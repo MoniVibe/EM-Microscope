@@ -20,6 +20,11 @@ L3.4 begins the measured-data bridge: browser-side PNG/JPEG import, DOM-free cor
 metadata, and ROI definitions. L3.4B turns that bridge into a measured-vs-simulated workbench with ROI metrics,
 residual maps, deterministic grid-search fitting, and comparison report export. It is not certified ISO 12233,
 EMVA 1288, clinical, or hardware calibration.
+L4 Phase 0 starts the Maxwell-first lane with a DOM-free frequency-domain planar multilayer transfer-matrix
+special case for film stacks. It computes complex-amplitude reflection/transmission, R/T/A Poynting-style flux
+ratios, effective permittivity, energy-balance checks, warnings, and deterministic hashes. It is not a general 3D
+Maxwell solver, FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, or
+sensor-stack simulator.
 
 ## Current Modes
 
@@ -43,6 +48,9 @@ EMVA 1288, clinical, or hardware calibration.
 - `L3.4B Measured-vs-Simulated Workbench v0`: PNG/JPEG measured-image import, grayscale typed-array hashing,
   calibration metadata, ROI definitions, line-pair/slanted-edge/PSF/flat/dark ROI metrics, residual maps,
   deterministic grid-search fitting, and JSON/Markdown/HTML comparison report export.
+- `L4 Maxwell Phase 0 Planar TMM`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
+  constant complex material samples, film-stack R/T/A, Poynting-style energy accounting, JSON/Markdown export, and
+  strict limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
 
@@ -117,6 +125,27 @@ Comparison export produces `comparison_report.json`, `comparison_report.md`, `co
 SceneV7 is additive: old scenes migrate with empty measured-image, calibration-target, ROI, comparison-run, and
 fit-run arrays. The current L3.4B layer does not claim ISO 12233, EMVA 1288, clinical, or hardware calibration.
 True 3D physics remains out of scope; 3D should wait until the 2D measured-data diagnostics are stronger.
+
+## L4 Maxwell Phase 0
+
+The L4 core modules live under `packages/core/src/maxwell`. They include a small complex-number utility, constant
+complex refractive-index material samples, relative-permittivity conversion, absorption-coefficient diagnostics,
+and a planar multilayer transfer-matrix solver for TE/TM plane waves. The bundled validation fixtures cover a bare
+air/glass interface, a MgF2 quarter-wave AR coating, a lossy chromium-like film on glass, and an oblique TM AR
+stack.
+
+This is Maxwell-first but intentionally narrow: the TMM path solves the planar film-stack special case directly
+from frequency-domain boundary conditions and E/H admittance, not geometric raytracing. It does not solve curved
+lenses, apertures, arbitrary 3D geometry, vector focusing through high-NA objectives, RCWA gratings, FEM/BEM
+meshes, FDTD time marching, or pixel-level sensor absorption yet.
+
+Recommended next L4 steps:
+
+- Add a wavelength-dependent material importer with source metadata, interpolation policy, and passivity checks.
+- Compile optical coating stacks from scene elements into planar TMM inputs for normal/oblique validation cases.
+- Export field-monitor metadata around film interfaces, not just aggregate R/T/A.
+- Prototype a separate 3D engine boundary that can call an external FEM/BEM/RCWA/FDTD backend without mixing it
+  into the current 2D scalar/ray bench API.
 
 ## Local Development
 

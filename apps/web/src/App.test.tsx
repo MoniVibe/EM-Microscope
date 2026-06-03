@@ -56,4 +56,13 @@ describe("solver disclosure copy", () => {
     expect(fitPanel).toContain("diagnostic only");
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
+
+  it("labels L4 Maxwell as a planar TMM special case without claiming arbitrary 3D EM", () => {
+    const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
+
+    expect(maxwellPanel).toContain("frequency-domain Maxwell planar multilayer TMM special case");
+    expect(maxwellPanel).toContain("not a general 3D Maxwell solver");
+    expect(maxwellPanel).toContain("runPlanarTmm");
+    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA/i);
+  });
 });

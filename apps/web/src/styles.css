@@ -419,6 +419,71 @@ h2 {
   gap: 6px;
 }
 
+.maxwell-flux {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.maxwell-flux-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 8px;
+  color: #536175;
+  font-size: 12px;
+}
+
+.maxwell-flux-row strong {
+  color: #263244;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-align: right;
+}
+
+.maxwell-flux-bar {
+  height: 9px;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #edf2f7;
+}
+
+.maxwell-flux-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #227c9d;
+}
+
+.maxwell-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.maxwell-stack ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #4d5b6d;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.maxwell-stack li {
+  margin: 4px 0;
+}
+
+.maxwell-stack li strong {
+  display: block;
+  color: #253247;
+}
+
+.maxwell-stack li span {
+  color: #66758a;
+}
+
 .readonly-row strong {
   color: var(--text);
   font-variant-numeric: tabular-nums;

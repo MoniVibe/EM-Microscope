@@ -104,6 +104,7 @@ import { FitPanel } from "./measurement/FitPanel";
 import { ImageImportPanel } from "./measurement/ImageImportPanel";
 import { residualMapToPngDataUrl } from "./measurement/ResidualView";
 import { RoiPanel } from "./measurement/RoiPanel";
+import { MaxwellPanel } from "./maxwell/MaxwellPanel";
 import { MtfPanel } from "./metrics/MtfPanel";
 import { ResolutionTargetPanel } from "./metrics/ResolutionTargetPanel";
 import { ReportPanel } from "./report/ReportPanel";
@@ -1028,6 +1029,7 @@ export function App() {
             onCancelFit={cancelL34bFit}
             onExportFitCsv={exportL34bFitCsv}
           />
+          <MaxwellPanel />
 
           {scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && (
             <WavePanel
