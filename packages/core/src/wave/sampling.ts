@@ -1,6 +1,7 @@
 import { isPowerOfTwo } from "../math/fft";
-import type { FieldGrid1D, RectApertureMask1D } from "../scene/schema";
+import type { FieldGrid1D, RectApertureMask1D, SamplePlane1D } from "../scene/schema";
 import type { SolverWarning } from "../solvers/Solver";
+import { minimumFeatureSizeM } from "./transmissionMasks1D";
 
 export function gridSamplingWarnings(grid: FieldGrid1D): SolverWarning[] {
   const warnings: SolverWarning[] = [];
@@ -29,6 +30,20 @@ export function apertureSamplingWarnings(mask: RectApertureMask1D, grid: FieldGr
       code: "aperture.undersampled",
       message: `${mask.label} spans ${samplesAcrossAperture.toFixed(1)} grid samples; use at least 8 samples across the opening.`,
       elementId: mask.id
+    }
+  ];
+}
+
+export function sampleSamplingWarnings(sample: SamplePlane1D, grid: FieldGrid1D): SolverWarning[] {
+  const featureM = minimumFeatureSizeM(sample.transmission);
+  if (featureM === null) return [];
+  const samplesAcrossFeature = featureM / grid.spacingM;
+  if (samplesAcrossFeature >= 8) return [];
+  return [
+    {
+      code: "sample.undersampled",
+      message: `${sample.label} has a ${samplesAcrossFeature.toFixed(1)} sample feature; use at least 8 samples across the smallest sample feature.`,
+      elementId: sample.id
     }
   ];
 }

@@ -106,6 +106,18 @@ export type FieldOutput1D = {
   provenance: PhysicsProvenance;
 };
 
+export type WaveEnergyStage = {
+  id: string;
+  label: string;
+  kind: "source" | "propagation" | "sample" | "aperture" | "detector";
+  xM: number;
+  inputEnergy: number;
+  outputEnergy: number;
+  clippedEnergy: number;
+  relativeChange: number;
+  elementId?: string;
+};
+
 export type EnergyLedger = {
   inputEnergy: number;
   afterMaskEnergy: number;
@@ -113,6 +125,7 @@ export type EnergyLedger = {
   clippedEnergy: number;
   relativeOutputDrift: number;
   units: "relative-field-energy";
+  stages?: WaveEnergyStage[];
   provenance: PhysicsProvenance;
 };
 

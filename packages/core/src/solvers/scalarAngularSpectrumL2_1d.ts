@@ -2,20 +2,27 @@ import { angularFrequencyGrid, fft, isPowerOfTwo } from "../math/fft";
 import { refractiveIndexById } from "../optics/media";
 import { makeWaveEnergyLedger, l2Scalar1DProvenance } from "../readouts/waveEnergy";
 import { hashScene, stableStringify, fnv1a64 } from "../scene/hashScene";
-import { parseScene, type FieldGrid1D, type FieldPlane1D, type RectApertureMask1D, type Scene } from "../scene/schema";
+import { parseScene, type FieldGrid1D, type FieldPlane1D, type RectApertureMask1D, type SamplePlane1D, type Scene } from "../scene/schema";
 import { applyRectAperture1D } from "../wave/apertures1d";
 import { cloneComplexArray, multiplyByComplex, type ComplexArray } from "../wave/complex";
 import { createFieldFromPlane, fieldEnergy, gridCoordinates, intensityAndPhase } from "../wave/field1d";
-import { apertureSamplingWarnings, edgeEnergyWarning, gridSamplingWarnings, propagationWindowWarnings } from "../wave/sampling";
-import type { FieldOutput1D, Solver, SolverRequest, SolverResult, SolverWarning } from "./Solver";
+import { applySamplePlane1D } from "../wave/samplePlanes1D";
+import { apertureSamplingWarnings, edgeEnergyWarning, gridSamplingWarnings, propagationWindowWarnings, sampleSamplingWarnings } from "../wave/sampling";
+import type { FieldOutput1D, Solver, SolverRequest, SolverResult, SolverWarning, WaveEnergyStage } from "./Solver";
 
 const assumptions = [
   "L2 scalar 1D field propagation",
   "1D transverse slice, not full circular-aperture Airy disk",
+  "L2 scalar 1D sample propagation when sample planes are present",
+  "1D coherent transverse slice; not a full microscope image, full PSF, or Airy disk",
   "Coherent monochromatic angular-spectrum propagation",
-  "Homogeneous medium between source, mask, and detector planes",
+  "Homogeneous medium between source, sample, pupil, and detector planes",
   "No polarization, scattering, fluorescence, or incoherent imaging"
 ];
+
+type WaveInteraction1D =
+  | { kind: "sample"; xM: number; item: SamplePlane1D }
+  | { kind: "aperture"; xM: number; item: RectApertureMask1D };
 
 export const scalarAngularSpectrumL2_1dSolver: Solver = {
   id: "scalar.angularSpectrum.l2.1d",
@@ -40,13 +47,13 @@ export const scalarAngularSpectrumL2_1dSolver: Solver = {
     const detectorPlane = firstPlane(scene, "detector");
     const grid = gridById(scene, sourcePlane.gridId);
     if (detectorPlane.gridId !== grid.id) {
-      throw new Error("L2 v0 requires the source and detector field planes to use the same 1D grid");
+      throw new Error("L2.5 requires the source and detector field planes to use the same 1D grid");
     }
     if (!isPowerOfTwo(grid.samples)) {
       throw new Error("L2 angular-spectrum solver requires a power-of-two grid");
     }
     if (detectorPlane.xM < sourcePlane.xM) {
-      throw new Error("L2 v0 requires detector xM to be greater than or equal to source xM");
+      throw new Error("L2.5 requires detector xM to be greater than or equal to source xM");
     }
 
     const warnings = validateL2Scene(scene);
@@ -54,43 +61,65 @@ export const scalarAngularSpectrumL2_1dSolver: Solver = {
     let currentX = sourcePlane.xM;
     let field = createFieldFromPlane(grid, sourcePlane);
     const inputEnergy = fieldEnergy(field, grid.spacingM);
+    const stages: WaveEnergyStage[] = [
+      {
+        id: `${sourcePlane.id}-energy`,
+        label: sourcePlane.label,
+        kind: "source",
+        xM: sourcePlane.xM,
+        inputEnergy,
+        outputEnergy: inputEnergy,
+        clippedEnergy: 0,
+        relativeChange: 0,
+        elementId: sourcePlane.id
+      }
+    ];
+    const mediumN = refractiveIndexById(scene, sourcePlane.mediumId, scene.environment.defaultWavelengthM);
+    const interactions = orderedWaveInteractions(scene, grid.id, sourcePlane.xM, detectorPlane.xM);
 
-    const mask = firstRectAperture(scene, grid.id);
-    let afterMaskEnergy = inputEnergy;
-    if (mask) {
-      if (mask.xM < currentX) {
-        throw new Error("L2 v0 requires the aperture mask to be at or after the source field plane");
+    for (const interaction of interactions) {
+      if (interaction.xM < currentX - 1e-15) {
+        throw new Error("L2.5 wave interactions must be ordered from source toward detector");
       }
-      if (mask.xM > currentX) {
-        field = propagateAngularSpectrum1D(field, grid, scene.environment.defaultWavelengthM, refractiveIndexById(scene, sourcePlane.mediumId, scene.environment.defaultWavelengthM), mask.xM - currentX);
-        currentX = mask.xM;
+      if (interaction.xM > currentX) {
+        const before = fieldEnergy(field, grid.spacingM);
+        field = propagateAngularSpectrum1D(field, grid, scene.environment.defaultWavelengthM, mediumN, interaction.xM - currentX);
+        const after = fieldEnergy(field, grid.spacingM);
+        stages.push(makeStage("propagation", `Propagate to ${interaction.item.label}`, interaction.xM, before, after, interaction.item.id));
+        currentX = interaction.xM;
       }
-      const apertureResult = applyRectAperture1D(field, mask, yM, grid.spacingM);
-      field = apertureResult.field;
-      afterMaskEnergy = apertureResult.outputEnergy;
-      warnings.push(
-        ...propagationWindowWarnings({
-          wavelengthM: scene.environment.defaultWavelengthM,
-          propagationM: detectorPlane.xM - mask.xM,
-          apertureWidthM: mask.widthM,
-          grid
-        })
-      );
+
+      if (interaction.kind === "sample") {
+        const applied = applySamplePlane1D(field, interaction.item, yM, grid.spacingM);
+        field = applied.field;
+        stages.push(makeStage("sample", interaction.item.label, interaction.xM, applied.inputEnergy, applied.outputEnergy, interaction.item.id));
+      } else {
+        const applied = applyRectAperture1D(field, interaction.item, yM, grid.spacingM);
+        field = applied.field;
+        stages.push(makeStage("aperture", interaction.item.label, interaction.xM, applied.inputEnergy, applied.outputEnergy, interaction.item.id));
+        warnings.push(
+          ...propagationWindowWarnings({
+            wavelengthM: scene.environment.defaultWavelengthM,
+            propagationM: detectorPlane.xM - interaction.item.xM,
+            apertureWidthM: interaction.item.widthM,
+            grid
+          })
+        );
+      }
     }
 
+    const afterInteractionEnergy = fieldEnergy(field, grid.spacingM);
     if (detectorPlane.xM > currentX) {
-      field = propagateAngularSpectrum1D(
-        field,
-        grid,
-        scene.environment.defaultWavelengthM,
-        refractiveIndexById(scene, detectorPlane.mediumId, scene.environment.defaultWavelengthM),
-        detectorPlane.xM - currentX
-      );
+      const before = afterInteractionEnergy;
+      field = propagateAngularSpectrum1D(field, grid, scene.environment.defaultWavelengthM, mediumN, detectorPlane.xM - currentX);
+      const after = fieldEnergy(field, grid.spacingM);
+      stages.push(makeStage("propagation", `Propagate to ${detectorPlane.label}`, detectorPlane.xM, before, after, detectorPlane.id));
     }
 
     const { intensity, phaseRad } = intensityAndPhase(field);
     warnings.push(...edgeEnergyWarning(intensity));
     const outputEnergy = fieldEnergy(field, grid.spacingM);
+    stages.push(makeStage("detector", detectorPlane.label, detectorPlane.xM, outputEnergy, outputEnergy, detectorPlane.id));
     const fieldOutput: FieldOutput1D = {
       id: `${detectorPlane.id}-profile`,
       type: "fieldProfile1D",
@@ -110,7 +139,7 @@ export const scalarAngularSpectrumL2_1dSolver: Solver = {
       provenance: l2Scalar1DProvenance
     };
     const sceneHash = hashScene(scene);
-    const energyLedger = makeWaveEnergyLedger({ inputEnergy, afterMaskEnergy, outputEnergy });
+    const energyLedger = makeWaveEnergyLedger({ inputEnergy, afterMaskEnergy: afterInteractionEnergy, outputEnergy, stages });
     const resultHash = l2ResultHash(sceneHash, fieldOutput, energyLedger);
 
     return {
@@ -185,6 +214,11 @@ function validateL2Scene(scene: Scene): SolverWarning[] {
       if (grid) warnings.push(...apertureSamplingWarnings(mask, grid));
     }
   }
+  for (const sample of scene.samplePlanes1D) {
+    const grid = scene.fieldGrids1D.find((candidate) => candidate.id === sample.gridId);
+    if (grid) warnings.push(...sampleSamplingWarnings(sample, grid));
+    warnings.push(...sampleGeometryWarnings(sample));
+  }
   return warnings;
 }
 
@@ -204,8 +238,76 @@ function gridById(scene: Scene, gridId: string): FieldGrid1D {
   return grid;
 }
 
-function firstRectAperture(scene: Scene, gridId: string): RectApertureMask1D | null {
-  return scene.masks1D.find((mask): mask is RectApertureMask1D => mask.type === "rectAperture1D" && mask.gridId === gridId) ?? null;
+function orderedWaveInteractions(scene: Scene, gridId: string, sourceXM: number, detectorXM: number): WaveInteraction1D[] {
+  const interactions: WaveInteraction1D[] = [
+    ...scene.samplePlanes1D
+      .filter((sample) => sample.gridId === gridId)
+      .map((item) => ({ kind: "sample" as const, xM: item.xM, item })),
+    ...scene.masks1D
+      .filter((mask): mask is RectApertureMask1D => mask.type === "rectAperture1D" && mask.gridId === gridId)
+      .map((item) => ({ kind: "aperture" as const, xM: item.xM, item }))
+  ];
+
+  for (const interaction of interactions) {
+    if (interaction.xM < sourceXM - 1e-15 || interaction.xM > detectorXM + 1e-15) {
+      throw new Error(`${interaction.item.label} must lie between the source and detector field planes`);
+    }
+  }
+
+  return interactions.sort((a, b) => {
+    if (a.xM !== b.xM) return a.xM - b.xM;
+    if (a.kind === b.kind) return a.item.id.localeCompare(b.item.id);
+    return a.kind === "sample" ? -1 : 1;
+  });
+}
+
+function makeStage(
+  kind: WaveEnergyStage["kind"],
+  label: string,
+  xM: number,
+  inputEnergy: number,
+  outputEnergy: number,
+  elementId?: string
+): WaveEnergyStage {
+  return {
+    id: `${kind}-${elementId ?? label}-${xM}`,
+    label,
+    kind,
+    xM,
+    inputEnergy,
+    outputEnergy,
+    clippedEnergy: Math.max(0, inputEnergy - outputEnergy),
+    relativeChange: inputEnergy > 0 ? (outputEnergy - inputEnergy) / inputEnergy : 0,
+    elementId
+  };
+}
+
+function sampleGeometryWarnings(sample: SamplePlane1D): SolverWarning[] {
+  const transmission = sample.transmission;
+  const profiles =
+    transmission.kind === "analyticAmplitude"
+      ? [transmission.profile]
+      : transmission.kind === "analyticComplex"
+        ? [transmission.amplitudeProfile]
+        : [];
+  const warnings: SolverWarning[] = [];
+  for (const profile of profiles) {
+    if (profile.kind === "doubleSlit" && profile.separationM <= profile.slitWidthM) {
+      warnings.push({
+        code: "sample.doubleSlitInvalid",
+        message: `${sample.label} separation must exceed slit width.`,
+        elementId: sample.id
+      });
+    }
+    if (profile.kind === "grating" && profile.periodM < profile.slitWidthM) {
+      warnings.push({
+        code: "sample.gratingInvalid",
+        message: `${sample.label} period must be at least the slit width.`,
+        elementId: sample.id
+      });
+    }
+  }
+  return warnings;
 }
 
 function l2ResultHash(sceneHash: string, field: FieldOutput1D, energyLedger: SolverResult["energyLedger"]): string {

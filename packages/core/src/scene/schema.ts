@@ -337,6 +337,96 @@ export const mask1DSchema = z.discriminatedUnion("type", [
     .strict()
 ]);
 
+const sampleAmplitudeProfile1DSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("singleSlit"),
+      widthM: positiveNumber,
+      centerYM: finiteNumber
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("doubleSlit"),
+      slitWidthM: positiveNumber,
+      separationM: positiveNumber,
+      centerYM: finiteNumber
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("grating"),
+      periodM: positiveNumber,
+      slitWidthM: positiveNumber,
+      count: z.number().int().min(1).max(201),
+      centerYM: finiteNumber
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("barTarget1D"),
+      periodM: positiveNumber,
+      dutyCycle: z.number().finite().min(0.01).max(0.99),
+      bars: z.number().int().min(1).max(201),
+      contrast: z.number().finite().min(0).max(1),
+      centerYM: finiteNumber
+    })
+    .strict()
+]);
+
+const samplePhaseProfile1DSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("phaseStep"),
+      stepYM: finiteNumber,
+      phaseLeftRad: finiteNumber,
+      phaseRightRad: finiteNumber
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("phaseGrating"),
+      periodM: positiveNumber,
+      dutyCycle: z.number().finite().min(0.01).max(0.99),
+      phaseDepthRad: finiteNumber,
+      centerYM: finiteNumber
+    })
+    .strict()
+]);
+
+export const sampleTransmission1DSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("analyticAmplitude"),
+      profile: sampleAmplitudeProfile1DSchema
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("analyticPhase"),
+      profile: samplePhaseProfile1DSchema
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("analyticComplex"),
+      amplitudeProfile: sampleAmplitudeProfile1DSchema,
+      phaseProfile: samplePhaseProfile1DSchema
+    })
+    .strict()
+]);
+
+export const samplePlane1DSchema = z
+  .object({
+    id: z.string().min(1),
+    type: z.literal("samplePlane1D"),
+    label: z.string().min(1),
+    xM: finiteNumber,
+    gridId: z.string().min(1),
+    transmission: sampleTransmission1DSchema
+  })
+  .strict();
+
 const sceneV3BaseSchema = sceneV2BaseSchema
   .omit({ schemaVersion: true })
   .extend({
@@ -351,7 +441,8 @@ const sceneV3BaseSchema = sceneV2BaseSchema
     fieldGrids1D: z.array(fieldGrid1DSchema),
     fieldPlanes1D: z.array(fieldPlane1DSchema),
     masks1D: z.array(mask1DSchema),
-    sampleMasks1D: z.array(z.never())
+    samplePlanes1D: z.array(samplePlane1DSchema).default([]),
+    sampleMasks1D: z.array(z.never()).default([])
   });
 
 export const sceneV3Schema = sceneV3BaseSchema.superRefine((scene, ctx) => {
@@ -361,7 +452,8 @@ export const sceneV3Schema = sceneV3BaseSchema.superRefine((scene, ctx) => {
   for (const id of [
     ...scene.fieldGrids1D.map((grid) => grid.id),
     ...scene.fieldPlanes1D.map((plane) => plane.id),
-    ...scene.masks1D.map((mask) => mask.id)
+    ...scene.masks1D.map((mask) => mask.id),
+    ...scene.samplePlanes1D.map((sample) => sample.id)
   ]) {
     if (ids.has(id)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate wave id: ${id}` });
@@ -387,6 +479,11 @@ export const sceneV3Schema = sceneV3BaseSchema.superRefine((scene, ctx) => {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: `mask ${mask.id} references an unknown grid` });
     }
   }
+  for (const sample of scene.samplePlanes1D) {
+    if (!gridIds.has(sample.gridId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `sample plane ${sample.id} references an unknown grid` });
+    }
+  }
 });
 
 export type SourceElement = z.infer<typeof sourceElementSchema>;
@@ -401,6 +498,8 @@ export type FieldGrid1D = z.infer<typeof fieldGrid1DSchema>;
 export type FieldPlane1D = z.infer<typeof fieldPlane1DSchema>;
 export type Mask1D = z.infer<typeof mask1DSchema>;
 export type RectApertureMask1D = Extract<Mask1D, { type: "rectAperture1D" }>;
+export type SampleTransmission1D = z.infer<typeof sampleTransmission1DSchema>;
+export type SamplePlane1D = z.infer<typeof samplePlane1DSchema>;
 export type SceneV1 = z.infer<typeof sceneV1Schema>;
 export type SceneV2 = z.infer<typeof sceneV2Schema>;
 export type SceneV3 = z.infer<typeof sceneV3Schema>;
@@ -449,6 +548,7 @@ export function migrateSceneV2ToV3(scene: SceneV2): SceneV3 {
     fieldGrids1D: [],
     fieldPlanes1D: [],
     masks1D: [],
+    samplePlanes1D: [],
     sampleMasks1D: []
   };
 }

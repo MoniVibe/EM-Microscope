@@ -9,6 +9,8 @@ import {
   fromRadians,
   geometricL0Solver,
   geometricL1_2dSolver,
+  l25PresetDefinitions,
+  l25PresetScenes,
   parseScene,
   sampleL1Scene,
   sampleL2Scene,
@@ -18,7 +20,9 @@ import {
   type DetectorElement,
   type EnergyLedger,
   type FieldOutput1D,
+  type L25PresetId,
   type OpticalElement,
+  type SamplePlane1D,
   type Scene,
   type SolverResult,
   type SolverWarning,
@@ -44,6 +48,7 @@ import { IntensityProfilePlot } from "./wave/IntensityProfilePlot";
 type SelectableKind = "source" | "element" | "detector";
 export type SelectedItem = { kind: SelectableKind; id: string } | null;
 type ActiveSolverId = Scene["solverSettings"]["activeSolverId"];
+type WavePresetValue = L25PresetId | "custom";
 
 type EditableItem =
   | { kind: "source"; item: SourceElement }
@@ -58,8 +63,14 @@ function id(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function solverDisclosureFor(solverId: ActiveSolverId): { label: string; detail: string } {
+export function solverDisclosureFor(solverId: ActiveSolverId, hasSamplePlane = false): { label: string; detail: string } {
   if (solverId === "scalar.angularSpectrum.l2.1d") {
+    if (hasSamplePlane) {
+      return {
+        label: "L2 scalar 1D sample propagation",
+        detail: "1D coherent transverse slice; not a full microscope image, full PSF, or Airy disk"
+      };
+    }
     return {
       label: "L2 scalar 1D field propagation",
       detail: "1D transverse slice; not a full circular-aperture Airy disk"
@@ -75,6 +86,21 @@ export function solverDisclosureFor(solverId: ActiveSolverId): { label: string; 
     label: "L0 Geometric Ray Optics",
     detail: "Diffraction not propagated"
   };
+}
+
+function wavePresetIdFor(scene: Scene): WavePresetValue {
+  const suffix = scene.sceneId.startsWith("sample-l25-") ? scene.sceneId.slice("sample-l25-".length) : "";
+  return suffix in l25PresetScenes ? (suffix as L25PresetId) : "custom";
+}
+
+function sampleVisualDiameterM(sample: SamplePlane1D): number {
+  const transmission = sample.transmission;
+  if (transmission.kind === "analyticPhase") return 0.006;
+  const profile = transmission.kind === "analyticAmplitude" ? transmission.profile : transmission.amplitudeProfile;
+  if (profile.kind === "singleSlit") return profile.widthM;
+  if (profile.kind === "doubleSlit") return profile.separationM + profile.slitWidthM;
+  if (profile.kind === "grating") return profile.periodM * profile.count;
+  return profile.periodM * profile.bars;
 }
 
 function touch(scene: Scene): Scene {
@@ -143,7 +169,7 @@ export function App() {
     primaryThickLens?.type === "thickLens2D" && primaryLensmaker
       ? primaryThickLens.xM + primaryThickLens.thicknessM + primaryLensmaker.backFocalLengthM
       : null;
-  const modeDisclosure = solverDisclosureFor(scene.solverSettings.activeSolverId);
+  const modeDisclosure = solverDisclosureFor(scene.solverSettings.activeSolverId, scene.samplePlanes1D.length > 0);
 
   function updateScene(updater: (current: Scene) => Scene): void {
     setL2Result(null);
@@ -156,6 +182,10 @@ export function App() {
     setL2Error(null);
     setScene(nextScene);
     setSelected(nextSelected);
+  }
+
+  function loadWavePreset(presetId: L25PresetId): void {
+    replaceScene(structuredClone(l25PresetScenes[presetId]), { kind: "element", id: "sample-marker" });
   }
 
   function updateItem(kind: SelectableKind, itemId: string, updater: (item: any) => any): void {
@@ -390,8 +420,8 @@ export function App() {
             title="Reset sample scene"
             onClick={() =>
               replaceScene(
-                scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? sampleL2Scene : sampleL1Scene,
-                scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? { kind: "element", id: "slit-ray-marker" } : { kind: "element", id: "lens-thick-biconvex" }
+                scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? structuredClone(l25PresetScenes.singleSlit) : sampleL1Scene,
+                scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? { kind: "element", id: "sample-marker" } : { kind: "element", id: "lens-thick-biconvex" }
               )
             }
           >
@@ -454,6 +484,7 @@ export function App() {
             scene={scene}
             updateScene={updateScene}
             loadL2Sample={() => replaceScene(sampleL2Scene, { kind: "element", id: "slit-ray-marker" })}
+            loadWavePreset={loadWavePreset}
           />
 
           <div className="rail-section">
@@ -505,6 +536,7 @@ export function App() {
               result={activeL2Result}
               validationWarnings={l2ValidationWarnings}
               error={l2Error}
+              disclosure={modeDisclosure}
               onCompute={computeL2Profile}
               onExportCsv={exportPrimaryCsv}
               onExportJson={exportFieldJson}
@@ -523,7 +555,10 @@ export function App() {
               <li>NA/Airy: analytic lower-bound estimate only</li>
               <li>Spot size: geometric detector RMS</li>
               {scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && (
-                <li>L2 profile: simulated scalar 1D angular-spectrum field; not a full circular-aperture Airy disk</li>
+                <li>
+                  L2 profile: simulated scalar 1D {scene.samplePlanes1D.length > 0 ? "sample propagation" : "angular-spectrum field"};
+                  not a full microscope image, full PSF, or Airy disk
+                </li>
               )}
             </ul>
           </section>
@@ -536,11 +571,13 @@ export function App() {
 function SceneControls({
   scene,
   updateScene,
-  loadL2Sample
+  loadL2Sample,
+  loadWavePreset
 }: {
   scene: Scene;
   updateScene: (updater: (current: Scene) => Scene) => void;
   loadL2Sample: () => void;
+  loadWavePreset: (presetId: L25PresetId) => void;
 }) {
   return (
     <div className="rail-section">
@@ -552,7 +589,7 @@ function SceneControls({
           onChange={(event) => {
             const activeSolverId = event.currentTarget.value as ActiveSolverId;
             if (activeSolverId === "scalar.angularSpectrum.l2.1d" && scene.fieldGrids1D.length === 0) {
-              loadL2Sample();
+              loadWavePreset("singleSlit");
               return;
             }
             updateScene((current) => ({
@@ -618,7 +655,7 @@ function SceneControls({
         }
       />
       {scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && (
-        <WaveControls scene={scene} updateScene={updateScene} loadL2Sample={loadL2Sample} />
+        <WaveControls scene={scene} updateScene={updateScene} loadL2Sample={loadL2Sample} loadWavePreset={loadWavePreset} />
       )}
     </div>
   );
@@ -627,46 +664,81 @@ function SceneControls({
 function WaveControls({
   scene,
   updateScene,
-  loadL2Sample
+  loadL2Sample,
+  loadWavePreset
 }: {
   scene: Scene;
   updateScene: (updater: (current: Scene) => Scene) => void;
   loadL2Sample: () => void;
+  loadWavePreset: (presetId: L25PresetId) => void;
 }) {
   const grid = scene.fieldGrids1D[0];
   const detectorPlane = scene.fieldPlanes1D.find((plane) => plane.role === "detector");
   const mask = scene.masks1D.find((candidate) => candidate.type === "rectAperture1D");
+  const sample = scene.samplePlanes1D[0];
 
-  if (!grid || !detectorPlane || !mask) {
+  if (!grid || !detectorPlane) {
     return (
-      <button type="button" title="Load L2 slit diffraction fixture" onClick={loadL2Sample}>
+      <button type="button" title="Load L2.5 single-slit sample fixture" onClick={() => loadWavePreset("singleSlit")}>
         <Waves size={17} />
-        <span>Slit fixture</span>
+        <span>Sample fixture</span>
       </button>
     );
   }
 
   return (
     <>
-      <NumberField
-        label="Slit width"
-        value={fromMeters(mask.widthM, "um")}
-        unit="um"
-        min={10}
-        max={2000}
-        step={10}
-        onChange={(value) => {
-          const maskId = mask.id;
-          updateScene((current) => ({
-            ...current,
-            masks1D: current.masks1D.map((candidate) =>
-              candidate.id === maskId && candidate.type === "rectAperture1D"
-                ? { ...candidate, widthM: Math.max(1e-9, toMeters(value, "um")) }
-                : candidate
-            )
-          }));
-        }}
-      />
+      <label className="field-row">
+        <span>Preset</span>
+        <select
+          value={wavePresetIdFor(scene)}
+          onChange={(event) => {
+            const presetId = event.currentTarget.value as WavePresetValue;
+            if (presetId !== "custom") loadWavePreset(presetId);
+          }}
+        >
+          <option value="custom">Custom scene</option>
+          {l25PresetDefinitions.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {sample ? (
+        <SamplePlaneControls sample={sample} updateScene={updateScene} />
+      ) : mask ? (
+        <>
+          <NumberField
+            label="Slit width"
+            value={fromMeters(mask.widthM, "um")}
+            unit="um"
+            min={10}
+            max={2000}
+            step={10}
+            onChange={(value) => {
+              const maskId = mask.id;
+              updateScene((current) => ({
+                ...current,
+                masks1D: current.masks1D.map((candidate) =>
+                  candidate.id === maskId && candidate.type === "rectAperture1D"
+                    ? { ...candidate, widthM: Math.max(1e-9, toMeters(value, "um")) }
+                    : candidate
+                )
+              }));
+            }}
+          />
+          <button type="button" title="Load L2.5 sample preset" onClick={() => loadWavePreset("singleSlit")}>
+            <Waves size={17} />
+            <span>Use sample presets</span>
+          </button>
+        </>
+      ) : (
+        <button type="button" title="Load L2 slit diffraction fixture" onClick={loadL2Sample}>
+          <Waves size={17} />
+          <span>Slit fixture</span>
+        </button>
+      )}
       <NumberField
         label="Distance"
         value={fromMeters(detectorPlane.xM, "mm")}
@@ -739,6 +811,284 @@ function WaveControls({
           <option value={8192}>8192</option>
         </select>
       </label>
+    </>
+  );
+}
+
+function SamplePlaneControls({
+  sample,
+  updateScene
+}: {
+  sample: SamplePlane1D;
+  updateScene: (updater: (current: Scene) => Scene) => void;
+}) {
+  const updateSample = (updater: (current: SamplePlane1D) => SamplePlane1D) => {
+    updateScene((current) => {
+      const existing = current.samplePlanes1D.find((candidate) => candidate.id === sample.id);
+      if (!existing) return current;
+      const markerSample = updater(existing);
+      const samplePlanes1D = current.samplePlanes1D.map((candidate) => (candidate.id === sample.id ? markerSample : candidate));
+      return {
+        ...current,
+        samplePlanes1D,
+        elements: current.elements.map((element) =>
+          element.id === "sample-marker" && element.type === "aperture"
+            ? { ...element, label: markerSample.label, diameterM: sampleVisualDiameterM(markerSample) }
+            : element
+        )
+      };
+    });
+  };
+
+  const transmission = sample.transmission;
+  const profile = transmission.kind === "analyticAmplitude" ? transmission.profile : transmission.kind === "analyticPhase" ? transmission.profile : transmission.amplitudeProfile;
+
+  return (
+    <>
+      <div className="compact-stat">
+        <span>Sample</span>
+        <strong>{profile.kind}</strong>
+      </div>
+      {transmission.kind === "analyticAmplitude" && profile.kind === "singleSlit" && (
+        <NumberField
+          label="Width"
+          value={fromMeters(profile.widthM, "um")}
+          unit="um"
+          min={5}
+          max={2000}
+          step={5}
+          onChange={(value) =>
+            updateSample((current) => ({
+              ...current,
+              transmission: {
+                kind: "analyticAmplitude",
+                profile: { ...profile, widthM: Math.max(1e-9, toMeters(value, "um")) }
+              }
+            }))
+          }
+        />
+      )}
+      {transmission.kind === "analyticAmplitude" && profile.kind === "doubleSlit" && (
+        <>
+          <NumberField
+            label="Slit width"
+            value={fromMeters(profile.slitWidthM, "um")}
+            unit="um"
+            min={2}
+            max={500}
+            step={2}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticAmplitude",
+                  profile: { ...profile, slitWidthM: Math.max(1e-9, toMeters(value, "um")) }
+                }
+              }))
+            }
+          />
+          <NumberField
+            label="Separation"
+            value={fromMeters(profile.separationM, "um")}
+            unit="um"
+            min={5}
+            max={1000}
+            step={5}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticAmplitude",
+                  profile: { ...profile, separationM: Math.max(1e-9, toMeters(value, "um")) }
+                }
+              }))
+            }
+          />
+        </>
+      )}
+      {transmission.kind === "analyticAmplitude" && profile.kind === "grating" && (
+        <>
+          <NumberField
+            label="Period"
+            value={fromMeters(profile.periodM, "um")}
+            unit="um"
+            min={2}
+            max={500}
+            step={1}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticAmplitude",
+                  profile: { ...profile, periodM: Math.max(1e-9, toMeters(value, "um")) }
+                }
+              }))
+            }
+          />
+          <NumberField
+            label="Open width"
+            value={fromMeters(profile.slitWidthM, "um")}
+            unit="um"
+            min={1}
+            max={500}
+            step={1}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticAmplitude",
+                  profile: { ...profile, slitWidthM: Math.max(1e-9, toMeters(value, "um")) }
+                }
+              }))
+            }
+          />
+          <NumberField
+            label="Lines"
+            value={profile.count}
+            min={1}
+            max={101}
+            step={2}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticAmplitude",
+                  profile: { ...profile, count: Math.max(1, Math.round(value)) }
+                }
+              }))
+            }
+          />
+        </>
+      )}
+      {transmission.kind === "analyticAmplitude" && profile.kind === "barTarget1D" && (
+        <>
+          <NumberField
+            label="Period"
+            value={fromMeters(profile.periodM, "um")}
+            unit="um"
+            min={10}
+            max={2000}
+            step={10}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticAmplitude",
+                  profile: { ...profile, periodM: Math.max(1e-9, toMeters(value, "um")) }
+                }
+              }))
+            }
+          />
+          <NumberField
+            label="Duty"
+            value={profile.dutyCycle * 100}
+            unit="%"
+            min={1}
+            max={99}
+            step={1}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticAmplitude",
+                  profile: { ...profile, dutyCycle: Math.min(0.99, Math.max(0.01, value / 100)) }
+                }
+              }))
+            }
+          />
+          <NumberField
+            label="Contrast"
+            value={profile.contrast * 100}
+            unit="%"
+            min={0}
+            max={100}
+            step={1}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticAmplitude",
+                  profile: { ...profile, contrast: Math.min(1, Math.max(0, value / 100)) }
+                }
+              }))
+            }
+          />
+        </>
+      )}
+      {transmission.kind === "analyticPhase" && profile.kind === "phaseStep" && (
+        <>
+          <NumberField
+            label="Step y"
+            value={fromMeters(profile.stepYM, "um")}
+            unit="um"
+            step={10}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticPhase",
+                  profile: { ...profile, stepYM: toMeters(value, "um") }
+                }
+              }))
+            }
+          />
+          <NumberField
+            label="Right phase"
+            value={profile.phaseRightRad}
+            unit="rad"
+            min={-Math.PI * 4}
+            max={Math.PI * 4}
+            step={0.1}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticPhase",
+                  profile: { ...profile, phaseRightRad: value }
+                }
+              }))
+            }
+          />
+        </>
+      )}
+      {transmission.kind === "analyticPhase" && profile.kind === "phaseGrating" && (
+        <>
+          <NumberField
+            label="Period"
+            value={fromMeters(profile.periodM, "um")}
+            unit="um"
+            min={2}
+            max={1000}
+            step={2}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticPhase",
+                  profile: { ...profile, periodM: Math.max(1e-9, toMeters(value, "um")) }
+                }
+              }))
+            }
+          />
+          <NumberField
+            label="Depth"
+            value={profile.phaseDepthRad}
+            unit="rad"
+            min={-Math.PI * 4}
+            max={Math.PI * 4}
+            step={0.1}
+            onChange={(value) =>
+              updateSample((current) => ({
+                ...current,
+                transmission: {
+                  kind: "analyticPhase",
+                  profile: { ...profile, phaseDepthRad: value }
+                }
+              }))
+            }
+          />
+        </>
+      )}
     </>
   );
 }
@@ -836,6 +1186,7 @@ function WavePanel({
   result,
   validationWarnings,
   error,
+  disclosure,
   onCompute,
   onExportCsv,
   onExportJson
@@ -844,6 +1195,7 @@ function WavePanel({
   result: SolverResult | null;
   validationWarnings: SolverWarning[];
   error: string | null;
+  disclosure: { label: string; detail: string };
   onCompute: () => void;
   onExportCsv: () => void;
   onExportJson: () => void;
@@ -854,7 +1206,7 @@ function WavePanel({
       <div className="wave-actions">
         <button type="button" onClick={onCompute}>
           <Waves size={17} />
-          <span>Compute L2 profile</span>
+          <span>Compute profile</span>
         </button>
         <button type="button" disabled={!field || !result} onClick={onExportCsv}>
           <FileDown size={17} />
@@ -866,9 +1218,21 @@ function WavePanel({
         </button>
       </div>
       <div className="l2-disclosure">
-        <strong>L2 scalar 1D field propagation</strong>
-        <span>1D transverse slice; not a full circular-aperture Airy disk</span>
+        <strong>{disclosure.label}</strong>
+        <span>{disclosure.detail}</span>
       </div>
+      {result && (
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>Result hash</span>
+            <strong>{result.resultHash?.slice(0, 10) ?? "n/a"}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Wave stages</span>
+            <strong>{result.energyLedger?.stages?.length ?? 0}</strong>
+          </div>
+        </div>
+      )}
       {error && <div className="error-banner">{error}</div>}
       {warnings.length > 0 && (
         <ul className="warning-list">
@@ -930,7 +1294,7 @@ function ReadoutStrip({
         <Readout label="Profile" value={l2Field ? "computed" : "pending"} source="on demand" />
         <Readout label="Peak I" value={formatRelativeEnergy(peak)} source="relative" />
         <Readout label="Input E" value={formatRelativeEnergy(l2Energy?.inputEnergy)} source="field" />
-        <Readout label="After slit" value={formatRelativeEnergy(l2Energy?.afterMaskEnergy)} source="field" />
+        <Readout label="After chain" value={formatRelativeEnergy(l2Energy?.afterMaskEnergy)} source="field" />
         <Readout label="Output E" value={formatRelativeEnergy(l2Energy?.outputEnergy)} source="field" />
         <Readout label="Warnings" value={String(l2WarningCount)} source={`${l2Field?.yM.length ?? 0} samples`} />
       </div>

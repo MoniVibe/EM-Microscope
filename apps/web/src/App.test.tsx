@@ -7,6 +7,14 @@ describe("solver disclosure copy", () => {
 
     expect(disclosure.label).toBe("L2 scalar 1D field propagation");
     expect(disclosure.detail).toBe("1D transverse slice; not a full circular-aperture Airy disk");
-    expect(`${disclosure.label} ${disclosure.detail}`).not.toMatch(/Airy disk simulated|full PSF/i);
+    expect(`${disclosure.label} ${disclosure.detail}`).not.toMatch(/Airy disk simulated|full PSF simulated|full microscope image simulated/i);
+  });
+
+  it("labels L2.5 sample propagation without claiming a microscope image", () => {
+    const disclosure = solverDisclosureFor("scalar.angularSpectrum.l2.1d", true);
+
+    expect(disclosure.label).toBe("L2 scalar 1D sample propagation");
+    expect(disclosure.detail).toBe("1D coherent transverse slice; not a full microscope image, full PSF, or Airy disk");
+    expect(`${disclosure.label} ${disclosure.detail}`).not.toMatch(/Airy disk simulated|full PSF simulated|full microscope image simulated/i);
   });
 });

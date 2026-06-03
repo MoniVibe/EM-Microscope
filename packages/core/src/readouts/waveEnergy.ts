@@ -18,11 +18,13 @@ export const l2Scalar1DProvenance: PhysicsProvenance = {
 export function makeWaveEnergyLedger({
   inputEnergy,
   afterMaskEnergy,
-  outputEnergy
+  outputEnergy,
+  stages
 }: {
   inputEnergy: number;
   afterMaskEnergy: number;
   outputEnergy: number;
+  stages?: EnergyLedger["stages"];
 }): EnergyLedger {
   const reference = Math.max(afterMaskEnergy, Number.EPSILON);
   return {
@@ -32,6 +34,7 @@ export function makeWaveEnergyLedger({
     clippedEnergy: Math.max(0, inputEnergy - afterMaskEnergy),
     relativeOutputDrift: (outputEnergy - afterMaskEnergy) / reference,
     units: "relative-field-energy",
+    stages,
     provenance: l2Scalar1DProvenance
   };
 }

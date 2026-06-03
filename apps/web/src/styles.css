@@ -387,6 +387,11 @@ h2 {
   color: #755320;
 }
 
+.profile-meta {
+  display: grid;
+  gap: 6px;
+}
+
 .warning-list {
   margin: 0;
   padding: 8px 8px 8px 24px;

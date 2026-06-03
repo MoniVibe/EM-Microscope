@@ -273,6 +273,7 @@ export const sampleL2Scene: Scene = {
       centerYM: 0
     }
   ],
+  samplePlanes1D: [],
   sampleMasks1D: [],
   metadata: {
     ...sampleL1Scene.metadata,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sampleL1Scene, sampleScene } from "./sampleScene";
+import { sampleL1Scene, sampleL2Scene, sampleScene } from "./sampleScene";
 import { parseScene, parseSceneV1 } from "./schema";
 
 describe("SceneV1 schema", () => {
@@ -39,5 +39,17 @@ describe("SceneV3 migration", () => {
     expect(parsed.schemaVersion).toBe("0.3.0");
     expect(parsed.solverSettings.activeSolverId).toBe("geometric.l1.2d");
     expect(parsed.waveSettings.defaultCoherence).toBe("coherent");
+  });
+
+  it("defaults missing L2.5 sample collections on older SceneV3 files", () => {
+    const olderScene = structuredClone(sampleL2Scene) as Record<string, unknown>;
+    delete olderScene.samplePlanes1D;
+    delete olderScene.sampleMasks1D;
+
+    const parsed = parseScene(olderScene);
+
+    expect(parsed.schemaVersion).toBe("0.3.0");
+    expect(parsed.samplePlanes1D).toEqual([]);
+    expect(parsed.sampleMasks1D).toEqual([]);
   });
 });
