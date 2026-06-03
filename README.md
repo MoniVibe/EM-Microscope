@@ -16,6 +16,8 @@ diffraction physics or calibrated hardware prediction.
 L3.3 adds a partial-coherence scalar brightfield approximation by averaging detector intensities from deterministic
 source-angle sub-solves. It is not vector optics, fluorescence, true 3D physics, EM, or certified microscope
 metrology.
+L3.4 begins the measured-data bridge: browser-side PNG/JPEG import, DOM-free core image metadata, calibration
+metadata, and ROI definitions for later measured-vs-simulated comparison. It is not certified ISO/EMVA calibration.
 
 ## Current Modes
 
@@ -36,6 +38,8 @@ metrology.
 - `L3.3 Brightfield Partial-Coherence Workbench v0`: uniform-disk and annular source-angle sampling, brightfield
   target presets, detector-intensity averaging over coherent L3 sub-solves, target contrast/SFR-style readouts,
   source-NA sweep metadata, and report export with illumination/target provenance.
+- `L3.4 Measured-Data Foundation v0`: PNG/JPEG measured-image import, grayscale typed-array hashing, calibration
+  metadata, ROI definitions, and SceneV7 measured-data containers for future compare/fit/report workflows.
 
 ## L2 Validation Fixture
 
@@ -87,6 +91,17 @@ Siemens-star-like target.
 The UI exposes source NA, source-angle count, and target selection for L3.3 scenes. The image panel adds
 illumination, test-target, and resolution-target sections; report export includes source-angle and target
 metadata. Slanted-edge SFR and target contrast are workbench estimates, not certified ISO measurements.
+
+## L3.4 Measured-Data Foundation
+
+L3.4 adds the first compare-to-real scaffolding without adding a new physics solver. The web app can import a
+PNG or JPEG target image, decode it in the browser, convert it to normalized grayscale `Float32Array` pixels for
+core utilities, and store measured-image metadata in SceneV7. Core modules provide deterministic measured-image
+hashing, histogram summaries, pixel-size calibration conversion, ROI coordinate transforms, ROI bounds warnings,
+and nearest-neighbor ROI extraction.
+
+SceneV7 is additive: old scenes migrate with empty measured-image, calibration-target, ROI, comparison-run, and
+fit-run arrays. The current L3.4 layer does not claim ISO 12233, EMVA 1288, clinical, or hardware calibration.
 
 ## Local Development
 

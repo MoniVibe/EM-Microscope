@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { solverDisclosureFor } from "./App";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const testDir = fileURLToPath(new URL(".", import.meta.url));
 
 describe("solver disclosure copy", () => {
   it("labels the L2 result as a 1D scalar slice without claiming a full PSF", () => {
@@ -32,5 +37,13 @@ describe("solver disclosure copy", () => {
     expect(disclosure.label).toBe("L3.3 partial-coherence scalar brightfield approximation");
     expect(disclosure.detail).toContain("source-angle intensity averaging");
     expect(`${disclosure.label} ${disclosure.detail}`).not.toMatch(/true 3D simulation|certified microscope simulation|vector optics simulated|fluorescence simulated|Maxwell solver/i);
+  });
+
+  it("keeps measured-data UI copy away from certified calibration claims", () => {
+    const importPanel = readFileSync(resolve(testDir, "measurement/ImageImportPanel.tsx"), "utf8");
+    const calibrationPanel = readFileSync(resolve(testDir, "measurement/CalibrationPanel.tsx"), "utf8");
+    const roiPanel = readFileSync(resolve(testDir, "measurement/RoiPanel.tsx"), "utf8");
+
+    expect(`${importPanel}\n${calibrationPanel}\n${roiPanel}`).not.toMatch(/certified ISO|certified EMVA|clinical calibration|hardware calibration/i);
   });
 });

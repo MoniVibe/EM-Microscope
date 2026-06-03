@@ -22,11 +22,11 @@ describe("SceneV1 schema", () => {
   });
 });
 
-describe("SceneV6 migration", () => {
-  it("migrates SceneV1 to SceneV6 without inventing L2, L3, L3.2, or L3.3 workbench fields", () => {
+describe("SceneV7 migration", () => {
+  it("migrates SceneV1 to SceneV7 without inventing L2, L3, L3.2, L3.3, or L3.4 workbench fields", () => {
     const migrated = parseScene(sampleScene);
 
-    expect(migrated.schemaVersion).toBe("0.6.0");
+    expect(migrated.schemaVersion).toBe("0.7.0");
     expect(migrated.solverSettings.activeSolverId).toBe("geometric.l0");
     expect(migrated.fieldGrids1D).toEqual([]);
     expect(migrated.fieldPlanes1D).toEqual([]);
@@ -40,12 +40,17 @@ describe("SceneV6 migration", () => {
     expect(migrated.sourceAngleSets2D).toEqual([]);
     expect(migrated.testTargets2D).toEqual([]);
     expect(migrated.brightfieldPipelines2D).toEqual([]);
+    expect(migrated.measuredImages2D).toEqual([]);
+    expect(migrated.calibrationTargets2D).toEqual([]);
+    expect(migrated.measurementRois2D).toEqual([]);
+    expect(migrated.comparisonRuns2D).toEqual([]);
+    expect(migrated.fitRuns2D).toEqual([]);
   });
 
   it("validates the migrated L1 sample scene", () => {
     const parsed = parseScene(sampleL1Scene);
 
-    expect(parsed.schemaVersion).toBe("0.6.0");
+    expect(parsed.schemaVersion).toBe("0.7.0");
     expect(parsed.solverSettings.activeSolverId).toBe("geometric.l1.2d");
     expect(parsed.waveSettings.defaultCoherence).toBe("coherent");
   });
@@ -71,15 +76,22 @@ describe("SceneV6 migration", () => {
     delete olderScene.sourceAngleSets2D;
     delete olderScene.testTargets2D;
     delete olderScene.brightfieldPipelines2D;
+    delete olderScene.measuredImages2D;
+    delete olderScene.calibrationTargets2D;
+    delete olderScene.measurementRois2D;
+    delete olderScene.comparisonRuns2D;
+    delete olderScene.fitRuns2D;
+    delete olderScene.comparisonReportSettings;
 
     const parsed = parseScene(olderScene);
 
-    expect(parsed.schemaVersion).toBe("0.6.0");
+    expect(parsed.schemaVersion).toBe("0.7.0");
     expect(parsed.samplePlanes1D).toEqual([]);
     expect(parsed.sampleMasks1D).toEqual([]);
     expect(parsed.fieldGrids2D).toEqual([]);
     expect(parsed.cameraModels).toEqual([]);
     expect(parsed.illuminationModels2D).toEqual([]);
+    expect(parsed.measuredImages2D).toEqual([]);
   });
 
   it("rejects L3 pipelines that reference missing 2D planes", () => {
@@ -130,5 +142,23 @@ describe("SceneV6 migration", () => {
     ];
 
     expect(() => parseScene(invalid)).toThrow(/unknown coherent pipeline|unknown illumination model/);
+  });
+
+  it("rejects L3.4 ROIs that reference missing measured images", () => {
+    const invalid = structuredClone(sampleL1Scene);
+    invalid.measurementRois2D = [
+      {
+        id: "roi",
+        imageId: "missing-image",
+        label: "Missing image ROI",
+        type: "linePairs",
+        xPx: 0,
+        yPx: 0,
+        widthPx: 10,
+        heightPx: 10
+      }
+    ];
+
+    expect(() => parseScene(invalid)).toThrow(/unknown measured image/);
   });
 });

@@ -82,6 +82,9 @@ import {
 } from "lucide-react";
 import { BenchCanvas } from "./canvas/BenchCanvas";
 import { IlluminationPanel } from "./illumination/IlluminationPanel";
+import { CalibrationPanel } from "./measurement/CalibrationPanel";
+import { ImageImportPanel } from "./measurement/ImageImportPanel";
+import { RoiPanel } from "./measurement/RoiPanel";
 import { MtfPanel } from "./metrics/MtfPanel";
 import { ResolutionTargetPanel } from "./metrics/ResolutionTargetPanel";
 import { ReportPanel } from "./report/ReportPanel";
@@ -286,6 +289,7 @@ export function App() {
     () => (activeL3Field && activeTestTarget ? computeResolutionTargetMetrics2D(activeL3Field, activeTestTarget) : null),
     [activeL3Field, activeTestTarget]
   );
+  const activeMeasuredImage = scene.measuredImages2D[0];
   const l32Report = useMemo<EngineeringReport | null>(
     () =>
       activeL3Result && l32SensorImage && l32Snr && l32Mtf && l32Psf && l32Sampling
@@ -843,6 +847,9 @@ export function App() {
             </button>
           </div>
           <ElementProperties selectedItem={selectedItem} updateItem={updateItem} />
+          <ImageImportPanel scene={scene} updateScene={updateScene} />
+          <CalibrationPanel image={activeMeasuredImage} updateScene={updateScene} />
+          <RoiPanel image={activeMeasuredImage} scene={scene} updateScene={updateScene} />
 
           {scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && (
             <WavePanel

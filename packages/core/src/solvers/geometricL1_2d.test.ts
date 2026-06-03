@@ -9,7 +9,7 @@ describe("geometric L1 2D solver", () => {
   it("migrates old L0 scenes to the latest scene schema without changing the solver id", () => {
     const migrated = parseScene(sampleScene);
 
-    expect(migrated.schemaVersion).toBe("0.6.0");
+    expect(migrated.schemaVersion).toBe("0.7.0");
     expect(migrated.geometry.dimension).toBe("2d");
     expect(migrated.solverSettings.activeSolverId).toBe("geometric.l0");
     expect(migrated.fieldGrids1D).toEqual([]);

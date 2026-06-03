@@ -82,7 +82,7 @@ export function makeL33PresetScene(id: L33PresetId): Scene {
 
   return {
     ...base,
-    schemaVersion: "0.6.0",
+    schemaVersion: "0.7.0",
     sceneId: `sample-l33-${id}`,
     name: `L3.3 ${l33PresetLabels[id]}`,
     solverSettings: {
@@ -143,7 +143,7 @@ export function makeL33PresetScene(id: L33PresetId): Scene {
     },
     metadata: {
       ...base.metadata,
-      appVersion: "0.6.0"
+      appVersion: "0.7.0"
     }
   };
 }

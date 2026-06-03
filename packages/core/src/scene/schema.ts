@@ -873,6 +873,109 @@ export const brightfieldPipeline2DSchema = z
   })
   .strict();
 
+export const imageCalibration2DSchema = z
+  .object({
+    pixelSizeUM: positiveNumber.optional(),
+    pixelSizeVM: positiveNumber.optional(),
+    magnification: positiveNumber.optional(),
+    wavelengthM: positiveNumber.optional(),
+    objectiveNA: nonNegativeNumber.optional(),
+    sourceNA: nonNegativeNumber.optional(),
+    exposureS: positiveNumber.optional(),
+    bitDepth: z.union([z.literal(8), z.literal(10), z.literal(12), z.literal(14), z.literal(16)]).optional(),
+    notes: z.string().max(2048).optional()
+  })
+  .strict();
+
+export const measuredImageProvenanceSchema = z
+  .object({
+    kind: z.literal("measured"),
+    source: z.enum(["user-import", "synthetic-fixture"]),
+    dimensionality: z.literal("2d"),
+    approximation: z.array(z.string().min(1)).default([])
+  })
+  .strict();
+
+export const measuredImage2DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    widthPx: z.number().int().min(1).max(32768),
+    heightPx: z.number().int().min(1).max(32768),
+    channels: z.enum(["grayscale", "rgb"]),
+    pixelDataPolicy: z.enum(["external-session", "embedded-data-url", "project-bundle"]),
+    imageHash: z.string().min(1),
+    importedAtIso: z.string().min(1),
+    calibration: imageCalibration2DSchema.optional(),
+    previewDataUrl: z.string().min(1).optional(),
+    provenance: measuredImageProvenanceSchema
+  })
+  .strict();
+
+export const calibrationTarget2DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    measuredImageId: z.string().min(1).optional(),
+    targetKind: z.enum(["slantedEdge", "linePairs", "usafStyleBars", "psfSpot", "flatField", "darkFrame", "unknown"]),
+    testTargetId: z.string().min(1).optional()
+  })
+  .strict();
+
+export const measurementRoi2DSchema = z
+  .object({
+    id: z.string().min(1),
+    imageId: z.string().min(1),
+    label: z.string().min(1),
+    type: z.enum(["slantedEdge", "linePairs", "usafStyleBars", "psfSpot", "flatField", "darkFrame", "freeformRect"]),
+    xPx: nonNegativeNumber,
+    yPx: nonNegativeNumber,
+    widthPx: positiveNumber,
+    heightPx: positiveNumber,
+    rotationRad: finiteNumber.optional()
+  })
+  .strict();
+
+export const comparisonRun2DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    measuredImageId: z.string().min(1),
+    simulatedResultId: z.string().min(1).optional(),
+    roiIds: z.array(z.string().min(1)).min(1),
+    targetModelId: z.string().min(1).optional(),
+    metricIds: z.array(z.string().min(1)).min(1)
+  })
+  .strict();
+
+export const fitParameter2DSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("effectiveNA"), min: nonNegativeNumber, max: positiveNumber, steps: z.number().int().min(2).max(256) }).strict(),
+  z.object({ kind: z.literal("defocusM"), min: finiteNumber, max: finiteNumber, steps: z.number().int().min(2).max(256) }).strict(),
+  z.object({ kind: z.literal("sourceNA"), min: nonNegativeNumber, max: positiveNumber, steps: z.number().int().min(2).max(256) }).strict(),
+  z.object({ kind: z.literal("gaussianBlurSigmaPx"), min: nonNegativeNumber, max: positiveNumber, steps: z.number().int().min(2).max(256) }).strict(),
+  z.object({ kind: z.literal("intensityScale"), min: nonNegativeNumber, max: positiveNumber, steps: z.number().int().min(2).max(256) }).strict(),
+  z.object({ kind: z.literal("backgroundOffset"), min: finiteNumber, max: finiteNumber, steps: z.number().int().min(2).max(256) }).strict()
+]);
+
+export const fitRun2DSchema = z
+  .object({
+    id: z.string().min(1),
+    comparisonRunId: z.string().min(1),
+    fitParameters: z.array(fitParameter2DSchema).min(1).max(8),
+    optimizer: z.enum(["gridSearch", "deterministicCoordinateSearch"])
+  })
+  .strict();
+
+export const comparisonReportSettingsSchema = z
+  .object({
+    id: z.string().min(1).default("comparison-report-default"),
+    title: z.string().min(1).default("L3.4 Measured-Data Comparison Report"),
+    includeLimitations: z.boolean().default(true),
+    includeWarnings: z.boolean().default(true)
+  })
+  .strict()
+  .default({});
+
 const sceneV3BaseSchema = sceneV2BaseSchema
   .omit({ schemaVersion: true })
   .extend({
@@ -1148,6 +1251,87 @@ function validateSceneV6References(scene: SceneV6ReferenceInput, ctx: z.Refineme
 
 export const sceneV6Schema = sceneV6BaseSchema.superRefine(validateSceneV6References);
 
+const sceneV7BaseSchema = sceneV6BaseSchema
+  .omit({ schemaVersion: true })
+  .extend({
+    schemaVersion: z.literal("0.7.0"),
+    measuredImages2D: z.array(measuredImage2DSchema).default([]),
+    calibrationTargets2D: z.array(calibrationTarget2DSchema).default([]),
+    measurementRois2D: z.array(measurementRoi2DSchema).default([]),
+    comparisonRuns2D: z.array(comparisonRun2DSchema).default([]),
+    fitRuns2D: z.array(fitRun2DSchema).default([]),
+    comparisonReportSettings: comparisonReportSettingsSchema
+  });
+
+type SceneV7ReferenceInput = Omit<z.infer<typeof sceneV7BaseSchema>, "schemaVersion">;
+
+function validateSceneV7References(scene: SceneV7ReferenceInput, ctx: z.RefinementCtx): void {
+  validateSceneV6References(scene, ctx);
+
+  const ids = new Set<string>();
+  for (const id of [
+    ...scene.measuredImages2D.map((image) => image.id),
+    ...scene.calibrationTargets2D.map((target) => target.id),
+    ...scene.measurementRois2D.map((roi) => roi.id),
+    ...scene.comparisonRuns2D.map((run) => run.id),
+    ...scene.fitRuns2D.map((run) => run.id)
+  ]) {
+    if (ids.has(id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate L3.4 id: ${id}` });
+    }
+    ids.add(id);
+  }
+
+  const measuredImageIds = new Set(scene.measuredImages2D.map((image) => image.id));
+  const roiIds = new Set(scene.measurementRois2D.map((roi) => roi.id));
+  const comparisonRunIds = new Set(scene.comparisonRuns2D.map((run) => run.id));
+  const testTargetIds = new Set(scene.testTargets2D.map((target) => target.id));
+
+  for (const target of scene.calibrationTargets2D) {
+    if (target.measuredImageId && !measuredImageIds.has(target.measuredImageId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `calibration target ${target.id} references an unknown measured image` });
+    }
+    if (target.testTargetId && !testTargetIds.has(target.testTargetId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `calibration target ${target.id} references an unknown test target` });
+    }
+  }
+
+  for (const roi of scene.measurementRois2D) {
+    const image = scene.measuredImages2D.find((candidate) => candidate.id === roi.imageId);
+    if (!image) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `measurement ROI ${roi.id} references an unknown measured image` });
+      continue;
+    }
+    if (roi.xPx + roi.widthPx > image.widthPx || roi.yPx + roi.heightPx > image.heightPx) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `measurement ROI ${roi.id} exceeds measured image bounds` });
+    }
+  }
+
+  for (const run of scene.comparisonRuns2D) {
+    if (!measuredImageIds.has(run.measuredImageId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `comparison run ${run.id} references an unknown measured image` });
+    }
+    for (const roiId of run.roiIds) {
+      if (!roiIds.has(roiId)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `comparison run ${run.id} references an unknown ROI` });
+      }
+    }
+  }
+
+  for (const run of scene.fitRuns2D) {
+    if (!comparisonRunIds.has(run.comparisonRunId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `fit run ${run.id} references an unknown comparison run` });
+    }
+    for (const parameter of run.fitParameters) {
+      if (parameter.min >= parameter.max) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `fit run ${run.id} parameter ${parameter.kind} min must be smaller than max` });
+      }
+    }
+  }
+}
+
+export const sceneV7Schema = sceneV7BaseSchema.superRefine(validateSceneV7References);
+
 export type SourceElement = z.infer<typeof sourceElementSchema>;
 export type OpticalElement = z.infer<typeof opticalElementSchema>;
 export type ThinLensElement = Extract<OpticalElement, { type: "thinLens" }>;
@@ -1181,13 +1365,23 @@ export type SourceAngleSample2D = z.infer<typeof sourceAngleSample2DSchema>;
 export type SourceAngleSet2D = z.infer<typeof sourceAngleSet2DSchema>;
 export type TestTarget2D = z.infer<typeof testTarget2DSchema>;
 export type BrightfieldPipeline2D = z.infer<typeof brightfieldPipeline2DSchema>;
+export type ImageCalibration2D = z.infer<typeof imageCalibration2DSchema>;
+export type MeasuredImageProvenance = z.infer<typeof measuredImageProvenanceSchema>;
+export type MeasuredImage2D = z.infer<typeof measuredImage2DSchema>;
+export type CalibrationTarget2D = z.infer<typeof calibrationTarget2DSchema>;
+export type MeasurementRoi2D = z.infer<typeof measurementRoi2DSchema>;
+export type ComparisonRun2D = z.infer<typeof comparisonRun2DSchema>;
+export type FitParameter2D = z.infer<typeof fitParameter2DSchema>;
+export type FitRun2D = z.infer<typeof fitRun2DSchema>;
+export type ComparisonReportSettings = z.infer<typeof comparisonReportSettingsSchema>;
 export type SceneV1 = z.infer<typeof sceneV1Schema>;
 export type SceneV2 = z.infer<typeof sceneV2Schema>;
 export type SceneV3 = z.infer<typeof sceneV3Schema>;
 export type SceneV4 = z.infer<typeof sceneV4Schema>;
 export type SceneV5 = z.infer<typeof sceneV5Schema>;
 export type SceneV6 = z.infer<typeof sceneV6Schema>;
-export type Scene = SceneV6;
+export type SceneV7 = z.infer<typeof sceneV7Schema>;
+export type Scene = SceneV7;
 
 export function parseSceneV1(value: unknown): SceneV1 {
   return sceneV1Schema.parse(value);
@@ -1282,22 +1476,43 @@ export function migrateSceneV5ToV6(scene: SceneV5): SceneV6 {
   };
 }
 
+export function migrateSceneV6ToV7(scene: SceneV6): SceneV7 {
+  return {
+    ...scene,
+    schemaVersion: "0.7.0",
+    measuredImages2D: [],
+    calibrationTargets2D: [],
+    measurementRois2D: [],
+    comparisonRuns2D: [],
+    fitRuns2D: [],
+    comparisonReportSettings: {
+      id: "comparison-report-default",
+      title: "L3.4 Measured-Data Comparison Report",
+      includeLimitations: true,
+      includeWarnings: true
+    }
+  };
+}
+
 export function parseScene(value: unknown): Scene {
   const maybeVersion = typeof value === "object" && value !== null ? (value as { schemaVersion?: unknown }).schemaVersion : undefined;
   if (maybeVersion === "0.1.0") {
-    return migrateSceneV5ToV6(migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(migrateSceneV1ToV2(parseSceneV1(value))))));
+    return migrateSceneV6ToV7(migrateSceneV5ToV6(migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(migrateSceneV1ToV2(parseSceneV1(value)))))));
   }
   if (maybeVersion === "0.2.0") {
-    return migrateSceneV5ToV6(migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(sceneV2Schema.parse(value)))));
+    return migrateSceneV6ToV7(migrateSceneV5ToV6(migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(sceneV2Schema.parse(value))))));
   }
   if (maybeVersion === "0.3.0") {
-    return migrateSceneV5ToV6(migrateSceneV4ToV5(migrateSceneV3ToV4(sceneV3Schema.parse(value))));
+    return migrateSceneV6ToV7(migrateSceneV5ToV6(migrateSceneV4ToV5(migrateSceneV3ToV4(sceneV3Schema.parse(value)))));
   }
   if (maybeVersion === "0.4.0") {
-    return migrateSceneV5ToV6(migrateSceneV4ToV5(sceneV4Schema.parse(value)));
+    return migrateSceneV6ToV7(migrateSceneV5ToV6(migrateSceneV4ToV5(sceneV4Schema.parse(value))));
   }
   if (maybeVersion === "0.5.0") {
-    return migrateSceneV5ToV6(sceneV5Schema.parse(value));
+    return migrateSceneV6ToV7(migrateSceneV5ToV6(sceneV5Schema.parse(value)));
   }
-  return sceneV6Schema.parse(value);
+  if (maybeVersion === "0.6.0") {
+    return migrateSceneV6ToV7(sceneV6Schema.parse(value));
+  }
+  return sceneV7Schema.parse(value);
 }
