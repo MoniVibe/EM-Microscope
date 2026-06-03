@@ -13,6 +13,7 @@ const gridId = "grid-2mm-256";
 const wavelengthM = 500e-9;
 const focalLengthM = 0.02;
 const pupilRadiusM = 100e-6;
+const cameraPixelPitchM = 6.5e-6;
 
 export const l3PresetLabels: Record<L3PresetId, string> = {
   airyPupil: "Circular pupil Airy-like focus",
@@ -169,9 +170,63 @@ export function makeL3PresetScene(id: L3PresetId): Scene {
         outputFieldPolicy: "detectorOnly"
       }
     ],
+    cameraModels: [
+      {
+        id: "l3-camera",
+        label: "L3.2 reference scientific CMOS",
+        pixelPitchM: cameraPixelPitchM,
+        widthPx: 256,
+        heightPx: 256,
+        quantumEfficiency: 0.62,
+        exposureS: 0.01,
+        fullWellElectrons: 30000,
+        readNoiseElectronsRms: 1.6,
+        darkCurrentElectronsPerS: 0.4,
+        bitDepth: 12,
+        gainDnPerElectron: 0.12,
+        blackLevelDn: 64,
+        peakPhotonRatePerS: 2e6,
+        seed: 1024
+      }
+    ],
+    sensorPipelines2D: [
+      {
+        id: "l3-sensor-pipeline",
+        label: "L3.2 virtual camera stage",
+        inputFieldOutputId: "detector-intensity-2d",
+        cameraModelId: "l3-camera",
+        outputPolicy: "pixelatedAndNoisy"
+      }
+    ],
+    measurementSettings: [
+      {
+        id: "l3-measurement",
+        label: "L3.2 target feature",
+        targetFeaturePeriodM: 25e-6,
+        mtfFrequencyCyclesPerM: 40_000,
+        objectSpaceMagnification: 1
+      }
+    ],
+    sweepDefinitions: [
+      {
+        id: "l3-exposure-qe-sweep",
+        label: "Exposure x QE",
+        parameters: [
+          { kind: "exposureS", values: [0.0025, 0.005, 0.01, 0.02] },
+          { kind: "quantumEfficiency", values: [0.35, 0.62, 0.85] }
+        ],
+        outputs: ["snrMean", "saturationFraction", "contrastAtTarget"]
+      }
+    ],
+    reportSettings: {
+      id: "l3-report",
+      title: "L3.2 Instrument Performance Report",
+      includeLimitations: true,
+      includeWarnings: true
+    },
     metadata: {
       ...base.metadata,
-      appVersion: "0.4.0"
+      appVersion: "0.5.0"
     }
   };
 }

@@ -22,23 +22,26 @@ describe("SceneV1 schema", () => {
   });
 });
 
-describe("SceneV4 migration", () => {
-  it("migrates SceneV1 to SceneV4 without inventing L2 or L3 fields", () => {
+describe("SceneV5 migration", () => {
+  it("migrates SceneV1 to SceneV5 without inventing L2, L3, or L3.2 workbench fields", () => {
     const migrated = parseScene(sampleScene);
 
-    expect(migrated.schemaVersion).toBe("0.4.0");
+    expect(migrated.schemaVersion).toBe("0.5.0");
     expect(migrated.solverSettings.activeSolverId).toBe("geometric.l0");
     expect(migrated.fieldGrids1D).toEqual([]);
     expect(migrated.fieldPlanes1D).toEqual([]);
     expect(migrated.masks1D).toEqual([]);
     expect(migrated.fieldGrids2D).toEqual([]);
     expect(migrated.microscopePipelines2D).toEqual([]);
+    expect(migrated.cameraModels).toEqual([]);
+    expect(migrated.sensorPipelines2D).toEqual([]);
+    expect(migrated.sweepDefinitions).toEqual([]);
   });
 
   it("validates the migrated L1 sample scene", () => {
     const parsed = parseScene(sampleL1Scene);
 
-    expect(parsed.schemaVersion).toBe("0.4.0");
+    expect(parsed.schemaVersion).toBe("0.5.0");
     expect(parsed.solverSettings.activeSolverId).toBe("geometric.l1.2d");
     expect(parsed.waveSettings.defaultCoherence).toBe("coherent");
   });
@@ -55,13 +58,19 @@ describe("SceneV4 migration", () => {
     delete olderScene.thinLensPhasePlanes2D;
     delete olderScene.detectorPlanes2D;
     delete olderScene.microscopePipelines2D;
+    delete olderScene.cameraModels;
+    delete olderScene.sensorPipelines2D;
+    delete olderScene.measurementSettings;
+    delete olderScene.sweepDefinitions;
+    delete olderScene.reportSettings;
 
     const parsed = parseScene(olderScene);
 
-    expect(parsed.schemaVersion).toBe("0.4.0");
+    expect(parsed.schemaVersion).toBe("0.5.0");
     expect(parsed.samplePlanes1D).toEqual([]);
     expect(parsed.sampleMasks1D).toEqual([]);
     expect(parsed.fieldGrids2D).toEqual([]);
+    expect(parsed.cameraModels).toEqual([]);
   });
 
   it("rejects L3 pipelines that reference missing 2D planes", () => {
@@ -83,5 +92,19 @@ describe("SceneV4 migration", () => {
     ];
 
     expect(() => parseScene(invalid)).toThrow(/unknown source plane/);
+  });
+
+  it("rejects L3.2 sensor pipelines that reference missing camera models", () => {
+    const invalid = structuredClone(sampleL1Scene);
+    invalid.sensorPipelines2D = [
+      {
+        id: "sensor",
+        label: "Broken sensor",
+        cameraModelId: "missing-camera",
+        outputPolicy: "pixelatedAndNoisy"
+      }
+    ];
+
+    expect(() => parseScene(invalid)).toThrow(/unknown camera model/);
   });
 });

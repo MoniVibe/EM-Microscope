@@ -645,6 +645,81 @@ export const coherentMicroscopePipeline2DSchema = z
   })
   .strict();
 
+export const cameraModel2DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    pixelPitchM: positiveNumber,
+    widthPx: z.number().int().min(4).max(4096),
+    heightPx: z.number().int().min(4).max(4096),
+    quantumEfficiency: z.number().finite().min(0).max(1),
+    exposureS: positiveNumber,
+    fullWellElectrons: positiveNumber,
+    readNoiseElectronsRms: nonNegativeNumber,
+    darkCurrentElectronsPerS: nonNegativeNumber,
+    bitDepth: z.union([z.literal(8), z.literal(10), z.literal(12), z.literal(14), z.literal(16)]),
+    gainDnPerElectron: positiveNumber,
+    blackLevelDn: nonNegativeNumber,
+    peakPhotonRatePerS: positiveNumber.default(2e6),
+    nonuniformity: z
+      .object({
+        prnuStdFraction: nonNegativeNumber.optional(),
+        dsnuElectronsRms: nonNegativeNumber.optional()
+      })
+      .strict()
+      .optional(),
+    seed: z.number().int()
+  })
+  .strict();
+
+export const sensorPipeline2DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    inputFieldOutputId: z.string().min(1).optional(),
+    cameraModelId: z.string().min(1),
+    outputPolicy: z.enum(["pixelatedOnly", "pixelatedAndNoisy"])
+  })
+  .strict();
+
+export const measurementSettings2DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    targetFeaturePeriodM: positiveNumber.optional(),
+    mtfFrequencyCyclesPerM: positiveNumber.optional(),
+    objectSpaceMagnification: positiveNumber.optional()
+  })
+  .strict();
+
+export const sweepParameterSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("wavelengthM"), values: z.array(positiveNumber).min(1).max(16) }).strict(),
+  z.object({ kind: z.literal("numericalAperture"), values: z.array(positiveNumber).min(1).max(16) }).strict(),
+  z.object({ kind: z.literal("defocusM"), values: z.array(finiteNumber).min(1).max(16) }).strict(),
+  z.object({ kind: z.literal("pixelPitchM"), values: z.array(positiveNumber).min(1).max(16) }).strict(),
+  z.object({ kind: z.literal("exposureS"), values: z.array(positiveNumber).min(1).max(16) }).strict(),
+  z.object({ kind: z.literal("quantumEfficiency"), values: z.array(z.number().finite().min(0).max(1)).min(1).max(16) }).strict()
+]);
+
+export const sweepDefinitionSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    parameters: z.array(sweepParameterSchema).min(1).max(3),
+    outputs: z.array(z.enum(["mtf50", "snrMean", "saturationFraction", "contrastAtTarget", "edgeEnergyFraction"])).min(1)
+  })
+  .strict();
+
+export const engineeringReportSettingsSchema = z
+  .object({
+    id: z.string().min(1).default("report-default"),
+    title: z.string().min(1).default("L3.2 Instrument Performance Report"),
+    includeLimitations: z.boolean().default(true),
+    includeWarnings: z.boolean().default(true)
+  })
+  .strict()
+  .default({});
+
 const sceneV3BaseSchema = sceneV2BaseSchema
   .omit({ schemaVersion: true })
   .extend({
@@ -818,6 +893,45 @@ function validateSceneV4References(scene: SceneV4ReferenceInput, ctx: z.Refineme
 
 export const sceneV4Schema = sceneV4BaseSchema.superRefine(validateSceneV4References);
 
+const sceneV5BaseSchema = sceneV4BaseSchema
+  .omit({ schemaVersion: true })
+  .extend({
+    schemaVersion: z.literal("0.5.0"),
+    cameraModels: z.array(cameraModel2DSchema).default([]),
+    sensorPipelines2D: z.array(sensorPipeline2DSchema).default([]),
+    measurementSettings: z.array(measurementSettings2DSchema).default([]),
+    sweepDefinitions: z.array(sweepDefinitionSchema).default([]),
+    reportSettings: engineeringReportSettingsSchema
+  });
+
+type SceneV5ReferenceInput = Omit<z.infer<typeof sceneV5BaseSchema>, "schemaVersion">;
+
+function validateSceneV5References(scene: SceneV5ReferenceInput, ctx: z.RefinementCtx): void {
+  validateSceneV4References(scene, ctx);
+
+  const ids = new Set<string>();
+  for (const id of [
+    ...scene.cameraModels.map((camera) => camera.id),
+    ...scene.sensorPipelines2D.map((pipeline) => pipeline.id),
+    ...scene.measurementSettings.map((settings) => settings.id),
+    ...scene.sweepDefinitions.map((sweep) => sweep.id)
+  ]) {
+    if (ids.has(id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate L3.2 id: ${id}` });
+    }
+    ids.add(id);
+  }
+
+  const cameraIds = new Set(scene.cameraModels.map((camera) => camera.id));
+  for (const pipeline of scene.sensorPipelines2D) {
+    if (!cameraIds.has(pipeline.cameraModelId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `sensor pipeline ${pipeline.id} references an unknown camera model` });
+    }
+  }
+}
+
+export const sceneV5Schema = sceneV5BaseSchema.superRefine(validateSceneV5References);
+
 export type SourceElement = z.infer<typeof sourceElementSchema>;
 export type OpticalElement = z.infer<typeof opticalElementSchema>;
 export type ThinLensElement = Extract<OpticalElement, { type: "thinLens" }>;
@@ -840,11 +954,18 @@ export type PupilPlane2D = z.infer<typeof pupilPlane2DSchema>;
 export type ThinLensPhasePlane2D = z.infer<typeof thinLensPhasePlane2DSchema>;
 export type DetectorPlane2D = z.infer<typeof detectorPlane2DSchema>;
 export type CoherentMicroscopePipeline2D = z.infer<typeof coherentMicroscopePipeline2DSchema>;
+export type CameraModel2D = z.infer<typeof cameraModel2DSchema>;
+export type SensorPipeline2D = z.infer<typeof sensorPipeline2DSchema>;
+export type MeasurementSettings2D = z.infer<typeof measurementSettings2DSchema>;
+export type SweepParameter = z.infer<typeof sweepParameterSchema>;
+export type SweepDefinition = z.infer<typeof sweepDefinitionSchema>;
+export type EngineeringReportSettings = z.infer<typeof engineeringReportSettingsSchema>;
 export type SceneV1 = z.infer<typeof sceneV1Schema>;
 export type SceneV2 = z.infer<typeof sceneV2Schema>;
 export type SceneV3 = z.infer<typeof sceneV3Schema>;
 export type SceneV4 = z.infer<typeof sceneV4Schema>;
-export type Scene = SceneV4;
+export type SceneV5 = z.infer<typeof sceneV5Schema>;
+export type Scene = SceneV5;
 
 export function parseSceneV1(value: unknown): SceneV1 {
   return sceneV1Schema.parse(value);
@@ -911,16 +1032,36 @@ export function migrateSceneV3ToV4(scene: SceneV3): SceneV4 {
   };
 }
 
+export function migrateSceneV4ToV5(scene: SceneV4): SceneV5 {
+  return {
+    ...scene,
+    schemaVersion: "0.5.0",
+    cameraModels: [],
+    sensorPipelines2D: [],
+    measurementSettings: [],
+    sweepDefinitions: [],
+    reportSettings: {
+      id: "report-default",
+      title: "L3.2 Instrument Performance Report",
+      includeLimitations: true,
+      includeWarnings: true
+    }
+  };
+}
+
 export function parseScene(value: unknown): Scene {
   const maybeVersion = typeof value === "object" && value !== null ? (value as { schemaVersion?: unknown }).schemaVersion : undefined;
   if (maybeVersion === "0.1.0") {
-    return migrateSceneV3ToV4(migrateSceneV2ToV3(migrateSceneV1ToV2(parseSceneV1(value))));
+    return migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(migrateSceneV1ToV2(parseSceneV1(value)))));
   }
   if (maybeVersion === "0.2.0") {
-    return migrateSceneV3ToV4(migrateSceneV2ToV3(sceneV2Schema.parse(value)));
+    return migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(sceneV2Schema.parse(value))));
   }
   if (maybeVersion === "0.3.0") {
-    return migrateSceneV3ToV4(sceneV3Schema.parse(value));
+    return migrateSceneV4ToV5(migrateSceneV3ToV4(sceneV3Schema.parse(value)));
   }
-  return sceneV4Schema.parse(value);
+  if (maybeVersion === "0.4.0") {
+    return migrateSceneV4ToV5(sceneV4Schema.parse(value));
+  }
+  return sceneV5Schema.parse(value);
 }

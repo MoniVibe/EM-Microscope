@@ -518,6 +518,68 @@ h2 {
   font-style: normal;
 }
 
+.provenance-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.compact-actions button {
+  min-width: 54px;
+  flex-basis: 54px;
+}
+
+.metric-plot {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid #d1d9e4;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.metric-plot rect {
+  fill: #f8fafc;
+}
+
+.metric-plot polyline {
+  fill: none;
+  stroke: #0b7788;
+  stroke-width: 2;
+}
+
+.metric-plot .target-line {
+  stroke: #b45309;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.sweep-table {
+  display: grid;
+  gap: 6px;
+}
+
+.sweep-row {
+  display: grid;
+  gap: 3px;
+  padding: 7px;
+  border: 1px solid #d1d9e4;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 0.76rem;
+}
+
+.sweep-row span {
+  color: var(--muted);
+}
+
+.sweep-row strong {
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
 .warning-list {
   margin: 0;
   padding: 8px 8px 8px 24px;

@@ -9,6 +9,17 @@ import {
   formatPower,
   fromMeters,
   fromRadians,
+  cameraWithDefaults,
+  computeMtf2D,
+  computePsfMetrics2D,
+  computeSamplingMetrics2D,
+  computeSnrMetrics2D,
+  createEngineeringReport,
+  defaultL32CameraModel,
+  defaultL32SweepDefinitions,
+  engineeringReportToHtml,
+  engineeringReportToJson,
+  engineeringReportToMarkdown,
   geometricL0Solver,
   geometricL1_2dSolver,
   l25PresetDefinitions,
@@ -16,24 +27,37 @@ import {
   l3PresetDefinitions,
   l3PresetScenes,
   parseScene,
+  renderCameraImage2D,
+  runSweepDefinition2D,
   sampleL1Scene,
   sampleL2Scene,
   scalarAngularSpectrumL2_1dSolver,
   scalarCoherentL3_2dSolver,
+  sweepResultToCsv,
   toMeters,
   toRadians,
+  type CameraImageOutput2D,
+  type CameraModel2D,
   type DetectorElement,
   type EnergyLedger,
+  type EngineeringReport,
   type FieldOutput1D,
   type FieldOutput2D,
   type L25PresetId,
   type L3PresetId,
+  type MeasurementSettings2D,
+  type MtfMetrics2D,
   type OpticalElement,
+  type PsfMetrics2D,
   type SamplePlane1D,
+  type SamplingMetrics2D,
   type Scene,
+  type SnrMetrics2D,
   type SolverResult,
   type SolverWarning,
-  type SourceElement
+  type SourceElement,
+  type SweepDefinition,
+  type SweepResult
 } from "@emmicro/core";
 import {
   Aperture,
@@ -50,6 +74,11 @@ import {
   Waves
 } from "lucide-react";
 import { BenchCanvas } from "./canvas/BenchCanvas";
+import { MtfPanel } from "./metrics/MtfPanel";
+import { ReportPanel } from "./report/ReportPanel";
+import { CameraPanel } from "./sensor/CameraPanel";
+import { SnrPanel } from "./sensor/SnrPanel";
+import { SweepPanel } from "./sweeps/SweepPanel";
 import { startL3ImageCompute, type L3ComputeJob, type L3ComputeProgress } from "./wave/computeL3Image";
 import { ImageAnalysisPanel, validationSummaryText } from "./wave/ImageAnalysisPanel";
 import { fieldImageToPngDataUrl, IntensityImageView, type IntensityDisplayMode } from "./wave/IntensityImageView";
@@ -173,6 +202,8 @@ export function App() {
   const [l3Progress, setL3Progress] = useState<L3ComputeProgress | null>(null);
   const [l3Running, setL3Running] = useState(false);
   const [l3DisplayMode, setL3DisplayMode] = useState<IntensityDisplayMode>("gamma");
+  const [l32CameraOverride, setL32CameraOverride] = useState<CameraModel2D | null>(null);
+  const [l32SweepResult, setL32SweepResult] = useState<SweepResult | null>(null);
   const l3JobRef = useRef<L3ComputeJob | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -185,6 +216,45 @@ export function App() {
   const activeL2Field = activeL2Result?.fieldOutputs?.[0];
   const activeL3Result = l3Result?.sceneHash === result.sceneHash ? l3Result : null;
   const activeL3Field = activeL3Result?.fieldImageOutputs?.[0];
+  const l32Camera = useMemo<CameraModel2D>(() => cameraWithDefaults(l32CameraOverride ?? scene.cameraModels[0] ?? defaultL32CameraModel), [l32CameraOverride, scene.cameraModels]);
+  const l32Measurement = useMemo<MeasurementSettings2D>(
+    () =>
+      scene.measurementSettings[0] ?? {
+        id: "l3-measurement",
+        label: "L3.2 target feature",
+        targetFeaturePeriodM: 25e-6,
+        mtfFrequencyCyclesPerM: 40_000,
+        objectSpaceMagnification: 1
+      },
+    [scene.measurementSettings]
+  );
+  const l32SweepDefinition = useMemo<SweepDefinition | null>(() => scene.sweepDefinitions[0] ?? defaultL32SweepDefinitions[0] ?? null, [scene.sweepDefinitions]);
+  const l32SensorImage = useMemo<CameraImageOutput2D | null>(() => (activeL3Field ? renderCameraImage2D(activeL3Field, l32Camera) : null), [activeL3Field, l32Camera]);
+  const l32Snr = useMemo<SnrMetrics2D | null>(() => (l32SensorImage ? computeSnrMetrics2D(l32Camera, l32SensorImage) : null), [l32Camera, l32SensorImage]);
+  const l32Mtf = useMemo<MtfMetrics2D | null>(() => (activeL3Field ? computeMtf2D(activeL3Field) : null), [activeL3Field]);
+  const l32Psf = useMemo<PsfMetrics2D | null>(() => (activeL3Field ? computePsfMetrics2D(activeL3Field) : null), [activeL3Field]);
+  const l32Sampling = useMemo<SamplingMetrics2D | null>(
+    () => (l32Mtf ? computeSamplingMetrics2D({ pixelPitchM: l32Camera.pixelPitchM, measurement: l32Measurement, mtf: l32Mtf }) : null),
+    [l32Camera.pixelPitchM, l32Measurement, l32Mtf]
+  );
+  const l32Report = useMemo<EngineeringReport | null>(
+    () =>
+      activeL3Result && l32SensorImage && l32Snr && l32Mtf && l32Psf && l32Sampling
+        ? createEngineeringReport({
+            scene,
+            result: activeL3Result,
+            camera: l32Camera,
+            measurement: l32Measurement,
+            sensor: l32SensorImage,
+            psf: l32Psf,
+            mtf: l32Mtf,
+            snr: l32Snr,
+            sampling: l32Sampling,
+            sweep: l32SweepResult ?? undefined
+          })
+        : null,
+    [activeL3Result, l32Camera, l32Measurement, l32Mtf, l32Psf, l32Sampling, l32SensorImage, l32Snr, l32SweepResult, scene]
+  );
   const l2ValidationWarnings = useMemo(
     () => (scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? scalarAngularSpectrumL2_1dSolver.validateScene(scene) : []),
     [scene]
@@ -213,6 +283,7 @@ export function App() {
     setL2Error(null);
     setL3Result(null);
     setL3Error(null);
+    setL32SweepResult(null);
     setScene((current) => touch(updater(current)));
   }
 
@@ -222,6 +293,8 @@ export function App() {
     setL2Error(null);
     setL3Result(null);
     setL3Error(null);
+    setL32CameraOverride(null);
+    setL32SweepResult(null);
     setScene(nextScene);
     setSelected(nextSelected);
   }
@@ -495,6 +568,46 @@ export function App() {
     downloadText("l3-validation-summary.txt", "text/plain", text);
   }
 
+  function updateL32Camera(camera: CameraModel2D): void {
+    setL32CameraOverride(camera);
+    setL32SweepResult(null);
+  }
+
+  function runL32Sweep(): void {
+    if (!activeL3Field || !l32SweepDefinition) return;
+    setL32SweepResult(
+      runSweepDefinition2D({
+        field: activeL3Field,
+        camera: l32Camera,
+        measurement: l32Measurement,
+        definition: l32SweepDefinition
+      })
+    );
+  }
+
+  function exportL32SweepCsv(): void {
+    if (!l32SweepResult) return;
+    downloadText(`${l32SweepResult.id}.csv`, "text/csv", sweepResultToCsv(l32SweepResult));
+  }
+
+  function exportL32SweepJson(): void {
+    if (!l32SweepResult) return;
+    downloadText(`${l32SweepResult.id}.json`, "application/json", JSON.stringify(l32SweepResult, null, 2));
+  }
+
+  function exportL32Report(format: "json" | "md" | "html"): void {
+    if (!l32Report) return;
+    if (format === "json") {
+      downloadText("l32-engineering-report.json", "application/json", engineeringReportToJson(l32Report));
+      return;
+    }
+    if (format === "md") {
+      downloadText("l32-engineering-report.md", "text/markdown", engineeringReportToMarkdown(l32Report));
+      return;
+    }
+    downloadText("l32-engineering-report.html", "text/html", engineeringReportToHtml(l32Report));
+  }
+
   function exportPrimaryCsv(): void {
     if (scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" && activeL3Result && activeL3Field) {
       downloadText(`${activeL3Field.id}.csv`, "text/csv", fieldImageToCsv(activeL3Result, activeL3Field));
@@ -700,6 +813,22 @@ export function App() {
               onExportJson={exportFieldJson}
               onExportPng={exportFieldPng}
               onCopyValidationSummary={copyL3ValidationSummary}
+              camera={l32Camera}
+              sensorImage={l32SensorImage}
+              snr={l32Snr}
+              mtf={l32Mtf}
+              psf={l32Psf}
+              sampling={l32Sampling}
+              sweepDefinition={l32SweepDefinition}
+              sweepResult={l32SweepResult}
+              report={l32Report}
+              onCameraChange={updateL32Camera}
+              onRunSweep={runL32Sweep}
+              onExportSweepCsv={exportL32SweepCsv}
+              onExportSweepJson={exportL32SweepJson}
+              onExportReportJson={() => exportL32Report("json")}
+              onExportReportMarkdown={() => exportL32Report("md")}
+              onExportReportHtml={() => exportL32Report("html")}
             />
           )}
 
@@ -1497,7 +1626,23 @@ function ImagePanel({
   onExportCsv,
   onExportJson,
   onExportPng,
-  onCopyValidationSummary
+  onCopyValidationSummary,
+  camera,
+  sensorImage,
+  snr,
+  mtf,
+  psf,
+  sampling,
+  sweepDefinition,
+  sweepResult,
+  report,
+  onCameraChange,
+  onRunSweep,
+  onExportSweepCsv,
+  onExportSweepJson,
+  onExportReportJson,
+  onExportReportMarkdown,
+  onExportReportHtml
 }: {
   field: FieldOutput2D | undefined;
   result: SolverResult | null;
@@ -1514,6 +1659,22 @@ function ImagePanel({
   onExportJson: () => void;
   onExportPng: () => void;
   onCopyValidationSummary: () => void;
+  camera: CameraModel2D;
+  sensorImage: CameraImageOutput2D | null;
+  snr: SnrMetrics2D | null;
+  mtf: MtfMetrics2D | null;
+  psf: PsfMetrics2D | null;
+  sampling: SamplingMetrics2D | null;
+  sweepDefinition: SweepDefinition | null;
+  sweepResult: SweepResult | null;
+  report: EngineeringReport | null;
+  onCameraChange: (camera: CameraModel2D) => void;
+  onRunSweep: () => void;
+  onExportSweepCsv: () => void;
+  onExportSweepJson: () => void;
+  onExportReportJson: () => void;
+  onExportReportMarkdown: () => void;
+  onExportReportHtml: () => void;
 }) {
   const warnings = result?.warnings ?? validationWarnings;
   return (
@@ -1578,6 +1739,11 @@ function ImagePanel({
         <>
           <IntensityImageView field={field} displayMode={displayMode} />
           <ImageAnalysisPanel field={field} />
+          <CameraPanel camera={camera} image={sensorImage} onCameraChange={onCameraChange} />
+          <MtfPanel mtf={mtf} psf={psf} sampling={sampling} />
+          <SnrPanel snr={snr} sampling={sampling} />
+          <SweepPanel definition={sweepDefinition} result={sweepResult} onRun={onRunSweep} onExportCsv={onExportSweepCsv} onExportJson={onExportSweepJson} />
+          <ReportPanel report={report} onExportJson={onExportReportJson} onExportMarkdown={onExportReportMarkdown} onExportHtml={onExportReportHtml} />
         </>
       ) : (
         <div className="empty-state">No L3 image map computed for the current scene.</div>
