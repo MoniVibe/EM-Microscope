@@ -13,6 +13,9 @@ L3 is labeled as a coherent 2D scalar image-plane intensity approximation, not p
 fluorescence, 3D physics, EM, or a full microscope objective model.
 L3.2 is labeled as a virtual camera, MTF, SNR, sampling, sweep, and report layer over L3 outputs, not additional
 diffraction physics or calibrated hardware prediction.
+L3.3 adds a partial-coherence scalar brightfield approximation by averaging detector intensities from deterministic
+source-angle sub-solves. It is not vector optics, fluorescence, true 3D physics, EM, or certified microscope
+metrology.
 
 ## Current Modes
 
@@ -30,6 +33,9 @@ diffraction physics or calibrated hardware prediction.
 - `L3.2 Instrument Performance Workbench v0`: virtual camera pixel sampling, deterministic shot/read/dark noise,
   SNR and saturation estimates, PSF/OTF/MTF metrics, Nyquist/target-contrast warnings, deterministic sweeps, and
   JSON/Markdown/HTML engineering report export.
+- `L3.3 Brightfield Partial-Coherence Workbench v0`: uniform-disk and annular source-angle sampling, brightfield
+  target presets, detector-intensity averaging over coherent L3 sub-solves, target contrast/SFR-style readouts,
+  source-NA sweep metadata, and report export with illumination/target provenance.
 
 ## L2 Validation Fixture
 
@@ -70,6 +76,17 @@ The sweep panel currently runs deterministic post-processing sweeps over camera/
 exposure, quantum efficiency, and pixel pitch. Report export produces self-contained JSON, Markdown, and HTML
 with scene/result hashes, solver version, camera settings, MTF/SNR/sampling summaries, warnings, performance
 stats, provenance, and limitations.
+
+## L3.3 Brightfield Partial Coherence
+
+L3.3 keeps the 2D MVP scope and reuses the coherent L3 propagation path once per deterministic source angle.
+The solver injects the selected target as an analytic 2D sample mask, runs the coherent sub-solve, and averages
+detector intensities rather than complex fields. Bundled presets include line pairs, a slanted edge, and a
+Siemens-star-like target.
+
+The UI exposes source NA, source-angle count, and target selection for L3.3 scenes. The image panel adds
+illumination, test-target, and resolution-target sections; report export includes source-angle and target
+metadata. Slanted-edge SFR and target contrast are workbench estimates, not certified ISO measurements.
 
 ## Local Development
 

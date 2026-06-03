@@ -10,6 +10,7 @@ import {
   fromMeters,
   fromRadians,
   cameraWithDefaults,
+  computeResolutionTargetMetrics2D,
   computeMtf2D,
   computePsfMetrics2D,
   computeSamplingMetrics2D,
@@ -24,6 +25,8 @@ import {
   geometricL1_2dSolver,
   l25PresetDefinitions,
   l25PresetScenes,
+  l33PresetDefinitions,
+  l33PresetScenes,
   l3PresetDefinitions,
   l3PresetScenes,
   parseScene,
@@ -33,6 +36,7 @@ import {
   sampleL2Scene,
   scalarAngularSpectrumL2_1dSolver,
   scalarCoherentL3_2dSolver,
+  scalarPartialCoherentL33_2dSolver,
   sweepResultToCsv,
   toMeters,
   toRadians,
@@ -44,11 +48,13 @@ import {
   type FieldOutput1D,
   type FieldOutput2D,
   type L25PresetId,
+  type L33PresetId,
   type L3PresetId,
   type MeasurementSettings2D,
   type MtfMetrics2D,
   type OpticalElement,
   type PsfMetrics2D,
+  type ResolutionTargetMetrics2D,
   type SamplePlane1D,
   type SamplingMetrics2D,
   type Scene,
@@ -57,7 +63,8 @@ import {
   type SolverWarning,
   type SourceElement,
   type SweepDefinition,
-  type SweepResult
+  type SweepResult,
+  type TestTarget2D
 } from "@emmicro/core";
 import {
   Aperture,
@@ -74,11 +81,14 @@ import {
   Waves
 } from "lucide-react";
 import { BenchCanvas } from "./canvas/BenchCanvas";
+import { IlluminationPanel } from "./illumination/IlluminationPanel";
 import { MtfPanel } from "./metrics/MtfPanel";
+import { ResolutionTargetPanel } from "./metrics/ResolutionTargetPanel";
 import { ReportPanel } from "./report/ReportPanel";
 import { CameraPanel } from "./sensor/CameraPanel";
 import { SnrPanel } from "./sensor/SnrPanel";
 import { SweepPanel } from "./sweeps/SweepPanel";
+import { TestTargetPanel } from "./targets/TestTargetPanel";
 import { startL3ImageCompute, type L3ComputeJob, type L3ComputeProgress } from "./wave/computeL3Image";
 import { ImageAnalysisPanel, validationSummaryText } from "./wave/ImageAnalysisPanel";
 import { fieldImageToPngDataUrl, IntensityImageView, type IntensityDisplayMode } from "./wave/IntensityImageView";
@@ -90,7 +100,8 @@ type SelectableKind = "source" | "element" | "detector";
 export type SelectedItem = { kind: SelectableKind; id: string } | null;
 type ActiveSolverId = Scene["solverSettings"]["activeSolverId"];
 type WavePresetValue = L25PresetId | "custom";
-type ImagePresetValue = L3PresetId | "custom";
+type ImagePresetId = L3PresetId | L33PresetId;
+type ImagePresetValue = ImagePresetId | "custom";
 
 type EditableItem =
   | { kind: "source"; item: SourceElement }
@@ -105,7 +116,34 @@ function id(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function isImageSolver(solverId: ActiveSolverId): boolean {
+  return solverId === "scalar.coherent.l3.2d" || solverId === "scalar.partialCoherent.l3.3.2d";
+}
+
+function isL33PresetId(presetId: ImagePresetId): presetId is L33PresetId {
+  return presetId in l33PresetScenes;
+}
+
+const uniformDiskSampleCounts = [1, 5, 9, 21, 49, 81] as const;
+const annulusSampleCounts = [8, 16, 32, 64] as const;
+
+function uniformDiskSampleCount(value: number): (typeof uniformDiskSampleCounts)[number] {
+  return uniformDiskSampleCounts.includes(value as (typeof uniformDiskSampleCounts)[number])
+    ? (value as (typeof uniformDiskSampleCounts)[number])
+    : 9;
+}
+
+function annulusSampleCount(value: number): (typeof annulusSampleCounts)[number] {
+  return annulusSampleCounts.includes(value as (typeof annulusSampleCounts)[number]) ? (value as (typeof annulusSampleCounts)[number]) : 16;
+}
+
 export function solverDisclosureFor(solverId: ActiveSolverId, hasSamplePlane = false): { label: string; detail: string } {
+  if (solverId === "scalar.partialCoherent.l3.3.2d") {
+    return {
+      label: "L3.3 partial-coherence scalar brightfield approximation",
+      detail: "2D scalar source-angle intensity averaging; not vector optics, fluorescence, true 3D, EM, or certified microscope metrology"
+    };
+  }
   if (solverId === "scalar.coherent.l3.2d") {
     return {
       label: "L3 coherent 2D scalar image approximation",
@@ -142,6 +180,8 @@ function wavePresetIdFor(scene: Scene): WavePresetValue {
 }
 
 function imagePresetIdFor(scene: Scene): ImagePresetValue {
+  const l33Suffix = scene.sceneId.startsWith("sample-l33-") ? scene.sceneId.slice("sample-l33-".length) : "";
+  if (l33Suffix in l33PresetScenes) return l33Suffix as L33PresetId;
   const suffix = scene.sceneId.startsWith("sample-l3-") ? scene.sceneId.slice("sample-l3-".length) : "";
   return suffix in l3PresetScenes ? (suffix as L3PresetId) : "custom";
 }
@@ -237,6 +277,15 @@ export function App() {
     () => (l32Mtf ? computeSamplingMetrics2D({ pixelPitchM: l32Camera.pixelPitchM, measurement: l32Measurement, mtf: l32Mtf }) : null),
     [l32Camera.pixelPitchM, l32Measurement, l32Mtf]
   );
+  const activeBrightfieldPipeline = scene.brightfieldPipelines2D[0];
+  const activeTestTarget = useMemo<TestTarget2D | undefined>(
+    () => (activeBrightfieldPipeline?.testTargetId ? scene.testTargets2D.find((target) => target.id === activeBrightfieldPipeline.testTargetId) : undefined),
+    [activeBrightfieldPipeline?.testTargetId, scene.testTargets2D]
+  );
+  const l33TargetMetrics = useMemo<ResolutionTargetMetrics2D | null>(
+    () => (activeL3Field && activeTestTarget ? computeResolutionTargetMetrics2D(activeL3Field, activeTestTarget) : null),
+    [activeL3Field, activeTestTarget]
+  );
   const l32Report = useMemo<EngineeringReport | null>(
     () =>
       activeL3Result && l32SensorImage && l32Snr && l32Mtf && l32Psf && l32Sampling
@@ -250,17 +299,24 @@ export function App() {
             mtf: l32Mtf,
             snr: l32Snr,
             sampling: l32Sampling,
+            testTarget: activeTestTarget,
+            resolutionTarget: l33TargetMetrics ?? undefined,
             sweep: l32SweepResult ?? undefined
           })
         : null,
-    [activeL3Result, l32Camera, l32Measurement, l32Mtf, l32Psf, l32Sampling, l32SensorImage, l32Snr, l32SweepResult, scene]
+    [activeL3Result, activeTestTarget, l32Camera, l32Measurement, l32Mtf, l32Psf, l32Sampling, l32SensorImage, l32Snr, l32SweepResult, l33TargetMetrics, scene]
   );
   const l2ValidationWarnings = useMemo(
     () => (scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? scalarAngularSpectrumL2_1dSolver.validateScene(scene) : []),
     [scene]
   );
   const l3ValidationWarnings = useMemo(
-    () => (scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" ? scalarCoherentL3_2dSolver.validateScene(scene) : []),
+    () =>
+      scene.solverSettings.activeSolverId === "scalar.partialCoherent.l3.3.2d"
+        ? scalarPartialCoherentL33_2dSolver.validateScene(scene)
+        : scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d"
+          ? scalarCoherentL3_2dSolver.validateScene(scene)
+          : [],
     [scene]
   );
   const selectedItem = findSelected(scene, selected);
@@ -303,8 +359,8 @@ export function App() {
     replaceScene(structuredClone(l25PresetScenes[presetId]), { kind: "element", id: "sample-marker" });
   }
 
-  function loadImagePreset(presetId: L3PresetId): void {
-    replaceScene(structuredClone(l3PresetScenes[presetId]), { kind: "element", id: "l3-lens-marker" });
+  function loadImagePreset(presetId: ImagePresetId): void {
+    replaceScene(structuredClone(isL33PresetId(presetId) ? l33PresetScenes[presetId] : l3PresetScenes[presetId]), { kind: "element", id: "l3-lens-marker" });
   }
 
   function updateItem(kind: SelectableKind, itemId: string, updater: (item: any) => any): void {
@@ -609,7 +665,7 @@ export function App() {
   }
 
   function exportPrimaryCsv(): void {
-    if (scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" && activeL3Result && activeL3Field) {
+    if (isImageSolver(scene.solverSettings.activeSolverId) && activeL3Result && activeL3Field) {
       downloadText(`${activeL3Field.id}.csv`, "text/csv", fieldImageToCsv(activeL3Result, activeL3Field));
       return;
     }
@@ -622,7 +678,7 @@ export function App() {
   }
 
   function exportFieldJson(): void {
-    if (scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" && activeL3Result && activeL3Field) {
+    if (isImageSolver(scene.solverSettings.activeSolverId) && activeL3Result && activeL3Field) {
       downloadText(`${activeL3Field.id}.json`, "application/json", fieldImageToJson(activeL3Result, activeL3Field));
       return;
     }
@@ -664,11 +720,15 @@ export function App() {
               replaceScene(
                 scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d"
                   ? structuredClone(l3PresetScenes.airyPupil)
+                  : scene.solverSettings.activeSolverId === "scalar.partialCoherent.l3.3.2d"
+                    ? structuredClone(l33PresetScenes.linePairs)
                   : scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d"
                     ? structuredClone(l25PresetScenes.singleSlit)
                     : sampleL1Scene,
                 scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d"
                   ? { kind: "element", id: "l3-lens-marker" }
+                  : scene.solverSettings.activeSolverId === "scalar.partialCoherent.l3.3.2d"
+                    ? { kind: "element", id: "l3-lens-marker" }
                   : scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d"
                     ? { kind: "element", id: "sample-marker" }
                     : { kind: "element", id: "lens-thick-biconvex" }
@@ -796,8 +856,9 @@ export function App() {
               onExportJson={exportFieldJson}
             />
           )}
-          {scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" && (
+          {isImageSolver(scene.solverSettings.activeSolverId) && (
             <ImagePanel
+              scene={scene}
               field={activeL3Field}
               result={activeL3Result}
               validationWarnings={l3ValidationWarnings}
@@ -819,6 +880,8 @@ export function App() {
               mtf={l32Mtf}
               psf={l32Psf}
               sampling={l32Sampling}
+              testTarget={activeTestTarget}
+              resolutionTargetMetrics={l33TargetMetrics}
               sweepDefinition={l32SweepDefinition}
               sweepResult={l32SweepResult}
               report={l32Report}
@@ -852,6 +915,9 @@ export function App() {
               {scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" && (
                 <li>L3 image: coherent 2D scalar image-plane intensity approximation; not partial coherence, vector optics, fluorescence, 3D physics, or EM</li>
               )}
+              {scene.solverSettings.activeSolverId === "scalar.partialCoherent.l3.3.2d" && (
+                <li>L3.3 image: partial-coherence scalar brightfield approximation using source-angle intensity averaging; not vector optics, fluorescence, 3D physics, EM, or certified metrology</li>
+              )}
             </ul>
           </section>
         </aside>
@@ -871,7 +937,7 @@ function SceneControls({
   updateScene: (updater: (current: Scene) => Scene) => void;
   loadL2Sample: () => void;
   loadWavePreset: (presetId: L25PresetId) => void;
-  loadImagePreset: (presetId: L3PresetId) => void;
+  loadImagePreset: (presetId: ImagePresetId) => void;
 }) {
   return (
     <div className="rail-section">
@@ -884,6 +950,10 @@ function SceneControls({
             const activeSolverId = event.currentTarget.value as ActiveSolverId;
             if (activeSolverId === "scalar.coherent.l3.2d" && scene.fieldGrids2D.length === 0) {
               loadImagePreset("airyPupil");
+              return;
+            }
+            if (activeSolverId === "scalar.partialCoherent.l3.3.2d" && scene.brightfieldPipelines2D.length === 0) {
+              loadImagePreset("linePairs");
               return;
             }
             if (activeSolverId === "scalar.angularSpectrum.l2.1d" && scene.fieldGrids1D.length === 0) {
@@ -903,6 +973,7 @@ function SceneControls({
           <option value="geometric.l0">L0 thin lens</option>
           <option value="scalar.angularSpectrum.l2.1d">L2 wave profile</option>
           <option value="scalar.coherent.l3.2d">L3 image map</option>
+          <option value="scalar.partialCoherent.l3.3.2d">L3.3 brightfield</option>
         </select>
       </label>
       <NumberField
@@ -956,7 +1027,7 @@ function SceneControls({
       {scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && (
         <WaveControls scene={scene} updateScene={updateScene} loadL2Sample={loadL2Sample} loadWavePreset={loadWavePreset} />
       )}
-      {scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" && <ImageControls scene={scene} loadImagePreset={loadImagePreset} />}
+      {isImageSolver(scene.solverSettings.activeSolverId) && <ImageControls scene={scene} updateScene={updateScene} loadImagePreset={loadImagePreset} />}
     </div>
   );
 }
@@ -1115,18 +1186,29 @@ function WaveControls({
   );
 }
 
-function ImageControls({ scene, loadImagePreset }: { scene: Scene; loadImagePreset: (presetId: L3PresetId) => void }) {
+function ImageControls({
+  scene,
+  updateScene,
+  loadImagePreset
+}: {
+  scene: Scene;
+  updateScene: (updater: (current: Scene) => Scene) => void;
+  loadImagePreset: (presetId: ImagePresetId) => void;
+}) {
   const grid = scene.fieldGrids2D[0];
   const pipeline = scene.microscopePipelines2D[0];
   const lens = pipeline ? scene.thinLensPhasePlanes2D.find((candidate) => candidate.id === pipeline.lensPlaneId) : undefined;
   const pupil = pipeline ? scene.pupilPlanes2D.find((candidate) => candidate.id === pipeline.pupilPlaneId) : undefined;
   const detector = pipeline ? scene.detectorPlanes2D.find((candidate) => candidate.id === pipeline.detectorPlaneId) : undefined;
+  const brightfield = scene.brightfieldPipelines2D[0];
+  const illumination = brightfield ? scene.illuminationModels2D.find((candidate) => candidate.id === brightfield.illuminationModelId) : undefined;
+  const target = brightfield?.testTargetId ? scene.testTargets2D.find((candidate) => candidate.id === brightfield.testTargetId) : undefined;
 
-  if (!grid || !pipeline || !lens || !pupil || !detector) {
+  if (!grid || !pipeline || !lens || !pupil || !detector || (scene.solverSettings.activeSolverId === "scalar.partialCoherent.l3.3.2d" && (!brightfield || !illumination))) {
     return (
-      <button type="button" title="Load L3 circular pupil fixture" onClick={() => loadImagePreset("airyPupil")}>
+      <button type="button" title="Load L3 image fixture" onClick={() => loadImagePreset(scene.solverSettings.activeSolverId === "scalar.partialCoherent.l3.3.2d" ? "linePairs" : "airyPupil")}>
         <Waves size={17} />
-        <span>L3 fixture</span>
+        <span>{scene.solverSettings.activeSolverId === "scalar.partialCoherent.l3.3.2d" ? "L3.3 fixture" : "L3 fixture"}</span>
       </button>
     );
   }
@@ -1145,13 +1227,98 @@ function ImageControls({ scene, loadImagePreset }: { scene: Scene; loadImagePres
           }}
         >
           <option value="custom">Custom scene</option>
-          {l3PresetDefinitions.map((preset) => (
-            <option key={preset.id} value={preset.id}>
-              {preset.label}
-            </option>
-          ))}
+          <optgroup label="L3 coherent">
+            {l3PresetDefinitions.map((preset) => (
+              <option key={preset.id} value={preset.id}>
+                {preset.label}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="L3.3 brightfield">
+            {l33PresetDefinitions.map((preset) => (
+              <option key={preset.id} value={preset.id}>
+                {preset.label}
+              </option>
+            ))}
+          </optgroup>
         </select>
       </label>
+      {brightfield && illumination && (
+        <>
+          <label className="field-row">
+            <span>Target</span>
+            <select
+              value={target?.id ?? ""}
+              onChange={(event) => {
+                const testTargetId = event.currentTarget.value;
+                updateScene((current) => ({
+                  ...current,
+                  brightfieldPipelines2D: current.brightfieldPipelines2D.map((candidate) =>
+                    candidate.id === brightfield.id ? { ...candidate, testTargetId } : candidate
+                  )
+                }));
+              }}
+            >
+              {scene.testTargets2D.map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {illumination.kind !== "singleCoherentAngle" && (
+            <NumberField
+              label="Source NA"
+              value={illumination.kind === "uniformDisk" ? illumination.sourceNA : illumination.outerNA}
+              min={0}
+              max={0.2}
+              step={0.0005}
+              onChange={(value) => {
+                const sourceNA = Math.max(0, value);
+                updateScene((current) => ({
+                  ...current,
+                  illuminationModels2D: current.illuminationModels2D.map((candidate) =>
+                    candidate.id === illumination.id
+                      ? candidate.kind === "uniformDisk"
+                        ? { ...candidate, sourceNA }
+                        : candidate.kind === "annulus"
+                          ? { ...candidate, outerNA: Math.max(sourceNA, candidate.innerNA + 1e-6) }
+                          : candidate
+                      : candidate
+                  )
+                }));
+              }}
+            />
+          )}
+          {illumination.kind !== "singleCoherentAngle" && (
+            <label className="field-row">
+              <span>Angles</span>
+              <select
+                value={illumination.sampleCount}
+                onChange={(event) => {
+                  const sampleCount = Number(event.currentTarget.value);
+                  updateScene((current) => ({
+                    ...current,
+                    illuminationModels2D: current.illuminationModels2D.map((candidate) =>
+                      candidate.id === illumination.id && candidate.kind === "uniformDisk"
+                        ? { ...candidate, sampleCount: uniformDiskSampleCount(sampleCount) }
+                        : candidate.id === illumination.id && candidate.kind === "annulus"
+                          ? { ...candidate, sampleCount: annulusSampleCount(sampleCount) }
+                        : candidate
+                    )
+                  }));
+                }}
+              >
+                {(illumination.kind === "uniformDisk" ? uniformDiskSampleCounts : annulusSampleCounts).map((count) => (
+                  <option key={count} value={count}>
+                    {count}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </>
+      )}
       <div className="field-row readonly-row">
         <span>Grid</span>
         <strong>{grid.width} x {grid.height}</strong>
@@ -1612,6 +1779,7 @@ function WavePanel({
 }
 
 function ImagePanel({
+  scene,
   field,
   result,
   validationWarnings,
@@ -1633,6 +1801,8 @@ function ImagePanel({
   mtf,
   psf,
   sampling,
+  testTarget,
+  resolutionTargetMetrics,
   sweepDefinition,
   sweepResult,
   report,
@@ -1644,6 +1814,7 @@ function ImagePanel({
   onExportReportMarkdown,
   onExportReportHtml
 }: {
+  scene: Scene;
   field: FieldOutput2D | undefined;
   result: SolverResult | null;
   validationWarnings: SolverWarning[];
@@ -1665,6 +1836,8 @@ function ImagePanel({
   mtf: MtfMetrics2D | null;
   psf: PsfMetrics2D | null;
   sampling: SamplingMetrics2D | null;
+  testTarget?: TestTarget2D;
+  resolutionTargetMetrics: ResolutionTargetMetrics2D | null;
   sweepDefinition: SweepDefinition | null;
   sweepResult: SweepResult | null;
   report: EngineeringReport | null;
@@ -1739,6 +1912,13 @@ function ImagePanel({
         <>
           <IntensityImageView field={field} displayMode={displayMode} />
           <ImageAnalysisPanel field={field} />
+          {scene.solverSettings.activeSolverId === "scalar.partialCoherent.l3.3.2d" && (
+            <>
+              <IlluminationPanel sourceAngleSet={result?.sourceAngleSetOutput} partialCoherence={result?.partialCoherenceOutput} />
+              <TestTargetPanel target={testTarget} />
+              <ResolutionTargetPanel metrics={resolutionTargetMetrics} />
+            </>
+          )}
           <CameraPanel camera={camera} image={sensorImage} onCameraChange={onCameraChange} />
           <MtfPanel mtf={mtf} psf={psf} sampling={sampling} />
           <SnrPanel snr={snr} sampling={sampling} />
@@ -1795,7 +1975,7 @@ function ReadoutStrip({
   l3Energy: EnergyLedger | undefined;
   l3WarningCount: number;
 }) {
-  if (solverId === "scalar.coherent.l3.2d") {
+  if (isImageSolver(solverId)) {
     const peak = l3Field ? Math.max(...l3Field.intensity) : null;
     return (
       <div className="readout-strip">
@@ -1804,7 +1984,7 @@ function ReadoutStrip({
         <Readout label="Input E" value={formatRelativeEnergy(l3Energy?.inputEnergy)} source="field" />
         <Readout label="After chain" value={formatRelativeEnergy(l3Energy?.afterMaskEnergy)} source="field" />
         <Readout label="Output E" value={formatRelativeEnergy(l3Energy?.outputEnergy)} source="field" />
-        <Readout label="Warnings" value={String(l3WarningCount)} source={`${l3Field ? l3Field.width * l3Field.height : 0} px`} />
+        <Readout label="Warnings" value={String(l3WarningCount)} source={solverId === "scalar.partialCoherent.l3.3.2d" ? "L3.3 avg" : `${l3Field ? l3Field.width * l3Field.height : 0} px`} />
       </div>
     );
   }

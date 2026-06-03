@@ -22,6 +22,31 @@ export function makeL3ResultCacheKey(sceneInput: Scene, solverVersion = "0.4.0")
   });
 }
 
+export function makeL33ResultCacheKey(sceneInput: Scene, solverVersion = "0.6.0"): string {
+  const scene = parseScene(sceneInput);
+  const brightfieldPipeline = scene.brightfieldPipelines2D[0];
+  const coherentPipeline = brightfieldPipeline
+    ? scene.microscopePipelines2D.find((candidate) => candidate.id === brightfieldPipeline.coherentPipelineId)
+    : scene.microscopePipelines2D[0];
+  const grid = coherentPipeline
+    ? scene.fieldGrids2D.find((candidate) => candidate.id === scene.fieldPlanes2D.find((plane) => plane.id === coherentPipeline.sourcePlaneId)?.gridId)
+    : scene.fieldGrids2D[0];
+
+  return makeResultCacheKey({
+    sceneHash: hashScene(scene),
+    solverId: "scalar.partialCoherent.l3.3.2d",
+    solverVersion,
+    pipelineId: brightfieldPipeline?.id ?? coherentPipeline?.id,
+    gridId: grid?.id,
+    gridWidth: grid?.width,
+    gridHeight: grid?.height,
+    wavelengthM: coherentPipeline?.wavelengthM,
+    mediumId: coherentPipeline?.mediumId,
+    illuminationModelId: brightfieldPipeline?.illuminationModelId,
+    testTargetId: brightfieldPipeline?.testTargetId
+  });
+}
+
 export function makeResultCacheKey({
   sceneHash,
   solverId,
@@ -31,7 +56,9 @@ export function makeResultCacheKey({
   gridWidth,
   gridHeight,
   wavelengthM,
-  mediumId
+  mediumId,
+  illuminationModelId,
+  testTargetId
 }: {
   sceneHash: string;
   solverId: SolverId;
@@ -42,6 +69,8 @@ export function makeResultCacheKey({
   gridHeight?: number;
   wavelengthM?: number;
   mediumId?: string;
+  illuminationModelId?: string;
+  testTargetId?: string;
 }): string {
   return fnv1a64(
     stableStringify({
@@ -53,7 +82,9 @@ export function makeResultCacheKey({
       gridWidth,
       gridHeight,
       wavelengthM,
-      mediumId
+      mediumId,
+      illuminationModelId,
+      testTargetId
     })
   );
 }

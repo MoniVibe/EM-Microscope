@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { l3PresetScenes } from "@emmicro/core";
+import { l33PresetScenes, l3PresetScenes } from "@emmicro/core";
 import { cachedL3ResultCount, clearL3ResultCache, startL3ImageCompute } from "./computeL3Image";
 
 describe("L3 image compute service", () => {
@@ -23,6 +23,15 @@ describe("L3 image compute service", () => {
     expect(result.solverId).toBe("scalar.coherent.l3.2d");
     expect(result.performanceStats?.workerUsed).toBe(false);
     expect(result.performanceStats?.cacheHit).toBe(false);
+  });
+
+  it("computes L3.3 partial-coherent scenes through the same image service", async () => {
+    clearL3ResultCache();
+    const result = await waitForResult(false, l33PresetScenes.linePairs);
+
+    expect(result.solverId).toBe("scalar.partialCoherent.l3.3.2d");
+    expect(result.sourceAngleSetOutput?.samples.length).toBeGreaterThan(1);
+    expect(result.performanceStats?.workerUsed).toBe(false);
   });
 
   it("does not publish a result after cancellation", async () => {
@@ -57,10 +66,10 @@ function compute(useWorker: boolean): Promise<{ result: Awaited<ReturnType<typeo
   return waitForResult(useWorker).then((result) => ({ result }));
 }
 
-function waitForResult(useWorker: boolean) {
+function waitForResult(useWorker: boolean, scene = l3PresetScenes.airyPupil) {
   return new Promise<Parameters<Parameters<typeof startL3ImageCompute>[1]["onResult"]>[0]>((resolve, reject) => {
     startL3ImageCompute(
-      l3PresetScenes.airyPupil,
+      scene,
       {
         onProgress: () => undefined,
         onResult: resolve,

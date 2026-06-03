@@ -63,7 +63,9 @@ export function runSweepDefinition2D({
     label: definition.label,
     rowCount: rows.length,
     rows,
-    provenanceLabel: "L3.2 deterministic post-processing sweep over camera/measurement parameters; physics field is reused."
+    provenanceLabel: definition.parameters.some((parameter) => parameter.kind === "sourceNA")
+      ? "L3.3 sweep table includes source NA values; v0 sweep rows reuse the current detector field unless the scene is recomputed."
+      : "L3.2 deterministic post-processing sweep over camera/measurement parameters; physics field is reused."
   };
 }
 

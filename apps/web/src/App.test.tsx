@@ -25,4 +25,12 @@ describe("solver disclosure copy", () => {
     expect(disclosure.detail).toContain("2D coherent scalar image-plane intensity approximation");
     expect(`${disclosure.label} ${disclosure.detail}`).not.toMatch(/full microscope image|true microscope simulation|incoherent imaging|fluorescence simulated|vector PSF|Maxwell solver/i);
   });
+
+  it("labels L3.3 as a partial-coherence scalar approximation without certified microscope claims", () => {
+    const disclosure = solverDisclosureFor("scalar.partialCoherent.l3.3.2d");
+
+    expect(disclosure.label).toBe("L3.3 partial-coherence scalar brightfield approximation");
+    expect(disclosure.detail).toContain("source-angle intensity averaging");
+    expect(`${disclosure.label} ${disclosure.detail}`).not.toMatch(/true 3D simulation|certified microscope simulation|vector optics simulated|fluorescence simulated|Maxwell solver/i);
+  });
 });

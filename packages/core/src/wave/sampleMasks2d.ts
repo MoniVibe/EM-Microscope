@@ -59,6 +59,23 @@ export function transmissionAtUV(transmission: SampleTransmission2D, uM: number,
     return { amplitude: 1, phaseRad: uM < transmission.boundaryUM ? transmission.phaseLeftRad : transmission.phaseRightRad };
   }
 
+  if (transmission.kind === "slantedEdge2D") {
+    const local = orientedCoordinateM(uM - transmission.centerUM, vM - transmission.centerVM, transmission.edgeAngleRad);
+    return { amplitude: local >= 0 ? 1 : 1 - transmission.contrast, phaseRad: 0 };
+  }
+
+  if (transmission.kind === "siemensStarLike2D") {
+    const uRel = uM - transmission.centerUM;
+    const vRel = vM - transmission.centerVM;
+    const radiusM = Math.hypot(uRel, vRel);
+    if (radiusM < transmission.innerRadiusM || radiusM > transmission.outerRadiusM) {
+      return { amplitude: 1, phaseRad: 0 };
+    }
+    const theta = positiveModulo(Math.atan2(vRel, uRel), Math.PI * 2);
+    const sector = Math.floor(theta / ((Math.PI * 2) / transmission.spokeCount));
+    return { amplitude: sector % 2 === 0 ? 1 : 1 - transmission.contrast, phaseRad: 0 };
+  }
+
   const uCycle = positiveModulo(uM - transmission.centerUM, transmission.periodM);
   const vCycle = positiveModulo(vM - transmission.centerVM, transmission.periodM);
   const dark = (uCycle < transmission.periodM / 2) !== (vCycle < transmission.periodM / 2);
@@ -72,6 +89,11 @@ export function minimumFeatureSize2DM(transmission: SampleTransmission2D): numbe
   if (transmission.kind === "grating2D") return Math.min(transmission.periodM * transmission.dutyCycle, transmission.periodM * (1 - transmission.dutyCycle));
   if (transmission.kind === "barTarget2D") return Math.min(transmission.periodM * transmission.dutyCycle, transmission.periodM * (1 - transmission.dutyCycle));
   if (transmission.kind === "phaseStep2D") return null;
+  if (transmission.kind === "slantedEdge2D") return null;
+  if (transmission.kind === "siemensStarLike2D") {
+    const referenceRadiusM = Math.max(transmission.innerRadiusM, transmission.outerRadiusM * 0.1);
+    return (Math.PI * 2 * referenceRadiusM) / transmission.spokeCount;
+  }
   return transmission.periodM / 2;
 }
 

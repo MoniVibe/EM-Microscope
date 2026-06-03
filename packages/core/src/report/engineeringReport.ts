@@ -1,11 +1,13 @@
-import type { CameraModel2D, EngineeringReportSettings, MeasurementSettings2D, Scene } from "../scene/schema";
-import type { SolverResult } from "../solvers/Solver";
+import { testTargetCyclesPerM, testTargetFeaturePeriodM } from "../wave/testTargets2d";
+import type { CameraModel2D, EngineeringReportSettings, MeasurementSettings2D, Scene, TestTarget2D } from "../scene/schema";
+import type { PartialCoherenceOutput, SolverResult, SourceAngleSetOutput } from "../solvers/Solver";
 import type { CameraImageOutput2D } from "../sensor/pixelSampling2d";
 import type { SamplingMetrics2D } from "../sensor/samplingMetrics";
 import type { SnrMetrics2D } from "../sensor/snrMetrics";
 import type { MtfMetrics2D } from "../wave/otfMtf2d";
 import type { PsfMetrics2D } from "../wave/psfMetrics2d";
 import type { SweepResult } from "../sweeps/sweepRunner";
+import type { ResolutionTargetMetrics2D } from "../metrics/resolutionTargetMetrics";
 
 export type EngineeringReport = {
   title: string;
@@ -52,6 +54,18 @@ export type EngineeringReport = {
     saturationPixels: number;
     provenance: unknown;
   };
+  illumination?: {
+    sourceAngleSet?: Pick<SourceAngleSetOutput, "id" | "label" | "illuminationModelId" | "weightSum"> & { angleCount: number };
+    partialCoherence?: PartialCoherenceOutput;
+  };
+  testTarget?: {
+    id: string;
+    label: string;
+    kind: TestTarget2D["kind"];
+    featurePeriodM: number | null;
+    cyclesPerM: number | null;
+  };
+  resolutionTarget?: ResolutionTargetMetrics2D;
   sweep?: SweepResult;
   warnings: string[];
   performanceStats: SolverResult["performanceStats"];
@@ -68,6 +82,8 @@ export function createEngineeringReport({
   mtf,
   snr,
   sampling,
+  testTarget,
+  resolutionTarget,
   sweep,
   settings = scene.reportSettings
 }: {
@@ -80,6 +96,8 @@ export function createEngineeringReport({
   mtf?: MtfMetrics2D;
   snr?: SnrMetrics2D;
   sampling?: SamplingMetrics2D;
+  testTarget?: TestTarget2D;
+  resolutionTarget?: ResolutionTargetMetrics2D;
   sweep?: SweepResult;
   settings?: EngineeringReportSettings;
 }): EngineeringReport {
@@ -130,10 +148,31 @@ export function createEngineeringReport({
       saturationPixels: countSaturated(sensor.saturationMask),
       provenance: sensor.provenance
     },
+    illumination:
+      result.sourceAngleSetOutput || result.partialCoherenceOutput
+        ? {
+            sourceAngleSet: result.sourceAngleSetOutput && {
+              id: result.sourceAngleSetOutput.id,
+              label: result.sourceAngleSetOutput.label,
+              illuminationModelId: result.sourceAngleSetOutput.illuminationModelId,
+              angleCount: result.sourceAngleSetOutput.samples.length,
+              weightSum: result.sourceAngleSetOutput.weightSum
+            },
+            partialCoherence: result.partialCoherenceOutput
+          }
+        : undefined,
+    testTarget: testTarget && {
+      id: testTarget.id,
+      label: testTarget.label,
+      kind: testTarget.kind,
+      featurePeriodM: testTargetFeaturePeriodM(testTarget),
+      cyclesPerM: testTargetCyclesPerM(testTarget)
+    },
+    resolutionTarget,
     sweep,
     warnings,
     performanceStats: result.performanceStats,
-    limitations: settings.includeLimitations ? l32Limitations() : []
+    limitations: settings.includeLimitations ? limitationsForSolver(result.solverId) : []
   };
 }
 
@@ -170,6 +209,20 @@ export function engineeringReportToMarkdown(report: EngineeringReport): string {
       ? `- Nyquist: ${report.sampling.nyquistCyclesPerM.toExponential(3)} cycles/m\n- Target contrast: ${report.sampling.contrastAtTarget === null ? "n/a" : report.sampling.contrastAtTarget.toFixed(3)}`
       : "- No sampling metrics",
     "",
+    "## Illumination",
+    report.illumination?.sourceAngleSet
+      ? `- ${report.illumination.sourceAngleSet.label}: ${report.illumination.sourceAngleSet.angleCount} source angles, weight sum ${report.illumination.sourceAngleSet.weightSum.toFixed(6)}`
+      : "- No partial-coherence source-angle set",
+    report.illumination?.partialCoherence ? `- ${report.illumination.partialCoherence.provenanceLabel}` : "",
+    "",
+    "## Target",
+    report.testTarget
+      ? `- ${report.testTarget.label}: ${report.testTarget.kind}, feature ${report.testTarget.featurePeriodM === null ? "n/a" : formatMetric(report.testTarget.featurePeriodM, "m")}`
+      : "- No L3.3 test target",
+    report.resolutionTarget
+      ? `- Contrast: ${report.resolutionTarget.contrastMichelson === null ? "n/a" : report.resolutionTarget.contrastMichelson.toFixed(3)}\n- SFR50: ${formatNullable(report.resolutionTarget.sfr50CyclesPerM)} cycles/m\n- ${report.resolutionTarget.provenanceLabel}`
+      : "",
+    "",
     "## Warnings",
     ...(report.warnings.length > 0 ? report.warnings.map((warning) => `- ${warning}`) : ["- None"]),
     "",
@@ -196,6 +249,20 @@ export function l32Limitations(): string[] {
     "MTF is derived from coherent scalar L3 PSF/OTF, not a full incoherent microscope MTF.",
     "Sweeps reuse the current L3 field for post-processing parameters in v0."
   ];
+}
+
+export function l33Limitations(): string[] {
+  return [
+    "Partial coherence is approximated by deterministic source-angle intensity averaging.",
+    "The model is scalar and monochromatic; it does not include vector polarization, fluorescence, scattering, or sensor color response.",
+    "Targets are analytic 2D masks on the workbench grid, not calibrated physical microscope slides.",
+    "SFR and target contrast metrics are workbench estimates, not certified ISO 12233 or microscope-metrology measurements.",
+    "Sweeps reuse the current detector field for post-processing parameters unless the scene is recomputed."
+  ];
+}
+
+function limitationsForSolver(solverId: string): string[] {
+  return solverId === "scalar.partialCoherent.l3.3.2d" ? l33Limitations() : l32Limitations();
 }
 
 function countSaturated(mask: Uint8Array): number {

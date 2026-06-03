@@ -1,4 +1,11 @@
-import { makeL3ResultCacheKey, scalarCoherentL3_2dSolver, type Scene, type SolverResult } from "@emmicro/core";
+import {
+  makeL33ResultCacheKey,
+  makeL3ResultCacheKey,
+  scalarCoherentL3_2dSolver,
+  scalarPartialCoherentL33_2dSolver,
+  type Scene,
+  type SolverResult
+} from "@emmicro/core";
 import type { L3WorkerMessage } from "../workers/l3Worker";
 
 export type L3ComputeProgress = {
@@ -32,7 +39,7 @@ export function cachedL3ResultCount(): number {
 
 export function startL3ImageCompute(scene: Scene, callbacks: L3ComputeCallbacks, useWorker = true): L3ComputeJob {
   const requestId = `l3-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-  const cacheKey = makeL3ResultCacheKey(scene);
+  const cacheKey = imageCacheKey(scene);
   const cached = l3ResultCache.get(cacheKey);
   let cancelled = false;
   let worker: Worker | null = null;
@@ -42,8 +49,7 @@ export function startL3ImageCompute(scene: Scene, callbacks: L3ComputeCallbacks,
       if (cancelled) return;
       try {
         callbacks.onProgress({ stage: "main-thread", percent: 15, message: "Computing L3 image on main thread" });
-        const result = scalarCoherentL3_2dSolver.run(scene, {
-          solverId: "scalar.coherent.l3.2d",
+        const result = runActiveImageSolver(scene, {
           computePolicy: "mainThread"
         });
         result.performanceStats = {
@@ -154,6 +160,23 @@ export function startL3ImageCompute(scene: Scene, callbacks: L3ComputeCallbacks,
       callbacks.onCancelled(cacheKey);
     }
   };
+}
+
+function imageCacheKey(scene: Scene): string {
+  return scene.solverSettings.activeSolverId === "scalar.partialCoherent.l3.3.2d" ? makeL33ResultCacheKey(scene) : makeL3ResultCacheKey(scene);
+}
+
+function runActiveImageSolver(scene: Scene, options: { computePolicy: "mainThread" | "worker" }): SolverResult {
+  if (scene.solverSettings.activeSolverId === "scalar.partialCoherent.l3.3.2d") {
+    return scalarPartialCoherentL33_2dSolver.run(scene, {
+      solverId: "scalar.partialCoherent.l3.3.2d",
+      computePolicy: options.computePolicy
+    });
+  }
+  return scalarCoherentL3_2dSolver.run(scene, {
+    solverId: "scalar.coherent.l3.2d",
+    computePolicy: options.computePolicy
+  });
 }
 
 function markCacheHit(result: SolverResult): SolverResult {

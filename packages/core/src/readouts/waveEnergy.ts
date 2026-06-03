@@ -33,6 +33,25 @@ export const l3Scalar2DProvenance: PhysicsProvenance = {
   ]
 };
 
+export const l33PartialCoherence2DProvenance: PhysicsProvenance = {
+  kind: "simulated",
+  level: "L3",
+  solverId: "scalar.partialCoherent.l3.3.2d",
+  model: "scalar-partial-coherence-2d-angular-spectrum",
+  dimensionality: "2d",
+  approximation: [
+    "Partial-coherence scalar brightfield approximation",
+    "deterministic source-angle sampling",
+    "detector intensities averaged across coherent scalar L3 solves",
+    "monochromatic scalar field",
+    "homogeneous medium",
+    "no vector polarization",
+    "no fluorescence",
+    "not true 3D physics",
+    "not a certified ISO microscope measurement"
+  ]
+};
+
 export function makeWaveEnergyLedger({
   inputEnergy,
   afterMaskEnergy,

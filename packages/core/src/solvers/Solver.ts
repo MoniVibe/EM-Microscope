@@ -4,7 +4,7 @@ import type { NAReadout } from "../readouts/numericalAperture";
 import type { SpotReadout } from "../readouts/spotSize";
 import type { ThinLensReadout } from "../readouts/thinLens";
 import type { LensmakerReadout } from "../optics/assemblies/thickLens2d";
-import type { Scene } from "../scene/schema";
+import type { Scene, SourceAngleSample2D } from "../scene/schema";
 
 export type SolverId =
   | "geometric.l0"
@@ -12,6 +12,7 @@ export type SolverId =
   | "geometric.surfaces.l1"
   | "scalar.angularSpectrum.l2.1d"
   | "scalar.coherent.l3.2d"
+  | "scalar.partialCoherent.l3.3.2d"
   | "hybrid.microscope.l3"
   | "em.fdtdIsland.l4";
 
@@ -61,6 +62,7 @@ export type PhysicsProvenance =
         | "geometric-ray-2d-surface"
         | "scalar-wave-1d-angular-spectrum"
         | "scalar-wave-2d-angular-spectrum"
+        | "scalar-partial-coherence-2d-angular-spectrum"
         | "hybrid-ray-wave"
         | "em-fdtd-bounded";
       dimensionality: "1d" | "2d" | "3d";
@@ -167,6 +169,24 @@ export type SolverPerformanceStats = {
   cancelled: boolean;
 };
 
+export type SourceAngleSetOutput = {
+  id: string;
+  label: string;
+  illuminationModelId: string;
+  samples: SourceAngleSample2D[];
+  weightSum: number;
+};
+
+export type PartialCoherenceOutput = {
+  brightfieldPipelineId: string;
+  coherentPipelineId: string;
+  illuminationModelId: string;
+  testTargetId?: string;
+  angleCount: number;
+  intensityAveraging: "incoherent-detector-intensity";
+  provenanceLabel: "Partial-coherence scalar brightfield approximation";
+};
+
 export type SolverResult = {
   solverId: SolverId;
   sceneHash: string;
@@ -187,6 +207,8 @@ export type SolverResult = {
   fieldOutputs?: FieldOutput1D[];
   fieldImageOutputs?: FieldOutput2D[];
   energyLedger?: EnergyLedger;
+  sourceAngleSetOutput?: SourceAngleSetOutput;
+  partialCoherenceOutput?: PartialCoherenceOutput;
   readouts: {
     thinLens?: ThinLensReadout[];
     numericalAperture?: NAReadout[];

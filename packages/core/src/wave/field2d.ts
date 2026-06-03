@@ -18,7 +18,11 @@ export function gridCoordinates2D(grid: FieldGrid2D): { uM: Float64Array; vM: Fl
   return { uM, vM };
 }
 
-export function createFieldFromPlane2D(grid: FieldGrid2D, plane: FieldPlane2D): ComplexGrid2D {
+export function createFieldFromPlane2D(
+  grid: FieldGrid2D,
+  plane: FieldPlane2D,
+  options: { wavelengthM?: number; refractiveIndex?: number } = {}
+): ComplexGrid2D {
   if (!plane.fieldSource) {
     throw new Error(`2D field plane ${plane.id} has no fieldSource`);
   }
@@ -29,6 +33,25 @@ export function createFieldFromPlane2D(grid: FieldGrid2D, plane: FieldPlane2D): 
     const imag = plane.fieldSource.amplitude * Math.sin(plane.fieldSource.phaseRad);
     field.real.fill(real);
     field.imag.fill(imag);
+    return field;
+  }
+  if (plane.fieldSource.kind === "tiltedPlaneWave") {
+    if (!options.wavelengthM) {
+      throw new Error("tiltedPlaneWave 2D source requires wavelengthM");
+    }
+    const k = (2 * Math.PI * (options.refractiveIndex ?? 1)) / options.wavelengthM;
+    const ku = k * Math.sin(plane.fieldSource.angleURad);
+    const kv = k * Math.sin(plane.fieldSource.angleVRad);
+    for (let vIndex = 0; vIndex < grid.height; vIndex += 1) {
+      const vM = grid.vMinM + vIndex * grid.spacingVM;
+      for (let uIndex = 0; uIndex < grid.width; uIndex += 1) {
+        const uM = grid.uMinM + uIndex * grid.spacingUM;
+        const phase = plane.fieldSource.phaseRad + ku * uM + kv * vM;
+        const targetIndex = index2D(grid.width, uIndex, vIndex);
+        field.real[targetIndex] = plane.fieldSource.amplitude * Math.cos(phase);
+        field.imag[targetIndex] = plane.fieldSource.amplitude * Math.sin(phase);
+      }
+    }
     return field;
   }
 

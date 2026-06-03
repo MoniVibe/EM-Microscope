@@ -1,4 +1,4 @@
-import { scalarCoherentL3_2dSolver, type Scene, type SolverResult } from "@emmicro/core";
+import { scalarCoherentL3_2dSolver, scalarPartialCoherentL33_2dSolver, type Scene, type SolverResult } from "@emmicro/core";
 
 type L3WorkerRequest = {
   type: "compute";
@@ -48,10 +48,16 @@ workerScope.onmessage = (event: MessageEvent<L3WorkerRequest>) => {
       message: "Starting L3 worker compute"
     } satisfies L3WorkerProgressMessage);
 
-    const result = scalarCoherentL3_2dSolver.run(request.scene, {
-      solverId: "scalar.coherent.l3.2d",
-      computePolicy: "worker"
-    });
+    const result =
+      request.scene.solverSettings.activeSolverId === "scalar.partialCoherent.l3.3.2d"
+        ? scalarPartialCoherentL33_2dSolver.run(request.scene, {
+            solverId: "scalar.partialCoherent.l3.3.2d",
+            computePolicy: "worker"
+          })
+        : scalarCoherentL3_2dSolver.run(request.scene, {
+            solverId: "scalar.coherent.l3.2d",
+            computePolicy: "worker"
+          });
     result.performanceStats = {
       ...(result.performanceStats ?? {
         computeMs: 0,

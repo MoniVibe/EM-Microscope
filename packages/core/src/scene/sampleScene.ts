@@ -1,4 +1,4 @@
-import { migrateSceneV2ToV3, migrateSceneV3ToV4, migrateSceneV4ToV5, type Scene, type SceneV1, type SceneV2 } from "./schema";
+import { migrateSceneV2ToV3, migrateSceneV3ToV4, migrateSceneV4ToV5, migrateSceneV5ToV6, type Scene, type SceneV1, type SceneV2 } from "./schema";
 
 export const sampleScene: SceneV1 = {
   schemaVersion: "0.1.0",
@@ -163,13 +163,13 @@ const sampleL1SceneV2: SceneV2 = {
   }
 };
 
-export const sampleL1Scene: Scene = migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(sampleL1SceneV2)));
+export const sampleL1Scene: Scene = migrateSceneV5ToV6(migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(sampleL1SceneV2))));
 
 const l2GridSpacingM = 0.04 / 4096;
 
 export const sampleL2Scene: Scene = {
   ...sampleL1Scene,
-  schemaVersion: "0.5.0",
+  schemaVersion: "0.6.0",
   sceneId: "sample-l2-slit-wave-profile",
   name: "L2 1D slit diffraction profile",
   bench: {
@@ -277,6 +277,6 @@ export const sampleL2Scene: Scene = {
   sampleMasks1D: [],
   metadata: {
     ...sampleL1Scene.metadata,
-    appVersion: "0.5.0"
+    appVersion: "0.6.0"
   }
 };

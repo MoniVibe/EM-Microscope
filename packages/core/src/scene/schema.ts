@@ -2,7 +2,13 @@ import { z } from "zod";
 
 export const displayLengthUnitSchema = z.enum(["m", "mm", "um", "nm"]);
 export const displayAngleUnitSchema = z.enum(["rad", "deg"]);
-export const solverIdSchema = z.enum(["geometric.l0", "geometric.l1.2d", "scalar.angularSpectrum.l2.1d", "scalar.coherent.l3.2d"]);
+export const solverIdSchema = z.enum([
+  "geometric.l0",
+  "geometric.l1.2d",
+  "scalar.angularSpectrum.l2.1d",
+  "scalar.coherent.l3.2d",
+  "scalar.partialCoherent.l3.3.2d"
+]);
 
 const finiteNumber = z.number().finite();
 const positiveNumber = finiteNumber.positive();
@@ -460,6 +466,15 @@ const fieldSource2DSchema = z.discriminatedUnion("kind", [
     .strict(),
   z
     .object({
+      kind: z.literal("tiltedPlaneWave"),
+      amplitude: nonNegativeNumber,
+      phaseRad: finiteNumber,
+      angleURad: finiteNumber,
+      angleVRad: finiteNumber
+    })
+    .strict(),
+  z
+    .object({
       kind: z.literal("gaussian"),
       waistUM: positiveNumber,
       waistVM: positiveNumber,
@@ -546,6 +561,26 @@ export const sampleTransmission2DSchema = z.discriminatedUnion("kind", [
       boundaryUM: finiteNumber,
       phaseLeftRad: finiteNumber,
       phaseRightRad: finiteNumber
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("slantedEdge2D"),
+      edgeAngleRad: finiteNumber,
+      contrast: z.number().finite().min(0).max(1),
+      centerUM: finiteNumber.default(0),
+      centerVM: finiteNumber.default(0)
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("siemensStarLike2D"),
+      spokeCount: z.number().int().min(4).max(256),
+      innerRadiusM: nonNegativeNumber,
+      outerRadiusM: positiveNumber,
+      contrast: z.number().finite().min(0).max(1),
+      centerUM: finiteNumber.default(0),
+      centerVM: finiteNumber.default(0)
     })
     .strict(),
   z
@@ -695,6 +730,7 @@ export const measurementSettings2DSchema = z
 export const sweepParameterSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("wavelengthM"), values: z.array(positiveNumber).min(1).max(16) }).strict(),
   z.object({ kind: z.literal("numericalAperture"), values: z.array(positiveNumber).min(1).max(16) }).strict(),
+  z.object({ kind: z.literal("sourceNA"), values: z.array(nonNegativeNumber).min(1).max(16) }).strict(),
   z.object({ kind: z.literal("defocusM"), values: z.array(finiteNumber).min(1).max(16) }).strict(),
   z.object({ kind: z.literal("pixelPitchM"), values: z.array(positiveNumber).min(1).max(16) }).strict(),
   z.object({ kind: z.literal("exposureS"), values: z.array(positiveNumber).min(1).max(16) }).strict(),
@@ -719,6 +755,123 @@ export const engineeringReportSettingsSchema = z
   })
   .strict()
   .default({});
+
+export const illuminationModel2DSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+      kind: z.literal("singleCoherentAngle"),
+      angleURad: finiteNumber,
+      angleVRad: finiteNumber
+    })
+    .strict(),
+  z
+    .object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+      kind: z.literal("uniformDisk"),
+      sourceNA: nonNegativeNumber,
+      condenserNA: nonNegativeNumber.optional(),
+      sampleCount: z.union([z.literal(1), z.literal(5), z.literal(9), z.literal(21), z.literal(49), z.literal(81)]),
+      pattern: z.enum(["center", "rings", "deterministicJitter"]),
+      seed: z.number().int()
+    })
+    .strict(),
+  z
+    .object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+      kind: z.literal("annulus"),
+      innerNA: nonNegativeNumber,
+      outerNA: positiveNumber,
+      sampleCount: z.union([z.literal(8), z.literal(16), z.literal(32), z.literal(64)]),
+      seed: z.number().int()
+    })
+    .strict()
+]);
+
+export const sourceAngleSample2DSchema = z
+  .object({
+    angleURad: finiteNumber,
+    angleVRad: finiteNumber,
+    weight: nonNegativeNumber
+  })
+  .strict();
+
+export const sourceAngleSet2DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    illuminationModelId: z.string().min(1),
+    samples: z.array(sourceAngleSample2DSchema).min(1)
+  })
+  .strict();
+
+export const testTarget2DSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+      kind: z.literal("linePairs"),
+      periodM: positiveNumber,
+      dutyCycle: z.number().finite().min(0.01).max(0.99),
+      orientationRad: finiteNumber,
+      contrast: z.number().finite().min(0).max(1)
+    })
+    .strict(),
+  z
+    .object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+      kind: z.literal("usafStyleBars"),
+      group: z.number().int().min(-2).max(7),
+      element: z.number().int().min(1).max(6),
+      orientation: z.enum(["horizontal", "vertical", "both"]),
+      contrast: z.number().finite().min(0).max(1)
+    })
+    .strict(),
+  z
+    .object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+      kind: z.literal("slantedEdge"),
+      edgeAngleRad: finiteNumber,
+      contrast: z.number().finite().min(0).max(1)
+    })
+    .strict(),
+  z
+    .object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+      kind: z.literal("siemensStarLike"),
+      spokeCount: z.number().int().min(4).max(256),
+      innerRadiusM: nonNegativeNumber,
+      outerRadiusM: positiveNumber,
+      contrast: z.number().finite().min(0).max(1)
+    })
+    .strict(),
+  z
+    .object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+      kind: z.literal("checkerboard"),
+      periodM: positiveNumber,
+      contrast: z.number().finite().min(0).max(1)
+    })
+    .strict()
+]);
+
+export const brightfieldPipeline2DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    coherentPipelineId: z.string().min(1),
+    illuminationModelId: z.string().min(1),
+    testTargetId: z.string().min(1).optional(),
+    outputFieldPolicy: z.enum(["averagedDetectorOnly"])
+  })
+  .strict();
 
 const sceneV3BaseSchema = sceneV2BaseSchema
   .omit({ schemaVersion: true })
@@ -932,6 +1085,69 @@ function validateSceneV5References(scene: SceneV5ReferenceInput, ctx: z.Refineme
 
 export const sceneV5Schema = sceneV5BaseSchema.superRefine(validateSceneV5References);
 
+const sceneV6BaseSchema = sceneV5BaseSchema
+  .omit({ schemaVersion: true })
+  .extend({
+    schemaVersion: z.literal("0.6.0"),
+    illuminationModels2D: z.array(illuminationModel2DSchema).default([]),
+    sourceAngleSets2D: z.array(sourceAngleSet2DSchema).default([]),
+    testTargets2D: z.array(testTarget2DSchema).default([]),
+    brightfieldPipelines2D: z.array(brightfieldPipeline2DSchema).default([])
+  });
+
+type SceneV6ReferenceInput = Omit<z.infer<typeof sceneV6BaseSchema>, "schemaVersion">;
+
+function validateSceneV6References(scene: SceneV6ReferenceInput, ctx: z.RefinementCtx): void {
+  validateSceneV5References(scene, ctx);
+
+  const ids = new Set<string>();
+  for (const id of [
+    ...scene.illuminationModels2D.map((model) => model.id),
+    ...scene.sourceAngleSets2D.map((set) => set.id),
+    ...scene.testTargets2D.map((target) => target.id),
+    ...scene.brightfieldPipelines2D.map((pipeline) => pipeline.id)
+  ]) {
+    if (ids.has(id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate L3.3 id: ${id}` });
+    }
+    ids.add(id);
+  }
+
+  const illuminationIds = new Set(scene.illuminationModels2D.map((model) => model.id));
+  const targetIds = new Set(scene.testTargets2D.map((target) => target.id));
+  const coherentPipelineIds = new Set(scene.microscopePipelines2D.map((pipeline) => pipeline.id));
+
+  for (const set of scene.sourceAngleSets2D) {
+    if (!illuminationIds.has(set.illuminationModelId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `source angle set ${set.id} references an unknown illumination model` });
+    }
+  }
+  for (const pipeline of scene.brightfieldPipelines2D) {
+    if (!coherentPipelineIds.has(pipeline.coherentPipelineId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `brightfield pipeline ${pipeline.id} references an unknown coherent pipeline` });
+    }
+    if (!illuminationIds.has(pipeline.illuminationModelId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `brightfield pipeline ${pipeline.id} references an unknown illumination model` });
+    }
+    if (pipeline.testTargetId && !targetIds.has(pipeline.testTargetId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `brightfield pipeline ${pipeline.id} references an unknown test target` });
+    }
+  }
+
+  for (const model of scene.illuminationModels2D) {
+    if (model.kind === "annulus" && model.innerNA >= model.outerNA) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `illumination model ${model.id} annulus innerNA must be smaller than outerNA` });
+    }
+  }
+  for (const target of scene.testTargets2D) {
+    if (target.kind === "siemensStarLike" && target.innerRadiusM >= target.outerRadiusM) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `test target ${target.id} inner radius must be smaller than outer radius` });
+    }
+  }
+}
+
+export const sceneV6Schema = sceneV6BaseSchema.superRefine(validateSceneV6References);
+
 export type SourceElement = z.infer<typeof sourceElementSchema>;
 export type OpticalElement = z.infer<typeof opticalElementSchema>;
 export type ThinLensElement = Extract<OpticalElement, { type: "thinLens" }>;
@@ -960,12 +1176,18 @@ export type MeasurementSettings2D = z.infer<typeof measurementSettings2DSchema>;
 export type SweepParameter = z.infer<typeof sweepParameterSchema>;
 export type SweepDefinition = z.infer<typeof sweepDefinitionSchema>;
 export type EngineeringReportSettings = z.infer<typeof engineeringReportSettingsSchema>;
+export type IlluminationModel2D = z.infer<typeof illuminationModel2DSchema>;
+export type SourceAngleSample2D = z.infer<typeof sourceAngleSample2DSchema>;
+export type SourceAngleSet2D = z.infer<typeof sourceAngleSet2DSchema>;
+export type TestTarget2D = z.infer<typeof testTarget2DSchema>;
+export type BrightfieldPipeline2D = z.infer<typeof brightfieldPipeline2DSchema>;
 export type SceneV1 = z.infer<typeof sceneV1Schema>;
 export type SceneV2 = z.infer<typeof sceneV2Schema>;
 export type SceneV3 = z.infer<typeof sceneV3Schema>;
 export type SceneV4 = z.infer<typeof sceneV4Schema>;
 export type SceneV5 = z.infer<typeof sceneV5Schema>;
-export type Scene = SceneV5;
+export type SceneV6 = z.infer<typeof sceneV6Schema>;
+export type Scene = SceneV6;
 
 export function parseSceneV1(value: unknown): SceneV1 {
   return sceneV1Schema.parse(value);
@@ -1049,19 +1271,33 @@ export function migrateSceneV4ToV5(scene: SceneV4): SceneV5 {
   };
 }
 
+export function migrateSceneV5ToV6(scene: SceneV5): SceneV6 {
+  return {
+    ...scene,
+    schemaVersion: "0.6.0",
+    illuminationModels2D: [],
+    sourceAngleSets2D: [],
+    testTargets2D: [],
+    brightfieldPipelines2D: []
+  };
+}
+
 export function parseScene(value: unknown): Scene {
   const maybeVersion = typeof value === "object" && value !== null ? (value as { schemaVersion?: unknown }).schemaVersion : undefined;
   if (maybeVersion === "0.1.0") {
-    return migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(migrateSceneV1ToV2(parseSceneV1(value)))));
+    return migrateSceneV5ToV6(migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(migrateSceneV1ToV2(parseSceneV1(value))))));
   }
   if (maybeVersion === "0.2.0") {
-    return migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(sceneV2Schema.parse(value))));
+    return migrateSceneV5ToV6(migrateSceneV4ToV5(migrateSceneV3ToV4(migrateSceneV2ToV3(sceneV2Schema.parse(value)))));
   }
   if (maybeVersion === "0.3.0") {
-    return migrateSceneV4ToV5(migrateSceneV3ToV4(sceneV3Schema.parse(value)));
+    return migrateSceneV5ToV6(migrateSceneV4ToV5(migrateSceneV3ToV4(sceneV3Schema.parse(value))));
   }
   if (maybeVersion === "0.4.0") {
-    return migrateSceneV4ToV5(sceneV4Schema.parse(value));
+    return migrateSceneV5ToV6(migrateSceneV4ToV5(sceneV4Schema.parse(value)));
   }
-  return sceneV5Schema.parse(value);
+  if (maybeVersion === "0.5.0") {
+    return migrateSceneV5ToV6(sceneV5Schema.parse(value));
+  }
+  return sceneV6Schema.parse(value);
 }

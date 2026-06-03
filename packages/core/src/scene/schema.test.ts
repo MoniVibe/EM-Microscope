@@ -22,11 +22,11 @@ describe("SceneV1 schema", () => {
   });
 });
 
-describe("SceneV5 migration", () => {
-  it("migrates SceneV1 to SceneV5 without inventing L2, L3, or L3.2 workbench fields", () => {
+describe("SceneV6 migration", () => {
+  it("migrates SceneV1 to SceneV6 without inventing L2, L3, L3.2, or L3.3 workbench fields", () => {
     const migrated = parseScene(sampleScene);
 
-    expect(migrated.schemaVersion).toBe("0.5.0");
+    expect(migrated.schemaVersion).toBe("0.6.0");
     expect(migrated.solverSettings.activeSolverId).toBe("geometric.l0");
     expect(migrated.fieldGrids1D).toEqual([]);
     expect(migrated.fieldPlanes1D).toEqual([]);
@@ -36,12 +36,16 @@ describe("SceneV5 migration", () => {
     expect(migrated.cameraModels).toEqual([]);
     expect(migrated.sensorPipelines2D).toEqual([]);
     expect(migrated.sweepDefinitions).toEqual([]);
+    expect(migrated.illuminationModels2D).toEqual([]);
+    expect(migrated.sourceAngleSets2D).toEqual([]);
+    expect(migrated.testTargets2D).toEqual([]);
+    expect(migrated.brightfieldPipelines2D).toEqual([]);
   });
 
   it("validates the migrated L1 sample scene", () => {
     const parsed = parseScene(sampleL1Scene);
 
-    expect(parsed.schemaVersion).toBe("0.5.0");
+    expect(parsed.schemaVersion).toBe("0.6.0");
     expect(parsed.solverSettings.activeSolverId).toBe("geometric.l1.2d");
     expect(parsed.waveSettings.defaultCoherence).toBe("coherent");
   });
@@ -63,14 +67,19 @@ describe("SceneV5 migration", () => {
     delete olderScene.measurementSettings;
     delete olderScene.sweepDefinitions;
     delete olderScene.reportSettings;
+    delete olderScene.illuminationModels2D;
+    delete olderScene.sourceAngleSets2D;
+    delete olderScene.testTargets2D;
+    delete olderScene.brightfieldPipelines2D;
 
     const parsed = parseScene(olderScene);
 
-    expect(parsed.schemaVersion).toBe("0.5.0");
+    expect(parsed.schemaVersion).toBe("0.6.0");
     expect(parsed.samplePlanes1D).toEqual([]);
     expect(parsed.sampleMasks1D).toEqual([]);
     expect(parsed.fieldGrids2D).toEqual([]);
     expect(parsed.cameraModels).toEqual([]);
+    expect(parsed.illuminationModels2D).toEqual([]);
   });
 
   it("rejects L3 pipelines that reference missing 2D planes", () => {
@@ -106,5 +115,20 @@ describe("SceneV5 migration", () => {
     ];
 
     expect(() => parseScene(invalid)).toThrow(/unknown camera model/);
+  });
+
+  it("rejects L3.3 brightfield pipelines that reference missing illumination models", () => {
+    const invalid = structuredClone(sampleL1Scene);
+    invalid.brightfieldPipelines2D = [
+      {
+        id: "brightfield",
+        label: "Broken brightfield pipeline",
+        coherentPipelineId: "missing-coherent-pipeline",
+        illuminationModelId: "missing-illumination",
+        outputFieldPolicy: "averagedDetectorOnly"
+      }
+    ];
+
+    expect(() => parseScene(invalid)).toThrow(/unknown coherent pipeline|unknown illumination model/);
   });
 });
