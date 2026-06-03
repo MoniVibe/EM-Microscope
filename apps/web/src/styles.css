@@ -504,6 +504,7 @@ h2 {
 
 .maxwell-layer-editor,
 .maxwell-monitor-card,
+.maxwell-foundry-card,
 .maxwell-sweep-card {
   display: grid;
   gap: 10px;
@@ -595,6 +596,25 @@ h2 {
   display: grid;
   gap: 6px;
   padding-top: 2px;
+}
+
+.maxwell-foundry-layers {
+  display: grid;
+  gap: 6px;
+}
+
+.maxwell-foundry-card .compact-stat {
+  min-width: 0;
+}
+
+.maxwell-foundry-card .compact-stat span,
+.maxwell-foundry-card .compact-stat strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.maxwell-foundry-card .compact-stat strong {
+  text-align: right;
 }
 
 .readonly-row strong {

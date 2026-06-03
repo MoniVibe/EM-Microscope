@@ -1,6 +1,6 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L4 Maxwell Phase 0 planar multilayer
+An EM-first light simulator MVP. The visible web app is now the L5.1 Maxwell Design Foundry planar multilayer
 transfer-matrix workbench; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
@@ -9,15 +9,18 @@ adds diagnostic wavelength-dependent material records, editable coating stacks, 
 planar Maxwell TMM path. L4.2 adds a planar field monitor that samples complex tangential E/H equivalents through
 the stack and estimates per-layer absorption from planar flux drops. It computes complex-amplitude
 reflection/transmission, R/T/A Poynting-style flux ratios, effective permittivity, energy-balance checks, warnings,
-and deterministic hashes. It is not a general 3D Maxwell solver, FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry
-solver, curved lens solver, aperture solver, or sensor-stack simulator.
+and deterministic hashes. L5.1 adds a declarative planar coating objective layer and deterministic thickness
+optimizer that proposes coating designs, then certifies the selected result by re-running the same Maxwell TMM
+coating-stack path. It is not a general 3D Maxwell solver, FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver,
+curved lens solver, aperture solver, sensor-stack simulator, adjoint optimizer, topology optimizer, digital twin, or
+manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L4.2 Maxwell Planar Coating Stack`: frequency-domain Maxwell planar multilayer transfer-matrix special case
-  with diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor
-  samples, per-layer flux-drop absorption estimates, film-stack R/T/A, JSON/Markdown/CSV export, and strict
-  limitations against arbitrary 3D EM claims.
+- `L5.1 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
+  diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
+  per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
+  best-candidate re-solve hashes, JSON/Markdown/CSV export, and strict limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
 
@@ -118,11 +121,28 @@ from frequency-domain boundary conditions and E/H admittance, not geometric rayt
 lenses, apertures, arbitrary 3D geometry, vector focusing through high-NA objectives, RCWA gratings, FEM/BEM
 meshes, FDTD time marching, or pixel-level sensor absorption yet.
 
-Recommended next L4 steps:
+## L5.1 Maxwell Design Foundry
+
+The first `trueem2.md` layer lives in `packages/core/src/maxwell/designFoundry.ts`. It introduces a declarative
+planar coating objective schema with wavelength samples, weighted objective terms, scalar manufacturing constraints,
+thickness variables, deterministic coordinate-search settings, candidate ranking, and result hashes.
+
+The current optimizer is intentionally narrow. It searches coating layer thicknesses for the visible low-reflection
+objective and evaluates every candidate through `runCoatingStack`, which compiles spectral materials, runs planar
+TMM, computes the field monitor, and returns provenance/warnings. The accepted best candidate also carries a
+certified single-wavelength stack run hash. The web panel exposes the objective, seed/best scores, mean reflectance,
+evaluation count, best thicknesses, Apply Best, and Foundry JSON export.
+
+This is the first layer above simulation: users can ask for a physical coating outcome instead of manually choosing
+every thickness. It is still not adjoint optimization, topology optimization, robust yield analysis, digital-twin
+calibration, PDK rule checking, or sensor-complete design.
+
+Recommended next L5 steps:
 
 - Add a wavelength-dependent material importer with source metadata, interpolation policy, and passivity checks.
-- Compile optical coating stacks from scene elements into planar TMM inputs for normal/oblique validation cases.
-- Export field-monitor metadata around film interfaces, not just aggregate R/T/A.
+- Add tolerance/yield analysis around foundry output with thickness sigma, drift, and worst-case reflectance.
+- Add discrete material/order search so the foundry can propose layer sequences, not just thicknesses.
+- Compile optical coating stacks from future scene elements into planar TMM inputs for normal/oblique validation cases.
 - Prototype a separate 3D engine boundary that can call an external FEM/BEM/RCWA/FDTD backend without mixing it
   into the current 2D scalar/ray bench API.
 

@@ -2,14 +2,18 @@ import { useMemo, useState } from "react";
 import {
   listL4SpectralMaterials,
   runCoatingStack,
+  runCoatingDesignFoundry,
   runCoatingSweep,
+  visibleArObjective,
+  type CoatingDesignResult,
   type CoatingStackDefinition,
   type CoatingStackRunResult,
   type CoatingSweepResult,
   type MaxwellPolarization,
-  type PlanarFieldMonitorResult
+  type PlanarFieldMonitorResult,
+  type SolverWarning
 } from "@emmicro/core";
-import { FileDown, Plus, Save, Trash2 } from "lucide-react";
+import { FileDown, Plus, Save, Sparkles, Trash2 } from "lucide-react";
 
 type StackPresetId = "bareGlass" | "quarterWaveAr" | "broadbandAr" | "absorbingFilm";
 
@@ -117,6 +121,18 @@ export function MaxwellPanel() {
       }),
     [stack, sweepCount, sweepEndNm, sweepStartNm]
   );
+  const foundry = useMemo<CoatingDesignResult>(
+    () =>
+      runCoatingDesignFoundry({
+        id: `l51-${presetId}-visible-ar`,
+        label: `L5.1 ${stackPresets[presetId].label} design foundry`,
+        seedStack: stack,
+        objective: visibleArObjective,
+        settings: { passes: 2, samplesPerVariable: 7, candidateCount: 3 }
+      }),
+    [presetId, stack]
+  );
+  const warnings = useMemo(() => uniquePanelWarnings([...foundry.warnings, ...run.warnings]), [foundry, run]);
 
   function selectPreset(nextPresetId: StackPresetId): void {
     const preset = stackPresets[nextPresetId];
@@ -148,11 +164,26 @@ export function MaxwellPanel() {
     setLayers((current) => current.filter((layer) => layer.id !== layerId));
   }
 
+  function applyFoundryBest(): void {
+    setIncidentMaterialId(foundry.best.stack.incidentMaterialId);
+    setSubstrateMaterialId(foundry.best.stack.substrateMaterialId);
+    setWavelengthNm(foundry.best.stack.wavelengthM * 1e9);
+    setAngleDeg(degFromRad(foundry.best.stack.angleRad));
+    setPolarization(foundry.best.stack.polarization);
+    setLayers(
+      foundry.best.stack.layers.map((layer) => ({
+        id: layer.id,
+        materialId: layer.materialId,
+        thicknessNm: layer.thicknessM * 1e9
+      }))
+    );
+  }
+
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L4 Maxwell Phase 0">
-      <h2>L4 Maxwell Phase 0</h2>
+    <section className="wave-panel maxwell-panel" aria-label="L5.1 Maxwell Design Foundry">
+      <h2>L5.1 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM special case</strong>
+        <strong>frequency-domain Maxwell planar coating-stack TMM plus certified design objective search</strong>
         <span>not a general 3D Maxwell solver</span>
       </div>
 
@@ -251,11 +282,11 @@ export function MaxwellPanel() {
       </div>
 
       <div className="wave-actions">
-        <button type="button" onClick={() => exportStackJson(run, sweep)}>
+        <button type="button" onClick={() => exportStackJson(run, sweep, foundry)}>
           <Save size={17} />
           <span>JSON</span>
         </button>
-        <button type="button" onClick={() => exportStackSummary(run, sweep)}>
+        <button type="button" onClick={() => exportStackSummary(run, sweep, foundry)}>
           <FileDown size={17} />
           <span>Summary</span>
         </button>
@@ -324,6 +355,67 @@ export function MaxwellPanel() {
         )}
       </div>
 
+      <div className="maxwell-foundry-card">
+        <div className="maxwell-section-heading">
+          <h2>Design Foundry</h2>
+          <strong>{foundry.resultHash.slice(0, 10)}</strong>
+        </div>
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>Objective</span>
+            <strong>{foundry.objective.label}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Variables</span>
+            <strong>{foundry.variableCount}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Evaluations</span>
+            <strong>{foundry.evaluationCount}</strong>
+          </div>
+        </div>
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>Seed score</span>
+            <strong>{foundry.seed.score.toExponential(2)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Best score</span>
+            <strong>{foundry.best.score.toExponential(2)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Best mean R</span>
+            <strong>{formatPercent(foundry.best.metrics.meanReflectance)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Certified</span>
+            <strong>{foundry.best.certifiedRun.resultHash.slice(0, 10)}</strong>
+          </div>
+        </div>
+        {foundry.best.stack.layers.length > 0 ? (
+          <div className="maxwell-foundry-layers">
+            {foundry.best.stack.layers.map((layer) => (
+              <div className="compact-stat" key={layer.id}>
+                <span>{layer.label}</span>
+                <strong>{(layer.thicknessM * 1e9).toFixed(2)} nm</strong>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">No coating variables for a bare boundary.</div>
+        )}
+        <div className="maxwell-layer-actions">
+          <button type="button" disabled={foundry.variableCount === 0} onClick={applyFoundryBest}>
+            <Sparkles size={15} />
+            <span>Apply Best</span>
+          </button>
+          <button type="button" onClick={() => exportFoundryJson(foundry)}>
+            <FileDown size={15} />
+            <span>Foundry JSON</span>
+          </button>
+        </div>
+      </div>
+
       <div className="maxwell-sweep-card">
         <div className="maxwell-section-heading">
           <h2>Wavelength Sweep</h2>
@@ -351,10 +443,10 @@ export function MaxwellPanel() {
         </div>
       </div>
 
-      {run.warnings.length > 0 && (
+      {warnings.length > 0 && (
         <ul className="warning-list">
-          {run.warnings.map((warning) => (
-            <li key={`${warning.code}:${warning.elementId ?? ""}`}>{warning.message}</li>
+          {warnings.map((warning, index) => (
+            <li key={`${index}:${warning.code}:${warning.elementId ?? ""}`}>{warning.message}</li>
           ))}
         </ul>
       )}
@@ -362,6 +454,9 @@ export function MaxwellPanel() {
       <div className="maxwell-stack">
         <h2>Limitations</h2>
         <ul>
+          {foundry.provenance.limitations.map((limitation) => (
+            <li key={limitation}>{limitation}</li>
+          ))}
           {run.provenance.limitations.map((limitation) => (
             <li key={limitation}>{limitation}</li>
           ))}
@@ -487,13 +582,13 @@ function FieldMonitorPlot({ monitor }: { monitor: PlanarFieldMonitorResult }) {
   );
 }
 
-function exportStackJson(run: CoatingStackRunResult, sweep: CoatingSweepResult): void {
-  downloadText("l41-coating-stack.json", "application/json", JSON.stringify({ run, sweep }, null, 2));
+function exportStackJson(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult): void {
+  downloadText("l51-coating-design-foundry-stack.json", "application/json", JSON.stringify({ run, sweep, foundry }, null, 2));
 }
 
-function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResult): void {
+function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult): void {
   downloadText(
-    "l41-coating-stack.md",
+    "l51-coating-design-foundry-stack.md",
     "text/markdown",
     [
       `# ${run.label}`,
@@ -510,11 +605,21 @@ function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResul
       `Stack hash: ${run.resultHash}`,
       `Monitor hash: ${run.fieldMonitor.resultHash}`,
       `Sweep hash: ${sweep.resultHash}`,
+      `Foundry hash: ${foundry.resultHash}`,
       "",
       "Planar field monitor:",
       `- Max |E|^2: ${run.fieldMonitor.maxElectricIntensity.toExponential(3)}`,
       `- Layer absorption sum: ${formatPercent(run.fieldMonitor.aggregateLayerAbsorbance)}`,
       ...run.fieldMonitor.layerFlux.map((layer) => `- ${layer.label}: ${formatPercent(layer.absorbedFlux)}`),
+      "",
+      "Design foundry:",
+      `- Objective: ${foundry.objective.label}`,
+      `- Seed score: ${foundry.seed.score.toExponential(3)}`,
+      `- Best score: ${foundry.best.score.toExponential(3)}`,
+      `- Best mean reflectance: ${formatPercent(foundry.best.metrics.meanReflectance)}`,
+      `- Best max reflectance: ${formatPercent(foundry.best.metrics.maxReflectance)}`,
+      `- Certified run hash: ${foundry.best.certifiedRun.resultHash}`,
+      ...foundry.best.stack.layers.map((layer) => `- ${layer.label}: ${(layer.thicknessM * 1e9).toFixed(3)} nm`),
       "",
       "Sweep:",
       `- R min: ${formatPercent(sweep.reflectanceMin)}`,
@@ -522,9 +627,14 @@ function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResul
       `- A max: ${formatPercent(sweep.absorbanceMax)}`,
       "",
       "Limitations:",
+      ...foundry.provenance.limitations.map((limitation) => `- ${limitation}`),
       ...run.provenance.limitations.map((limitation) => `- ${limitation}`)
     ].join("\n")
   );
+}
+
+function exportFoundryJson(foundry: CoatingDesignResult): void {
+  downloadText("l51-design-foundry.json", "application/json", JSON.stringify(foundry, null, 2));
 }
 
 function exportSweepCsv(sweep: CoatingSweepResult): void {
@@ -617,4 +727,16 @@ function formatNumberInputValue(value: number): string {
   if (value === 0) return "0";
   const rounded = Math.abs(value) >= 1e-3 ? Number(value.toFixed(6)) : Number(value.toPrecision(6));
   return Object.is(rounded, -0) ? "0" : String(rounded);
+}
+
+function uniquePanelWarnings(warnings: SolverWarning[]): SolverWarning[] {
+  const seen = new Set<string>();
+  const output: SolverWarning[] = [];
+  for (const warning of warnings) {
+    const key = `${warning.code}:${warning.elementId ?? ""}:${warning.message}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    output.push(warning);
+  }
+  return output;
 }

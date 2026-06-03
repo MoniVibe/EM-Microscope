@@ -263,13 +263,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L4 Maxwell Phase 0</p>
+            <p>L5.1 Maxwell Design Foundry</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>Planar Maxwell TMM</span>
-          <strong>frequency-domain multilayer special case</strong>
+          <span>Planar Maxwell TMM Foundry</span>
+          <strong>certified coating design special case</strong>
         </div>
       </header>
 

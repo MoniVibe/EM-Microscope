@@ -57,15 +57,18 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L4 Maxwell as a planar TMM special case without claiming arbitrary 3D EM", () => {
+  it("labels L5.1 Maxwell foundry as planar TMM-certified design without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM special case");
+    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM plus certified design objective search");
     expect(maxwellPanel).toContain("not a general 3D Maxwell solver");
     expect(maxwellPanel).toContain("runCoatingStack");
     expect(maxwellPanel).toContain("runCoatingSweep");
+    expect(maxwellPanel).toContain("runCoatingDesignFoundry");
     expect(maxwellPanel).toContain("Planar Field Monitor");
     expect(maxwellPanel).toContain("Monitor CSV");
+    expect(maxwellPanel).toContain("Design Foundry");
+    expect(maxwellPanel).toContain("Apply Best");
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA/i);
   });
 
@@ -75,7 +78,7 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("Planar Maxwell TMM");
+    expect(app).toContain("Planar Maxwell TMM Foundry");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });
