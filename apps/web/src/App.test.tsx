@@ -60,9 +60,10 @@ describe("solver disclosure copy", () => {
   it("labels L4 Maxwell as a planar TMM special case without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("frequency-domain Maxwell planar multilayer TMM special case");
+    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM special case");
     expect(maxwellPanel).toContain("not a general 3D Maxwell solver");
-    expect(maxwellPanel).toContain("runPlanarTmm");
+    expect(maxwellPanel).toContain("runCoatingStack");
+    expect(maxwellPanel).toContain("runCoatingSweep");
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA/i);
   });
 

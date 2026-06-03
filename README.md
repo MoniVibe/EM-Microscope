@@ -4,17 +4,19 @@ An EM-first light simulator MVP. The visible web app is now the L4 Maxwell Phase
 transfer-matrix workbench; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
-L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. It
-computes complex-amplitude reflection/transmission, R/T/A Poynting-style flux ratios, effective permittivity,
-energy-balance checks, warnings, and deterministic hashes. It is not a general 3D Maxwell solver,
-FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, or sensor-stack
-simulator.
+L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. L4.1
+adds diagnostic wavelength-dependent material records, editable coating stacks, and wavelength sweeps over the same
+planar Maxwell TMM path. It computes complex-amplitude reflection/transmission, R/T/A Poynting-style flux ratios,
+effective permittivity, energy-balance checks, warnings, and deterministic hashes. It is not a general 3D Maxwell
+solver, FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, or
+sensor-stack simulator.
 
 ## Current Visible Mode
 
-- `L4 Maxwell Phase 0 Planar TMM`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
-  constant complex material samples, film-stack R/T/A, Poynting-style energy accounting, JSON/Markdown export, and
-  strict limitations against arbitrary 3D EM claims.
+- `L4.1 Maxwell Planar Coating Stack`: frequency-domain Maxwell planar multilayer transfer-matrix special case
+  with diagnostic spectral material records, editable film stacks, wavelength sweeps, film-stack R/T/A,
+  Poynting-style energy accounting, JSON/Markdown/CSV export, and strict limitations against arbitrary 3D EM
+  claims.
 
 ## L2 Validation Fixture
 
@@ -90,13 +92,19 @@ SceneV7 is additive: old scenes migrate with empty measured-image, calibration-t
 fit-run arrays. The current L3.4B layer does not claim ISO 12233, EMVA 1288, clinical, or hardware calibration.
 True 3D physics remains out of scope; 3D should wait until the 2D measured-data diagnostics are stronger.
 
-## L4 Maxwell Phase 0
+## L4 Maxwell Phase 0/1
 
 The L4 core modules live under `packages/core/src/maxwell`. They include a small complex-number utility, constant
 complex refractive-index material samples, relative-permittivity conversion, absorption-coefficient diagnostics,
 and a planar multilayer transfer-matrix solver for TE/TM plane waves. The bundled validation fixtures cover a bare
 air/glass interface, a MgF2 quarter-wave AR coating, a lossy chromium-like film on glass, and an oblique TM AR
 stack.
+
+L4.1 adds `materialCatalog` and `coatingStack` modules. The material catalog is still a built-in diagnostic data
+set, not an authoritative material database import, but it establishes the right API shape: wavelength-dependent
+`n,k`, source/provenance notes, interpolation/clamping warnings, and passivity checks. The coating-stack runner
+compiles material IDs and layer thicknesses into the planar TMM solver, then can run single-wavelength R/T/A or a
+deterministic wavelength sweep with CSV/JSON/Markdown export.
 
 This is Maxwell-first but intentionally narrow: the TMM path solves the planar film-stack special case directly
 from frequency-domain boundary conditions and E/H admittance, not geometric raytracing. It does not solve curved

@@ -21,6 +21,8 @@ export * from "./measurement/modelComparison2d";
 export * from "./measurement/residualMaps2d";
 export * from "./measurement/roi2d";
 export * from "./maxwell/complex";
+export * from "./maxwell/coatingStack";
+export * from "./maxwell/materialCatalog";
 export * from "./maxwell/materials";
 export * from "./maxwell/planarTmm";
 export * from "./metrics/resolutionTargetMetrics";

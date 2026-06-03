@@ -484,6 +484,106 @@ h2 {
   color: #66758a;
 }
 
+.maxwell-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.maxwell-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.maxwell-section-heading strong {
+  color: #263244;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.maxwell-layer-editor,
+.maxwell-sweep-card {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.maxwell-layer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.maxwell-layer-actions button {
+  height: 30px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  font-weight: 650;
+  font-size: 12px;
+}
+
+.maxwell-layer-list {
+  display: grid;
+  gap: 8px;
+}
+
+.maxwell-layer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 148px 34px;
+  align-items: center;
+  gap: 8px;
+}
+
+.maxwell-layer-row select,
+.maxwell-layer-row input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  padding: 0 8px;
+  background: #ffffff;
+  color: #1d2736;
+}
+
+.maxwell-sweep-controls {
+  display: grid;
+  gap: 8px;
+}
+
+.maxwell-sweep-plot {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid #d1d9e4;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.maxwell-sweep-plot rect {
+  fill: #f8fafc;
+  stroke: #d6dee8;
+}
+
+.maxwell-sweep-line {
+  fill: none;
+  stroke: #227c9d;
+  stroke-width: 3;
+}
+
+.maxwell-sweep-plot text {
+  fill: #536175;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 .readonly-row strong {
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -914,5 +1014,9 @@ h2 {
 
   .maxwell-only-main .maxwell-flux-row {
     grid-template-columns: 20px minmax(0, 1fr) 76px;
+  }
+
+  .maxwell-layer-row {
+    grid-template-columns: 1fr;
   }
 }

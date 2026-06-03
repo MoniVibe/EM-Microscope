@@ -1,182 +1,320 @@
 import { useMemo, useState } from "react";
 import {
-  l4AbsorbingFilmTmm,
-  l4BareGlassTmm,
-  l4ObliqueStackTmm,
-  l4QuarterWaveArTmm,
-  runPlanarTmm,
-  type MaxwellPolarization,
-  type PlanarTmmInput,
-  type PlanarTmmResult
+  listL4SpectralMaterials,
+  runCoatingStack,
+  runCoatingSweep,
+  type CoatingStackDefinition,
+  type CoatingStackRunResult,
+  type CoatingSweepResult,
+  type MaxwellPolarization
 } from "@emmicro/core";
-import { FileDown, Save } from "lucide-react";
+import { FileDown, Plus, Save, Trash2 } from "lucide-react";
 
-const maxwellPresets = {
+type StackPresetId = "bareGlass" | "quarterWaveAr" | "broadbandAr" | "absorbingFilm";
+
+type EditableLayer = {
+  id: string;
+  materialId: string;
+  thicknessNm: number;
+};
+
+type StackPreset = {
+  label: string;
+  incidentMaterialId: string;
+  substrateMaterialId: string;
+  wavelengthNm: number;
+  angleDeg: number;
+  polarization: MaxwellPolarization;
+  layers: EditableLayer[];
+};
+
+const materialOptions = listL4SpectralMaterials();
+const layerMaterialOptions = materialOptions.filter((material) => material.family !== "ambient");
+
+const stackPresets = {
   bareGlass: {
     label: "Bare air/glass",
-    input: l4BareGlassTmm
+    incidentMaterialId: "air",
+    substrateMaterialId: "bk7",
+    wavelengthNm: 550,
+    angleDeg: 0,
+    polarization: "TE",
+    layers: []
   },
   quarterWaveAr: {
     label: "MgF2 quarter-wave AR",
-    input: l4QuarterWaveArTmm
+    incidentMaterialId: "air",
+    substrateMaterialId: "bk7",
+    wavelengthNm: 550,
+    angleDeg: 0,
+    polarization: "TE",
+    layers: [{ id: "layer-mgf2-qw", materialId: "mgf2", thicknessNm: 550 / (4 * 1.38) }]
+  },
+  broadbandAr: {
+    label: "Three-layer visible AR",
+    incidentMaterialId: "air",
+    substrateMaterialId: "bk7",
+    wavelengthNm: 550,
+    angleDeg: 0,
+    polarization: "TE",
+    layers: [
+      { id: "layer-tio2", materialId: "tio2", thicknessNm: 46 },
+      { id: "layer-sio2", materialId: "sio2", thicknessNm: 96 },
+      { id: "layer-mgf2", materialId: "mgf2", thicknessNm: 104 }
+    ]
   },
   absorbingFilm: {
-    label: "Lossy chromium-like film",
-    input: l4AbsorbingFilmTmm
-  },
-  obliqueAr: {
-    label: "Oblique TM AR stack",
-    input: l4ObliqueStackTmm
+    label: "Lossy absorber on glass",
+    incidentMaterialId: "air",
+    substrateMaterialId: "bk7",
+    wavelengthNm: 550,
+    angleDeg: 0,
+    polarization: "TE",
+    layers: [{ id: "layer-chromium", materialId: "chromiumLossy", thicknessNm: 18 }]
   }
-} satisfies Record<string, { label: string; input: PlanarTmmInput }>;
+} satisfies Record<StackPresetId, StackPreset>;
 
-type MaxwellPresetId = keyof typeof maxwellPresets;
-
-const presetEntries = Object.entries(maxwellPresets) as Array<[MaxwellPresetId, (typeof maxwellPresets)[MaxwellPresetId]]>;
+const presetEntries = Object.entries(stackPresets) as Array<[StackPresetId, StackPreset]>;
 
 export function MaxwellPanel() {
-  const [presetId, setPresetId] = useState<MaxwellPresetId>("quarterWaveAr");
-  const [wavelengthNm, setWavelengthNm] = useState(nmFromM(maxwellPresets.quarterWaveAr.input.wavelengthM));
-  const [angleDeg, setAngleDeg] = useState(degFromRad(maxwellPresets.quarterWaveAr.input.angleRad));
-  const [polarization, setPolarization] = useState<MaxwellPolarization>(maxwellPresets.quarterWaveAr.input.polarization);
-  const [thicknessScale, setThicknessScale] = useState(1);
+  const [presetId, setPresetId] = useState<StackPresetId>("quarterWaveAr");
+  const [incidentMaterialId, setIncidentMaterialId] = useState(stackPresets.quarterWaveAr.incidentMaterialId);
+  const [substrateMaterialId, setSubstrateMaterialId] = useState(stackPresets.quarterWaveAr.substrateMaterialId);
+  const [wavelengthNm, setWavelengthNm] = useState(stackPresets.quarterWaveAr.wavelengthNm);
+  const [angleDeg, setAngleDeg] = useState(stackPresets.quarterWaveAr.angleDeg);
+  const [polarization, setPolarization] = useState<MaxwellPolarization>(stackPresets.quarterWaveAr.polarization);
+  const [layers, setLayers] = useState<EditableLayer[]>(() => cloneLayers(stackPresets.quarterWaveAr.layers));
+  const [sweepStartNm, setSweepStartNm] = useState(420);
+  const [sweepEndNm, setSweepEndNm] = useState(700);
+  const [sweepCount, setSweepCount] = useState(33);
 
-  const input = useMemo(
-    () => makeControlledInput(maxwellPresets[presetId].input, wavelengthNm, angleDeg, polarization, thicknessScale),
-    [angleDeg, polarization, presetId, thicknessScale, wavelengthNm]
+  const stack = useMemo<CoatingStackDefinition>(
+    () => ({
+      id: `l41-${presetId}`,
+      label: `L4.1 ${stackPresets[presetId].label}`,
+      wavelengthM: clamp(wavelengthNm, 200, 2000) * 1e-9,
+      angleRad: radFromDeg(clamp(angleDeg, -80, 80)),
+      polarization,
+      incidentMaterialId,
+      substrateMaterialId,
+      layers: layers.map((layer) => ({
+        id: layer.id,
+        label: materialLabel(layer.materialId),
+        materialId: layer.materialId,
+        thicknessM: clamp(layer.thicknessNm, 0.1, 10000) * 1e-9
+      }))
+    }),
+    [angleDeg, incidentMaterialId, layers, polarization, presetId, substrateMaterialId, wavelengthNm]
   );
-  const result = useMemo(() => runPlanarTmm(input), [input]);
+  const run = useMemo<CoatingStackRunResult>(() => runCoatingStack(stack), [stack]);
+  const sweep = useMemo<CoatingSweepResult>(
+    () =>
+      runCoatingSweep(stack, {
+        startWavelengthM: clamp(sweepStartNm, 200, 2000) * 1e-9,
+        endWavelengthM: clamp(Math.max(sweepStartNm, sweepEndNm), 200, 2000) * 1e-9,
+        sampleCount: Math.max(3, Math.min(81, Math.round(sweepCount)))
+      }),
+    [stack, sweepCount, sweepEndNm, sweepStartNm]
+  );
 
-  function selectPreset(nextPresetId: MaxwellPresetId): void {
-    const next = maxwellPresets[nextPresetId].input;
+  function selectPreset(nextPresetId: StackPresetId): void {
+    const preset = stackPresets[nextPresetId];
     setPresetId(nextPresetId);
-    setWavelengthNm(nmFromM(next.wavelengthM));
-    setAngleDeg(degFromRad(next.angleRad));
-    setPolarization(next.polarization);
-    setThicknessScale(1);
+    setIncidentMaterialId(preset.incidentMaterialId);
+    setSubstrateMaterialId(preset.substrateMaterialId);
+    setWavelengthNm(preset.wavelengthNm);
+    setAngleDeg(preset.angleDeg);
+    setPolarization(preset.polarization);
+    setLayers(cloneLayers(preset.layers));
+  }
+
+  function updateLayer(layerId: string, updater: (layer: EditableLayer) => EditableLayer): void {
+    setLayers((current) => current.map((layer) => (layer.id === layerId ? updater(layer) : layer)));
+  }
+
+  function addLayer(materialId: string): void {
+    setLayers((current) => [
+      ...current,
+      {
+        id: `layer-${materialId}-${Date.now().toString(36)}`,
+        materialId,
+        thicknessNm: defaultThicknessNm(materialId)
+      }
+    ]);
+  }
+
+  function removeLayer(layerId: string): void {
+    setLayers((current) => current.filter((layer) => layer.id !== layerId));
   }
 
   return (
     <section className="wave-panel maxwell-panel" aria-label="L4 Maxwell Phase 0">
       <h2>L4 Maxwell Phase 0</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar multilayer TMM special case</strong>
+        <strong>frequency-domain Maxwell planar coating-stack TMM special case</strong>
         <span>not a general 3D Maxwell solver</span>
       </div>
-      <label className="field-row">
-        <span>Preset</span>
-        <select value={presetId} onChange={(event) => selectPreset(event.currentTarget.value as MaxwellPresetId)}>
-          {presetEntries.map(([id, preset]) => (
-            <option key={id} value={id}>
-              {preset.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="field-row">
-        <span>Wavelength</span>
-        <div className="number-input">
-          <input
-            type="number"
-            value={formatNumberInputValue(wavelengthNm)}
-            min={200}
-            max={2000}
-            step={1}
-            onChange={(event) => setWavelengthNm(Number(event.currentTarget.value))}
-          />
-          <em>nm</em>
+
+      <div className="maxwell-grid">
+        <label className="field-row">
+          <span>Preset</span>
+          <select value={presetId} onChange={(event) => selectPreset(event.currentTarget.value as StackPresetId)}>
+            {presetEntries.map(([id, preset]) => (
+              <option key={id} value={id}>
+                {preset.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field-row">
+          <span>Incident</span>
+          <select value={incidentMaterialId} onChange={(event) => setIncidentMaterialId(event.currentTarget.value)}>
+            {materialOptions.map((material) => (
+              <option key={material.id} value={material.id}>
+                {material.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field-row">
+          <span>Substrate</span>
+          <select value={substrateMaterialId} onChange={(event) => setSubstrateMaterialId(event.currentTarget.value)}>
+            {materialOptions.map((material) => (
+              <option key={material.id} value={material.id}>
+                {material.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <NumberField label="Wavelength" value={wavelengthNm} unit="nm" min={200} max={2000} step={1} onChange={setWavelengthNm} />
+        <NumberField label="Angle" value={angleDeg} unit="deg" min={-80} max={80} step={0.25} onChange={setAngleDeg} />
+        <label className="field-row">
+          <span>Pol.</span>
+          <select value={polarization} onChange={(event) => setPolarization(event.currentTarget.value as MaxwellPolarization)}>
+            <option value="TE">TE</option>
+            <option value="TM">TM</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="maxwell-layer-editor">
+        <div className="maxwell-section-heading">
+          <h2>Coating Stack</h2>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={() => addLayer("mgf2")}>
+              <Plus size={15} />
+              <span>MgF2</span>
+            </button>
+            <button type="button" onClick={() => addLayer("tio2")}>
+              <Plus size={15} />
+              <span>TiO2</span>
+            </button>
+            <button type="button" onClick={() => addLayer("chromiumLossy")}>
+              <Plus size={15} />
+              <span>Absorber</span>
+            </button>
+          </div>
         </div>
-      </label>
-      <label className="field-row">
-        <span>Angle</span>
-        <div className="number-input">
-          <input
-            type="number"
-            value={formatNumberInputValue(angleDeg)}
-            min={-80}
-            max={80}
-            step={0.25}
-            onChange={(event) => setAngleDeg(Number(event.currentTarget.value))}
-          />
-          <em>deg</em>
-        </div>
-      </label>
-      <label className="field-row">
-        <span>Pol.</span>
-        <select value={polarization} onChange={(event) => setPolarization(event.currentTarget.value as MaxwellPolarization)}>
-          <option value="TE">TE</option>
-          <option value="TM">TM</option>
-        </select>
-      </label>
-      <label className="field-row">
-        <span>Layer scale</span>
-        <div className="number-input">
-          <input
-            type="number"
-            value={formatNumberInputValue(thicknessScale)}
-            min={0.05}
-            max={5}
-            step={0.05}
-            onChange={(event) => setThicknessScale(Number(event.currentTarget.value))}
-          />
-          <em>x</em>
-        </div>
-      </label>
+
+        {layers.length > 0 ? (
+          <div className="maxwell-layer-list">
+            {layers.map((layer) => (
+              <div className="maxwell-layer-row" key={layer.id}>
+                <select value={layer.materialId} onChange={(event) => updateLayer(layer.id, (current) => ({ ...current, materialId: event.currentTarget.value }))}>
+                  {layerMaterialOptions.map((material) => (
+                    <option key={material.id} value={material.id}>
+                      {material.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="number-input">
+                  <input
+                    type="number"
+                    value={formatNumberInputValue(layer.thicknessNm)}
+                    min={0.1}
+                    max={10000}
+                    step={1}
+                    onChange={(event) => updateLayer(layer.id, (current) => ({ ...current, thicknessNm: Number(event.currentTarget.value) }))}
+                  />
+                  <em>nm</em>
+                </div>
+                <button className="icon-button danger" type="button" title="Remove layer" onClick={() => removeLayer(layer.id)}>
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">No coating layer; this is the bare incident/substrate boundary.</div>
+        )}
+      </div>
 
       <div className="wave-actions">
-        <button type="button" onClick={() => exportMaxwellJson(input, result)}>
+        <button type="button" onClick={() => exportStackJson(run, sweep)}>
           <Save size={17} />
           <span>JSON</span>
         </button>
-        <button type="button" onClick={() => exportMaxwellSummary(input, result)}>
+        <button type="button" onClick={() => exportStackSummary(run, sweep)}>
           <FileDown size={17} />
           <span>Summary</span>
+        </button>
+        <button type="button" onClick={() => exportSweepCsv(sweep)}>
+          <FileDown size={17} />
+          <span>Sweep CSV</span>
         </button>
       </div>
 
       <div className="profile-meta">
         <div className="compact-stat">
-          <span>Result hash</span>
-          <strong>{result.resultHash.slice(0, 10)}</strong>
+          <span>Stack hash</span>
+          <strong>{run.resultHash.slice(0, 10)}</strong>
         </div>
         <div className="compact-stat">
           <span>Layers</span>
-          <strong>{result.layerCount}</strong>
+          <strong>{run.tmm.layerCount}</strong>
         </div>
         <div className="compact-stat">
           <span>Energy error</span>
-          <strong>{result.energyBalanceError.toExponential(2)}</strong>
+          <strong>{run.tmm.energyBalanceError.toExponential(2)}</strong>
         </div>
       </div>
 
       <div className="maxwell-flux" aria-label="Poynting flux ratios">
-        <FluxRow label="R" value={result.reflectance} />
-        <FluxRow label="T" value={result.transmittance} />
-        <FluxRow label="A" value={result.absorbance} />
+        <FluxRow label="R" value={run.tmm.reflectance} />
+        <FluxRow label="T" value={run.tmm.transmittance} />
+        <FluxRow label="A" value={run.tmm.absorbance} />
       </div>
 
-      <div className="maxwell-stack">
-        <h2>Layer Stack</h2>
-        {input.layers.length > 0 ? (
-          <ul>
-            {input.layers.map((layer) => (
-              <li key={layer.id}>
-                <strong>{layer.label}</strong>
-                <span>
-                  {formatNm(layer.thicknessM)} nm, n={layer.material.refractiveIndex.n.toFixed(3)}, k=
-                  {layer.material.refractiveIndex.k.toFixed(3)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="empty-state">No internal film layer; this preset is the bare incident/substrate boundary.</div>
-        )}
+      <div className="maxwell-sweep-card">
+        <div className="maxwell-section-heading">
+          <h2>Wavelength Sweep</h2>
+          <strong>{sweep.resultHash.slice(0, 10)}</strong>
+        </div>
+        <div className="maxwell-sweep-controls">
+          <NumberField label="Start" value={sweepStartNm} unit="nm" min={200} max={2000} step={5} onChange={setSweepStartNm} />
+          <NumberField label="End" value={sweepEndNm} unit="nm" min={200} max={2000} step={5} onChange={setSweepEndNm} />
+          <NumberField label="Samples" value={sweepCount} min={3} max={81} step={2} onChange={setSweepCount} />
+        </div>
+        <SweepPlot sweep={sweep} />
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>R min</span>
+            <strong>{formatPercent(sweep.reflectanceMin)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>R max</span>
+            <strong>{formatPercent(sweep.reflectanceMax)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>A max</span>
+            <strong>{formatPercent(sweep.absorbanceMax)}</strong>
+          </div>
+        </div>
       </div>
 
-      {result.warnings.length > 0 && (
+      {run.warnings.length > 0 && (
         <ul className="warning-list">
-          {result.warnings.map((warning) => (
+          {run.warnings.map((warning) => (
             <li key={`${warning.code}:${warning.elementId ?? ""}`}>{warning.message}</li>
           ))}
         </ul>
@@ -185,7 +323,7 @@ export function MaxwellPanel() {
       <div className="maxwell-stack">
         <h2>Limitations</h2>
         <ul>
-          {result.provenance.limitations.map((limitation) => (
+          {run.provenance.limitations.map((limitation) => (
             <li key={limitation}>{limitation}</li>
           ))}
         </ul>
@@ -194,26 +332,39 @@ export function MaxwellPanel() {
   );
 }
 
-function makeControlledInput(
-  base: PlanarTmmInput,
-  wavelengthNm: number,
-  angleDeg: number,
-  polarization: MaxwellPolarization,
-  thicknessScale: number
-): PlanarTmmInput {
-  const safeWavelengthNm = clamp(Number.isFinite(wavelengthNm) ? wavelengthNm : 550, 200, 2000);
-  const safeAngleDeg = clamp(Number.isFinite(angleDeg) ? angleDeg : 0, -80, 80);
-  const safeThicknessScale = clamp(Number.isFinite(thicknessScale) ? thicknessScale : 1, 0.05, 5);
-  return {
-    ...base,
-    wavelengthM: safeWavelengthNm * 1e-9,
-    angleRad: radFromDeg(safeAngleDeg),
-    polarization,
-    layers: base.layers.map((layer) => ({
-      ...layer,
-      thicknessM: layer.thicknessM * safeThicknessScale
-    }))
-  };
+function NumberField({
+  label,
+  value,
+  unit,
+  min,
+  max,
+  step = 0.1,
+  onChange
+}: {
+  label: string;
+  value: number;
+  unit?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="field-row">
+      <span>{label}</span>
+      <div className="number-input">
+        <input
+          type="number"
+          value={formatNumberInputValue(value)}
+          min={min}
+          max={max}
+          step={step}
+          onChange={(event) => onChange(Number(event.currentTarget.value))}
+        />
+        {unit && <em>{unit}</em>}
+      </div>
+    </label>
+  );
 }
 
 function FluxRow({ label, value }: { label: string; value: number }) {
@@ -228,43 +379,89 @@ function FluxRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-function exportMaxwellJson(input: PlanarTmmInput, result: PlanarTmmResult): void {
-  downloadText(
-    `l4-planar-tmm-${result.id}.json`,
-    "application/json",
-    JSON.stringify(
-      {
-        input,
-        result
-      },
-      null,
-      2
-    )
+function SweepPlot({ sweep }: { sweep: CoatingSweepResult }) {
+  const width = 720;
+  const height = 150;
+  const pad = 20;
+  const usableWidth = width - pad * 2;
+  const usableHeight = height - pad * 2;
+  const yMax = Math.max(0.05, ...sweep.samples.map((sample) => sample.reflectance));
+  const points = sweep.samples
+    .map((sample, index) => {
+      const x = pad + (usableWidth * index) / Math.max(1, sweep.samples.length - 1);
+      const y = pad + usableHeight * (1 - sample.reflectance / yMax);
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+
+  return (
+    <svg className="maxwell-sweep-plot" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Reflectance over wavelength sweep">
+      <rect x="0" y="0" width={width} height={height} />
+      <line className="profile-axis" x1={pad} y1={height - pad} x2={width - pad} y2={height - pad} />
+      <line className="profile-axis" x1={pad} y1={pad} x2={pad} y2={height - pad} />
+      <polyline className="maxwell-sweep-line" points={points} />
+      <text x={pad} y={height - 5}>
+        {(sweep.sweep.startWavelengthM * 1e9).toFixed(0)} nm
+      </text>
+      <text x={width - pad - 48} y={height - 5}>
+        {(sweep.sweep.endWavelengthM * 1e9).toFixed(0)} nm
+      </text>
+      <text x={pad + 4} y={pad + 12}>
+        R max {formatPercent(yMax)}
+      </text>
+    </svg>
   );
 }
 
-function exportMaxwellSummary(input: PlanarTmmInput, result: PlanarTmmResult): void {
+function exportStackJson(run: CoatingStackRunResult, sweep: CoatingSweepResult): void {
+  downloadText("l41-coating-stack.json", "application/json", JSON.stringify({ run, sweep }, null, 2));
+}
+
+function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResult): void {
   downloadText(
-    `l4-planar-tmm-${result.id}.md`,
+    "l41-coating-stack.md",
     "text/markdown",
     [
-      `# ${result.label}`,
+      `# ${run.label}`,
       "",
-      `Analysis: ${result.provenance.label}`,
-      `Wavelength: ${formatNm(input.wavelengthM)} nm`,
-      `Angle: ${degFromRad(input.angleRad).toFixed(2)} deg`,
-      `Polarization: ${input.polarization}`,
+      `Analysis: ${run.provenance.label}`,
+      `Wavelength: ${(run.tmm.wavelengthM * 1e9).toFixed(2)} nm`,
+      `Angle: ${degFromRad(run.tmm.angleRad).toFixed(2)} deg`,
+      `Polarization: ${run.tmm.polarization}`,
       "",
-      `Reflectance: ${formatPercent(result.reflectance)}`,
-      `Transmittance: ${formatPercent(result.transmittance)}`,
-      `Absorbance: ${formatPercent(result.absorbance)}`,
-      `Energy balance error: ${result.energyBalanceError.toExponential(3)}`,
-      `Result hash: ${result.resultHash}`,
+      `Reflectance: ${formatPercent(run.tmm.reflectance)}`,
+      `Transmittance: ${formatPercent(run.tmm.transmittance)}`,
+      `Absorbance: ${formatPercent(run.tmm.absorbance)}`,
+      `Energy balance error: ${run.tmm.energyBalanceError.toExponential(3)}`,
+      `Stack hash: ${run.resultHash}`,
+      `Sweep hash: ${sweep.resultHash}`,
+      "",
+      "Sweep:",
+      `- R min: ${formatPercent(sweep.reflectanceMin)}`,
+      `- R max: ${formatPercent(sweep.reflectanceMax)}`,
+      `- A max: ${formatPercent(sweep.absorbanceMax)}`,
       "",
       "Limitations:",
-      ...result.provenance.limitations.map((limitation) => `- ${limitation}`)
+      ...run.provenance.limitations.map((limitation) => `- ${limitation}`)
     ].join("\n")
   );
+}
+
+function exportSweepCsv(sweep: CoatingSweepResult): void {
+  const rows = [
+    "wavelength_nm,reflectance,transmittance,absorbance,energy_balance_error,result_hash",
+    ...sweep.samples.map((sample) =>
+      [
+        (sample.wavelengthM * 1e9).toFixed(6),
+        sample.reflectance.toPrecision(12),
+        sample.transmittance.toPrecision(12),
+        sample.absorbance.toPrecision(12),
+        sample.energyBalanceError.toPrecision(6),
+        sample.resultHash
+      ].join(",")
+    )
+  ];
+  downloadText("l41-coating-sweep.csv", "text/csv", rows.join("\n"));
 }
 
 function downloadText(filename: string, mime: string, text: string): void {
@@ -279,16 +476,25 @@ function downloadText(filename: string, mime: string, text: string): void {
   URL.revokeObjectURL(url);
 }
 
+function cloneLayers(layers: EditableLayer[]): EditableLayer[] {
+  return layers.map((layer) => ({ ...layer }));
+}
+
+function materialLabel(materialId: string): string {
+  return materialOptions.find((material) => material.id === materialId)?.label ?? materialId;
+}
+
+function defaultThicknessNm(materialId: string): number {
+  if (materialId === "tio2") return 50;
+  if (materialId === "sio2") return 100;
+  if (materialId === "chromiumLossy") return 18;
+  if (materialId === "silicon") return 200;
+  return 100;
+}
+
 function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function nmFromM(value: number): number {
-  return value * 1e9;
-}
-
-function formatNm(value: number): string {
-  return nmFromM(value).toFixed(value < 1e-6 ? 2 : 1);
+  const finite = Number.isFinite(value) ? value : min;
+  return Math.min(max, Math.max(min, finite));
 }
 
 function radFromDeg(value: number): number {
