@@ -1,53 +1,17 @@
 # EMMicro
 
-A 2D microscope-grade optical bench MVP.
+An EM-first light simulator MVP. The visible web app is now the L4 Maxwell Phase 0 planar multilayer
+transfer-matrix workbench; the earlier geometric/scalar microscope bench code remains in source and tests as
+historical validation scaffolding, but it is hidden from the app shell.
 
-The first public version started as L0 geometric optics: deterministic rays, thin lenses, aperture clipping,
-detector histograms, and analytic microscope readouts. The current build adds L1 2D surface optics, an on-demand
-L2 scalar wave profile, L2.5 analytic sample/object planes for validated 1D coherent experiments, an early
-L3 coherent 2D scalar image-plane workbench, and L3.2 instrument-performance post-processing.
+L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. It
+computes complex-amplitude reflection/transmission, R/T/A Poynting-style flux ratios, effective permittivity,
+energy-balance checks, warnings, and deterministic hashes. It is not a general 3D Maxwell solver,
+FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, or sensor-stack
+simulator.
 
-Diffraction is still not faked. L0/L1 keep Airy/PSF values labeled as analytic estimates, while L2 is explicitly
-labeled as scalar 1D angular-spectrum propagation, not a full circular-aperture Airy disk or microscope image.
-L3 is labeled as a coherent 2D scalar image-plane intensity approximation, not partial coherence, vector optics,
-fluorescence, 3D physics, EM, or a full microscope objective model.
-L3.2 is labeled as a virtual camera, MTF, SNR, sampling, sweep, and report layer over L3 outputs, not additional
-diffraction physics or calibrated hardware prediction.
-L3.3 adds a partial-coherence scalar brightfield approximation by averaging detector intensities from deterministic
-source-angle sub-solves. It is not vector optics, fluorescence, true 3D physics, EM, or certified microscope
-metrology.
-L3.4 begins the measured-data bridge: browser-side PNG/JPEG import, DOM-free core image metadata, calibration
-metadata, and ROI definitions. L3.4B turns that bridge into a measured-vs-simulated workbench with ROI metrics,
-residual maps, deterministic grid-search fitting, and comparison report export. It is not certified ISO 12233,
-EMVA 1288, clinical, or hardware calibration.
-L4 Phase 0 starts the Maxwell-first lane with a DOM-free frequency-domain planar multilayer transfer-matrix
-special case for film stacks. It computes complex-amplitude reflection/transmission, R/T/A Poynting-style flux
-ratios, effective permittivity, energy-balance checks, warnings, and deterministic hashes. It is not a general 3D
-Maxwell solver, FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, or
-sensor-stack simulator.
+## Current Visible Mode
 
-## Current Modes
-
-- `L0 Geometric Ray Optics`: thin-lens paraxial approximation, aperture clipping, detector histograms.
-- `L1 2D Surface Ray Optics`: biconvex thick lens surfaces, vector Snell refraction, lensmaker EFL/BFL readouts,
-  geometric detector spot size, and spherical-aberration diagnostics.
-- `L2 Scalar 1D Wave Profile`: coherent monochromatic angular-spectrum propagation through a rectangular slit,
-  detector intensity profile, sampling warnings, energy accounting, and CSV/JSON field export.
-- `L2.5 Sample/Image Plane v0`: analytic 1D sample planes for single slit, double slit, amplitude grating,
-  phase step, and bar-target presets. These are labeled as coherent 1D transverse slices, not full microscope
-  images, full PSFs, or Airy disk simulations.
-- `L3 Coherent 2D Scalar Image Approximation`: worker-backed plane-wave source, 2D angular-spectrum propagation,
-  thin-lens scalar phase, circular pupil, detector/image-plane intensity map, energy stages, sampling warnings,
-  image analysis metrics, display controls, cache/performance telemetry, cancellation, and CSV/JSON/PNG export.
-- `L3.2 Instrument Performance Workbench v0`: virtual camera pixel sampling, deterministic shot/read/dark noise,
-  SNR and saturation estimates, PSF/OTF/MTF metrics, Nyquist/target-contrast warnings, deterministic sweeps, and
-  JSON/Markdown/HTML engineering report export.
-- `L3.3 Brightfield Partial-Coherence Workbench v0`: uniform-disk and annular source-angle sampling, brightfield
-  target presets, detector-intensity averaging over coherent L3 sub-solves, target contrast/SFR-style readouts,
-  source-NA sweep metadata, and report export with illumination/target provenance.
-- `L3.4B Measured-vs-Simulated Workbench v0`: PNG/JPEG measured-image import, grayscale typed-array hashing,
-  calibration metadata, ROI definitions, line-pair/slanted-edge/PSF/flat/dark ROI metrics, residual maps,
-  deterministic grid-search fitting, and JSON/Markdown/HTML comparison report export.
 - `L4 Maxwell Phase 0 Planar TMM`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
   constant complex material samples, film-stack R/T/A, Poynting-style energy accounting, JSON/Markdown export, and
   strict limitations against arbitrary 3D EM claims.

@@ -797,6 +797,46 @@ h2 {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+.maxwell-only-shell {
+  grid-template-rows: 64px minmax(0, 1fr);
+}
+
+.maxwell-only-topbar {
+  grid-template-columns: minmax(180px, 1fr) minmax(0, auto);
+}
+
+.maxwell-only-workspace {
+  min-height: 0;
+  overflow: auto;
+  background: #e3e8ef;
+  padding: 18px;
+}
+
+.maxwell-only-main {
+  width: min(920px, 100%);
+  margin: 0 auto;
+}
+
+.maxwell-only-main .maxwell-panel {
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.maxwell-only-main .field-row {
+  grid-template-columns: 150px minmax(0, 1fr);
+}
+
+.maxwell-only-main .profile-meta {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.maxwell-only-main .maxwell-flux-row {
+  grid-template-columns: 24px minmax(0, 1fr) 84px;
+}
+
 @media (max-width: 1040px) {
   .topbar {
     grid-template-columns: 1fr auto;
@@ -821,6 +861,14 @@ h2 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     height: auto;
   }
+
+  .maxwell-only-topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .maxwell-only-main .profile-meta {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
@@ -833,6 +881,10 @@ h2 {
   .topbar,
   .workspace {
     display: block;
+  }
+
+  .maxwell-only-topbar {
+    display: grid;
   }
 
   .top-actions {
@@ -850,5 +902,17 @@ h2 {
 
   .readout-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .maxwell-only-workspace {
+    padding: 12px;
+  }
+
+  .maxwell-only-main .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .maxwell-only-main .maxwell-flux-row {
+    grid-template-columns: 20px minmax(0, 1fr) 76px;
   }
 }

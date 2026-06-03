@@ -255,7 +255,36 @@ function downloadText(filename: string, mime: string, text: string): void {
   URL.revokeObjectURL(url);
 }
 
+function MaxwellOnlyApp() {
+  return (
+    <div className="app-shell maxwell-only-shell">
+      <header className="topbar maxwell-only-topbar">
+        <div className="brand-block">
+          <div className="brand-mark">EM</div>
+          <div>
+            <h1>EMMicro</h1>
+            <p>L4 Maxwell Phase 0</p>
+          </div>
+        </div>
+        <div className="mode-badge">
+          <Gauge size={16} />
+          <span>Planar Maxwell TMM</span>
+          <strong>frequency-domain multilayer special case</strong>
+        </div>
+      </header>
+
+      <main className="maxwell-only-workspace" aria-label="Maxwell simulator">
+        <div className="maxwell-only-main">
+          <MaxwellPanel />
+        </div>
+      </main>
+    </div>
+  );
+}
+
 export function App() {
+  return <MaxwellOnlyApp />;
+
   const [scene, setScene] = useState<Scene>(() => sampleL1Scene);
   const [selected, setSelected] = useState<SelectedItem>({ kind: "element", id: "lens-thick-biconvex" });
   const [l2Result, setL2Result] = useState<SolverResult | null>(null);
@@ -319,8 +348,8 @@ export function App() {
     [activeL3Field, activeTestTarget]
   );
   const activeMeasuredImage = scene.measuredImages2D[0];
-  const activeMeasuredPixels = activeMeasuredImage ? measuredPixelsById[activeMeasuredImage.id] : undefined;
-  const activeMeasurementRois = activeMeasuredImage ? scene.measurementRois2D.filter((roi) => roi.imageId === activeMeasuredImage.id) : [];
+  const activeMeasuredPixels = activeMeasuredImage === undefined ? undefined : measuredPixelsById[activeMeasuredImage!.id];
+  const activeMeasurementRois = activeMeasuredImage === undefined ? [] : scene.measurementRois2D.filter((roi) => roi.imageId === activeMeasuredImage!.id);
   const l34bReport = useMemo<ComparisonReport2D | null>(
     () => (l34bComparison ? createComparisonReport2D({ scene, comparison: l34bComparison, fit: l34bFit }) : null),
     [l34bComparison, l34bFit, scene]
@@ -366,10 +395,10 @@ export function App() {
   const primaryLensmaker = result.readouts.lensmaker?.[0];
   const primaryAberration = result.readouts.aberration?.[0];
   const primaryThickLens = scene.elements.find((element) => element.type === "thickLens2D");
-  const l1FocusXM =
-    primaryThickLens?.type === "thickLens2D" && primaryLensmaker
-      ? primaryThickLens.xM + primaryThickLens.thicknessM + primaryLensmaker.backFocalLengthM
-      : null;
+  const l1FocusXM = (() => {
+    if (primaryThickLens?.type !== "thickLens2D" || primaryLensmaker === undefined) return null;
+    return primaryThickLens!.xM + primaryThickLens!.thicknessM + primaryLensmaker!.backFocalLengthM;
+  })();
   const modeDisclosure = solverDisclosureFor(scene.solverSettings.activeSolverId, scene.samplePlanes1D.length > 0);
 
   function updateScene(updater: (current: Scene) => Scene): void {

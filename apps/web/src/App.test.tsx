@@ -65,4 +65,15 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("runPlanarTmm");
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA/i);
   });
+
+  it("keeps the visible app shell Maxwell-only", () => {
+    const app = readFileSync(resolve(testDir, "App.tsx"), "utf8");
+    const maxwellReturn = app.indexOf("return <MaxwellOnlyApp />;");
+    const legacyWorkspace = app.indexOf('<main className="workspace">');
+
+    expect(app).toContain('aria-label="Maxwell simulator"');
+    expect(app).toContain("Planar Maxwell TMM");
+    expect(maxwellReturn).toBeGreaterThan(0);
+    expect(maxwellReturn).toBeLessThan(legacyWorkspace);
+  });
 });
