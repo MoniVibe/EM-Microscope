@@ -505,6 +505,7 @@ h2 {
 .maxwell-layer-editor,
 .maxwell-monitor-card,
 .maxwell-foundry-card,
+.maxwell-yield-card,
 .maxwell-sweep-card {
   display: grid;
   gap: 10px;
@@ -603,17 +604,26 @@ h2 {
   gap: 6px;
 }
 
-.maxwell-foundry-card .compact-stat {
+.maxwell-yield-requirements {
+  display: grid;
+  gap: 6px;
+}
+
+.maxwell-foundry-card .compact-stat,
+.maxwell-yield-card .compact-stat {
   min-width: 0;
 }
 
 .maxwell-foundry-card .compact-stat span,
-.maxwell-foundry-card .compact-stat strong {
+.maxwell-foundry-card .compact-stat strong,
+.maxwell-yield-card .compact-stat span,
+.maxwell-yield-card .compact-stat strong {
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.maxwell-foundry-card .compact-stat strong {
+.maxwell-foundry-card .compact-stat strong,
+.maxwell-yield-card .compact-stat strong {
   text-align: right;
 }
 

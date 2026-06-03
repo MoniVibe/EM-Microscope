@@ -3,17 +3,19 @@ import {
   listL4SpectralMaterials,
   runCoatingStack,
   runCoatingDesignFoundry,
+  runCoatingYieldAnalysis,
   runCoatingSweep,
   visibleArObjective,
   type CoatingDesignResult,
   type CoatingStackDefinition,
   type CoatingStackRunResult,
   type CoatingSweepResult,
+  type CoatingYieldResult,
   type MaxwellPolarization,
   type PlanarFieldMonitorResult,
   type SolverWarning
 } from "@emmicro/core";
-import { FileDown, Plus, Save, Sparkles, Trash2 } from "lucide-react";
+import { FileDown, Plus, Save, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
 
 type StackPresetId = "bareGlass" | "quarterWaveAr" | "broadbandAr" | "absorbingFilm";
 
@@ -132,7 +134,19 @@ export function MaxwellPanel() {
       }),
     [presetId, stack]
   );
-  const warnings = useMemo(() => uniquePanelWarnings([...foundry.warnings, ...run.warnings]), [foundry, run]);
+  const yieldAnalysis = useMemo<CoatingYieldResult>(
+    () =>
+      runCoatingYieldAnalysis({
+        id: `l52-${presetId}-visible-ar-yield`,
+        label: `L5.2 ${stackPresets[presetId].label} tolerance yield`,
+        stack: foundry.best.stack,
+        objective: visibleArObjective,
+        tolerances: foundry.best.stack.layers.map((layer) => ({ layerId: layer.id, sigmaM: 2e-9 })),
+        settings: { sampleCount: 41, confidenceLevel: 0.95 }
+      }),
+    [foundry, presetId]
+  );
+  const warnings = useMemo(() => uniquePanelWarnings([...yieldAnalysis.warnings, ...foundry.warnings, ...run.warnings]), [foundry, run, yieldAnalysis]);
 
   function selectPreset(nextPresetId: StackPresetId): void {
     const preset = stackPresets[nextPresetId];
@@ -180,10 +194,10 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L5.1 Maxwell Design Foundry">
-      <h2>L5.1 Maxwell Design Foundry</h2>
+    <section className="wave-panel maxwell-panel" aria-label="L5.2 Maxwell Design Foundry">
+      <h2>L5.2 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM plus certified design objective search</strong>
+        <strong>frequency-domain Maxwell planar coating-stack TMM plus certified design and yield analysis</strong>
         <span>not a general 3D Maxwell solver</span>
       </div>
 
@@ -282,11 +296,11 @@ export function MaxwellPanel() {
       </div>
 
       <div className="wave-actions">
-        <button type="button" onClick={() => exportStackJson(run, sweep, foundry)}>
+        <button type="button" onClick={() => exportStackJson(run, sweep, foundry, yieldAnalysis)}>
           <Save size={17} />
           <span>JSON</span>
         </button>
-        <button type="button" onClick={() => exportStackSummary(run, sweep, foundry)}>
+        <button type="button" onClick={() => exportStackSummary(run, sweep, foundry, yieldAnalysis)}>
           <FileDown size={17} />
           <span>Summary</span>
         </button>
@@ -416,6 +430,61 @@ export function MaxwellPanel() {
         </div>
       </div>
 
+      <div className="maxwell-yield-card">
+        <div className="maxwell-section-heading">
+          <h2>Tolerance Yield</h2>
+          <strong>{yieldAnalysis.resultHash.slice(0, 10)}</strong>
+        </div>
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>Pass rate</span>
+            <strong>{formatPercent(yieldAnalysis.passRate)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>95% CI</span>
+            <strong>{formatInterval(yieldAnalysis.confidenceInterval.lower, yieldAnalysis.confidenceInterval.upper)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Samples</span>
+            <strong>{yieldAnalysis.samples.length}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Worst score</span>
+            <strong>{yieldAnalysis.worstSample.score.toExponential(2)}</strong>
+          </div>
+        </div>
+        <div className="maxwell-yield-requirements">
+          {yieldAnalysis.requirements.map((requirement) => (
+            <div className="compact-stat" key={requirement.requirement.id}>
+              <span>{requirement.requirement.label}</span>
+              <strong>
+                {formatPercent(requirement.passRate)} pass / worst {formatMetric(requirement.requirement.metric, requirement.worstValue)}
+              </strong>
+            </div>
+          ))}
+        </div>
+        {yieldAnalysis.sensitivities.length > 0 ? (
+          <div className="maxwell-yield-requirements">
+            {yieldAnalysis.sensitivities.slice(0, 3).map((sensitivity) => (
+              <div className="compact-stat" key={sensitivity.layerId}>
+                <span>
+                  #{sensitivity.rank} {sensitivity.label}
+                </span>
+                <strong>{sensitivity.impactScore.toExponential(2)} score impact</strong>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">No coating tolerance sensitivities for a bare boundary.</div>
+        )}
+        <div className="maxwell-layer-actions">
+          <button type="button" onClick={() => exportYieldJson(yieldAnalysis)}>
+            <ShieldCheck size={15} />
+            <span>Yield JSON</span>
+          </button>
+        </div>
+      </div>
+
       <div className="maxwell-sweep-card">
         <div className="maxwell-section-heading">
           <h2>Wavelength Sweep</h2>
@@ -454,6 +523,9 @@ export function MaxwellPanel() {
       <div className="maxwell-stack">
         <h2>Limitations</h2>
         <ul>
+          {yieldAnalysis.provenance.limitations.map((limitation) => (
+            <li key={limitation}>{limitation}</li>
+          ))}
           {foundry.provenance.limitations.map((limitation) => (
             <li key={limitation}>{limitation}</li>
           ))}
@@ -582,13 +654,13 @@ function FieldMonitorPlot({ monitor }: { monitor: PlanarFieldMonitorResult }) {
   );
 }
 
-function exportStackJson(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult): void {
-  downloadText("l51-coating-design-foundry-stack.json", "application/json", JSON.stringify({ run, sweep, foundry }, null, 2));
+function exportStackJson(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult, yieldAnalysis: CoatingYieldResult): void {
+  downloadText("l52-coating-design-yield-stack.json", "application/json", JSON.stringify({ run, sweep, foundry, yieldAnalysis }, null, 2));
 }
 
-function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult): void {
+function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult, yieldAnalysis: CoatingYieldResult): void {
   downloadText(
-    "l51-coating-design-foundry-stack.md",
+    "l52-coating-design-yield-stack.md",
     "text/markdown",
     [
       `# ${run.label}`,
@@ -606,6 +678,7 @@ function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResul
       `Monitor hash: ${run.fieldMonitor.resultHash}`,
       `Sweep hash: ${sweep.resultHash}`,
       `Foundry hash: ${foundry.resultHash}`,
+      `Yield hash: ${yieldAnalysis.resultHash}`,
       "",
       "Planar field monitor:",
       `- Max |E|^2: ${run.fieldMonitor.maxElectricIntensity.toExponential(3)}`,
@@ -621,12 +694,24 @@ function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResul
       `- Certified run hash: ${foundry.best.certifiedRun.resultHash}`,
       ...foundry.best.stack.layers.map((layer) => `- ${layer.label}: ${(layer.thicknessM * 1e9).toFixed(3)} nm`),
       "",
+      "Tolerance yield:",
+      `- Pass rate: ${formatPercent(yieldAnalysis.passRate)}`,
+      `- 95% CI: ${formatInterval(yieldAnalysis.confidenceInterval.lower, yieldAnalysis.confidenceInterval.upper)}`,
+      `- Samples: ${yieldAnalysis.samples.length}`,
+      `- Worst score: ${yieldAnalysis.worstSample.score.toExponential(3)}`,
+      ...yieldAnalysis.requirements.map(
+        (requirement) =>
+          `- ${requirement.requirement.label}: ${formatPercent(requirement.passRate)} pass, worst ${formatMetric(requirement.requirement.metric, requirement.worstValue)}`
+      ),
+      ...yieldAnalysis.sensitivities.slice(0, 3).map((sensitivity) => `- sensitivity #${sensitivity.rank} ${sensitivity.label}: ${sensitivity.impactScore.toExponential(3)} score impact`),
+      "",
       "Sweep:",
       `- R min: ${formatPercent(sweep.reflectanceMin)}`,
       `- R max: ${formatPercent(sweep.reflectanceMax)}`,
       `- A max: ${formatPercent(sweep.absorbanceMax)}`,
       "",
       "Limitations:",
+      ...yieldAnalysis.provenance.limitations.map((limitation) => `- ${limitation}`),
       ...foundry.provenance.limitations.map((limitation) => `- ${limitation}`),
       ...run.provenance.limitations.map((limitation) => `- ${limitation}`)
     ].join("\n")
@@ -635,6 +720,10 @@ function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResul
 
 function exportFoundryJson(foundry: CoatingDesignResult): void {
   downloadText("l51-design-foundry.json", "application/json", JSON.stringify(foundry, null, 2));
+}
+
+function exportYieldJson(yieldAnalysis: CoatingYieldResult): void {
+  downloadText("l52-yield-analysis.json", "application/json", JSON.stringify(yieldAnalysis, null, 2));
 }
 
 function exportSweepCsv(sweep: CoatingSweepResult): void {
@@ -720,6 +809,17 @@ function degFromRad(value: number): number {
 
 function formatPercent(value: number): string {
   return `${(value * 100).toFixed(value < 0.001 ? 4 : 2)}%`;
+}
+
+function formatInterval(lower: number, upper: number): string {
+  return `${formatPercent(lower)}-${formatPercent(upper)}`;
+}
+
+function formatMetric(metric: string, value: number): string {
+  if (metric.toLowerCase().includes("reflectance") || metric.toLowerCase().includes("transmittance") || metric.toLowerCase().includes("absorbance")) {
+    return formatPercent(value);
+  }
+  return value.toExponential(2);
 }
 
 function formatNumberInputValue(value: number): string {

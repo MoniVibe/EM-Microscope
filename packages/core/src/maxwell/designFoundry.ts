@@ -93,7 +93,7 @@ export type CoatingDesignResult = {
   };
 };
 
-type EvaluatedStack = {
+export type CoatingDesignEvaluation = {
   score: number;
   stack: CoatingStackDefinition;
   metrics: CoatingDesignMetrics;
@@ -141,13 +141,13 @@ export function runCoatingDesignFoundry(problem: CoatingDesignProblem): CoatingD
     });
   }
 
-  const evaluationCache = new Map<string, EvaluatedStack>();
-  const allEvaluations = new Map<string, EvaluatedStack>();
-  const evaluate = (stack: CoatingStackDefinition): EvaluatedStack => {
+  const evaluationCache = new Map<string, CoatingDesignEvaluation>();
+  const allEvaluations = new Map<string, CoatingDesignEvaluation>();
+  const evaluate = (stack: CoatingStackDefinition): CoatingDesignEvaluation => {
     const key = stackKey(stack);
     const cached = evaluationCache.get(key);
     if (cached) return cached;
-    const evaluated = evaluateStack(stack, problem.objective);
+    const evaluated = evaluateCoatingDesignStack(stack, problem.objective);
     evaluationCache.set(key, evaluated);
     allEvaluations.set(key, evaluated);
     return evaluated;
@@ -218,7 +218,7 @@ export function runCoatingDesignFoundry(problem: CoatingDesignProblem): CoatingD
   };
 }
 
-function evaluateStack(stack: CoatingStackDefinition, objective: CoatingDesignObjective): EvaluatedStack {
+export function evaluateCoatingDesignStack(stack: CoatingStackDefinition, objective: CoatingDesignObjective): CoatingDesignEvaluation {
   const warnings: SolverWarning[] = [];
   const reflectance: number[] = [];
   const transmittance: number[] = [];
@@ -247,7 +247,7 @@ function evaluateStack(stack: CoatingStackDefinition, objective: CoatingDesignOb
     minAbsorbance: Math.min(...absorbance),
     maxEnergyBalanceError: Math.max(...energyBalanceError)
   };
-  const score = scoreMetrics(metrics, stack, objective);
+  const score = scoreCoatingDesignMetrics(metrics, stack, objective);
 
   return {
     score,
@@ -257,7 +257,7 @@ function evaluateStack(stack: CoatingStackDefinition, objective: CoatingDesignOb
   };
 }
 
-function scoreMetrics(metrics: CoatingDesignMetrics, stack: CoatingStackDefinition, objective: CoatingDesignObjective): number {
+export function scoreCoatingDesignMetrics(metrics: CoatingDesignMetrics, stack: CoatingStackDefinition, objective: CoatingDesignObjective): number {
   let score = constraintPenalty(stack, objective);
   for (const term of objective.terms) {
     const weight = term.weight ?? 1;
@@ -306,7 +306,7 @@ function constraintPenalty(stack: CoatingStackDefinition, objective: CoatingDesi
   return penalty;
 }
 
-function makeCandidate(evaluation: EvaluatedStack, rank: number, seedScore: number): CoatingDesignCandidate {
+function makeCandidate(evaluation: CoatingDesignEvaluation, rank: number, seedScore: number): CoatingDesignCandidate {
   const certifiedRun = runCoatingStack(evaluation.stack);
   const resultHash = fnv1a64(
     stableStringify({
