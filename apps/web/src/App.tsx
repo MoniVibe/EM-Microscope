@@ -6,13 +6,14 @@ import {
   fromMeters,
   fromRadians,
   geometricL0Solver,
-  parseSceneV1,
-  sampleScene,
+  geometricL1_2dSolver,
+  parseScene,
+  sampleL1Scene,
   toMeters,
   toRadians,
   type DetectorElement,
   type OpticalElement,
-  type SceneV1,
+  type Scene,
   type SourceElement
 } from "@emmicro/core";
 import {
@@ -46,7 +47,7 @@ function id(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function touch(scene: SceneV1): SceneV1 {
+function touch(scene: Scene): Scene {
   return {
     ...scene,
     metadata: {
@@ -56,7 +57,7 @@ function touch(scene: SceneV1): SceneV1 {
   };
 }
 
-function findSelected(scene: SceneV1, selected: SelectedItem): EditableItem | null {
+function findSelected(scene: Scene, selected: SelectedItem): EditableItem | null {
   if (!selected) return null;
   if (selected.kind === "source") {
     const item = scene.sources.find((source) => source.id === selected.id);
@@ -83,19 +84,29 @@ function downloadText(filename: string, mime: string, text: string): void {
 }
 
 export function App() {
-  const [scene, setScene] = useState<SceneV1>(() => sampleScene);
-  const [selected, setSelected] = useState<SelectedItem>({ kind: "element", id: "lens-objective" });
+  const [scene, setScene] = useState<Scene>(() => sampleL1Scene);
+  const [selected, setSelected] = useState<SelectedItem>({ kind: "element", id: "lens-thick-biconvex" });
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const result = useMemo(() => geometricL0Solver.run(scene), [scene]);
+  const result = useMemo(() => {
+    return scene.solverSettings.activeSolverId === "geometric.l1.2d"
+      ? geometricL1_2dSolver.run(scene, { solverId: "geometric.l1.2d" })
+      : geometricL0Solver.run(scene, { solverId: "geometric.l0" });
+  }, [scene]);
   const selectedItem = findSelected(scene, selected);
-  const primaryDetector = scene.detectors[0];
   const primaryHistogram = result.detectorHistograms?.[0];
   const primarySpot = result.readouts.spot?.[0];
   const primaryLens = result.readouts.thinLens?.[0];
   const primaryNA = result.readouts.numericalAperture?.[0];
+  const primaryLensmaker = result.readouts.lensmaker?.[0];
+  const primaryAberration = result.readouts.aberration?.[0];
+  const primaryThickLens = scene.elements.find((element) => element.type === "thickLens2D");
+  const l1FocusXM =
+    primaryThickLens?.type === "thickLens2D" && primaryLensmaker
+      ? primaryThickLens.xM + primaryThickLens.thicknessM + primaryLensmaker.backFocalLengthM
+      : null;
 
-  function updateScene(updater: (current: SceneV1) => SceneV1): void {
+  function updateScene(updater: (current: Scene) => Scene): void {
     setScene((current) => touch(updater(current)));
   }
 
@@ -108,9 +119,19 @@ export function App() {
         };
       }
       if (kind === "element") {
+        const elements = current.elements.map((element) => (element.id === itemId ? updater(element) : element));
+        const updated = elements.find((element) => element.id === itemId);
         return {
           ...current,
-          elements: current.elements.map((element) => (element.id === itemId ? updater(element) : element))
+          elements,
+          mediaCatalog:
+            updated?.type === "thickLens2D"
+              ? current.mediaCatalog.map((medium) =>
+                  medium.id === updated.mediumId
+                    ? { ...medium, refractiveIndex: { kind: "constant", n: updated.material.refractiveIndex } }
+                    : medium
+                )
+              : current.mediaCatalog
         };
       }
       return {
@@ -210,6 +231,44 @@ export function App() {
     setSelected({ kind: "detector", id: detector.id });
   }
 
+  function addThickLens(): void {
+    const mediumId = id("glass");
+    const lens: OpticalElement = {
+      id: id("thick-lens"),
+      type: "thickLens2D",
+      label: "Biconvex thick lens",
+      xM: 0.09,
+      yCenterM: 0,
+      thicknessM: 0.005,
+      radius1M: 0.05,
+      radius2M: -0.05,
+      apertureDiameterM: 0.018,
+      mediumId,
+      material: {
+        refractiveIndex: 1.5,
+        dispersionModel: "none"
+      },
+      approximation: "surfaceSnell2D"
+    };
+    updateScene((current) => ({
+      ...current,
+      mediaCatalog: [
+        ...current.mediaCatalog,
+        {
+          id: mediumId,
+          label: "Glass n=1.5",
+          refractiveIndex: {
+            kind: "constant",
+            n: 1.5
+          }
+        }
+      ],
+      elements: [...current.elements, lens],
+      solverSettings: { ...current.solverSettings, activeSolverId: "geometric.l1.2d" }
+    }));
+    setSelected({ kind: "element", id: lens.id });
+  }
+
   function deleteSelected(): void {
     if (!selected) return;
     updateScene((current) => {
@@ -232,7 +291,7 @@ export function App() {
 
   async function loadScene(file: File): Promise<void> {
     const text = await file.text();
-    const parsed = parseSceneV1(JSON.parse(text));
+    const parsed = parseScene(JSON.parse(text));
     setScene(parsed);
     setSelected(null);
   }
@@ -254,11 +313,11 @@ export function App() {
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>L0 Geometric Ray Optics</span>
-          <strong>No diffraction field propagation</strong>
+          <span>{scene.solverSettings.activeSolverId === "geometric.l1.2d" ? "L1 2D Surface Ray Optics" : "L0 Geometric Ray Optics"}</span>
+          <strong>Diffraction not propagated</strong>
         </div>
         <div className="top-actions">
-          <button className="icon-button" type="button" title="Reset sample scene" onClick={() => setScene(sampleScene)}>
+          <button className="icon-button" type="button" title="Reset L1 sample scene" onClick={() => setScene(sampleL1Scene)}>
             <RotateCcw size={17} />
           </button>
           <button className="icon-button" type="button" title="Save scene JSON" onClick={saveScene}>
@@ -300,6 +359,10 @@ export function App() {
               <Plus size={17} />
               <span>Lens</span>
             </button>
+            <button type="button" title="Add biconvex thick lens" onClick={addThickLens}>
+              <Plus size={17} />
+              <span>Thick lens</span>
+            </button>
             <button type="button" title="Add aperture stop" onClick={addAperture}>
               <Aperture size={17} />
               <span>Aperture</span>
@@ -328,11 +391,16 @@ export function App() {
         <section className="bench-region" aria-label="Optical bench">
           <BenchCanvas scene={scene} result={result} selected={selected} onSelect={setSelected} onMove={updatePosition} />
           <ReadoutStrip
-            focalXM={primaryLens?.focalPlaneXM ?? null}
+            solverId={scene.solverSettings.activeSolverId}
+            focalXM={scene.solverSettings.activeSolverId === "geometric.l1.2d" ? l1FocusXM : primaryLens?.focalPlaneXM ?? null}
             magnification={primaryLens?.magnification ?? null}
             na={primaryNA?.numericalAperture ?? null}
             airyM={primaryNA?.airyRadiusM ?? null}
             spotM={primarySpot?.rmsRadiusM ?? null}
+            effectiveFocalLengthM={primaryLensmaker?.effectiveFocalLengthM ?? null}
+            backFocalLengthM={primaryLensmaker?.backFocalLengthM ?? null}
+            aberrationM={primaryAberration?.longitudinalSphericalAberrationM ?? null}
+            tirCount={primaryAberration?.tirCount ?? 0}
             detectorPowerW={primaryHistogram?.totalPowerW ?? 0}
             rayCount={primaryHistogram?.rayCount ?? 0}
           />
@@ -350,9 +418,10 @@ export function App() {
           <section className="readout-panel">
             <h2>Provenance</h2>
             <ul>
-              <li>Ray paths: simulated L0 geometric</li>
+              <li>Ray paths: simulated {scene.solverSettings.activeSolverId === "geometric.l1.2d" ? "L1 2D surface" : "L0 geometric"}</li>
               <li>Thin-lens image: analytic paraxial estimate</li>
-              <li>NA/Airy: analytic lower-bound estimate</li>
+              <li>Thick-lens EFL/BFL: analytic paraxial estimate</li>
+              <li>NA/Airy: analytic lower-bound estimate only</li>
               <li>Spot size: geometric detector RMS</li>
             </ul>
           </section>
@@ -366,12 +435,30 @@ function SceneControls({
   scene,
   updateScene
 }: {
-  scene: SceneV1;
-  updateScene: (updater: (current: SceneV1) => SceneV1) => void;
+  scene: Scene;
+  updateScene: (updater: (current: Scene) => Scene) => void;
 }) {
   return (
     <div className="rail-section">
       <h2>Bench</h2>
+      <label className="field-row">
+        <span>Solver</span>
+        <select
+          value={scene.solverSettings.activeSolverId}
+          onChange={(event) =>
+            updateScene((current) => ({
+              ...current,
+              solverSettings: {
+                ...current.solverSettings,
+                activeSolverId: event.currentTarget.value === "geometric.l1.2d" ? "geometric.l1.2d" : "geometric.l0"
+              }
+            }))
+          }
+        >
+          <option value="geometric.l1.2d">L1 surface optics</option>
+          <option value="geometric.l0">L0 thin lens</option>
+        </select>
+      </label>
       <NumberField
         label="Wavelength"
         value={fromMeters(scene.environment.defaultWavelengthM, "nm")}
@@ -473,6 +560,17 @@ function ElementProperties({
         </>
       )}
 
+      {item.type === "thickLens2D" && (
+        <>
+          <NumberField label="center y" value={fromMeters(item.yCenterM, "mm")} unit="mm" step={0.25} onChange={(value) => update((current) => ({ ...current, yCenterM: toMeters(value, "mm") }))} />
+          <NumberField label="R1" value={fromMeters(item.radius1M, "mm")} unit="mm" step={1} onChange={(value) => update((current) => ({ ...current, radius1M: toMeters(value, "mm") || 1e-6 }))} />
+          <NumberField label="R2" value={fromMeters(item.radius2M, "mm")} unit="mm" step={1} onChange={(value) => update((current) => ({ ...current, radius2M: toMeters(value, "mm") || -1e-6 }))} />
+          <NumberField label="Thickness" value={fromMeters(item.thicknessM, "mm")} unit="mm" min={0.1} step={0.25} onChange={(value) => update((current) => ({ ...current, thicknessM: toMeters(value, "mm") }))} />
+          <NumberField label="Aperture" value={fromMeters(item.apertureDiameterM, "mm")} unit="mm" min={0.1} step={0.25} onChange={(value) => update((current) => ({ ...current, apertureDiameterM: toMeters(value, "mm") }))} />
+          <NumberField label="Material n" value={item.material.refractiveIndex} min={1} max={3} step={0.01} onChange={(value) => update((current) => ({ ...current, material: { ...current.material, refractiveIndex: value } }))} />
+        </>
+      )}
+
       {item.type === "aperture" && (
         <>
           <NumberField label="center y" value={fromMeters(item.yCenterM, "mm")} unit="mm" step={0.25} onChange={(value) => update((current) => ({ ...current, yCenterM: toMeters(value, "mm") }))} />
@@ -502,22 +600,45 @@ function SourceSharedFields({ source, update }: { source: SourceElement; update:
 }
 
 function ReadoutStrip({
+  solverId,
   focalXM,
   magnification,
   na,
   airyM,
   spotM,
+  effectiveFocalLengthM,
+  backFocalLengthM,
+  aberrationM,
+  tirCount,
   detectorPowerW,
   rayCount
 }: {
+  solverId: Scene["solverSettings"]["activeSolverId"];
   focalXM: number | null;
   magnification: number | null;
   na: number | null;
   airyM: number | null;
   spotM: number | null;
+  effectiveFocalLengthM: number | null;
+  backFocalLengthM: number | null;
+  aberrationM: number | null;
+  tirCount: number;
   detectorPowerW: number;
   rayCount: number;
 }) {
+  if (solverId === "geometric.l1.2d") {
+    return (
+      <div className="readout-strip">
+        <Readout label="L1 focus x" value={focalXM === null ? "n/a" : formatLength(focalXM, "mm")} source="analytic" />
+        <Readout label="EFL" value={effectiveFocalLengthM === null ? "n/a" : formatLength(effectiveFocalLengthM, "mm")} source="paraxial" />
+        <Readout label="BFL" value={backFocalLengthM === null ? "n/a" : formatLength(backFocalLengthM, "mm")} source="paraxial" />
+        <Readout label="RMS spot" value={spotM === null ? "n/a" : formatLength(spotM, "um")} source="L1 ray" />
+        <Readout label="LSA" value={aberrationM === null ? "n/a" : formatLength(aberrationM, "um")} source={`TIR ${tirCount}`} />
+        <Readout label="Detector" value={`${rayCount} rays / ${formatPower(detectorPowerW)}`} source="simulated" />
+      </div>
+    );
+  }
+
   return (
     <div className="readout-strip">
       <Readout label="Focus x" value={focalXM === null ? "n/a" : formatLength(focalXM, "mm")} source="analytic" />

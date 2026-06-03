@@ -3,10 +3,12 @@ import type { RayPath } from "../optics/ray";
 import type { NAReadout } from "../readouts/numericalAperture";
 import type { SpotReadout } from "../readouts/spotSize";
 import type { ThinLensReadout } from "../readouts/thinLens";
-import type { SceneV1 } from "../scene/schema";
+import type { LensmakerReadout } from "../optics/assemblies/thickLens2d";
+import type { Scene } from "../scene/schema";
 
 export type SolverId =
   | "geometric.l0"
+  | "geometric.l1.2d"
   | "geometric.surfaces.l1"
   | "scalar.angularSpectrum.l2"
   | "hybrid.microscope.l3"
@@ -31,7 +33,18 @@ export type EnergyReadout = {
   survivingPowerW: number;
   clippedPowerW: number;
   detectorPowerW: number;
-  provenance: "L0 ray power accounting";
+  provenance: "L0 ray power accounting" | "L1 ray power accounting";
+};
+
+export type AberrationReadout = {
+  elementId: string;
+  paraxialFocusXM: number | null;
+  marginalFocusXM: number | null;
+  longitudinalSphericalAberrationM: number | null;
+  tirCount: number;
+  reflectedCount: number;
+  clippedCount: number;
+  provenance: "simulated.geometric.l1.2d";
 };
 
 export type SolverResult = {
@@ -49,6 +62,8 @@ export type SolverResult = {
     numericalAperture?: NAReadout[];
     spot?: SpotReadout[];
     energy?: EnergyReadout;
+    lensmaker?: LensmakerReadout[];
+    aberration?: AberrationReadout[];
   };
 };
 
@@ -57,6 +72,6 @@ export interface Solver {
   label: string;
   level: "L0" | "L1" | "L2" | "L3" | "L4";
   capabilities: string[];
-  validateScene(scene: SceneV1): SolverWarning[];
-  run(scene: SceneV1, request?: Partial<SolverRequest>): SolverResult;
+  validateScene(scene: Scene): SolverWarning[];
+  run(scene: Scene, request?: Partial<SolverRequest>): SolverResult;
 }

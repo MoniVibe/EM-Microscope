@@ -1,4 +1,4 @@
-import type { SceneV1, ThinLensElement } from "../scene/schema";
+import type { Scene, ThinLensElement } from "../scene/schema";
 
 export type ThinLensReadout = {
   lensId: string;
@@ -11,7 +11,7 @@ export type ThinLensReadout = {
   warnings: string[];
 };
 
-export function computeThinLensReadouts(scene: SceneV1): ThinLensReadout[] {
+export function computeThinLensReadouts(scene: Scene): ThinLensReadout[] {
   const firstSource = scene.sources[0];
   if (!firstSource) return [];
 
@@ -20,7 +20,7 @@ export function computeThinLensReadouts(scene: SceneV1): ThinLensReadout[] {
     .map((lens) => computeThinLensReadout(lens, sourceXM(firstSource)));
 }
 
-function sourceXM(source: SceneV1["sources"][number]): number {
+function sourceXM(source: Scene["sources"][number]): number {
   return source.xM;
 }
 

@@ -30,7 +30,7 @@ export function formatLength(valueM: number, preferred: DisplayLengthUnit): stri
   if (abs > 0 && abs < 0.001) {
     return `<0.001 ${preferred}`;
   }
-  const digits = abs >= 100 ? 2 : abs >= 10 ? 3 : 4;
+  const digits = 4;
   return `${Number(value.toPrecision(digits))} ${preferred}`;
 }
 

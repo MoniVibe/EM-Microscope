@@ -18,7 +18,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -300,7 +301,8 @@ h2 {
   color: #536175;
 }
 
-.field-row input {
+.field-row input,
+.field-row select {
   width: 100%;
   min-width: 0;
   height: 32px;

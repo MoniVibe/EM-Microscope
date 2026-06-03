@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
-import type { RayPath, SceneV1, SolverResult } from "@emmicro/core";
+import type { OpticalElement, RayPath, Scene, SolverResult } from "@emmicro/core";
 import type { SelectedItem } from "../App";
 
 type BenchCanvasProps = {
-  scene: SceneV1;
+  scene: Scene;
   result: SolverResult;
   selected: SelectedItem;
   onSelect: (selected: SelectedItem) => void;
@@ -117,7 +117,7 @@ export function BenchCanvas({ scene, result, selected, onSelect, onMove }: Bench
 
     for (const element of scene.elements) {
       const center = transform.toPx(element.xM, element.yCenterM);
-      const halfHeightM = element.type === "thinLens" ? element.clearApertureM / 2 : element.diameterM / 2;
+      const halfHeightM = elementHalfHeightM(element);
       const top = transform.toPx(element.xM, element.yCenterM + halfHeightM);
       const bottom = transform.toPx(element.xM, element.yCenterM - halfHeightM);
       const yMin = Math.min(top.y, bottom.y) - 12;
@@ -176,7 +176,7 @@ export function BenchCanvas({ scene, result, selected, onSelect, onMove }: Bench
 
 function drawBench(
   ctx: CanvasRenderingContext2D,
-  scene: SceneV1,
+  scene: Scene,
   rays: RayPath[],
   selected: SelectedItem,
   viewport: Viewport,
@@ -248,7 +248,7 @@ function drawBench(
       ctx.arc(top.x, top.y, 4, 0, Math.PI * 2);
       ctx.arc(bottom.x, bottom.y, 4, 0, Math.PI * 2);
       ctx.fill();
-    } else {
+    } else if (element.type === "aperture") {
       const top = toPx(element.xM, scene.bench.yMaxM);
       const bottom = toPx(element.xM, scene.bench.yMinM);
       const gapTop = toPx(element.xM, element.yCenterM + element.diameterM / 2);
@@ -261,6 +261,8 @@ function drawBench(
       ctx.moveTo(gapBottom.x, gapBottom.y);
       ctx.lineTo(bottom.x, bottom.y);
       ctx.stroke();
+    } else {
+      drawThickLens(ctx, element, active, toPx);
     }
   }
 
@@ -281,7 +283,7 @@ function drawBench(
 
 function drawGrid(
   ctx: CanvasRenderingContext2D,
-  scene: SceneV1,
+  scene: Scene,
   viewport: Viewport,
   toPx: (xM: number, yM: number) => { x: number; y: number }
 ) {
@@ -307,7 +309,7 @@ function drawGrid(
 
 function drawAxes(
   ctx: CanvasRenderingContext2D,
-  scene: SceneV1,
+  scene: Scene,
   viewport: Viewport,
   toPx: (xM: number, yM: number) => { x: number; y: number }
 ) {
@@ -333,6 +335,64 @@ function drawRay(ctx: CanvasRenderingContext2D, ray: RayPath, toPx: (xM: number,
     ctx.lineTo(b.x, b.y);
   }
   ctx.stroke();
+}
+
+function elementHalfHeightM(element: OpticalElement): number {
+  if (element.type === "thinLens") return element.clearApertureM / 2;
+  if (element.type === "aperture") return element.diameterM / 2;
+  return element.apertureDiameterM / 2;
+}
+
+function drawThickLens(
+  ctx: CanvasRenderingContext2D,
+  element: Extract<OpticalElement, { type: "thickLens2D" }>,
+  active: boolean,
+  toPx: (xM: number, yM: number) => { x: number; y: number }
+) {
+  const halfAperture = element.apertureDiameterM / 2;
+  const front = sampleCircularSurface(element.xM, element.yCenterM, element.radius1M, halfAperture, 26);
+  const back = sampleCircularSurface(element.xM + element.thicknessM, element.yCenterM, element.radius2M, halfAperture, 26);
+
+  ctx.fillStyle = active ? "rgba(20, 130, 150, 0.16)" : "rgba(34, 150, 165, 0.12)";
+  ctx.strokeStyle = active ? "#0b6d77" : "#198c96";
+  ctx.lineWidth = active ? 3 : 2;
+
+  ctx.beginPath();
+  for (const [index, point] of front.entries()) {
+    const p = toPx(point.x, point.y);
+    if (index === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  }
+  for (const point of [...back].reverse()) {
+    const p = toPx(point.x, point.y);
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  const topFront = toPx(front[0]?.x ?? element.xM, front[0]?.y ?? element.yCenterM + halfAperture);
+  const bottomFront = toPx(front[front.length - 1]?.x ?? element.xM, front[front.length - 1]?.y ?? element.yCenterM - halfAperture);
+  ctx.fillStyle = ctx.strokeStyle;
+  ctx.beginPath();
+  ctx.arc(topFront.x, topFront.y, 3.5, 0, Math.PI * 2);
+  ctx.arc(bottomFront.x, bottomFront.y, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function sampleCircularSurface(vertexXM: number, centerYM: number, radiusM: number, apertureRadiusM: number, steps: number) {
+  const centerXM = vertexXM + radiusM;
+  const sign = Math.sign(radiusM) || 1;
+  const radiusAbs = Math.abs(radiusM);
+  const points: Array<{ x: number; y: number }> = [];
+  for (let i = 0; i < steps; i += 1) {
+    const t = i / (steps - 1);
+    const y = centerYM + apertureRadiusM - 2 * apertureRadiusM * t;
+    const yRel = y - centerYM;
+    const x = centerXM - sign * Math.sqrt(Math.max(0, radiusAbs * radiusAbs - yRel * yRel));
+    points.push({ x, y });
+  }
+  return points;
 }
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {

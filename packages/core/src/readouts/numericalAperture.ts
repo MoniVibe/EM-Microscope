@@ -1,4 +1,4 @@
-import type { SceneV1, ThinLensElement } from "../scene/schema";
+import type { Scene, ThinLensElement } from "../scene/schema";
 
 export type NAReadout = {
   lensId: string;
@@ -8,7 +8,7 @@ export type NAReadout = {
   provenance: "analytic paraxial estimate";
 };
 
-export function computeNAReadouts(scene: SceneV1): NAReadout[] {
+export function computeNAReadouts(scene: Scene): NAReadout[] {
   return scene.elements
     .filter((element): element is ThinLensElement => element.type === "thinLens")
     .map((lens) => computeNAReadout(lens, scene.environment.ambientRefractiveIndex, scene.environment.defaultWavelengthM));

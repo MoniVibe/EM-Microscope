@@ -1,8 +1,8 @@
 import { seededJitterCentered } from "../math/rng";
-import type { SceneV1, SourceElement } from "../scene/schema";
+import type { Scene, SourceElement } from "../scene/schema";
 import type { Ray } from "./ray";
 
-export function generateSourceRays(scene: SceneV1): Ray[] {
+export function generateSourceRays(scene: Scene): Ray[] {
   const rays: Ray[] = [];
   for (const source of scene.sources) {
     rays.push(...generateRaysForSource(source, scene.seed, scene.solverSettings.sampling));
@@ -13,7 +13,7 @@ export function generateSourceRays(scene: SceneV1): Ray[] {
 export function generateRaysForSource(
   source: SourceElement,
   seed: number,
-  sampling: SceneV1["solverSettings"]["sampling"]
+  sampling: Scene["solverSettings"]["sampling"]
 ): Ray[] {
   if (source.type === "pointSource") {
     return generatePointSourceRays(source, seed, sampling);
@@ -29,7 +29,7 @@ function fraction(index: number, count: number): number {
 function generatePointSourceRays(
   source: Extract<SourceElement, { type: "pointSource" }>,
   seed: number,
-  sampling: SceneV1["solverSettings"]["sampling"]
+  sampling: Scene["solverSettings"]["sampling"]
 ): Ray[] {
   const count = source.rayCount;
   const powerPerRay = source.powerW / count;
@@ -56,7 +56,7 @@ function generatePointSourceRays(
 function generateCollimatedSourceRays(
   source: Extract<SourceElement, { type: "collimatedSource" }>,
   seed: number,
-  sampling: SceneV1["solverSettings"]["sampling"]
+  sampling: Scene["solverSettings"]["sampling"]
 ): Ray[] {
   const count = source.rayCount;
   const powerPerRay = source.powerW / count;

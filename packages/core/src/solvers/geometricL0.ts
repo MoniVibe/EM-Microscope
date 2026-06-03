@@ -7,7 +7,7 @@ import { computeNAReadouts } from "../readouts/numericalAperture";
 import { computeSpotReadouts } from "../readouts/spotSize";
 import { computeThinLensReadouts } from "../readouts/thinLens";
 import { hashScene, stableStringify, fnv1a64 } from "../scene/hashScene";
-import { parseSceneV1, type DetectorElement, type OpticalElement, type SceneV1 } from "../scene/schema";
+import { parseScene, type DetectorElement, type OpticalElement, type Scene } from "../scene/schema";
 import type { Solver, SolverRequest, SolverResult, SolverWarning } from "./Solver";
 
 type Interaction =
@@ -41,7 +41,7 @@ export const geometricL0Solver: Solver = {
     return warnings;
   },
   run(sceneInput, request = {}) {
-    const scene = parseSceneV1(sceneInput);
+    const scene = parseScene(sceneInput);
     const solverRequest: SolverRequest = {
       solverId: "geometric.l0",
       outputs: ["rays", "detectorHits", "detectorHistogram", "readouts"],
@@ -97,7 +97,7 @@ export const geometricL0Solver: Solver = {
   }
 };
 
-function orderedInteractions(scene: SceneV1): Interaction[] {
+function orderedInteractions(scene: Scene): Interaction[] {
   return [
     ...scene.elements.map((item) => ({ kind: "element" as const, xM: item.xM, item })),
     ...scene.detectors.map((item) => ({ kind: "detector" as const, xM: item.xM, item }))
