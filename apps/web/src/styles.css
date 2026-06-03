@@ -515,6 +515,75 @@ h2 {
   background: #0b7788;
 }
 
+.residual-card {
+  display: grid;
+  gap: 6px;
+}
+
+.residual-card canvas {
+  width: 100%;
+  max-height: 150px;
+  image-rendering: pixelated;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #101827;
+}
+
+.metric-table-wrap {
+  overflow-x: auto;
+}
+
+.metric-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-table th,
+.metric-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.metric-table th:first-child,
+.metric-table td:first-child {
+  text-align: left;
+}
+
+.cross-section-plot {
+  display: grid;
+  gap: 4px;
+}
+
+.cross-section-plot svg {
+  width: 100%;
+  height: 76px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.cross-section-plot path {
+  fill: none;
+  stroke-width: 2;
+}
+
+.cross-section-plot .measured-line {
+  stroke: #0b7788;
+}
+
+.cross-section-plot .sim-line {
+  stroke: #b45309;
+}
+
+.fit-parameter-list {
+  display: grid;
+  gap: 6px;
+}
+
 .analysis-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

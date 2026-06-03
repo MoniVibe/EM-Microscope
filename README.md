@@ -17,7 +17,9 @@ L3.3 adds a partial-coherence scalar brightfield approximation by averaging dete
 source-angle sub-solves. It is not vector optics, fluorescence, true 3D physics, EM, or certified microscope
 metrology.
 L3.4 begins the measured-data bridge: browser-side PNG/JPEG import, DOM-free core image metadata, calibration
-metadata, and ROI definitions for later measured-vs-simulated comparison. It is not certified ISO/EMVA calibration.
+metadata, and ROI definitions. L3.4B turns that bridge into a measured-vs-simulated workbench with ROI metrics,
+residual maps, deterministic grid-search fitting, and comparison report export. It is not certified ISO 12233,
+EMVA 1288, clinical, or hardware calibration.
 
 ## Current Modes
 
@@ -38,8 +40,9 @@ metadata, and ROI definitions for later measured-vs-simulated comparison. It is 
 - `L3.3 Brightfield Partial-Coherence Workbench v0`: uniform-disk and annular source-angle sampling, brightfield
   target presets, detector-intensity averaging over coherent L3 sub-solves, target contrast/SFR-style readouts,
   source-NA sweep metadata, and report export with illumination/target provenance.
-- `L3.4 Measured-Data Foundation v0`: PNG/JPEG measured-image import, grayscale typed-array hashing, calibration
-  metadata, ROI definitions, and SceneV7 measured-data containers for future compare/fit/report workflows.
+- `L3.4B Measured-vs-Simulated Workbench v0`: PNG/JPEG measured-image import, grayscale typed-array hashing,
+  calibration metadata, ROI definitions, line-pair/slanted-edge/PSF/flat/dark ROI metrics, residual maps,
+  deterministic grid-search fitting, and JSON/Markdown/HTML comparison report export.
 
 ## L2 Validation Fixture
 
@@ -92,7 +95,7 @@ The UI exposes source NA, source-angle count, and target selection for L3.3 scen
 illumination, test-target, and resolution-target sections; report export includes source-angle and target
 metadata. Slanted-edge SFR and target contrast are workbench estimates, not certified ISO measurements.
 
-## L3.4 Measured-Data Foundation
+## L3.4B Measured-vs-Simulated Workbench
 
 L3.4 adds the first compare-to-real scaffolding without adding a new physics solver. The web app can import a
 PNG or JPEG target image, decode it in the browser, convert it to normalized grayscale `Float32Array` pixels for
@@ -100,8 +103,20 @@ core utilities, and store measured-image metadata in SceneV7. Core modules provi
 hashing, histogram summaries, pixel-size calibration conversion, ROI coordinate transforms, ROI bounds warnings,
 and nearest-neighbor ROI extraction.
 
+L3.4B adds the working comparison loop. After importing a measured image and defining ROIs, the app can compare
+the active measured ROI against the currently computed L3/L3.3 detector image. It computes line-pair contrast,
+slanted-edge-style SFR, PSF centroid/FWHM, flat/dark frame statistics, metric deltas, a signed residual map, and a
+measured/simulated cross-section plot. The fit panel runs a deterministic grid search over focus, resolution,
+illumination, or camera-lite surrogate parameters such as effective NA, defocus, source NA, Gaussian blur,
+intensity scale, and background offset. Fit output is diagnostic-only and includes score, residual RMS, grid count,
+cache status, best parameters, warnings, and a deterministic result hash.
+
+Comparison export produces `comparison_report.json`, `comparison_report.md`, `comparison_report.html`,
+`measured_metrics.csv`, `fit_grid.csv`, and `residual.png` from the browser UI.
+
 SceneV7 is additive: old scenes migrate with empty measured-image, calibration-target, ROI, comparison-run, and
-fit-run arrays. The current L3.4 layer does not claim ISO 12233, EMVA 1288, clinical, or hardware calibration.
+fit-run arrays. The current L3.4B layer does not claim ISO 12233, EMVA 1288, clinical, or hardware calibration.
+True 3D physics remains out of scope; 3D should wait until the 2D measured-data diagnostics are stronger.
 
 ## Local Development
 

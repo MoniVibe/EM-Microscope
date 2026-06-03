@@ -9,7 +9,15 @@ import {
   type Scene
 } from "@emmicro/core";
 
-export function ImageImportPanel({ scene, updateScene }: { scene: Scene; updateScene: (updater: (current: Scene) => Scene) => void }) {
+export function ImageImportPanel({
+  scene,
+  updateScene,
+  onPixelsReady
+}: {
+  scene: Scene;
+  updateScene: (updater: (current: Scene) => Scene) => void;
+  onPixelsReady?: (imageId: string, pixels: MeasuredImagePixels2D) => void;
+}) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [histogram, setHistogram] = useState<MeasuredImageHistogram2D | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +39,7 @@ export function ImageImportPanel({ scene, updateScene }: { scene: Scene; updateS
         }
       });
       setHistogram(measuredImageHistogram2D(decoded.pixels));
+      onPixelsReady?.(measured.id, decoded.pixels);
       updateScene((current) => ({
         ...current,
         measuredImages2D: [measured, ...current.measuredImages2D]
@@ -118,6 +127,7 @@ export function ImageImportPanel({ scene, updateScene }: { scene: Scene; updateS
       rotationRad: 0
     };
     setHistogram(measuredImageHistogram2D(pixels));
+    onPixelsReady?.(measured.id, pixels);
     updateScene((current) => ({
       ...current,
       measuredImages2D: [measured, ...current.measuredImages2D],

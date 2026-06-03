@@ -46,4 +46,14 @@ describe("solver disclosure copy", () => {
 
     expect(`${importPanel}\n${calibrationPanel}\n${roiPanel}`).not.toMatch(/certified ISO|certified EMVA|clinical calibration|hardware calibration/i);
   });
+
+  it("labels L3.4B compare/fit as diagnostic measured-vs-simulated workbench output", () => {
+    const comparePanel = readFileSync(resolve(testDir, "measurement/ComparePanel.tsx"), "utf8");
+    const fitPanel = readFileSync(resolve(testDir, "measurement/FitPanel.tsx"), "utf8");
+
+    expect(comparePanel).toContain("measured-vs-simulated workbench");
+    expect(comparePanel).toContain("Not certified ISO 12233, EMVA 1288, clinical, or hardware calibration");
+    expect(fitPanel).toContain("diagnostic only");
+    expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
+  });
 });

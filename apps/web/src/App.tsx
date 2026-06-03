@@ -15,12 +15,21 @@ import {
   computePsfMetrics2D,
   computeSamplingMetrics2D,
   computeSnrMetrics2D,
+  comparisonMetricsToCsv2D,
+  comparisonReportToHtml,
+  comparisonReportToJson,
+  comparisonReportToMarkdown,
   createEngineeringReport,
+  createComparisonReport2D,
   defaultL32CameraModel,
   defaultL32SweepDefinitions,
+  defaultFitPresets2D,
   engineeringReportToHtml,
   engineeringReportToJson,
   engineeringReportToMarkdown,
+  fitEvaluationsToCsv2D,
+  fitPresetById2D,
+  makeFitRunCacheKey2D,
   geometricL0Solver,
   geometricL1_2dSolver,
   l25PresetDefinitions,
@@ -31,6 +40,8 @@ import {
   l3PresetScenes,
   parseScene,
   renderCameraImage2D,
+  runDeterministicFit2D,
+  runMeasuredSimulatedComparison2D,
   runSweepDefinition2D,
   sampleL1Scene,
   sampleL2Scene,
@@ -47,10 +58,15 @@ import {
   type EngineeringReport,
   type FieldOutput1D,
   type FieldOutput2D,
+  type ComparisonReport2D,
+  type ComparisonRunOutput2D,
+  type FitPresetId2D,
+  type FitRunOutput2D,
   type L25PresetId,
   type L33PresetId,
   type L3PresetId,
   type MeasurementSettings2D,
+  type MeasuredImagePixels2D,
   type MtfMetrics2D,
   type OpticalElement,
   type PsfMetrics2D,
@@ -83,7 +99,10 @@ import {
 import { BenchCanvas } from "./canvas/BenchCanvas";
 import { IlluminationPanel } from "./illumination/IlluminationPanel";
 import { CalibrationPanel } from "./measurement/CalibrationPanel";
+import { ComparePanel } from "./measurement/ComparePanel";
+import { FitPanel } from "./measurement/FitPanel";
 import { ImageImportPanel } from "./measurement/ImageImportPanel";
+import { residualMapToPngDataUrl } from "./measurement/ResidualView";
 import { RoiPanel } from "./measurement/RoiPanel";
 import { MtfPanel } from "./metrics/MtfPanel";
 import { ResolutionTargetPanel } from "./metrics/ResolutionTargetPanel";
@@ -247,7 +266,16 @@ export function App() {
   const [l3DisplayMode, setL3DisplayMode] = useState<IntensityDisplayMode>("gamma");
   const [l32CameraOverride, setL32CameraOverride] = useState<CameraModel2D | null>(null);
   const [l32SweepResult, setL32SweepResult] = useState<SweepResult | null>(null);
+  const [measuredPixelsById, setMeasuredPixelsById] = useState<Record<string, MeasuredImagePixels2D>>({});
+  const [l34bComparison, setL34bComparison] = useState<ComparisonRunOutput2D | null>(null);
+  const [l34bFit, setL34bFit] = useState<FitRunOutput2D | null>(null);
+  const [l34bError, setL34bError] = useState<string | null>(null);
+  const [l34bFitRunning, setL34bFitRunning] = useState(false);
+  const [l34bFitProgress, setL34bFitProgress] = useState(0);
+  const [l34bFitCacheHit, setL34bFitCacheHit] = useState(false);
   const l3JobRef = useRef<L3ComputeJob | null>(null);
+  const l34bFitTimeoutRef = useRef<number | null>(null);
+  const l34bFitCacheRef = useRef<Map<string, FitRunOutput2D>>(new Map());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const result = useMemo(() => {
@@ -290,6 +318,12 @@ export function App() {
     [activeL3Field, activeTestTarget]
   );
   const activeMeasuredImage = scene.measuredImages2D[0];
+  const activeMeasuredPixels = activeMeasuredImage ? measuredPixelsById[activeMeasuredImage.id] : undefined;
+  const activeMeasurementRois = activeMeasuredImage ? scene.measurementRois2D.filter((roi) => roi.imageId === activeMeasuredImage.id) : [];
+  const l34bReport = useMemo<ComparisonReport2D | null>(
+    () => (l34bComparison ? createComparisonReport2D({ scene, comparison: l34bComparison, fit: l34bFit }) : null),
+    [l34bComparison, l34bFit, scene]
+  );
   const l32Report = useMemo<EngineeringReport | null>(
     () =>
       activeL3Result && l32SensorImage && l32Snr && l32Mtf && l32Psf && l32Sampling
@@ -339,22 +373,31 @@ export function App() {
 
   function updateScene(updater: (current: Scene) => Scene): void {
     cancelL3Compute();
+    cancelL34bFit();
     setL2Result(null);
     setL2Error(null);
     setL3Result(null);
     setL3Error(null);
     setL32SweepResult(null);
+    setL34bComparison(null);
+    setL34bFit(null);
+    setL34bError(null);
     setScene((current) => touch(updater(current)));
   }
 
   function replaceScene(nextScene: Scene, nextSelected: SelectedItem = null): void {
     cancelL3Compute();
+    cancelL34bFit();
     setL2Result(null);
     setL2Error(null);
     setL3Result(null);
     setL3Error(null);
     setL32CameraOverride(null);
     setL32SweepResult(null);
+    setMeasuredPixelsById({});
+    setL34bComparison(null);
+    setL34bFit(null);
+    setL34bError(null);
     setScene(nextScene);
     setSelected(nextSelected);
   }
@@ -618,6 +661,116 @@ export function App() {
     job.cancel();
   }
 
+  function handleMeasuredPixelsReady(imageId: string, pixels: MeasuredImagePixels2D): void {
+    setMeasuredPixelsById((current) => ({ ...current, [imageId]: pixels }));
+  }
+
+  function runL34bComparison(): void {
+    try {
+      if (!activeMeasuredImage) throw new Error("Import a measured image before comparing.");
+      if (!activeMeasuredPixels) throw new Error("Measured pixels are not available in this browser session; re-import the image or use Fixture.");
+      if (activeMeasurementRois.length === 0) throw new Error("Add at least one measured ROI before comparing.");
+      if (!activeL3Field) throw new Error("Compute an L3/L3.3 simulated image before comparing.");
+      const comparison = runMeasuredSimulatedComparison2D({
+        id: `comparison-${Date.now().toString(36)}`,
+        measuredImage: activeMeasuredImage,
+        measuredPixels: activeMeasuredPixels,
+        rois: activeMeasurementRois,
+        simulatedField: activeL3Field,
+        simulatedResult: activeL3Result,
+        testTarget: activeTestTarget
+      });
+      setL34bComparison(comparison);
+      setL34bFit(null);
+      setL34bFitCacheHit(false);
+      setL34bError(null);
+    } catch (error) {
+      setL34bComparison(null);
+      setL34bFit(null);
+      setL34bError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  function runL34bFit(presetId: FitPresetId2D): void {
+    if (!l34bComparison) return;
+    cancelL34bFit();
+    const preset = fitPresetById2D(presetId);
+    const cacheKey = makeFitRunCacheKey2D(l34bComparison, preset.parameters);
+    const cached = l34bFitCacheRef.current.get(cacheKey);
+    if (cached) {
+      setL34bFit(cached);
+      setL34bFitCacheHit(true);
+      setL34bFitRunning(false);
+      setL34bFitProgress(100);
+      return;
+    }
+    setL34bFitRunning(true);
+    setL34bFitProgress(5);
+    setL34bFitCacheHit(false);
+    setL34bError(null);
+    l34bFitTimeoutRef.current = window.setTimeout(() => {
+      try {
+        setL34bFitProgress(45);
+        const fit = runDeterministicFit2D({
+          id: `fit-${Date.now().toString(36)}`,
+          comparison: l34bComparison,
+          fitParameters: preset.parameters
+        });
+        l34bFitCacheRef.current.set(cacheKey, fit);
+        setL34bFit(fit);
+        setL34bFitProgress(100);
+      } catch (error) {
+        setL34bError(error instanceof Error ? error.message : String(error));
+        setL34bFit(null);
+      } finally {
+        setL34bFitRunning(false);
+        l34bFitTimeoutRef.current = null;
+      }
+    }, 25);
+  }
+
+  function cancelL34bFit(): void {
+    if (l34bFitTimeoutRef.current !== null) {
+      window.clearTimeout(l34bFitTimeoutRef.current);
+      l34bFitTimeoutRef.current = null;
+    }
+    setL34bFitRunning(false);
+    setL34bFitProgress(0);
+  }
+
+  function exportL34bReport(format: "json" | "md" | "html"): void {
+    if (!l34bReport) return;
+    if (format === "json") {
+      downloadText("comparison_report.json", "application/json", comparisonReportToJson(l34bReport));
+      return;
+    }
+    if (format === "md") {
+      downloadText("comparison_report.md", "text/markdown", comparisonReportToMarkdown(l34bReport));
+      return;
+    }
+    downloadText("comparison_report.html", "text/html", comparisonReportToHtml(l34bReport));
+  }
+
+  function exportL34bMetricsCsv(): void {
+    if (!l34bComparison) return;
+    downloadText("measured_metrics.csv", "text/csv", comparisonMetricsToCsv2D(l34bComparison));
+  }
+
+  function exportL34bFitCsv(): void {
+    if (!l34bFit) return;
+    downloadText("fit_grid.csv", "text/csv", fitEvaluationsToCsv2D(l34bFit));
+  }
+
+  function exportL34bResidualPng(): void {
+    if (!l34bComparison?.residualMap) return;
+    const anchor = document.createElement("a");
+    anchor.href = residualMapToPngDataUrl(l34bComparison.residualMap);
+    anchor.download = "residual.png";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  }
+
   function copyL3ValidationSummary(): void {
     const text = validationSummaryText(activeL3Field);
     if (navigator.clipboard) {
@@ -847,9 +1000,34 @@ export function App() {
             </button>
           </div>
           <ElementProperties selectedItem={selectedItem} updateItem={updateItem} />
-          <ImageImportPanel scene={scene} updateScene={updateScene} />
+          <ImageImportPanel scene={scene} updateScene={updateScene} onPixelsReady={handleMeasuredPixelsReady} />
           <CalibrationPanel image={activeMeasuredImage} updateScene={updateScene} />
           <RoiPanel image={activeMeasuredImage} scene={scene} updateScene={updateScene} />
+          <ComparePanel
+            image={activeMeasuredImage}
+            pixels={activeMeasuredPixels}
+            rois={activeMeasurementRois}
+            field={activeL3Field}
+            comparison={l34bComparison}
+            fit={l34bFit}
+            error={l34bError}
+            onRunCompare={runL34bComparison}
+            onExportJson={() => exportL34bReport("json")}
+            onExportMarkdown={() => exportL34bReport("md")}
+            onExportHtml={() => exportL34bReport("html")}
+            onExportMetricsCsv={exportL34bMetricsCsv}
+            onExportResidualPng={exportL34bResidualPng}
+          />
+          <FitPanel
+            comparison={l34bComparison}
+            fit={l34bFit}
+            running={l34bFitRunning}
+            progress={l34bFitProgress}
+            cacheHit={l34bFitCacheHit}
+            onRunFit={runL34bFit}
+            onCancelFit={cancelL34bFit}
+            onExportFitCsv={exportL34bFitCsv}
+          />
 
           {scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && (
             <WavePanel
