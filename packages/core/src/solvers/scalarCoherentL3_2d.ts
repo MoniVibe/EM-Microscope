@@ -1,4 +1,5 @@
 import { isPowerOfTwo } from "../math/fft";
+import { makeL3ResultCacheKey } from "../cache/resultCacheKey";
 import { refractiveIndexById } from "../optics/media";
 import { l3Scalar2DProvenance, makeWaveEnergyLedger } from "../readouts/waveEnergy";
 import { fnv1a64, hashScene, stableStringify } from "../scene/hashScene";
@@ -46,6 +47,7 @@ export const scalarCoherentL3_2dSolver: Solver = {
     return validateL3Scene(scene);
   },
   run(sceneInput, request = {}) {
+    const startedMs = Date.now();
     const scene = parseScene(sceneInput);
     const solverRequest: SolverRequest = {
       solverId: "scalar.coherent.l3.2d",
@@ -74,6 +76,7 @@ export const scalarCoherentL3_2dSolver: Solver = {
     const mediumN = refractiveIndexById(scene, pipeline.mediumId, pipeline.wavelengthM);
     let currentX = sourcePlane.xM;
     let field = createFieldFromPlane2D(grid, sourcePlane);
+    let propagationCount = 0;
     const inputEnergy = fieldEnergy2D(field, grid.spacingUM, grid.spacingVM);
     const stages: WaveEnergyStage[] = [
       {
@@ -96,6 +99,7 @@ export const scalarCoherentL3_2dSolver: Solver = {
       if (interaction.xM > currentX) {
         const before = fieldEnergy2D(field, grid.spacingUM, grid.spacingVM);
         field = propagateAngularSpectrum2D(field, grid, pipeline.wavelengthM, mediumN, interaction.xM - currentX);
+        propagationCount += 1;
         const after = fieldEnergy2D(field, grid.spacingUM, grid.spacingVM);
         stages.push(makeStage("propagation", `Propagate to ${interaction.item.label}`, interaction.xM, before, after, interaction.item.id));
         currentX = interaction.xM;
@@ -110,6 +114,7 @@ export const scalarCoherentL3_2dSolver: Solver = {
     if (detectorPlane.xM > currentX) {
       const before = afterInteractionEnergy;
       field = propagateAngularSpectrum2D(field, grid, pipeline.wavelengthM, mediumN, detectorPlane.xM - currentX);
+      propagationCount += 1;
       const after = fieldEnergy2D(field, grid.spacingUM, grid.spacingVM);
       stages.push(makeStage("propagation", `Propagate to ${detectorPlane.label}`, detectorPlane.xM, before, after, detectorPlane.id));
     }
@@ -151,11 +156,28 @@ export const scalarCoherentL3_2dSolver: Solver = {
       provenance: l3Scalar2DProvenance
     });
     const resultHash = l3ResultHash(sceneHash, fieldOutput, energyLedger);
+    const cacheKey = makeL3ResultCacheKey(scene);
+    const estimatedBytes = grid.width * grid.height * 8 * 8;
+    const computeMs = Math.max(0, Date.now() - startedMs);
 
     return {
       solverId: "scalar.coherent.l3.2d",
       sceneHash,
       resultHash,
+      cacheKey,
+      cacheHit: false,
+      cancelled: false,
+      progressStage: "completed",
+      performanceStats: {
+        gridWidth: grid.width,
+        gridHeight: grid.height,
+        fftCount: propagationCount * 2,
+        estimatedBytes,
+        computeMs,
+        workerUsed: solverRequest.computePolicy === "worker",
+        cacheHit: false,
+        cancelled: false
+      },
       seed: scene.seed,
       solverVersion: "0.4.0",
       computedAtIso: new Date().toISOString(),

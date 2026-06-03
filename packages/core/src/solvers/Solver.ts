@@ -21,6 +21,7 @@ export type SolverRequest = {
   solverId: SolverId;
   outputs: SolverOutput[];
   maxComputeMs?: number;
+  computePolicy?: "mainThread" | "worker" | "auto";
 };
 
 export type SolverWarning = {
@@ -155,10 +156,26 @@ export type EnergyLedger = {
   provenance: PhysicsProvenance;
 };
 
+export type SolverPerformanceStats = {
+  gridWidth?: number;
+  gridHeight?: number;
+  fftCount?: number;
+  estimatedBytes?: number;
+  computeMs: number;
+  workerUsed: boolean;
+  cacheHit: boolean;
+  cancelled: boolean;
+};
+
 export type SolverResult = {
   solverId: SolverId;
   sceneHash: string;
   resultHash?: string;
+  cacheKey?: string;
+  cacheHit?: boolean;
+  cancelled?: boolean;
+  progressStage?: string;
+  performanceStats?: SolverPerformanceStats;
   seed: number;
   solverVersion: string;
   computedAtIso?: string;

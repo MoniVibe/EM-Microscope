@@ -11,6 +11,14 @@ describe("scalar coherent L3 2D solver", () => {
     if (!field) throw new Error("missing L3 field image output");
 
     expect(result.solverId).toBe("scalar.coherent.l3.2d");
+    expect(result.cacheKey).toBeTruthy();
+    expect(result.cacheHit).toBe(false);
+    expect(result.cancelled).toBe(false);
+    expect(result.progressStage).toBe("completed");
+    expect(result.performanceStats?.gridWidth).toBe(256);
+    expect(result.performanceStats?.gridHeight).toBe(256);
+    expect(result.performanceStats?.fftCount).toBeGreaterThan(0);
+    expect(result.performanceStats?.estimatedBytes).toBeGreaterThan(0);
     expect(field.type).toBe("fieldImage2D");
     expect(field.width).toBe(256);
     expect(field.height).toBe(256);
@@ -72,8 +80,12 @@ describe("scalar coherent L3 2D solver", () => {
     expect(csv).toContain("# width,256");
     expect(csv).toContain("# uUnit,m");
     expect(csv).toContain("# provenance,L3:scalar-wave-2d-angular-spectrum");
+    expect(csv).toContain("# cacheKey,");
+    expect(csv).toContain("# computeMs,");
+    expect(csv).toContain("# estimatedBytes,");
     expect(csv).toContain("uM,vM,intensity,phaseRad,real,imag");
     expect(json).toContain('"type": "fieldImage2D"');
     expect(json).toContain('"resultHash"');
+    expect(json).toContain('"performanceStats"');
   });
 });

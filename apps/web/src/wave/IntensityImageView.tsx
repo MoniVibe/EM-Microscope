@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { FieldOutput2D } from "@emmicro/core";
 
-export function IntensityImageView({ field }: { field: FieldOutput2D }) {
+export type IntensityDisplayMode = "linear" | "log" | "gamma";
+
+export function IntensityImageView({ field, displayMode }: { field: FieldOutput2D; displayMode: IntensityDisplayMode }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const peak = useMemo(() => maxValue(field.intensity), [field]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    drawIntensityToCanvas(canvas, field);
-  }, [field]);
+    drawIntensityToCanvas(canvas, field, displayMode);
+  }, [field, displayMode]);
 
   return (
     <div className="intensity-image-card">
@@ -22,7 +24,7 @@ export function IntensityImageView({ field }: { field: FieldOutput2D }) {
       />
       <div className="image-axis-row">
         <span>{formatAxis(field.uMinM)}</span>
-        <span>I/Imax</span>
+        <span>{displayMode}</span>
         <span>{formatAxis(field.uMaxM)}</span>
       </div>
       <div className="image-axis-row">
@@ -34,21 +36,22 @@ export function IntensityImageView({ field }: { field: FieldOutput2D }) {
   );
 }
 
-export function fieldImageToPngDataUrl(field: FieldOutput2D): string {
+export function fieldImageToPngDataUrl(field: FieldOutput2D, displayMode: IntensityDisplayMode): string {
   const canvas = document.createElement("canvas");
   canvas.width = field.width;
   canvas.height = field.height;
-  drawIntensityToCanvas(canvas, field);
+  drawIntensityToCanvas(canvas, field, displayMode);
   return canvas.toDataURL("image/png");
 }
 
-function drawIntensityToCanvas(canvas: HTMLCanvasElement, field: FieldOutput2D): void {
+function drawIntensityToCanvas(canvas: HTMLCanvasElement, field: FieldOutput2D, displayMode: IntensityDisplayMode): void {
   const context = canvas.getContext("2d");
   if (!context) return;
   const image = context.createImageData(field.width, field.height);
   const peak = maxValue(field.intensity);
   for (let index = 0; index < field.intensity.length; index += 1) {
-    const normalized = peak > 0 ? Math.sqrt((field.intensity[index] ?? 0) / peak) : 0;
+    const raw = peak > 0 ? (field.intensity[index] ?? 0) / peak : 0;
+    const normalized = mapDisplayValue(raw, displayMode);
     const [red, green, blue] = heatColor(normalized);
     const offset = index * 4;
     image.data[offset] = red;
@@ -57,6 +60,13 @@ function drawIntensityToCanvas(canvas: HTMLCanvasElement, field: FieldOutput2D):
     image.data[offset + 3] = 255;
   }
   context.putImageData(image, 0, 0);
+}
+
+function mapDisplayValue(raw: number, displayMode: IntensityDisplayMode): number {
+  const x = Math.max(0, Math.min(1, raw));
+  if (displayMode === "linear") return x;
+  if (displayMode === "log") return Math.log1p(x * 1000) / Math.log1p(1000);
+  return Math.pow(x, 0.45);
 }
 
 function heatColor(value: number): [number, number, number] {

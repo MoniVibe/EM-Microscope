@@ -5,7 +5,7 @@ A 2D microscope-grade optical bench MVP.
 The first public version started as L0 geometric optics: deterministic rays, thin lenses, aperture clipping,
 detector histograms, and analytic microscope readouts. The current build adds L1 2D surface optics, an on-demand
 L2 scalar wave profile, L2.5 analytic sample/object planes for validated 1D coherent experiments, and an early
-L3 coherent 2D scalar image-plane map.
+L3 coherent 2D scalar image-plane workbench.
 
 Diffraction is still not faked. L0/L1 keep Airy/PSF values labeled as analytic estimates, while L2 is explicitly
 labeled as scalar 1D angular-spectrum propagation, not a full circular-aperture Airy disk or microscope image.
@@ -22,9 +22,9 @@ fluorescence, 3D physics, EM, or a full microscope objective model.
 - `L2.5 Sample/Image Plane v0`: analytic 1D sample planes for single slit, double slit, amplitude grating,
   phase step, and bar-target presets. These are labeled as coherent 1D transverse slices, not full microscope
   images, full PSFs, or Airy disk simulations.
-- `L3 Coherent 2D Scalar Image Approximation`: plane-wave source, 2D angular-spectrum propagation, thin-lens
-  scalar phase, circular pupil, detector/image-plane intensity map, energy stages, sampling warnings, and
-  CSV/JSON/PNG export.
+- `L3 Coherent 2D Scalar Image Approximation`: worker-backed plane-wave source, 2D angular-spectrum propagation,
+  thin-lens scalar phase, circular pupil, detector/image-plane intensity map, energy stages, sampling warnings,
+  image analysis metrics, display controls, cache/performance telemetry, cancellation, and CSV/JSON/PNG export.
 
 ## L2 Validation Fixture
 
@@ -42,6 +42,12 @@ The bundled L3 scene uses a 500 nm coherent plane wave, a 20 mm focal-length thi
 circular pupil on a 256 x 256 detector grid. Core tests check that the focal-plane peak is centered, that the
 first low-intensity band falls near the scalar Airy first-minimum estimate, that pupil energy clipping and
 free-space propagation energy accounting are stable, and that image exports include solver provenance.
+
+The web workbench runs L3 image computations through a browser worker when available, falls back to the main
+thread for test and unsupported contexts, caches identical scene results, and reports grid size, FFT count,
+compute time, estimated memory, worker usage, and cache hits. The image view supports linear, log, and gamma
+display mappings; the analysis panel reports peak location, centroid, radial low estimate, edge energy fraction,
+and dynamic range for quick validation.
 
 ## Local Development
 

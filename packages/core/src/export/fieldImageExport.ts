@@ -15,6 +15,11 @@ export function fieldImageToCsv(result: SolverResult, field: FieldOutput2D): str
     `# uUnit,${field.units.u}`,
     `# vUnit,${field.units.v}`,
     `# intensityUnit,${field.units.intensity}`,
+    `# cacheKey,${result.cacheKey ?? ""}`,
+    `# computeMs,${result.performanceStats?.computeMs ?? ""}`,
+    `# workerUsed,${result.performanceStats?.workerUsed ?? ""}`,
+    `# cacheHit,${result.performanceStats?.cacheHit ?? result.cacheHit ?? ""}`,
+    `# estimatedBytes,${result.performanceStats?.estimatedBytes ?? ""}`,
     `# provenance,${provenance}`
   ];
   const header = "uM,vM,intensity,phaseRad,real,imag";
@@ -57,7 +62,12 @@ export function fieldImageToJson(result: SolverResult, field: FieldOutput2D): st
         provenance: field.provenance
       },
       energyLedger: result.energyLedger,
-      warnings: result.warnings
+      warnings: result.warnings,
+      cacheKey: result.cacheKey,
+      cacheHit: result.cacheHit,
+      cancelled: result.cancelled,
+      progressStage: result.progressStage,
+      performanceStats: result.performanceStats
     },
     null,
     2

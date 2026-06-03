@@ -50,8 +50,12 @@ import {
   Waves
 } from "lucide-react";
 import { BenchCanvas } from "./canvas/BenchCanvas";
-import { fieldImageToPngDataUrl, IntensityImageView } from "./wave/IntensityImageView";
+import { startL3ImageCompute, type L3ComputeJob, type L3ComputeProgress } from "./wave/computeL3Image";
+import { ImageAnalysisPanel, validationSummaryText } from "./wave/ImageAnalysisPanel";
+import { fieldImageToPngDataUrl, IntensityImageView, type IntensityDisplayMode } from "./wave/IntensityImageView";
 import { IntensityProfilePlot } from "./wave/IntensityProfilePlot";
+import { L3BenchmarkPanel } from "./wave/L3BenchmarkPanel";
+import { L3ComputeStatus } from "./wave/L3ComputeStatus";
 
 type SelectableKind = "source" | "element" | "detector";
 export type SelectedItem = { kind: SelectableKind; id: string } | null;
@@ -166,6 +170,10 @@ export function App() {
   const [l2Error, setL2Error] = useState<string | null>(null);
   const [l3Result, setL3Result] = useState<SolverResult | null>(null);
   const [l3Error, setL3Error] = useState<string | null>(null);
+  const [l3Progress, setL3Progress] = useState<L3ComputeProgress | null>(null);
+  const [l3Running, setL3Running] = useState(false);
+  const [l3DisplayMode, setL3DisplayMode] = useState<IntensityDisplayMode>("gamma");
+  const l3JobRef = useRef<L3ComputeJob | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const result = useMemo(() => {
@@ -200,6 +208,7 @@ export function App() {
   const modeDisclosure = solverDisclosureFor(scene.solverSettings.activeSolverId, scene.samplePlanes1D.length > 0);
 
   function updateScene(updater: (current: Scene) => Scene): void {
+    cancelL3Compute();
     setL2Result(null);
     setL2Error(null);
     setL3Result(null);
@@ -208,6 +217,7 @@ export function App() {
   }
 
   function replaceScene(nextScene: Scene, nextSelected: SelectedItem = null): void {
+    cancelL3Compute();
     setL2Result(null);
     setL2Error(null);
     setL3Result(null);
@@ -421,14 +431,68 @@ export function App() {
   }
 
   function computeL3Image(): void {
+    cancelL3Compute();
+    setL3Error(null);
+    setL3Running(true);
+    setL3Progress({ stage: "queued", percent: 0, message: "Queued L3 compute" });
+    const sceneAtStart = scene;
+    let job: L3ComputeJob;
     try {
-      const nextResult = scalarCoherentL3_2dSolver.run(scene, { solverId: "scalar.coherent.l3.2d" });
-      setL3Result(nextResult);
-      setL3Error(null);
+      job = startL3ImageCompute(sceneAtStart, {
+        onProgress: (progress) => {
+          if (l3JobRef.current?.requestId === job.requestId) setL3Progress(progress);
+        },
+        onResult: (nextResult) => {
+          if (l3JobRef.current?.requestId !== job.requestId) return;
+          setL3Result(nextResult);
+          setL3Running(false);
+          setL3Progress({
+            stage: nextResult.cacheHit ? "cache-hit" : "completed",
+            percent: 100,
+            message: nextResult.cacheHit ? "Loaded L3 result from cache" : "L3 image compute complete"
+          });
+          l3JobRef.current = null;
+        },
+        onError: (message) => {
+          if (l3JobRef.current?.requestId !== job.requestId) return;
+          setL3Result(null);
+          setL3Running(false);
+          setL3Error(message);
+          setL3Progress({ stage: "error", percent: 100, message });
+          l3JobRef.current = null;
+        },
+        onCancelled: () => {
+          setL3Running(false);
+          setL3Progress({ stage: "cancelled", percent: 100, message: "L3 compute cancelled" });
+          l3JobRef.current = null;
+        }
+      });
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       setL3Result(null);
-      setL3Error(error instanceof Error ? error.message : String(error));
+      setL3Running(false);
+      setL3Error(message);
+      setL3Progress({ stage: "error", percent: 100, message });
+      return;
     }
+    l3JobRef.current = job;
+  }
+
+  function cancelL3Compute(): void {
+    const job = l3JobRef.current;
+    if (!job) return;
+    l3JobRef.current = null;
+    job.cancel();
+  }
+
+  function copyL3ValidationSummary(): void {
+    const text = validationSummaryText(activeL3Field);
+    if (navigator.clipboard) {
+      void navigator.clipboard.writeText(text);
+      setL3Error(null);
+      return;
+    }
+    downloadText("l3-validation-summary.txt", "text/plain", text);
   }
 
   function exportPrimaryCsv(): void {
@@ -456,7 +520,7 @@ export function App() {
   function exportFieldPng(): void {
     if (!activeL3Field) return;
     const anchor = document.createElement("a");
-    anchor.href = fieldImageToPngDataUrl(activeL3Field);
+    anchor.href = fieldImageToPngDataUrl(activeL3Field, l3DisplayMode);
     anchor.download = `${activeL3Field.id}.png`;
     document.body.appendChild(anchor);
     anchor.click();
@@ -627,9 +691,15 @@ export function App() {
               error={l3Error}
               disclosure={modeDisclosure}
               onCompute={computeL3Image}
+              running={l3Running}
+              progress={l3Progress}
+              onCancel={cancelL3Compute}
+              displayMode={l3DisplayMode}
+              onDisplayModeChange={setL3DisplayMode}
               onExportCsv={exportPrimaryCsv}
               onExportJson={exportFieldJson}
               onExportPng={exportFieldPng}
+              onCopyValidationSummary={copyL3ValidationSummary}
             />
           )}
 
@@ -1419,9 +1489,15 @@ function ImagePanel({
   error,
   disclosure,
   onCompute,
+  running,
+  progress,
+  onCancel,
+  displayMode,
+  onDisplayModeChange,
   onExportCsv,
   onExportJson,
-  onExportPng
+  onExportPng,
+  onCopyValidationSummary
 }: {
   field: FieldOutput2D | undefined;
   result: SolverResult | null;
@@ -1429,15 +1505,21 @@ function ImagePanel({
   error: string | null;
   disclosure: { label: string; detail: string };
   onCompute: () => void;
+  running: boolean;
+  progress: L3ComputeProgress | null;
+  onCancel: () => void;
+  displayMode: IntensityDisplayMode;
+  onDisplayModeChange: (mode: IntensityDisplayMode) => void;
   onExportCsv: () => void;
   onExportJson: () => void;
   onExportPng: () => void;
+  onCopyValidationSummary: () => void;
 }) {
   const warnings = result?.warnings ?? validationWarnings;
   return (
     <section className="wave-panel">
       <div className="wave-actions">
-        <button type="button" onClick={onCompute}>
+        <button type="button" onClick={onCompute} disabled={running}>
           <Waves size={17} />
           <span>Compute image</span>
         </button>
@@ -1453,11 +1535,24 @@ function ImagePanel({
           <Download size={17} />
           <span>PNG</span>
         </button>
+        <button type="button" disabled={!field} onClick={onCopyValidationSummary}>
+          <FileDown size={17} />
+          <span>Summary</span>
+        </button>
       </div>
+      <L3ComputeStatus running={running} progress={progress} onCancel={onCancel} />
       <div className="l2-disclosure">
         <strong>{disclosure.label}</strong>
         <span>{disclosure.detail}</span>
       </div>
+      <label className="field-row">
+        <span>Display</span>
+        <select value={displayMode} onChange={(event) => onDisplayModeChange(event.currentTarget.value as IntensityDisplayMode)}>
+          <option value="linear">Linear</option>
+          <option value="log">Log</option>
+          <option value="gamma">Gamma</option>
+        </select>
+      </label>
       {result && (
         <div className="profile-meta">
           <div className="compact-stat">
@@ -1478,7 +1573,15 @@ function ImagePanel({
           ))}
         </ul>
       )}
-      {field ? <IntensityImageView field={field} /> : <div className="empty-state">No L3 image map computed for the current scene.</div>}
+      <L3BenchmarkPanel result={result} />
+      {field ? (
+        <>
+          <IntensityImageView field={field} displayMode={displayMode} />
+          <ImageAnalysisPanel field={field} />
+        </>
+      ) : (
+        <div className="empty-state">No L3 image map computed for the current scene.</div>
+      )}
     </section>
   );
 }
@@ -1621,7 +1724,7 @@ function NumberField({
       <div className="number-input">
         <input
           type="number"
-          value={Number.isFinite(value) ? value : 0}
+          value={formatNumberInputValue(value)}
           min={min}
           max={max}
           step={step}
@@ -1631,4 +1734,11 @@ function NumberField({
       </div>
     </label>
   );
+}
+
+function formatNumberInputValue(value: number): string {
+  if (!Number.isFinite(value)) return "0";
+  if (value === 0) return "0";
+  const rounded = Math.abs(value) >= 1e-3 ? Number(value.toFixed(6)) : Number(value.toPrecision(6));
+  return Object.is(rounded, -0) ? "0" : String(rounded);
 }
