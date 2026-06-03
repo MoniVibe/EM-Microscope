@@ -1,0 +1,22 @@
+{
+  "name": "emmicro",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/web",
+    "packages/core"
+  ],
+  "scripts": {
+    "dev": "npm --workspace apps/web run dev",
+    "build": "npm --workspace packages/core run build && npm --workspace apps/web run build",
+    "test": "npm --workspace packages/core run test && npm --workspace apps/web run test",
+    "test:core": "npm --workspace packages/core run test",
+    "test:web": "npm --workspace apps/web run test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.8"
+  }
+}
