@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const displayLengthUnitSchema = z.enum(["m", "mm", "um", "nm"]);
 export const displayAngleUnitSchema = z.enum(["rad", "deg"]);
-export const solverIdSchema = z.enum(["geometric.l0", "geometric.l1.2d"]);
+export const solverIdSchema = z.enum(["geometric.l0", "geometric.l1.2d", "scalar.angularSpectrum.l2.1d"]);
 
 const finiteNumber = z.number().finite();
 const positiveNumber = finiteNumber.positive();
@@ -218,7 +218,7 @@ export const surfaceElement2DSchema = z.discriminatedUnion("type", [
     .strict()
 ]);
 
-export const sceneV2Schema = sceneV1BaseSchema
+const sceneV2BaseSchema = sceneV1BaseSchema
   .omit({ schemaVersion: true, solverSettings: true })
   .extend({
     schemaVersion: z.literal("0.2.0"),
@@ -240,34 +240,154 @@ export const sceneV2Schema = sceneV1BaseSchema
         modeDisclosure: z.boolean()
       })
       .strict()
-  })
-  .superRefine((scene, ctx) => {
-    const ids = new Set<string>();
-    const allIds = [
-      ...scene.sources.map((source) => source.id),
-      ...scene.elements.map((element) => element.id),
-      ...scene.detectors.map((detector) => detector.id),
-      ...scene.surfaceElements2D.map((surface) => surface.id)
-    ];
-    for (const id of allIds) {
-      if (ids.has(id)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate element id: ${id}` });
-      }
-      ids.add(id);
-    }
+  });
 
-    const mediaIds = new Set(scene.mediaCatalog.map((medium) => medium.id));
-    for (const element of scene.elements) {
-      if (element.type === "thickLens2D" && !mediaIds.has(element.mediumId)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `unknown medium id: ${element.mediumId}` });
-      }
+function validateSceneV2References(scene: Omit<z.infer<typeof sceneV2BaseSchema>, "schemaVersion">, ctx: z.RefinementCtx): void {
+  const ids = new Set<string>();
+  const allIds = [
+    ...scene.sources.map((source) => source.id),
+    ...scene.elements.map((element) => element.id),
+    ...scene.detectors.map((detector) => detector.id),
+    ...scene.surfaceElements2D.map((surface) => surface.id)
+  ];
+  for (const id of allIds) {
+    if (ids.has(id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate element id: ${id}` });
     }
-    for (const surface of scene.surfaceElements2D) {
-      if (!mediaIds.has(surface.mediumBeforeId) || !mediaIds.has(surface.mediumAfterId)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `surface ${surface.id} references an unknown medium` });
-      }
+    ids.add(id);
+  }
+
+  const mediaIds = new Set(scene.mediaCatalog.map((medium) => medium.id));
+  for (const element of scene.elements) {
+    if (element.type === "thickLens2D" && !mediaIds.has(element.mediumId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `unknown medium id: ${element.mediumId}` });
+    }
+  }
+  for (const surface of scene.surfaceElements2D) {
+    if (!mediaIds.has(surface.mediumBeforeId) || !mediaIds.has(surface.mediumAfterId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `surface ${surface.id} references an unknown medium` });
+    }
+  }
+}
+
+export const sceneV2Schema = sceneV2BaseSchema.superRefine(validateSceneV2References);
+
+export const fieldGrid1DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    yMinM: finiteNumber,
+    yMaxM: finiteNumber,
+    samples: z.number().int().min(16).max(16384),
+    spacingM: positiveNumber
+  })
+  .strict()
+  .refine((grid) => grid.yMaxM > grid.yMinM, "yMaxM must be greater than yMinM")
+  .refine((grid) => Math.abs(grid.spacingM - (grid.yMaxM - grid.yMinM) / grid.samples) <= Math.max(1e-15, grid.spacingM * 1e-9), {
+    message: "spacingM must equal (yMaxM - yMinM) / samples"
+  });
+
+const fieldSource1DSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("uniformPlaneWave"),
+      amplitude: nonNegativeNumber,
+      phaseRad: finiteNumber
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("gaussian"),
+      waistM: positiveNumber,
+      amplitude: nonNegativeNumber,
+      phaseRad: finiteNumber.default(0),
+      centerYM: finiteNumber.default(0)
+    })
+    .strict()
+]);
+
+export const fieldPlane1DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    role: z.enum(["source", "detector"]),
+    xM: finiteNumber,
+    gridId: z.string().min(1),
+    mediumId: z.string().min(1),
+    fieldSource: fieldSource1DSchema.optional()
+  })
+  .strict()
+  .superRefine((plane, ctx) => {
+    if (plane.role === "source" && !plane.fieldSource) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `field plane ${plane.id} is a source but has no fieldSource` });
     }
   });
+
+export const mask1DSchema = z.discriminatedUnion("type", [
+  z
+    .object({
+      id: z.string().min(1),
+      type: z.literal("rectAperture1D"),
+      label: z.string().min(1),
+      xM: finiteNumber,
+      gridId: z.string().min(1),
+      widthM: positiveNumber,
+      centerYM: finiteNumber
+    })
+    .strict()
+]);
+
+const sceneV3BaseSchema = sceneV2BaseSchema
+  .omit({ schemaVersion: true })
+  .extend({
+    schemaVersion: z.literal("0.3.0"),
+    waveSettings: z
+      .object({
+        defaultCoherence: z.literal("coherent"),
+        defaultPolarization: z.literal("scalar-unpolarized-placeholder"),
+        defaultGrid1DId: z.string().min(1).optional()
+      })
+      .strict(),
+    fieldGrids1D: z.array(fieldGrid1DSchema),
+    fieldPlanes1D: z.array(fieldPlane1DSchema),
+    masks1D: z.array(mask1DSchema),
+    sampleMasks1D: z.array(z.never())
+  });
+
+export const sceneV3Schema = sceneV3BaseSchema.superRefine((scene, ctx) => {
+  validateSceneV2References(scene, ctx);
+
+  const ids = new Set<string>();
+  for (const id of [
+    ...scene.fieldGrids1D.map((grid) => grid.id),
+    ...scene.fieldPlanes1D.map((plane) => plane.id),
+    ...scene.masks1D.map((mask) => mask.id)
+  ]) {
+    if (ids.has(id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate wave id: ${id}` });
+    }
+    ids.add(id);
+  }
+
+  const gridIds = new Set(scene.fieldGrids1D.map((grid) => grid.id));
+  const mediaIds = new Set(scene.mediaCatalog.map((medium) => medium.id));
+  if (scene.waveSettings.defaultGrid1DId && !gridIds.has(scene.waveSettings.defaultGrid1DId)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `unknown default field grid id: ${scene.waveSettings.defaultGrid1DId}` });
+  }
+  for (const plane of scene.fieldPlanes1D) {
+    if (!gridIds.has(plane.gridId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `field plane ${plane.id} references an unknown grid` });
+    }
+    if (!mediaIds.has(plane.mediumId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `field plane ${plane.id} references an unknown medium` });
+    }
+  }
+  for (const mask of scene.masks1D) {
+    if (!gridIds.has(mask.gridId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `mask ${mask.id} references an unknown grid` });
+    }
+  }
+});
 
 export type SourceElement = z.infer<typeof sourceElementSchema>;
 export type OpticalElement = z.infer<typeof opticalElementSchema>;
@@ -277,9 +397,14 @@ export type ThickLens2DElement = Extract<OpticalElement, { type: "thickLens2D" }
 export type DetectorElement = z.infer<typeof detectorElementSchema>;
 export type Medium = z.infer<typeof mediumSchema>;
 export type SurfaceElement2D = z.infer<typeof surfaceElement2DSchema>;
+export type FieldGrid1D = z.infer<typeof fieldGrid1DSchema>;
+export type FieldPlane1D = z.infer<typeof fieldPlane1DSchema>;
+export type Mask1D = z.infer<typeof mask1DSchema>;
+export type RectApertureMask1D = Extract<Mask1D, { type: "rectAperture1D" }>;
 export type SceneV1 = z.infer<typeof sceneV1Schema>;
 export type SceneV2 = z.infer<typeof sceneV2Schema>;
-export type Scene = SceneV2;
+export type SceneV3 = z.infer<typeof sceneV3Schema>;
+export type Scene = SceneV3;
 
 export function parseSceneV1(value: unknown): SceneV1 {
   return sceneV1Schema.parse(value);
@@ -313,10 +438,28 @@ export function migrateSceneV1ToV2(scene: SceneV1): SceneV2 {
   };
 }
 
+export function migrateSceneV2ToV3(scene: SceneV2): SceneV3 {
+  return {
+    ...scene,
+    schemaVersion: "0.3.0",
+    waveSettings: {
+      defaultCoherence: "coherent",
+      defaultPolarization: "scalar-unpolarized-placeholder"
+    },
+    fieldGrids1D: [],
+    fieldPlanes1D: [],
+    masks1D: [],
+    sampleMasks1D: []
+  };
+}
+
 export function parseScene(value: unknown): Scene {
   const maybeVersion = typeof value === "object" && value !== null ? (value as { schemaVersion?: unknown }).schemaVersion : undefined;
   if (maybeVersion === "0.1.0") {
-    return migrateSceneV1ToV2(parseSceneV1(value));
+    return migrateSceneV2ToV3(migrateSceneV1ToV2(parseSceneV1(value)));
   }
-  return sceneV2Schema.parse(value);
+  if (maybeVersion === "0.2.0") {
+    return migrateSceneV2ToV3(sceneV2Schema.parse(value));
+  }
+  return sceneV3Schema.parse(value);
 }

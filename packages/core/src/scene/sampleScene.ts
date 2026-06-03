@@ -1,4 +1,4 @@
-import type { Scene, SceneV1 } from "./schema";
+import { migrateSceneV2ToV3, type Scene, type SceneV1, type SceneV2 } from "./schema";
 
 export const sampleScene: SceneV1 = {
   schemaVersion: "0.1.0",
@@ -83,7 +83,7 @@ export const sampleScene: SceneV1 = {
   }
 };
 
-export const sampleL1Scene: Scene = {
+const sampleL1SceneV2: SceneV2 = {
   ...sampleScene,
   schemaVersion: "0.2.0",
   sceneId: "sample-l1-thick-lens",
@@ -160,5 +160,122 @@ export const sampleL1Scene: Scene = {
   solverSettings: {
     ...sampleScene.solverSettings,
     activeSolverId: "geometric.l1.2d"
+  }
+};
+
+export const sampleL1Scene: Scene = migrateSceneV2ToV3(sampleL1SceneV2);
+
+const l2GridSpacingM = 0.04 / 4096;
+
+export const sampleL2Scene: Scene = {
+  ...sampleL1Scene,
+  schemaVersion: "0.3.0",
+  sceneId: "sample-l2-slit-wave-profile",
+  name: "L2 1D slit diffraction profile",
+  bench: {
+    xMinM: 0,
+    xMaxM: 1.05,
+    yMinM: -0.02,
+    yMaxM: 0.02,
+    opticalAxisYM: 0
+  },
+  sources: [
+    {
+      id: "src-plane-wave",
+      type: "collimatedSource",
+      label: "Plane-wave reference rays",
+      xM: 0,
+      yCenterM: 0,
+      beamHeightM: 0.004,
+      wavelengthM: 500e-9,
+      powerW: 1,
+      angleRad: 0,
+      rayCount: 25
+    }
+  ],
+  elements: [
+    {
+      id: "slit-ray-marker",
+      type: "aperture",
+      label: "100 um slit marker",
+      xM: 0.02,
+      yCenterM: 0,
+      diameterM: 100e-6
+    }
+  ],
+  detectors: [
+    {
+      id: "wave-detector-screen",
+      type: "screenDetector",
+      label: "1 m field detector",
+      xM: 1.02,
+      yCenterM: 0,
+      heightM: 0.04,
+      bins: 128
+    }
+  ],
+  environment: {
+    ambientRefractiveIndex: 1,
+    defaultWavelengthM: 500e-9
+  },
+  solverSettings: {
+    activeSolverId: "scalar.angularSpectrum.l2.1d",
+    rayCount: 25,
+    sampling: "deterministicFan",
+    modeDisclosure: true
+  },
+  waveSettings: {
+    defaultCoherence: "coherent",
+    defaultPolarization: "scalar-unpolarized-placeholder",
+    defaultGrid1DId: "grid-40mm-4096"
+  },
+  fieldGrids1D: [
+    {
+      id: "grid-40mm-4096",
+      label: "40 mm detector slice",
+      yMinM: -0.02,
+      yMaxM: 0.02,
+      samples: 4096,
+      spacingM: l2GridSpacingM
+    }
+  ],
+  fieldPlanes1D: [
+    {
+      id: "source-field",
+      label: "Coherent plane-wave source",
+      role: "source",
+      xM: 0,
+      gridId: "grid-40mm-4096",
+      mediumId: "air",
+      fieldSource: {
+        kind: "uniformPlaneWave",
+        amplitude: 1,
+        phaseRad: 0
+      }
+    },
+    {
+      id: "detector-field",
+      label: "Detector intensity profile",
+      role: "detector",
+      xM: 1,
+      gridId: "grid-40mm-4096",
+      mediumId: "air"
+    }
+  ],
+  masks1D: [
+    {
+      id: "slit-100um",
+      type: "rectAperture1D",
+      label: "100 um rectangular slit",
+      xM: 0,
+      gridId: "grid-40mm-4096",
+      widthM: 100e-6,
+      centerYM: 0
+    }
+  ],
+  sampleMasks1D: [],
+  metadata: {
+    ...sampleL1Scene.metadata,
+    appVersion: "0.3.0"
   }
 };

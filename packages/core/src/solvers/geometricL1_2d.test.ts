@@ -6,12 +6,13 @@ import { resultHash } from "./geometricL0";
 import { geometricL1_2dSolver } from "./geometricL1_2d";
 
 describe("geometric L1 2D solver", () => {
-  it("migrates old L0 scenes to SceneV2 without changing the solver id", () => {
+  it("migrates old L0 scenes to SceneV3 without changing the solver id", () => {
     const migrated = parseScene(sampleScene);
 
-    expect(migrated.schemaVersion).toBe("0.2.0");
+    expect(migrated.schemaVersion).toBe("0.3.0");
     expect(migrated.geometry.dimension).toBe("2d");
     expect(migrated.solverSettings.activeSolverId).toBe("geometric.l0");
+    expect(migrated.fieldGrids1D).toEqual([]);
   });
 
   it("computes the expected biconvex thick-lens lensmaker values", () => {

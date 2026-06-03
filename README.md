@@ -3,17 +3,25 @@
 A 2D microscope-grade optical bench MVP.
 
 The first public version started as L0 geometric optics: deterministic rays, thin lenses, aperture clipping,
-detector histograms, and analytic microscope readouts. The current build adds an L1 2D surface-optics mode with
-vector Snell refraction through editable thick-lens surfaces.
+detector histograms, and analytic microscope readouts. The current build adds L1 2D surface optics and an
+on-demand L2 scalar wave profile for a validated 1D transverse slice.
 
-Diffraction is still not faked; the UI labels Airy/PSF values as analytic estimates until a real scalar wave solver
-is added.
+Diffraction is still not faked. L0/L1 keep Airy/PSF values labeled as analytic estimates, while L2 is explicitly
+labeled as scalar 1D angular-spectrum propagation, not a full circular-aperture Airy disk or microscope image.
 
 ## Current Modes
 
 - `L0 Geometric Ray Optics`: thin-lens paraxial approximation, aperture clipping, detector histograms.
 - `L1 2D Surface Ray Optics`: biconvex thick lens surfaces, vector Snell refraction, lensmaker EFL/BFL readouts,
   geometric detector spot size, and spherical-aberration diagnostics.
+- `L2 Scalar 1D Wave Profile`: coherent monochromatic angular-spectrum propagation through a rectangular slit,
+  detector intensity profile, sampling warnings, energy accounting, and CSV/JSON field export.
+
+## L2 Validation Fixture
+
+The bundled L2 scene uses a 100 um rectangular slit, 500 nm wavelength, and 1 m propagation distance. The first
+1D Fraunhofer minima are expected near +/-5 mm, and the core tests check that the simulated intensity profile
+places the first minima there while conserving free-space field energy.
 
 ## Local Development
 

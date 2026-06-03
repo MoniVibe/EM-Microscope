@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import {
   detectorHistogramToCsv,
+  fieldProfileToCsv,
+  fieldProfileToJson,
   formatLength,
   formatPower,
   fromMeters,
@@ -9,11 +11,17 @@ import {
   geometricL1_2dSolver,
   parseScene,
   sampleL1Scene,
+  sampleL2Scene,
+  scalarAngularSpectrumL2_1dSolver,
   toMeters,
   toRadians,
   type DetectorElement,
+  type EnergyLedger,
+  type FieldOutput1D,
   type OpticalElement,
   type Scene,
+  type SolverResult,
+  type SolverWarning,
   type SourceElement
 } from "@emmicro/core";
 import {
@@ -27,12 +35,15 @@ import {
   RotateCcw,
   Save,
   SlidersHorizontal,
-  Trash2
+  Trash2,
+  Waves
 } from "lucide-react";
 import { BenchCanvas } from "./canvas/BenchCanvas";
+import { IntensityProfilePlot } from "./wave/IntensityProfilePlot";
 
 type SelectableKind = "source" | "element" | "detector";
 export type SelectedItem = { kind: SelectableKind; id: string } | null;
+type ActiveSolverId = Scene["solverSettings"]["activeSolverId"];
 
 type EditableItem =
   | { kind: "source"; item: SourceElement }
@@ -45,6 +56,25 @@ function nowIso(): string {
 
 function id(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+export function solverDisclosureFor(solverId: ActiveSolverId): { label: string; detail: string } {
+  if (solverId === "scalar.angularSpectrum.l2.1d") {
+    return {
+      label: "L2 scalar 1D field propagation",
+      detail: "1D transverse slice; not a full circular-aperture Airy disk"
+    };
+  }
+  if (solverId === "geometric.l1.2d") {
+    return {
+      label: "L1 2D Surface Ray Optics",
+      detail: "Diffraction not propagated"
+    };
+  }
+  return {
+    label: "L0 Geometric Ray Optics",
+    detail: "Diffraction not propagated"
+  };
 }
 
 function touch(scene: Scene): Scene {
@@ -86,13 +116,21 @@ function downloadText(filename: string, mime: string, text: string): void {
 export function App() {
   const [scene, setScene] = useState<Scene>(() => sampleL1Scene);
   const [selected, setSelected] = useState<SelectedItem>({ kind: "element", id: "lens-thick-biconvex" });
+  const [l2Result, setL2Result] = useState<SolverResult | null>(null);
+  const [l2Error, setL2Error] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const result = useMemo(() => {
-    return scene.solverSettings.activeSolverId === "geometric.l1.2d"
-      ? geometricL1_2dSolver.run(scene, { solverId: "geometric.l1.2d" })
-      : geometricL0Solver.run(scene, { solverId: "geometric.l0" });
+    return scene.solverSettings.activeSolverId === "geometric.l0"
+      ? geometricL0Solver.run(scene, { solverId: "geometric.l0" })
+      : geometricL1_2dSolver.run(scene, { solverId: "geometric.l1.2d" });
   }, [scene]);
+  const activeL2Result = l2Result?.sceneHash === result.sceneHash ? l2Result : null;
+  const activeL2Field = activeL2Result?.fieldOutputs?.[0];
+  const l2ValidationWarnings = useMemo(
+    () => (scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? scalarAngularSpectrumL2_1dSolver.validateScene(scene) : []),
+    [scene]
+  );
   const selectedItem = findSelected(scene, selected);
   const primaryHistogram = result.detectorHistograms?.[0];
   const primarySpot = result.readouts.spot?.[0];
@@ -105,9 +143,19 @@ export function App() {
     primaryThickLens?.type === "thickLens2D" && primaryLensmaker
       ? primaryThickLens.xM + primaryThickLens.thicknessM + primaryLensmaker.backFocalLengthM
       : null;
+  const modeDisclosure = solverDisclosureFor(scene.solverSettings.activeSolverId);
 
   function updateScene(updater: (current: Scene) => Scene): void {
+    setL2Result(null);
+    setL2Error(null);
     setScene((current) => touch(updater(current)));
+  }
+
+  function replaceScene(nextScene: Scene, nextSelected: SelectedItem = null): void {
+    setL2Result(null);
+    setL2Error(null);
+    setScene(nextScene);
+    setSelected(nextSelected);
   }
 
   function updateItem(kind: SelectableKind, itemId: string, updater: (item: any) => any): void {
@@ -292,13 +340,32 @@ export function App() {
   async function loadScene(file: File): Promise<void> {
     const text = await file.text();
     const parsed = parseScene(JSON.parse(text));
-    setScene(parsed);
-    setSelected(null);
+    replaceScene(parsed);
   }
 
-  function exportDetectorCsv(): void {
+  function computeL2Profile(): void {
+    try {
+      const nextResult = scalarAngularSpectrumL2_1dSolver.run(scene, { solverId: "scalar.angularSpectrum.l2.1d" });
+      setL2Result(nextResult);
+      setL2Error(null);
+    } catch (error) {
+      setL2Result(null);
+      setL2Error(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  function exportPrimaryCsv(): void {
+    if (scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && activeL2Result && activeL2Field) {
+      downloadText(`${activeL2Field.id}.csv`, "text/csv", fieldProfileToCsv(activeL2Result, activeL2Field));
+      return;
+    }
     if (!primaryHistogram) return;
     downloadText(`${primaryHistogram.detectorId}-histogram.csv`, "text/csv", detectorHistogramToCsv(primaryHistogram));
+  }
+
+  function exportFieldJson(): void {
+    if (!activeL2Result || !activeL2Field) return;
+    downloadText(`${activeL2Field.id}.json`, "application/json", fieldProfileToJson(activeL2Result, activeL2Field));
   }
 
   return (
@@ -313,11 +380,21 @@ export function App() {
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>{scene.solverSettings.activeSolverId === "geometric.l1.2d" ? "L1 2D Surface Ray Optics" : "L0 Geometric Ray Optics"}</span>
-          <strong>Diffraction not propagated</strong>
+          <span>{modeDisclosure.label}</span>
+          <strong>{modeDisclosure.detail}</strong>
         </div>
         <div className="top-actions">
-          <button className="icon-button" type="button" title="Reset L1 sample scene" onClick={() => setScene(sampleL1Scene)}>
+          <button
+            className="icon-button"
+            type="button"
+            title="Reset sample scene"
+            onClick={() =>
+              replaceScene(
+                scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? sampleL2Scene : sampleL1Scene,
+                scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? { kind: "element", id: "slit-ray-marker" } : { kind: "element", id: "lens-thick-biconvex" }
+              )
+            }
+          >
             <RotateCcw size={17} />
           </button>
           <button className="icon-button" type="button" title="Save scene JSON" onClick={saveScene}>
@@ -326,7 +403,7 @@ export function App() {
           <button className="icon-button" type="button" title="Load scene JSON" onClick={() => fileInputRef.current?.click()}>
             <FolderOpen size={17} />
           </button>
-          <button className="icon-button" type="button" title="Export detector histogram CSV" onClick={exportDetectorCsv}>
+          <button className="icon-button" type="button" title="Export current profile or detector CSV" onClick={exportPrimaryCsv}>
             <FileDown size={17} />
           </button>
           <input
@@ -373,7 +450,11 @@ export function App() {
             </button>
           </div>
 
-          <SceneControls scene={scene} updateScene={updateScene} />
+          <SceneControls
+            scene={scene}
+            updateScene={updateScene}
+            loadL2Sample={() => replaceScene(sampleL2Scene, { kind: "element", id: "slit-ray-marker" })}
+          />
 
           <div className="rail-section">
             <h2>Scene</h2>
@@ -392,7 +473,7 @@ export function App() {
           <BenchCanvas scene={scene} result={result} selected={selected} onSelect={setSelected} onMove={updatePosition} />
           <ReadoutStrip
             solverId={scene.solverSettings.activeSolverId}
-            focalXM={scene.solverSettings.activeSolverId === "geometric.l1.2d" ? l1FocusXM : primaryLens?.focalPlaneXM ?? null}
+            focalXM={scene.solverSettings.activeSolverId === "geometric.l0" ? primaryLens?.focalPlaneXM ?? null : l1FocusXM}
             magnification={primaryLens?.magnification ?? null}
             na={primaryNA?.numericalAperture ?? null}
             airyM={primaryNA?.airyRadiusM ?? null}
@@ -403,6 +484,9 @@ export function App() {
             tirCount={primaryAberration?.tirCount ?? 0}
             detectorPowerW={primaryHistogram?.totalPowerW ?? 0}
             rayCount={primaryHistogram?.rayCount ?? 0}
+            l2Field={activeL2Field}
+            l2Energy={activeL2Result?.energyLedger}
+            l2WarningCount={(activeL2Result?.warnings ?? l2ValidationWarnings).length}
           />
         </section>
 
@@ -415,14 +499,32 @@ export function App() {
           </div>
           <ElementProperties selectedItem={selectedItem} updateItem={updateItem} />
 
+          {scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && (
+            <WavePanel
+              field={activeL2Field}
+              result={activeL2Result}
+              validationWarnings={l2ValidationWarnings}
+              error={l2Error}
+              onCompute={computeL2Profile}
+              onExportCsv={exportPrimaryCsv}
+              onExportJson={exportFieldJson}
+            />
+          )}
+
           <section className="readout-panel">
             <h2>Provenance</h2>
             <ul>
-              <li>Ray paths: simulated {scene.solverSettings.activeSolverId === "geometric.l1.2d" ? "L1 2D surface" : "L0 geometric"}</li>
+              <li>
+                Ray paths: simulated{" "}
+                {scene.solverSettings.activeSolverId === "geometric.l0" ? "L0 geometric" : "L1 2D surface context"}
+              </li>
               <li>Thin-lens image: analytic paraxial estimate</li>
               <li>Thick-lens EFL/BFL: analytic paraxial estimate</li>
               <li>NA/Airy: analytic lower-bound estimate only</li>
               <li>Spot size: geometric detector RMS</li>
+              {scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && (
+                <li>L2 profile: simulated scalar 1D angular-spectrum field; not a full circular-aperture Airy disk</li>
+              )}
             </ul>
           </section>
         </aside>
@@ -433,10 +535,12 @@ export function App() {
 
 function SceneControls({
   scene,
-  updateScene
+  updateScene,
+  loadL2Sample
 }: {
   scene: Scene;
   updateScene: (updater: (current: Scene) => Scene) => void;
+  loadL2Sample: () => void;
 }) {
   return (
     <div className="rail-section">
@@ -445,18 +549,24 @@ function SceneControls({
         <span>Solver</span>
         <select
           value={scene.solverSettings.activeSolverId}
-          onChange={(event) =>
+          onChange={(event) => {
+            const activeSolverId = event.currentTarget.value as ActiveSolverId;
+            if (activeSolverId === "scalar.angularSpectrum.l2.1d" && scene.fieldGrids1D.length === 0) {
+              loadL2Sample();
+              return;
+            }
             updateScene((current) => ({
               ...current,
               solverSettings: {
                 ...current.solverSettings,
-                activeSolverId: event.currentTarget.value === "geometric.l1.2d" ? "geometric.l1.2d" : "geometric.l0"
+                activeSolverId
               }
-            }))
-          }
+            }));
+          }}
         >
           <option value="geometric.l1.2d">L1 surface optics</option>
           <option value="geometric.l0">L0 thin lens</option>
+          <option value="scalar.angularSpectrum.l2.1d">L2 wave profile</option>
         </select>
       </label>
       <NumberField
@@ -507,7 +617,129 @@ function SceneControls({
           })
         }
       />
+      {scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && (
+        <WaveControls scene={scene} updateScene={updateScene} loadL2Sample={loadL2Sample} />
+      )}
     </div>
+  );
+}
+
+function WaveControls({
+  scene,
+  updateScene,
+  loadL2Sample
+}: {
+  scene: Scene;
+  updateScene: (updater: (current: Scene) => Scene) => void;
+  loadL2Sample: () => void;
+}) {
+  const grid = scene.fieldGrids1D[0];
+  const detectorPlane = scene.fieldPlanes1D.find((plane) => plane.role === "detector");
+  const mask = scene.masks1D.find((candidate) => candidate.type === "rectAperture1D");
+
+  if (!grid || !detectorPlane || !mask) {
+    return (
+      <button type="button" title="Load L2 slit diffraction fixture" onClick={loadL2Sample}>
+        <Waves size={17} />
+        <span>Slit fixture</span>
+      </button>
+    );
+  }
+
+  return (
+    <>
+      <NumberField
+        label="Slit width"
+        value={fromMeters(mask.widthM, "um")}
+        unit="um"
+        min={10}
+        max={2000}
+        step={10}
+        onChange={(value) => {
+          const maskId = mask.id;
+          updateScene((current) => ({
+            ...current,
+            masks1D: current.masks1D.map((candidate) =>
+              candidate.id === maskId && candidate.type === "rectAperture1D"
+                ? { ...candidate, widthM: Math.max(1e-9, toMeters(value, "um")) }
+                : candidate
+            )
+          }));
+        }}
+      />
+      <NumberField
+        label="Distance"
+        value={fromMeters(detectorPlane.xM, "mm")}
+        unit="mm"
+        min={1}
+        max={3000}
+        step={10}
+        onChange={(value) => {
+          const planeId = detectorPlane.id;
+          const detectorXM = Math.max(1e-6, toMeters(value, "mm"));
+          updateScene((current) => ({
+            ...current,
+            fieldPlanes1D: current.fieldPlanes1D.map((plane) => (plane.id === planeId ? { ...plane, xM: detectorXM } : plane)),
+            detectors: current.detectors.map((detector, index) => (index === 0 ? { ...detector, xM: detectorXM } : detector)),
+            bench: { ...current.bench, xMaxM: Math.max(current.bench.xMaxM, detectorXM + 0.05) }
+          }));
+        }}
+      />
+      <NumberField
+        label="Window"
+        value={fromMeters(grid.yMaxM - grid.yMinM, "mm")}
+        unit="mm"
+        min={2}
+        max={100}
+        step={1}
+        onChange={(value) => {
+          const gridId = grid.id;
+          const heightM = Math.max(1e-6, toMeters(value, "mm"));
+          updateScene((current) => ({
+            ...current,
+            fieldGrids1D: current.fieldGrids1D.map((candidate) =>
+              candidate.id === gridId
+                ? {
+                    ...candidate,
+                    yMinM: -heightM / 2,
+                    yMaxM: heightM / 2,
+                    spacingM: heightM / candidate.samples
+                  }
+                : candidate
+            ),
+            bench: { ...current.bench, yMinM: -heightM / 2, yMaxM: heightM / 2 },
+            detectors: current.detectors.map((detector, index) => (index === 0 ? { ...detector, heightM } : detector))
+          }));
+        }}
+      />
+      <label className="field-row">
+        <span>Samples</span>
+        <select
+          value={grid.samples}
+          onChange={(event) => {
+            const samples = Number(event.currentTarget.value);
+            const gridId = grid.id;
+            updateScene((current) => ({
+              ...current,
+              fieldGrids1D: current.fieldGrids1D.map((candidate) =>
+                candidate.id === gridId
+                  ? {
+                      ...candidate,
+                      samples,
+                      spacingM: (candidate.yMaxM - candidate.yMinM) / samples
+                    }
+                  : candidate
+              )
+            }));
+          }}
+        >
+          <option value={1024}>1024</option>
+          <option value={2048}>2048</option>
+          <option value={4096}>4096</option>
+          <option value={8192}>8192</option>
+        </select>
+      </label>
+    </>
   );
 }
 
@@ -599,6 +831,65 @@ function SourceSharedFields({ source, update }: { source: SourceElement; update:
   );
 }
 
+function WavePanel({
+  field,
+  result,
+  validationWarnings,
+  error,
+  onCompute,
+  onExportCsv,
+  onExportJson
+}: {
+  field: FieldOutput1D | undefined;
+  result: SolverResult | null;
+  validationWarnings: SolverWarning[];
+  error: string | null;
+  onCompute: () => void;
+  onExportCsv: () => void;
+  onExportJson: () => void;
+}) {
+  const warnings = result?.warnings ?? validationWarnings;
+  return (
+    <section className="wave-panel">
+      <div className="wave-actions">
+        <button type="button" onClick={onCompute}>
+          <Waves size={17} />
+          <span>Compute L2 profile</span>
+        </button>
+        <button type="button" disabled={!field || !result} onClick={onExportCsv}>
+          <FileDown size={17} />
+          <span>CSV</span>
+        </button>
+        <button type="button" disabled={!field || !result} onClick={onExportJson}>
+          <Save size={17} />
+          <span>JSON</span>
+        </button>
+      </div>
+      <div className="l2-disclosure">
+        <strong>L2 scalar 1D field propagation</strong>
+        <span>1D transverse slice; not a full circular-aperture Airy disk</span>
+      </div>
+      {error && <div className="error-banner">{error}</div>}
+      {warnings.length > 0 && (
+        <ul className="warning-list">
+          {warnings.map((warning) => (
+            <li key={`${warning.code}:${warning.elementId ?? ""}`}>{warning.message}</li>
+          ))}
+        </ul>
+      )}
+      {field ? (
+        <IntensityProfilePlot field={field} />
+      ) : (
+        <div className="empty-state">No L2 field profile computed for the current scene.</div>
+      )}
+    </section>
+  );
+}
+
+function formatRelativeEnergy(value: number | null | undefined): string {
+  return value === null || value === undefined ? "n/a" : value.toExponential(3);
+}
+
 function ReadoutStrip({
   solverId,
   focalXM,
@@ -611,7 +902,10 @@ function ReadoutStrip({
   aberrationM,
   tirCount,
   detectorPowerW,
-  rayCount
+  rayCount,
+  l2Field,
+  l2Energy,
+  l2WarningCount
 }: {
   solverId: Scene["solverSettings"]["activeSolverId"];
   focalXM: number | null;
@@ -625,7 +919,24 @@ function ReadoutStrip({
   tirCount: number;
   detectorPowerW: number;
   rayCount: number;
+  l2Field: FieldOutput1D | undefined;
+  l2Energy: EnergyLedger | undefined;
+  l2WarningCount: number;
 }) {
+  if (solverId === "scalar.angularSpectrum.l2.1d") {
+    const peak = l2Field ? Math.max(...l2Field.intensity) : null;
+    return (
+      <div className="readout-strip">
+        <Readout label="Profile" value={l2Field ? "computed" : "pending"} source="on demand" />
+        <Readout label="Peak I" value={formatRelativeEnergy(peak)} source="relative" />
+        <Readout label="Input E" value={formatRelativeEnergy(l2Energy?.inputEnergy)} source="field" />
+        <Readout label="After slit" value={formatRelativeEnergy(l2Energy?.afterMaskEnergy)} source="field" />
+        <Readout label="Output E" value={formatRelativeEnergy(l2Energy?.outputEnergy)} source="field" />
+        <Readout label="Warnings" value={String(l2WarningCount)} source={`${l2Field?.yM.length ?? 0} samples`} />
+      </div>
+    );
+  }
+
   if (solverId === "geometric.l1.2d") {
     return (
       <div className="readout-strip">
