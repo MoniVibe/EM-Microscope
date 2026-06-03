@@ -11,6 +11,7 @@ export type SolverId =
   | "geometric.l1.2d"
   | "geometric.surfaces.l1"
   | "scalar.angularSpectrum.l2.1d"
+  | "scalar.coherent.l3.2d"
   | "hybrid.microscope.l3"
   | "em.fdtdIsland.l4";
 
@@ -106,10 +107,35 @@ export type FieldOutput1D = {
   provenance: PhysicsProvenance;
 };
 
+export type FieldOutput2D = {
+  id: string;
+  type: "fieldImage2D";
+  planeId: string;
+  gridId: string;
+  xM: number;
+  width: number;
+  height: number;
+  uMinM: number;
+  uMaxM: number;
+  vMinM: number;
+  vMaxM: number;
+  real?: Float64Array;
+  imag?: Float64Array;
+  intensity: Float64Array;
+  phaseRad?: Float64Array;
+  normalization: "raw" | "peak-normalized" | "energy-normalized";
+  units: {
+    u: "m";
+    v: "m";
+    intensity: "relative" | "W/m^2";
+  };
+  provenance: PhysicsProvenance;
+};
+
 export type WaveEnergyStage = {
   id: string;
   label: string;
-  kind: "source" | "propagation" | "sample" | "aperture" | "detector";
+  kind: "source" | "propagation" | "sample" | "aperture" | "lens" | "pupil" | "detector";
   xM: number;
   inputEnergy: number;
   outputEnergy: number;
@@ -142,6 +168,7 @@ export type SolverResult = {
   detectorHits?: DetectorHit[];
   detectorHistograms?: DetectorHistogram[];
   fieldOutputs?: FieldOutput1D[];
+  fieldImageOutputs?: FieldOutput2D[];
   energyLedger?: EnergyLedger;
   readouts: {
     thinLens?: ThinLensReadout[];

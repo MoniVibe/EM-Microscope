@@ -15,16 +15,36 @@ export const l2Scalar1DProvenance: PhysicsProvenance = {
   ]
 };
 
+export const l3Scalar2DProvenance: PhysicsProvenance = {
+  kind: "simulated",
+  level: "L3",
+  solverId: "scalar.coherent.l3.2d",
+  model: "scalar-wave-2d-angular-spectrum",
+  dimensionality: "2d",
+  approximation: [
+    "coherent monochromatic scalar field",
+    "2D transverse image-plane intensity approximation",
+    "paraxial thin-lens phase model planned for L3 solver",
+    "homogeneous medium",
+    "no partial coherence",
+    "no vector optics",
+    "not true 3D physics",
+    "not fluorescence or full microscope objective physics"
+  ]
+};
+
 export function makeWaveEnergyLedger({
   inputEnergy,
   afterMaskEnergy,
   outputEnergy,
-  stages
+  stages,
+  provenance = l2Scalar1DProvenance
 }: {
   inputEnergy: number;
   afterMaskEnergy: number;
   outputEnergy: number;
   stages?: EnergyLedger["stages"];
+  provenance?: PhysicsProvenance;
 }): EnergyLedger {
   const reference = Math.max(afterMaskEnergy, Number.EPSILON);
   return {
@@ -35,6 +55,6 @@ export function makeWaveEnergyLedger({
     relativeOutputDrift: (outputEnergy - afterMaskEnergy) / reference,
     units: "relative-field-energy",
     stages,
-    provenance: l2Scalar1DProvenance
+    provenance
   };
 }

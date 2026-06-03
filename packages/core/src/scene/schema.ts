@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const displayLengthUnitSchema = z.enum(["m", "mm", "um", "nm"]);
 export const displayAngleUnitSchema = z.enum(["rad", "deg"]);
-export const solverIdSchema = z.enum(["geometric.l0", "geometric.l1.2d", "scalar.angularSpectrum.l2.1d"]);
+export const solverIdSchema = z.enum(["geometric.l0", "geometric.l1.2d", "scalar.angularSpectrum.l2.1d", "scalar.coherent.l3.2d"]);
 
 const finiteNumber = z.number().finite();
 const positiveNumber = finiteNumber.positive();
@@ -427,6 +427,224 @@ export const samplePlane1DSchema = z
   })
   .strict();
 
+export const fieldGrid2DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    uMinM: finiteNumber,
+    uMaxM: finiteNumber,
+    vMinM: finiteNumber,
+    vMaxM: finiteNumber,
+    width: z.number().int().min(16).max(1024),
+    height: z.number().int().min(16).max(1024),
+    spacingUM: positiveNumber,
+    spacingVM: positiveNumber
+  })
+  .strict()
+  .refine((grid) => grid.uMaxM > grid.uMinM, "uMaxM must be greater than uMinM")
+  .refine((grid) => grid.vMaxM > grid.vMinM, "vMaxM must be greater than vMinM")
+  .refine((grid) => Math.abs(grid.spacingUM - (grid.uMaxM - grid.uMinM) / grid.width) <= Math.max(1e-15, grid.spacingUM * 1e-9), {
+    message: "spacingUM must equal (uMaxM - uMinM) / width"
+  })
+  .refine((grid) => Math.abs(grid.spacingVM - (grid.vMaxM - grid.vMinM) / grid.height) <= Math.max(1e-15, grid.spacingVM * 1e-9), {
+    message: "spacingVM must equal (vMaxM - vMinM) / height"
+  });
+
+const fieldSource2DSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("uniformPlaneWave"),
+      amplitude: nonNegativeNumber,
+      phaseRad: finiteNumber
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("gaussian"),
+      waistUM: positiveNumber,
+      waistVM: positiveNumber,
+      amplitude: nonNegativeNumber,
+      phaseRad: finiteNumber.default(0),
+      centerUM: finiteNumber.default(0),
+      centerVM: finiteNumber.default(0)
+    })
+    .strict()
+]);
+
+export const fieldPlane2DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    role: z.enum(["source", "detector"]),
+    xM: finiteNumber,
+    gridId: z.string().min(1),
+    mediumId: z.string().min(1),
+    fieldSource: fieldSource2DSchema.optional()
+  })
+  .strict()
+  .superRefine((plane, ctx) => {
+    if (plane.role === "source" && !plane.fieldSource) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D field plane ${plane.id} is a source but has no fieldSource` });
+    }
+  });
+
+export const sampleTransmission2DSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("uniform"),
+      amplitude: nonNegativeNumber,
+      phaseRad: finiteNumber
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("disc"),
+      radiusM: positiveNumber,
+      centerUM: finiteNumber.default(0),
+      centerVM: finiteNumber.default(0),
+      amplitudeInside: nonNegativeNumber,
+      amplitudeOutside: nonNegativeNumber,
+      phaseInsideRad: finiteNumber.default(0),
+      phaseOutsideRad: finiteNumber.default(0)
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("doubleSlit2D"),
+      slitWidthM: positiveNumber,
+      slitHeightM: positiveNumber,
+      separationM: positiveNumber,
+      centerUM: finiteNumber.default(0),
+      centerVM: finiteNumber.default(0)
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("grating2D"),
+      periodM: positiveNumber,
+      dutyCycle: z.number().finite().min(0.01).max(0.99),
+      orientationRad: finiteNumber.default(0),
+      centerUM: finiteNumber.default(0),
+      centerVM: finiteNumber.default(0)
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("barTarget2D"),
+      periodM: positiveNumber,
+      dutyCycle: z.number().finite().min(0.01).max(0.99),
+      bars: z.number().int().min(1).max(201),
+      contrast: z.number().finite().min(0).max(1),
+      orientationRad: finiteNumber.default(0),
+      centerUM: finiteNumber.default(0),
+      centerVM: finiteNumber.default(0)
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("phaseStep2D"),
+      boundaryUM: finiteNumber,
+      phaseLeftRad: finiteNumber,
+      phaseRightRad: finiteNumber
+    })
+    .strict(),
+  z
+    .object({
+      kind: z.literal("checkerboard"),
+      periodM: positiveNumber,
+      contrast: z.number().finite().min(0).max(1),
+      centerUM: finiteNumber.default(0),
+      centerVM: finiteNumber.default(0)
+    })
+    .strict()
+]);
+
+export const samplePlane2DSchema = z
+  .object({
+    id: z.string().min(1),
+    type: z.literal("samplePlane2D"),
+    label: z.string().min(1),
+    xM: finiteNumber,
+    gridId: z.string().min(1),
+    transmission: sampleTransmission2DSchema
+  })
+  .strict();
+
+export const pupilPlane2DSchema = z
+  .object({
+    id: z.string().min(1),
+    type: z.literal("pupilPlane2D"),
+    label: z.string().min(1),
+    xM: finiteNumber,
+    gridId: z.string().min(1),
+    shape: z.discriminatedUnion("kind", [
+      z
+        .object({
+          kind: z.literal("circle"),
+          radiusM: positiveNumber,
+          centerUM: finiteNumber.default(0),
+          centerVM: finiteNumber.default(0)
+        })
+        .strict(),
+      z
+        .object({
+          kind: z.literal("annulus"),
+          innerRadiusM: nonNegativeNumber,
+          outerRadiusM: positiveNumber,
+          centerUM: finiteNumber.default(0),
+          centerVM: finiteNumber.default(0)
+        })
+        .strict()
+    ]),
+    numericalAperture: positiveNumber.optional()
+  })
+  .strict()
+  .superRefine((plane, ctx) => {
+    if (plane.shape.kind === "annulus" && plane.shape.innerRadiusM >= plane.shape.outerRadiusM) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `pupil plane ${plane.id} annulus inner radius must be smaller than outer radius` });
+    }
+  });
+
+export const thinLensPhasePlane2DSchema = z
+  .object({
+    id: z.string().min(1),
+    type: z.literal("thinLensPhasePlane2D"),
+    label: z.string().min(1),
+    xM: finiteNumber,
+    gridId: z.string().min(1),
+    focalLengthM: finiteNumber.refine((value) => Math.abs(value) > 1e-12, "focal length cannot be zero"),
+    centerUM: finiteNumber.default(0),
+    centerVM: finiteNumber.default(0)
+  })
+  .strict();
+
+export const detectorPlane2DSchema = z
+  .object({
+    id: z.string().min(1),
+    type: z.literal("detectorPlane2D"),
+    label: z.string().min(1),
+    xM: finiteNumber,
+    gridId: z.string().min(1),
+    mediumId: z.string().min(1),
+    output: z.literal("intensity")
+  })
+  .strict();
+
+export const coherentMicroscopePipeline2DSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    sourcePlaneId: z.string().min(1),
+    samplePlaneIds: z.array(z.string().min(1)),
+    lensPlaneId: z.string().min(1),
+    pupilPlaneId: z.string().min(1),
+    detectorPlaneId: z.string().min(1),
+    wavelengthM: positiveNumber,
+    mediumId: z.string().min(1),
+    outputFieldPolicy: z.enum(["detectorOnly", "allPlanes"])
+  })
+  .strict();
+
 const sceneV3BaseSchema = sceneV2BaseSchema
   .omit({ schemaVersion: true })
   .extend({
@@ -445,7 +663,9 @@ const sceneV3BaseSchema = sceneV2BaseSchema
     sampleMasks1D: z.array(z.never()).default([])
   });
 
-export const sceneV3Schema = sceneV3BaseSchema.superRefine((scene, ctx) => {
+type SceneV3ReferenceInput = Omit<z.infer<typeof sceneV3BaseSchema>, "schemaVersion">;
+
+function validateSceneV3WaveReferences(scene: SceneV3ReferenceInput, ctx: z.RefinementCtx): void {
   validateSceneV2References(scene, ctx);
 
   const ids = new Set<string>();
@@ -484,7 +704,119 @@ export const sceneV3Schema = sceneV3BaseSchema.superRefine((scene, ctx) => {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: `sample plane ${sample.id} references an unknown grid` });
     }
   }
-});
+}
+
+export const sceneV3Schema = sceneV3BaseSchema.superRefine(validateSceneV3WaveReferences);
+
+const sceneV4BaseSchema = sceneV3BaseSchema
+  .omit({ schemaVersion: true, waveSettings: true })
+  .extend({
+    schemaVersion: z.literal("0.4.0"),
+    waveSettings: z
+      .object({
+        defaultCoherence: z.literal("coherent"),
+        defaultPolarization: z.literal("scalar-unpolarized-placeholder"),
+        defaultGrid1DId: z.string().min(1).optional(),
+        defaultGrid2DId: z.string().min(1).optional()
+      })
+      .strict(),
+    fieldGrids2D: z.array(fieldGrid2DSchema).default([]),
+    fieldPlanes2D: z.array(fieldPlane2DSchema).default([]),
+    samplePlanes2D: z.array(samplePlane2DSchema).default([]),
+    pupilPlanes2D: z.array(pupilPlane2DSchema).default([]),
+    thinLensPhasePlanes2D: z.array(thinLensPhasePlane2DSchema).default([]),
+    detectorPlanes2D: z.array(detectorPlane2DSchema).default([]),
+    microscopePipelines2D: z.array(coherentMicroscopePipeline2DSchema).default([])
+  });
+
+type SceneV4ReferenceInput = Omit<z.infer<typeof sceneV4BaseSchema>, "schemaVersion">;
+
+function validateSceneV4References(scene: SceneV4ReferenceInput, ctx: z.RefinementCtx): void {
+  validateSceneV3WaveReferences(scene, ctx);
+
+  const ids = new Set<string>();
+  for (const id of [
+    ...scene.fieldGrids2D.map((grid) => grid.id),
+    ...scene.fieldPlanes2D.map((plane) => plane.id),
+    ...scene.samplePlanes2D.map((sample) => sample.id),
+    ...scene.pupilPlanes2D.map((pupil) => pupil.id),
+    ...scene.thinLensPhasePlanes2D.map((lens) => lens.id),
+    ...scene.detectorPlanes2D.map((detector) => detector.id),
+    ...scene.microscopePipelines2D.map((pipeline) => pipeline.id)
+  ]) {
+    if (ids.has(id)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `duplicate 2D wave id: ${id}` });
+    }
+    ids.add(id);
+  }
+
+  const gridIds = new Set(scene.fieldGrids2D.map((grid) => grid.id));
+  const mediaIds = new Set(scene.mediaCatalog.map((medium) => medium.id));
+  const fieldPlaneIds = new Set(scene.fieldPlanes2D.map((plane) => plane.id));
+  const samplePlaneIds = new Set(scene.samplePlanes2D.map((sample) => sample.id));
+  const lensPlaneIds = new Set(scene.thinLensPhasePlanes2D.map((lens) => lens.id));
+  const pupilPlaneIds = new Set(scene.pupilPlanes2D.map((pupil) => pupil.id));
+  const detectorPlaneIds = new Set(scene.detectorPlanes2D.map((detector) => detector.id));
+
+  if (scene.waveSettings.defaultGrid2DId && !gridIds.has(scene.waveSettings.defaultGrid2DId)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: `unknown default 2D field grid id: ${scene.waveSettings.defaultGrid2DId}` });
+  }
+  for (const plane of scene.fieldPlanes2D) {
+    if (!gridIds.has(plane.gridId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D field plane ${plane.id} references an unknown grid` });
+    }
+    if (!mediaIds.has(plane.mediumId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D field plane ${plane.id} references an unknown medium` });
+    }
+  }
+  for (const sample of scene.samplePlanes2D) {
+    if (!gridIds.has(sample.gridId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D sample plane ${sample.id} references an unknown grid` });
+    }
+  }
+  for (const pupil of scene.pupilPlanes2D) {
+    if (!gridIds.has(pupil.gridId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D pupil plane ${pupil.id} references an unknown grid` });
+    }
+  }
+  for (const lens of scene.thinLensPhasePlanes2D) {
+    if (!gridIds.has(lens.gridId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D thin-lens phase plane ${lens.id} references an unknown grid` });
+    }
+  }
+  for (const detector of scene.detectorPlanes2D) {
+    if (!gridIds.has(detector.gridId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D detector plane ${detector.id} references an unknown grid` });
+    }
+    if (!mediaIds.has(detector.mediumId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D detector plane ${detector.id} references an unknown medium` });
+    }
+  }
+  for (const pipeline of scene.microscopePipelines2D) {
+    if (!fieldPlaneIds.has(pipeline.sourcePlaneId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D pipeline ${pipeline.id} references an unknown source plane` });
+    }
+    for (const samplePlaneId of pipeline.samplePlaneIds) {
+      if (!samplePlaneIds.has(samplePlaneId)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D pipeline ${pipeline.id} references an unknown sample plane` });
+      }
+    }
+    if (!lensPlaneIds.has(pipeline.lensPlaneId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D pipeline ${pipeline.id} references an unknown thin-lens phase plane` });
+    }
+    if (!pupilPlaneIds.has(pipeline.pupilPlaneId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D pipeline ${pipeline.id} references an unknown pupil plane` });
+    }
+    if (!detectorPlaneIds.has(pipeline.detectorPlaneId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D pipeline ${pipeline.id} references an unknown detector plane` });
+    }
+    if (!mediaIds.has(pipeline.mediumId)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: `2D pipeline ${pipeline.id} references an unknown medium` });
+    }
+  }
+}
+
+export const sceneV4Schema = sceneV4BaseSchema.superRefine(validateSceneV4References);
 
 export type SourceElement = z.infer<typeof sourceElementSchema>;
 export type OpticalElement = z.infer<typeof opticalElementSchema>;
@@ -500,10 +832,19 @@ export type Mask1D = z.infer<typeof mask1DSchema>;
 export type RectApertureMask1D = Extract<Mask1D, { type: "rectAperture1D" }>;
 export type SampleTransmission1D = z.infer<typeof sampleTransmission1DSchema>;
 export type SamplePlane1D = z.infer<typeof samplePlane1DSchema>;
+export type FieldGrid2D = z.infer<typeof fieldGrid2DSchema>;
+export type FieldPlane2D = z.infer<typeof fieldPlane2DSchema>;
+export type SampleTransmission2D = z.infer<typeof sampleTransmission2DSchema>;
+export type SamplePlane2D = z.infer<typeof samplePlane2DSchema>;
+export type PupilPlane2D = z.infer<typeof pupilPlane2DSchema>;
+export type ThinLensPhasePlane2D = z.infer<typeof thinLensPhasePlane2DSchema>;
+export type DetectorPlane2D = z.infer<typeof detectorPlane2DSchema>;
+export type CoherentMicroscopePipeline2D = z.infer<typeof coherentMicroscopePipeline2DSchema>;
 export type SceneV1 = z.infer<typeof sceneV1Schema>;
 export type SceneV2 = z.infer<typeof sceneV2Schema>;
 export type SceneV3 = z.infer<typeof sceneV3Schema>;
-export type Scene = SceneV3;
+export type SceneV4 = z.infer<typeof sceneV4Schema>;
+export type Scene = SceneV4;
 
 export function parseSceneV1(value: unknown): SceneV1 {
   return sceneV1Schema.parse(value);
@@ -553,13 +894,33 @@ export function migrateSceneV2ToV3(scene: SceneV2): SceneV3 {
   };
 }
 
+export function migrateSceneV3ToV4(scene: SceneV3): SceneV4 {
+  return {
+    ...scene,
+    schemaVersion: "0.4.0",
+    waveSettings: {
+      ...scene.waveSettings
+    },
+    fieldGrids2D: [],
+    fieldPlanes2D: [],
+    samplePlanes2D: [],
+    pupilPlanes2D: [],
+    thinLensPhasePlanes2D: [],
+    detectorPlanes2D: [],
+    microscopePipelines2D: []
+  };
+}
+
 export function parseScene(value: unknown): Scene {
   const maybeVersion = typeof value === "object" && value !== null ? (value as { schemaVersion?: unknown }).schemaVersion : undefined;
   if (maybeVersion === "0.1.0") {
-    return migrateSceneV2ToV3(migrateSceneV1ToV2(parseSceneV1(value)));
+    return migrateSceneV3ToV4(migrateSceneV2ToV3(migrateSceneV1ToV2(parseSceneV1(value))));
   }
   if (maybeVersion === "0.2.0") {
-    return migrateSceneV2ToV3(sceneV2Schema.parse(value));
+    return migrateSceneV3ToV4(migrateSceneV2ToV3(sceneV2Schema.parse(value)));
   }
-  return sceneV3Schema.parse(value);
+  if (maybeVersion === "0.3.0") {
+    return migrateSceneV3ToV4(sceneV3Schema.parse(value));
+  }
+  return sceneV4Schema.parse(value);
 }

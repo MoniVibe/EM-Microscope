@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import {
   detectorHistogramToCsv,
+  fieldImageToCsv,
+  fieldImageToJson,
   fieldProfileToCsv,
   fieldProfileToJson,
   formatLength,
@@ -11,16 +13,21 @@ import {
   geometricL1_2dSolver,
   l25PresetDefinitions,
   l25PresetScenes,
+  l3PresetDefinitions,
+  l3PresetScenes,
   parseScene,
   sampleL1Scene,
   sampleL2Scene,
   scalarAngularSpectrumL2_1dSolver,
+  scalarCoherentL3_2dSolver,
   toMeters,
   toRadians,
   type DetectorElement,
   type EnergyLedger,
   type FieldOutput1D,
+  type FieldOutput2D,
   type L25PresetId,
+  type L3PresetId,
   type OpticalElement,
   type SamplePlane1D,
   type Scene,
@@ -43,12 +50,14 @@ import {
   Waves
 } from "lucide-react";
 import { BenchCanvas } from "./canvas/BenchCanvas";
+import { fieldImageToPngDataUrl, IntensityImageView } from "./wave/IntensityImageView";
 import { IntensityProfilePlot } from "./wave/IntensityProfilePlot";
 
 type SelectableKind = "source" | "element" | "detector";
 export type SelectedItem = { kind: SelectableKind; id: string } | null;
 type ActiveSolverId = Scene["solverSettings"]["activeSolverId"];
 type WavePresetValue = L25PresetId | "custom";
+type ImagePresetValue = L3PresetId | "custom";
 
 type EditableItem =
   | { kind: "source"; item: SourceElement }
@@ -64,6 +73,12 @@ function id(prefix: string): string {
 }
 
 export function solverDisclosureFor(solverId: ActiveSolverId, hasSamplePlane = false): { label: string; detail: string } {
+  if (solverId === "scalar.coherent.l3.2d") {
+    return {
+      label: "L3 coherent 2D scalar image approximation",
+      detail: "2D coherent scalar image-plane intensity approximation; not partial coherence, vector optics, fluorescence, 3D physics, or EM"
+    };
+  }
   if (solverId === "scalar.angularSpectrum.l2.1d") {
     if (hasSamplePlane) {
       return {
@@ -91,6 +106,11 @@ export function solverDisclosureFor(solverId: ActiveSolverId, hasSamplePlane = f
 function wavePresetIdFor(scene: Scene): WavePresetValue {
   const suffix = scene.sceneId.startsWith("sample-l25-") ? scene.sceneId.slice("sample-l25-".length) : "";
   return suffix in l25PresetScenes ? (suffix as L25PresetId) : "custom";
+}
+
+function imagePresetIdFor(scene: Scene): ImagePresetValue {
+  const suffix = scene.sceneId.startsWith("sample-l3-") ? scene.sceneId.slice("sample-l3-".length) : "";
+  return suffix in l3PresetScenes ? (suffix as L3PresetId) : "custom";
 }
 
 function sampleVisualDiameterM(sample: SamplePlane1D): number {
@@ -144,6 +164,8 @@ export function App() {
   const [selected, setSelected] = useState<SelectedItem>({ kind: "element", id: "lens-thick-biconvex" });
   const [l2Result, setL2Result] = useState<SolverResult | null>(null);
   const [l2Error, setL2Error] = useState<string | null>(null);
+  const [l3Result, setL3Result] = useState<SolverResult | null>(null);
+  const [l3Error, setL3Error] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const result = useMemo(() => {
@@ -153,8 +175,14 @@ export function App() {
   }, [scene]);
   const activeL2Result = l2Result?.sceneHash === result.sceneHash ? l2Result : null;
   const activeL2Field = activeL2Result?.fieldOutputs?.[0];
+  const activeL3Result = l3Result?.sceneHash === result.sceneHash ? l3Result : null;
+  const activeL3Field = activeL3Result?.fieldImageOutputs?.[0];
   const l2ValidationWarnings = useMemo(
     () => (scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? scalarAngularSpectrumL2_1dSolver.validateScene(scene) : []),
+    [scene]
+  );
+  const l3ValidationWarnings = useMemo(
+    () => (scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" ? scalarCoherentL3_2dSolver.validateScene(scene) : []),
     [scene]
   );
   const selectedItem = findSelected(scene, selected);
@@ -174,18 +202,26 @@ export function App() {
   function updateScene(updater: (current: Scene) => Scene): void {
     setL2Result(null);
     setL2Error(null);
+    setL3Result(null);
+    setL3Error(null);
     setScene((current) => touch(updater(current)));
   }
 
   function replaceScene(nextScene: Scene, nextSelected: SelectedItem = null): void {
     setL2Result(null);
     setL2Error(null);
+    setL3Result(null);
+    setL3Error(null);
     setScene(nextScene);
     setSelected(nextSelected);
   }
 
   function loadWavePreset(presetId: L25PresetId): void {
     replaceScene(structuredClone(l25PresetScenes[presetId]), { kind: "element", id: "sample-marker" });
+  }
+
+  function loadImagePreset(presetId: L3PresetId): void {
+    replaceScene(structuredClone(l3PresetScenes[presetId]), { kind: "element", id: "l3-lens-marker" });
   }
 
   function updateItem(kind: SelectableKind, itemId: string, updater: (item: any) => any): void {
@@ -384,7 +420,22 @@ export function App() {
     }
   }
 
+  function computeL3Image(): void {
+    try {
+      const nextResult = scalarCoherentL3_2dSolver.run(scene, { solverId: "scalar.coherent.l3.2d" });
+      setL3Result(nextResult);
+      setL3Error(null);
+    } catch (error) {
+      setL3Result(null);
+      setL3Error(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   function exportPrimaryCsv(): void {
+    if (scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" && activeL3Result && activeL3Field) {
+      downloadText(`${activeL3Field.id}.csv`, "text/csv", fieldImageToCsv(activeL3Result, activeL3Field));
+      return;
+    }
     if (scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && activeL2Result && activeL2Field) {
       downloadText(`${activeL2Field.id}.csv`, "text/csv", fieldProfileToCsv(activeL2Result, activeL2Field));
       return;
@@ -394,8 +445,22 @@ export function App() {
   }
 
   function exportFieldJson(): void {
+    if (scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" && activeL3Result && activeL3Field) {
+      downloadText(`${activeL3Field.id}.json`, "application/json", fieldImageToJson(activeL3Result, activeL3Field));
+      return;
+    }
     if (!activeL2Result || !activeL2Field) return;
     downloadText(`${activeL2Field.id}.json`, "application/json", fieldProfileToJson(activeL2Result, activeL2Field));
+  }
+
+  function exportFieldPng(): void {
+    if (!activeL3Field) return;
+    const anchor = document.createElement("a");
+    anchor.href = fieldImageToPngDataUrl(activeL3Field);
+    anchor.download = `${activeL3Field.id}.png`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
   }
 
   return (
@@ -420,8 +485,16 @@ export function App() {
             title="Reset sample scene"
             onClick={() =>
               replaceScene(
-                scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? structuredClone(l25PresetScenes.singleSlit) : sampleL1Scene,
-                scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" ? { kind: "element", id: "sample-marker" } : { kind: "element", id: "lens-thick-biconvex" }
+                scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d"
+                  ? structuredClone(l3PresetScenes.airyPupil)
+                  : scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d"
+                    ? structuredClone(l25PresetScenes.singleSlit)
+                    : sampleL1Scene,
+                scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d"
+                  ? { kind: "element", id: "l3-lens-marker" }
+                  : scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d"
+                    ? { kind: "element", id: "sample-marker" }
+                    : { kind: "element", id: "lens-thick-biconvex" }
               )
             }
           >
@@ -433,7 +506,7 @@ export function App() {
           <button className="icon-button" type="button" title="Load scene JSON" onClick={() => fileInputRef.current?.click()}>
             <FolderOpen size={17} />
           </button>
-          <button className="icon-button" type="button" title="Export current profile or detector CSV" onClick={exportPrimaryCsv}>
+          <button className="icon-button" type="button" title="Export current profile, image, or detector CSV" onClick={exportPrimaryCsv}>
             <FileDown size={17} />
           </button>
           <input
@@ -485,6 +558,7 @@ export function App() {
             updateScene={updateScene}
             loadL2Sample={() => replaceScene(sampleL2Scene, { kind: "element", id: "slit-ray-marker" })}
             loadWavePreset={loadWavePreset}
+            loadImagePreset={loadImagePreset}
           />
 
           <div className="rail-section">
@@ -518,6 +592,9 @@ export function App() {
             l2Field={activeL2Field}
             l2Energy={activeL2Result?.energyLedger}
             l2WarningCount={(activeL2Result?.warnings ?? l2ValidationWarnings).length}
+            l3Field={activeL3Field}
+            l3Energy={activeL3Result?.energyLedger}
+            l3WarningCount={(activeL3Result?.warnings ?? l3ValidationWarnings).length}
           />
         </section>
 
@@ -542,6 +619,19 @@ export function App() {
               onExportJson={exportFieldJson}
             />
           )}
+          {scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" && (
+            <ImagePanel
+              field={activeL3Field}
+              result={activeL3Result}
+              validationWarnings={l3ValidationWarnings}
+              error={l3Error}
+              disclosure={modeDisclosure}
+              onCompute={computeL3Image}
+              onExportCsv={exportPrimaryCsv}
+              onExportJson={exportFieldJson}
+              onExportPng={exportFieldPng}
+            />
+          )}
 
           <section className="readout-panel">
             <h2>Provenance</h2>
@@ -560,6 +650,9 @@ export function App() {
                   not a full microscope image, full PSF, or Airy disk
                 </li>
               )}
+              {scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" && (
+                <li>L3 image: coherent 2D scalar image-plane intensity approximation; not partial coherence, vector optics, fluorescence, 3D physics, or EM</li>
+              )}
             </ul>
           </section>
         </aside>
@@ -572,12 +665,14 @@ function SceneControls({
   scene,
   updateScene,
   loadL2Sample,
-  loadWavePreset
+  loadWavePreset,
+  loadImagePreset
 }: {
   scene: Scene;
   updateScene: (updater: (current: Scene) => Scene) => void;
   loadL2Sample: () => void;
   loadWavePreset: (presetId: L25PresetId) => void;
+  loadImagePreset: (presetId: L3PresetId) => void;
 }) {
   return (
     <div className="rail-section">
@@ -588,6 +683,10 @@ function SceneControls({
           value={scene.solverSettings.activeSolverId}
           onChange={(event) => {
             const activeSolverId = event.currentTarget.value as ActiveSolverId;
+            if (activeSolverId === "scalar.coherent.l3.2d" && scene.fieldGrids2D.length === 0) {
+              loadImagePreset("airyPupil");
+              return;
+            }
             if (activeSolverId === "scalar.angularSpectrum.l2.1d" && scene.fieldGrids1D.length === 0) {
               loadWavePreset("singleSlit");
               return;
@@ -604,6 +703,7 @@ function SceneControls({
           <option value="geometric.l1.2d">L1 surface optics</option>
           <option value="geometric.l0">L0 thin lens</option>
           <option value="scalar.angularSpectrum.l2.1d">L2 wave profile</option>
+          <option value="scalar.coherent.l3.2d">L3 image map</option>
         </select>
       </label>
       <NumberField
@@ -657,6 +757,7 @@ function SceneControls({
       {scene.solverSettings.activeSolverId === "scalar.angularSpectrum.l2.1d" && (
         <WaveControls scene={scene} updateScene={updateScene} loadL2Sample={loadL2Sample} loadWavePreset={loadWavePreset} />
       )}
+      {scene.solverSettings.activeSolverId === "scalar.coherent.l3.2d" && <ImageControls scene={scene} loadImagePreset={loadImagePreset} />}
     </div>
   );
 }
@@ -811,6 +912,67 @@ function WaveControls({
           <option value={8192}>8192</option>
         </select>
       </label>
+    </>
+  );
+}
+
+function ImageControls({ scene, loadImagePreset }: { scene: Scene; loadImagePreset: (presetId: L3PresetId) => void }) {
+  const grid = scene.fieldGrids2D[0];
+  const pipeline = scene.microscopePipelines2D[0];
+  const lens = pipeline ? scene.thinLensPhasePlanes2D.find((candidate) => candidate.id === pipeline.lensPlaneId) : undefined;
+  const pupil = pipeline ? scene.pupilPlanes2D.find((candidate) => candidate.id === pipeline.pupilPlaneId) : undefined;
+  const detector = pipeline ? scene.detectorPlanes2D.find((candidate) => candidate.id === pipeline.detectorPlaneId) : undefined;
+
+  if (!grid || !pipeline || !lens || !pupil || !detector) {
+    return (
+      <button type="button" title="Load L3 circular pupil fixture" onClick={() => loadImagePreset("airyPupil")}>
+        <Waves size={17} />
+        <span>L3 fixture</span>
+      </button>
+    );
+  }
+
+  const pupilRadiusM = pupil.shape.kind === "circle" ? pupil.shape.radiusM : pupil.shape.outerRadiusM;
+
+  return (
+    <>
+      <label className="field-row">
+        <span>Preset</span>
+        <select
+          value={imagePresetIdFor(scene)}
+          onChange={(event) => {
+            const presetId = event.currentTarget.value as ImagePresetValue;
+            if (presetId !== "custom") loadImagePreset(presetId);
+          }}
+        >
+          <option value="custom">Custom scene</option>
+          {l3PresetDefinitions.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="field-row readonly-row">
+        <span>Grid</span>
+        <strong>{grid.width} x {grid.height}</strong>
+      </div>
+      <div className="field-row readonly-row">
+        <span>Wavelength</span>
+        <strong>{(pipeline.wavelengthM * 1e9).toFixed(0)} nm</strong>
+      </div>
+      <div className="field-row readonly-row">
+        <span>Focal length</span>
+        <strong>{formatLength(lens.focalLengthM, "mm")}</strong>
+      </div>
+      <div className="field-row readonly-row">
+        <span>Pupil</span>
+        <strong>{formatLength(pupilRadiusM * 2, "um")}</strong>
+      </div>
+      <div className="field-row readonly-row">
+        <span>Detector</span>
+        <strong>{formatLength(detector.xM, "mm")}</strong>
+      </div>
     </>
   );
 }
@@ -1250,6 +1412,77 @@ function WavePanel({
   );
 }
 
+function ImagePanel({
+  field,
+  result,
+  validationWarnings,
+  error,
+  disclosure,
+  onCompute,
+  onExportCsv,
+  onExportJson,
+  onExportPng
+}: {
+  field: FieldOutput2D | undefined;
+  result: SolverResult | null;
+  validationWarnings: SolverWarning[];
+  error: string | null;
+  disclosure: { label: string; detail: string };
+  onCompute: () => void;
+  onExportCsv: () => void;
+  onExportJson: () => void;
+  onExportPng: () => void;
+}) {
+  const warnings = result?.warnings ?? validationWarnings;
+  return (
+    <section className="wave-panel">
+      <div className="wave-actions">
+        <button type="button" onClick={onCompute}>
+          <Waves size={17} />
+          <span>Compute image</span>
+        </button>
+        <button type="button" disabled={!field || !result} onClick={onExportCsv}>
+          <FileDown size={17} />
+          <span>CSV</span>
+        </button>
+        <button type="button" disabled={!field || !result} onClick={onExportJson}>
+          <Save size={17} />
+          <span>JSON</span>
+        </button>
+        <button type="button" disabled={!field || !result} onClick={onExportPng}>
+          <Download size={17} />
+          <span>PNG</span>
+        </button>
+      </div>
+      <div className="l2-disclosure">
+        <strong>{disclosure.label}</strong>
+        <span>{disclosure.detail}</span>
+      </div>
+      {result && (
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>Result hash</span>
+            <strong>{result.resultHash?.slice(0, 10) ?? "n/a"}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Wave stages</span>
+            <strong>{result.energyLedger?.stages?.length ?? 0}</strong>
+          </div>
+        </div>
+      )}
+      {error && <div className="error-banner">{error}</div>}
+      {warnings.length > 0 && (
+        <ul className="warning-list">
+          {warnings.map((warning) => (
+            <li key={`${warning.code}:${warning.elementId ?? ""}`}>{warning.message}</li>
+          ))}
+        </ul>
+      )}
+      {field ? <IntensityImageView field={field} /> : <div className="empty-state">No L3 image map computed for the current scene.</div>}
+    </section>
+  );
+}
+
 function formatRelativeEnergy(value: number | null | undefined): string {
   return value === null || value === undefined ? "n/a" : value.toExponential(3);
 }
@@ -1269,7 +1502,10 @@ function ReadoutStrip({
   rayCount,
   l2Field,
   l2Energy,
-  l2WarningCount
+  l2WarningCount,
+  l3Field,
+  l3Energy,
+  l3WarningCount
 }: {
   solverId: Scene["solverSettings"]["activeSolverId"];
   focalXM: number | null;
@@ -1286,7 +1522,24 @@ function ReadoutStrip({
   l2Field: FieldOutput1D | undefined;
   l2Energy: EnergyLedger | undefined;
   l2WarningCount: number;
+  l3Field: FieldOutput2D | undefined;
+  l3Energy: EnergyLedger | undefined;
+  l3WarningCount: number;
 }) {
+  if (solverId === "scalar.coherent.l3.2d") {
+    const peak = l3Field ? Math.max(...l3Field.intensity) : null;
+    return (
+      <div className="readout-strip">
+        <Readout label="Image" value={l3Field ? "computed" : "pending"} source="on demand" />
+        <Readout label="Peak I" value={formatRelativeEnergy(peak)} source="relative" />
+        <Readout label="Input E" value={formatRelativeEnergy(l3Energy?.inputEnergy)} source="field" />
+        <Readout label="After chain" value={formatRelativeEnergy(l3Energy?.afterMaskEnergy)} source="field" />
+        <Readout label="Output E" value={formatRelativeEnergy(l3Energy?.outputEnergy)} source="field" />
+        <Readout label="Warnings" value={String(l3WarningCount)} source={`${l3Field ? l3Field.width * l3Field.height : 0} px`} />
+      </div>
+    );
+  }
+
   if (solverId === "scalar.angularSpectrum.l2.1d") {
     const peak = l2Field ? Math.max(...l2Field.intensity) : null;
     return (

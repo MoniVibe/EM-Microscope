@@ -4,10 +4,13 @@ A 2D microscope-grade optical bench MVP.
 
 The first public version started as L0 geometric optics: deterministic rays, thin lenses, aperture clipping,
 detector histograms, and analytic microscope readouts. The current build adds L1 2D surface optics, an on-demand
-L2 scalar wave profile, and L2.5 analytic sample/object planes for validated 1D coherent experiments.
+L2 scalar wave profile, L2.5 analytic sample/object planes for validated 1D coherent experiments, and an early
+L3 coherent 2D scalar image-plane map.
 
 Diffraction is still not faked. L0/L1 keep Airy/PSF values labeled as analytic estimates, while L2 is explicitly
 labeled as scalar 1D angular-spectrum propagation, not a full circular-aperture Airy disk or microscope image.
+L3 is labeled as a coherent 2D scalar image-plane intensity approximation, not partial coherence, vector optics,
+fluorescence, 3D physics, EM, or a full microscope objective model.
 
 ## Current Modes
 
@@ -19,6 +22,9 @@ labeled as scalar 1D angular-spectrum propagation, not a full circular-aperture 
 - `L2.5 Sample/Image Plane v0`: analytic 1D sample planes for single slit, double slit, amplitude grating,
   phase step, and bar-target presets. These are labeled as coherent 1D transverse slices, not full microscope
   images, full PSFs, or Airy disk simulations.
+- `L3 Coherent 2D Scalar Image Approximation`: plane-wave source, 2D angular-spectrum propagation, thin-lens
+  scalar phase, circular pupil, detector/image-plane intensity map, energy stages, sampling warnings, and
+  CSV/JSON/PNG export.
 
 ## L2 Validation Fixture
 
@@ -29,6 +35,13 @@ places the first minima there while conserving free-space field energy.
 The L2.5 preset scenes add numeric checks for double-slit fringe spacing, grating order positions, passive
 amplitude energy drop, phase-only energy preservation, bad sampling warnings, deterministic hashes, and export
 metadata.
+
+## L3 Validation Fixture
+
+The bundled L3 scene uses a 500 nm coherent plane wave, a 20 mm focal-length thin-lens phase plane, and a 200 um
+circular pupil on a 256 x 256 detector grid. Core tests check that the focal-plane peak is centered, that the
+first low-intensity band falls near the scalar Airy first-minimum estimate, that pupil energy clipping and
+free-space propagation energy accounting are stable, and that image exports include solver provenance.
 
 ## Local Development
 
