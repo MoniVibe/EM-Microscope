@@ -6,17 +6,18 @@ historical validation scaffolding, but it is hidden from the app shell.
 
 L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. L4.1
 adds diagnostic wavelength-dependent material records, editable coating stacks, and wavelength sweeps over the same
-planar Maxwell TMM path. It computes complex-amplitude reflection/transmission, R/T/A Poynting-style flux ratios,
-effective permittivity, energy-balance checks, warnings, and deterministic hashes. It is not a general 3D Maxwell
-solver, FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, or
-sensor-stack simulator.
+planar Maxwell TMM path. L4.2 adds a planar field monitor that samples complex tangential E/H equivalents through
+the stack and estimates per-layer absorption from planar flux drops. It computes complex-amplitude
+reflection/transmission, R/T/A Poynting-style flux ratios, effective permittivity, energy-balance checks, warnings,
+and deterministic hashes. It is not a general 3D Maxwell solver, FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry
+solver, curved lens solver, aperture solver, or sensor-stack simulator.
 
 ## Current Visible Mode
 
-- `L4.1 Maxwell Planar Coating Stack`: frequency-domain Maxwell planar multilayer transfer-matrix special case
-  with diagnostic spectral material records, editable film stacks, wavelength sweeps, film-stack R/T/A,
-  Poynting-style energy accounting, JSON/Markdown/CSV export, and strict limitations against arbitrary 3D EM
-  claims.
+- `L4.2 Maxwell Planar Coating Stack`: frequency-domain Maxwell planar multilayer transfer-matrix special case
+  with diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor
+  samples, per-layer flux-drop absorption estimates, film-stack R/T/A, JSON/Markdown/CSV export, and strict
+  limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
 
@@ -105,6 +106,12 @@ set, not an authoritative material database import, but it establishes the right
 `n,k`, source/provenance notes, interpolation/clamping warnings, and passivity checks. The coating-stack runner
 compiles material IDs and layer thicknesses into the planar TMM solver, then can run single-wavelength R/T/A or a
 deterministic wavelength sweep with CSV/JSON/Markdown export.
+
+L4.2 adds `planarFieldMonitor`. It samples the planar stack at the incident/substrate boundaries and at
+front/mid/back points inside each coating layer. Outputs include complex tangential E/H values, |E|^2, phase,
+normalized Poynting-style flux, a field plot in the UI, monitor CSV export, and per-layer absorption estimated from
+front/back planar flux differences. These are planar TMM monitor observables, not full 3D field volumes or
+volumetric absorption-density integrals.
 
 This is Maxwell-first but intentionally narrow: the TMM path solves the planar film-stack special case directly
 from frequency-domain boundary conditions and E/H admittance, not geometric raytracing. It does not solve curved

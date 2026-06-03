@@ -503,6 +503,7 @@ h2 {
 }
 
 .maxwell-layer-editor,
+.maxwell-monitor-card,
 .maxwell-sweep-card {
   display: grid;
   gap: 10px;
@@ -578,10 +579,22 @@ h2 {
   stroke-width: 3;
 }
 
+.maxwell-monitor-line {
+  fill: none;
+  stroke: #7252a5;
+  stroke-width: 3;
+}
+
 .maxwell-sweep-plot text {
   fill: #536175;
   font-size: 11px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.maxwell-layer-absorption {
+  display: grid;
+  gap: 6px;
+  padding-top: 2px;
 }
 
 .readonly-row strong {

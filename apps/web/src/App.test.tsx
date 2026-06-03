@@ -64,6 +64,8 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("not a general 3D Maxwell solver");
     expect(maxwellPanel).toContain("runCoatingStack");
     expect(maxwellPanel).toContain("runCoatingSweep");
+    expect(maxwellPanel).toContain("Planar Field Monitor");
+    expect(maxwellPanel).toContain("Monitor CSV");
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA/i);
   });
 

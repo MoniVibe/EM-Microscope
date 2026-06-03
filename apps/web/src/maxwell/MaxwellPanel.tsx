@@ -6,7 +6,8 @@ import {
   type CoatingStackDefinition,
   type CoatingStackRunResult,
   type CoatingSweepResult,
-  type MaxwellPolarization
+  type MaxwellPolarization,
+  type PlanarFieldMonitorResult
 } from "@emmicro/core";
 import { FileDown, Plus, Save, Trash2 } from "lucide-react";
 
@@ -262,6 +263,10 @@ export function MaxwellPanel() {
           <FileDown size={17} />
           <span>Sweep CSV</span>
         </button>
+        <button type="button" onClick={() => exportMonitorCsv(run.fieldMonitor)}>
+          <FileDown size={17} />
+          <span>Monitor CSV</span>
+        </button>
       </div>
 
       <div className="profile-meta">
@@ -283,6 +288,40 @@ export function MaxwellPanel() {
         <FluxRow label="R" value={run.tmm.reflectance} />
         <FluxRow label="T" value={run.tmm.transmittance} />
         <FluxRow label="A" value={run.tmm.absorbance} />
+      </div>
+
+      <div className="maxwell-monitor-card">
+        <div className="maxwell-section-heading">
+          <h2>Planar Field Monitor</h2>
+          <strong>{run.fieldMonitor.resultHash.slice(0, 10)}</strong>
+        </div>
+        <FieldMonitorPlot monitor={run.fieldMonitor} />
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>Max |E|^2</span>
+            <strong>{run.fieldMonitor.maxElectricIntensity.toExponential(2)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Layer A sum</span>
+            <strong>{formatPercent(run.fieldMonitor.aggregateLayerAbsorbance)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Samples</span>
+            <strong>{run.fieldMonitor.samples.length}</strong>
+          </div>
+        </div>
+        {run.fieldMonitor.layerFlux.length > 0 ? (
+          <div className="maxwell-layer-absorption">
+            {run.fieldMonitor.layerFlux.map((layer) => (
+              <div className="compact-stat" key={layer.layerId}>
+                <span>{layer.label}</span>
+                <strong>{formatPercent(layer.absorbedFlux)}</strong>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">No coating layer absorption rows for a bare boundary.</div>
+        )}
       </div>
 
       <div className="maxwell-sweep-card">
@@ -413,6 +452,41 @@ function SweepPlot({ sweep }: { sweep: CoatingSweepResult }) {
   );
 }
 
+function FieldMonitorPlot({ monitor }: { monitor: PlanarFieldMonitorResult }) {
+  const width = 720;
+  const height = 150;
+  const pad = 20;
+  const usableWidth = width - pad * 2;
+  const usableHeight = height - pad * 2;
+  const maxPositionM = Math.max(monitor.totalThicknessM, 1e-12);
+  const yMax = Math.max(0.05, monitor.maxElectricIntensity);
+  const points = monitor.samples
+    .map((sample) => {
+      const x = pad + usableWidth * (sample.positionM / maxPositionM);
+      const y = pad + usableHeight * (1 - sample.electricIntensity / yMax);
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+
+  return (
+    <svg className="maxwell-sweep-plot" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Planar field monitor electric intensity through coating stack">
+      <rect x="0" y="0" width={width} height={height} />
+      <line className="profile-axis" x1={pad} y1={height - pad} x2={width - pad} y2={height - pad} />
+      <line className="profile-axis" x1={pad} y1={pad} x2={pad} y2={height - pad} />
+      <polyline className="maxwell-monitor-line" points={points} />
+      <text x={pad} y={height - 5}>
+        0 nm
+      </text>
+      <text x={width - pad - 60} y={height - 5}>
+        {(monitor.totalThicknessM * 1e9).toFixed(1)} nm
+      </text>
+      <text x={pad + 4} y={pad + 12}>
+        max |E|^2 {yMax.toFixed(2)}
+      </text>
+    </svg>
+  );
+}
+
 function exportStackJson(run: CoatingStackRunResult, sweep: CoatingSweepResult): void {
   downloadText("l41-coating-stack.json", "application/json", JSON.stringify({ run, sweep }, null, 2));
 }
@@ -434,7 +508,13 @@ function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResul
       `Absorbance: ${formatPercent(run.tmm.absorbance)}`,
       `Energy balance error: ${run.tmm.energyBalanceError.toExponential(3)}`,
       `Stack hash: ${run.resultHash}`,
+      `Monitor hash: ${run.fieldMonitor.resultHash}`,
       `Sweep hash: ${sweep.resultHash}`,
+      "",
+      "Planar field monitor:",
+      `- Max |E|^2: ${run.fieldMonitor.maxElectricIntensity.toExponential(3)}`,
+      `- Layer absorption sum: ${formatPercent(run.fieldMonitor.aggregateLayerAbsorbance)}`,
+      ...run.fieldMonitor.layerFlux.map((layer) => `- ${layer.label}: ${formatPercent(layer.absorbedFlux)}`),
       "",
       "Sweep:",
       `- R min: ${formatPercent(sweep.reflectanceMin)}`,
@@ -462,6 +542,29 @@ function exportSweepCsv(sweep: CoatingSweepResult): void {
     )
   ];
   downloadText("l41-coating-sweep.csv", "text/csv", rows.join("\n"));
+}
+
+function exportMonitorCsv(monitor: PlanarFieldMonitorResult): void {
+  const rows = [
+    "id,kind,position_nm,layer_id,depth_nm,e_re,e_im,h_re,h_im,electric_intensity,normalized_poynting_flux,phase_rad",
+    ...monitor.samples.map((sample) =>
+      [
+        sample.id,
+        sample.kind,
+        (sample.positionM * 1e9).toFixed(6),
+        sample.layerId ?? "",
+        sample.depthInLayerM === undefined ? "" : (sample.depthInLayerM * 1e9).toFixed(6),
+        sample.eTangential.re.toPrecision(12),
+        sample.eTangential.im.toPrecision(12),
+        sample.hTangential.re.toPrecision(12),
+        sample.hTangential.im.toPrecision(12),
+        sample.electricIntensity.toPrecision(12),
+        sample.normalizedPoyntingFlux.toPrecision(12),
+        sample.phaseRad.toPrecision(12)
+      ].join(",")
+    )
+  ];
+  downloadText("l42-planar-field-monitor.csv", "text/csv", rows.join("\n"));
 }
 
 function downloadText(filename: string, mime: string, text: string): void {

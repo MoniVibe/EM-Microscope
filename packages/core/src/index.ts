@@ -24,6 +24,7 @@ export * from "./maxwell/complex";
 export * from "./maxwell/coatingStack";
 export * from "./maxwell/materialCatalog";
 export * from "./maxwell/materials";
+export * from "./maxwell/planarFieldMonitor";
 export * from "./maxwell/planarTmm";
 export * from "./metrics/resolutionTargetMetrics";
 export * from "./metrics/slantedEdgeSfr";

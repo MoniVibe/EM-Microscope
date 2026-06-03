@@ -1,6 +1,7 @@
 import { fnv1a64, stableStringify } from "../scene/hashScene";
 import type { SolverWarning } from "../solvers/Solver";
 import { getL4SpectralMaterial, sampleSpectralMaterial } from "./materialCatalog";
+import { runPlanarFieldMonitor, type PlanarFieldMonitorResult } from "./planarFieldMonitor";
 import { runPlanarTmm, type MaxwellPolarization, type PlanarTmmInput, type PlanarTmmResult } from "./planarTmm";
 
 export type CoatingStackLayer = {
@@ -29,6 +30,7 @@ export type CoatingStackRunResult = {
   label: string;
   compiledInput: PlanarTmmInput;
   tmm: PlanarTmmResult;
+  fieldMonitor: PlanarFieldMonitorResult;
   warnings: SolverWarning[];
   resultHash: string;
   provenance: {
@@ -122,12 +124,14 @@ export function compileCoatingStackToPlanarTmm(stack: CoatingStackDefinition, wa
 export function runCoatingStack(stack: CoatingStackDefinition): CoatingStackRunResult {
   const compiled = compileCoatingStackToPlanarTmm(stack);
   const tmm = runPlanarTmm(compiled.input);
-  const warnings = uniqueWarnings([...compiled.warnings, ...tmm.warnings]);
+  const fieldMonitor = runPlanarFieldMonitor(compiled.input, tmm);
+  const warnings = uniqueWarnings([...compiled.warnings, ...tmm.warnings, ...fieldMonitor.warnings]);
   const resultHash = fnv1a64(
     stableStringify({
       analysisId: "analysis.maxwell.l4.phase1.coatingStackPlanarTmm",
       stack: hashableStack(stack),
       tmmHash: tmm.resultHash,
+      fieldMonitorHash: fieldMonitor.resultHash,
       warningCodes: warnings.map((warning) => warning.code)
     })
   );
@@ -139,6 +143,7 @@ export function runCoatingStack(stack: CoatingStackDefinition): CoatingStackRunR
     label: stack.label,
     compiledInput: compiled.input,
     tmm,
+    fieldMonitor,
     warnings,
     resultHash,
     provenance: coatingStackProvenance()
@@ -234,7 +239,7 @@ function coatingStackProvenance(): CoatingStackRunResult["provenance"] {
       "Solves planar coating stacks only through the existing frequency-domain Maxwell TMM path.",
       "This is not a general 3D Maxwell solver; not FEM, BEM, RCWA, FDTD, curved optics, arbitrary CAD, aperture diffraction, or sensor-stack simulation.",
       "Built-in spectral material records are diagnostic samples, not an authoritative imported material database.",
-      "Layer absorption is not yet decomposed per layer; R/T/A are aggregate planar-stack flux ratios."
+      "Layer absorption is estimated from planar field-monitor flux drops, not full volumetric absorption density."
     ]
   };
 }

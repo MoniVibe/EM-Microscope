@@ -36,6 +36,10 @@ export function cneg(a: Complex): Complex {
   return { re: -a.re, im: -a.im };
 }
 
+export function cconj(a: Complex): Complex {
+  return { re: a.re, im: -a.im };
+}
+
 export function cinv(a: Complex): Complex {
   return cdiv(complex(1), a);
 }

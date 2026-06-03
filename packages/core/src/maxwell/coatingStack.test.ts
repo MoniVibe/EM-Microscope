@@ -18,6 +18,8 @@ describe("L4.1 coating stack runner", () => {
     expect(run.tmm.reflectance).toBeLessThan(0.02);
     expect(run.tmm.transmittance).toBeGreaterThan(0.9);
     expect(run.tmm.energyBalanceError).toBeLessThan(1e-10);
+    expect(run.fieldMonitor.samples.length).toBeGreaterThan(2);
+    expect(run.fieldMonitor.aggregateLayerAbsorbance).toBeCloseTo(run.tmm.absorbance, 10);
     expect(run.provenance.limitations.join(" ")).toContain("not a general 3D Maxwell solver");
   });
 
