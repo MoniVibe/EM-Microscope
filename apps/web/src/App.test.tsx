@@ -57,11 +57,15 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L5.7 Maxwell foundry as planar drift-aware robust search, provenance, design, and yield without claiming arbitrary 3D EM", () => {
+  it("labels L5.8 Maxwell foundry as planar backend-boundary robust search, provenance, design, and yield without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM plus drift-aware robust material/order search, provenance, design, and yield analysis");
+    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus drift-aware robust material/order search, provenance, design, and yield analysis");
     expect(maxwellPanel).toContain("not a general 3D Maxwell solver");
+    expect(maxwellPanel).toContain("Active solver backend");
+    expect(maxwellPanel).toContain("PlanarTmmBackend");
+    expect(maxwellPanel).toContain("FEM/FDTD/BEM/RCWA");
+    expect(maxwellPanel).toContain("solverBackend: run.solverBackend");
     expect(maxwellPanel).toContain("createMaterialCatalog");
     expect(maxwellPanel).toContain("listCatalogMaterials");
     expect(maxwellPanel).toContain("runCoatingSearch");
@@ -103,9 +107,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("Planar Maxwell TMM Foundry");
-    expect(app).toContain("L5.7 Maxwell Design Foundry");
-    expect(app).toContain("drift-aware robust search, provenance, and yield receipts");
+    expect(app).toContain("PlanarTmmBackend Foundry");
+    expect(app).toContain("L5.8 Maxwell Design Foundry");
+    expect(app).toContain("solver boundary, drift-aware robust search, and receipts");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

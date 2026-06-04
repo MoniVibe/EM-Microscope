@@ -1,6 +1,6 @@
 import { fnv1a64, stableStringify } from "../scene/hashScene";
 import type { SolverWarning } from "../solvers/Solver";
-import { runCoatingStack, type CoatingStackDefinition, type CoatingStackRunOptions } from "./coatingStack";
+import type { CoatingStackDefinition, CoatingStackRunOptions } from "./coatingStack";
 import {
   applyCoatingUncertaintySample,
   generateCoatingUncertaintySamples,
@@ -23,6 +23,8 @@ import {
 } from "./coatingSearch";
 import type { MaterialCatalogReference } from "./materialCatalog";
 import type { MaxwellPolarization } from "./planarTmm";
+import { solveCoatingStackWithPlanarTmmBackend } from "./planarTmmBackend";
+import { planarTmmSolverReceipt, type MaxwellSolverReceipt } from "./solverBackend";
 
 export type RobustCoatingSearchPrimaryMetric = "p90Score" | "expectedScore" | "worstCaseScore" | "passRate";
 
@@ -129,6 +131,7 @@ export type RobustCoatingSearchResult = {
   candidates: RobustCoatingSearchCandidate[];
   evaluationCount: number;
   sampleEvaluationCount: number;
+  solverBackend: MaxwellSolverReceipt;
   warnings: SolverWarning[];
   resultHash: string;
   provenance: {
@@ -189,6 +192,7 @@ export function runRobustCoatingSearch(spec: RobustCoatingSearchSpec, options: C
     candidates,
     evaluationCount: nominalSearchResult.evaluationCount,
     sampleEvaluationCount,
+    solverBackend: planarTmmSolverReceipt(),
     warnings: uniqueWarnings([...warnings, ...candidates.flatMap((candidate) => candidate.warnings), ...nominalSearchResult.warnings]),
     resultHash,
     provenance: robustSearchProvenance()
@@ -342,8 +346,9 @@ function evaluateSample(
 ): CoatingSearchSample {
   const normalized = normalizePolarization(polarization);
   if (normalized === "unpolarized") {
-    const te = runCoatingStack({ ...stack, wavelengthM, angleRad, polarization: "TE" }, options);
-    const tm = runCoatingStack({ ...stack, wavelengthM, angleRad, polarization: "TM" }, options);
+    const te = solveCoatingStackWithPlanarTmmBackend({ ...stack, wavelengthM, angleRad, polarization: "TE" }, options).coatingStackResult;
+    const tm = solveCoatingStackWithPlanarTmmBackend({ ...stack, wavelengthM, angleRad, polarization: "TM" }, options).coatingStackResult;
+    if (!te || !tm) throw new Error("PlanarTmmBackend did not return TE/TM direct coating stack results for unpolarized robust sample");
     return {
       wavelengthM,
       angleRad,
@@ -354,7 +359,8 @@ function evaluateSample(
     };
   }
 
-  const run = runCoatingStack({ ...stack, wavelengthM, angleRad, polarization: normalized }, options);
+  const run = solveCoatingStackWithPlanarTmmBackend({ ...stack, wavelengthM, angleRad, polarization: normalized }, options).coatingStackResult;
+  if (!run) throw new Error("PlanarTmmBackend did not return a direct coating stack result for robust sample");
   return {
     wavelengthM,
     angleRad,

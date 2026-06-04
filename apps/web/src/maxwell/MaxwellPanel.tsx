@@ -320,8 +320,8 @@ export function MaxwellPanel() {
       const thicknessMaxNm = clamp(Math.max(searchThicknessMinNm, searchThicknessMaxNm), thicknessMinNm, 10000);
       const thicknessStepNm = clamp(searchThicknessStepNm, 1, Math.max(1, thicknessMaxNm - thicknessMinNm));
       const nominalSearch = {
-        id: `l57-${presetId}-coating-search`,
-        label: `L5.7 ${stackPresets[presetId].label} coating search`,
+        id: `l58-${presetId}-coating-search`,
+        label: `L5.8 ${stackPresets[presetId].label} coating search`,
         baseStack: { ...stack, layers: [] },
         wavelengthsM: wavelengthsNm.map((nm) => clamp(nm, 200, 2000) * 1e-9),
         anglesRad: [stack.angleRad],
@@ -349,7 +349,7 @@ export function MaxwellPanel() {
           beamWidth: Math.max(2, Math.min(32, Math.round(searchBeamWidth))),
           maxCandidates: 5,
           refinementPasses: 1,
-          seed: 57
+          seed: 58
         }
       };
       if (robustSearchEnabled) {
@@ -397,8 +397,8 @@ export function MaxwellPanel() {
                 };
         const robust = runRobustCoatingSearch(
           {
-            id: `l57-${presetId}-robust-yield-search`,
-            label: `L5.7 ${stackPresets[presetId].label} robust-yield coating search`,
+            id: `l58-${presetId}-robust-yield-search`,
+            label: `L5.8 ${stackPresets[presetId].label} robust-yield coating search`,
             nominalSearch,
             uncertainty: {
               thickness: independentThickness,
@@ -451,11 +451,30 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L5.7 Maxwell Design Foundry">
-      <h2>L5.7 Maxwell Design Foundry</h2>
+    <section className="wave-panel maxwell-panel" aria-label="L5.8 Maxwell Design Foundry">
+      <h2>L5.8 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM plus drift-aware robust material/order search, provenance, design, and yield analysis</strong>
+        <strong>frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus drift-aware robust material/order search, provenance, design, and yield analysis</strong>
         <span>not a general 3D Maxwell solver</span>
+      </div>
+
+      <div className="profile-meta">
+        <div className="compact-stat">
+          <span>Active solver backend</span>
+          <strong>{run.solverBackend.label}</strong>
+        </div>
+        <div className="compact-stat">
+          <span>Method</span>
+          <strong>{run.solverBackend.method}</strong>
+        </div>
+        <div className="compact-stat">
+          <span>Dimensions</span>
+          <strong>{run.solverBackend.capabilities.dimensions.join(", ")}</strong>
+        </div>
+        <div className="compact-stat">
+          <span>Unsupported</span>
+          <strong>3D geometry, apertures, curved surfaces, FEM/FDTD/BEM/RCWA</strong>
+        </div>
       </div>
 
       <div className="maxwell-grid">
@@ -1268,7 +1287,7 @@ function exportStackJson(
   yieldAnalysis: CoatingYieldResult
 ): void {
   const design = serializeCoatingStackDesign(stack, materialCatalog);
-  downloadText("l54-coating-material-selection-stack.json", "application/json", JSON.stringify({ design, run, sweep, foundry, yieldAnalysis }, null, 2));
+  downloadText("l58-backend-boundary-stack.json", "application/json", JSON.stringify({ solverBackend: run.solverBackend, design, run, sweep, foundry, yieldAnalysis }, null, 2));
 }
 
 function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult, yieldAnalysis: CoatingYieldResult): void {
@@ -1279,6 +1298,10 @@ function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResul
       `# ${run.label}`,
       "",
       `Analysis: ${run.provenance.label}`,
+      `Solver backend: ${run.solverBackend.label}`,
+      `Solver method: ${run.solverBackend.method}`,
+      `Backend dimensions: ${run.solverBackend.capabilities.dimensions.join(", ")}`,
+      `Unsupported: ${run.solverBackend.unsupported.join(", ")}`,
       `Wavelength: ${(run.tmm.wavelengthM * 1e9).toFixed(2)} nm`,
       `Angle: ${degFromRad(run.tmm.angleRad).toFixed(2)} deg`,
       `Polarization: ${run.tmm.polarization}`,
@@ -1339,11 +1362,11 @@ function exportFoundryJson(foundry: CoatingDesignResult): void {
 }
 
 function exportSearchJson(search: CoatingSearchResult): void {
-  downloadText("l55-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l58-backend-boundary-coating-search.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportRobustSearchJson(search: RobustCoatingSearchResult): void {
-  downloadText("l57-drift-correlation-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l58-backend-boundary-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportYieldJson(yieldAnalysis: CoatingYieldResult): void {

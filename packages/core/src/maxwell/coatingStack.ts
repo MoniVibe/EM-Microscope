@@ -10,6 +10,7 @@ import {
 } from "./materialCatalog";
 import { runPlanarFieldMonitor, type PlanarFieldMonitorResult } from "./planarFieldMonitor";
 import { runPlanarTmm, type MaxwellPolarization, type PlanarTmmInput, type PlanarTmmResult } from "./planarTmm";
+import { planarTmmSolverReceipt, type MaxwellSolverReceipt } from "./solverBackend";
 
 export type CoatingStackLayer = {
   id: string;
@@ -39,6 +40,7 @@ export type CoatingStackRunResult = {
   compiledInput: PlanarTmmInput;
   tmm: PlanarTmmResult;
   fieldMonitor: PlanarFieldMonitorResult;
+  solverBackend: MaxwellSolverReceipt;
   warnings: SolverWarning[];
   resultHash: string;
   provenance: {
@@ -176,7 +178,8 @@ export function runCoatingStack(stack: CoatingStackDefinition, options: CoatingS
     tmm,
     fieldMonitor,
     warnings,
-    resultHash,
+    solverBackend: planarTmmSolverReceipt(),
+  resultHash,
     provenance: coatingStackProvenance()
   };
 }

@@ -1,6 +1,6 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L5.7 Maxwell Design Foundry planar multilayer
+An EM-first light simulator MVP. The visible web app is now the L5.8 Maxwell Design Foundry planar multilayer
 transfer-matrix workbench; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
@@ -23,19 +23,24 @@ thickness-only perturbation samples, ranks by p90/expected/worst/pass-rate robus
 `n,k` assumptions, and applies the selected robust candidate back to the coating editor. L5.7 upgrades that robust
 path with deterministic correlated thickness drift models: shared deposition scale, shared offset, per-layer
 residuals, layer-group drift, receipt-level sample reduction evidence, and independent-thickness comparison metrics.
+L5.8 moves the existing planar stack path behind a solver-neutral backend boundary, registering `PlanarTmmBackend`
+as the only available Maxwell backend and exposing planar-only capability receipts for future RCWA/FDTD/FEM/BEM
+adapters.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L5.7 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
+- `L5.8 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+  the registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
   best-candidate re-solve hashes, planar thickness tolerance/yield analysis, material import/audit evidence,
   imported-material selection, selected-material provenance receipts, deterministic coating material/order/thickness
   search, deterministic independent or correlated thickness-drift robust-yield re-ranking, candidate application,
-  independent-thickness comparison metrics, sample reduction receipts, JSON/Markdown/CSV export,
+  independent-thickness comparison metrics, sample reduction receipts, backend capability receipts,
+  JSON/Markdown/CSV export,
   and strict limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
@@ -263,12 +268,38 @@ L5.7 is still a deterministic planar coating workbench. It does not sample mater
 stress/thermal drift, metrology calibration data, Monte Carlo confidence intervals, 3D Maxwell geometry, RCWA
 gratings, FEM/BEM/FDTD meshes, sensor transport, or manufacturing certification.
 
+## L5.8 Solver Backend Boundary
+
+The backend-boundary layer adds `packages/core/src/maxwell/solverBackend.ts`,
+`maxwellProblem.ts`, `maxwellResult.ts`, `solverRegistry.ts`, `planarSceneCompiler.ts`, and
+`planarTmmBackend.ts`. It defines a solver-neutral Maxwell problem/result envelope and a
+`MaxwellSolverBackend` contract, then registers `PlanarTmmBackend` as the only available backend.
+
+`PlanarTmmBackend` does not duplicate or replace the physics math. It compiles a `PlanarStackProblem` back into the
+existing coating-stack runner, calls `runCoatingStack`, and exposes the original direct result inside a backend
+result envelope. Core parity tests verify that direct `runCoatingStack` and backend-wrapped solves match R/T/A and
+energy-balance metrics, while preserving material IDs, material hashes, imported pack hashes, warnings, and
+deterministic result hashes.
+
+The backend registry has type-level future slots for `rcwa`, `fdtd`, `fem-frequency-domain`, and
+`bem-frequency-domain`, but those methods are explicitly unavailable in L5.8. The registered planar backend reports
+`dimensions: ["1d-planar"]`, `geometry: ["planar-layers"]`, field-monitor support, material provenance support,
+and `false` for 3D geometry, volumetric fields, apertures, curved surfaces, FEM, FDTD, BEM, and RCWA.
+
+Coating search and robust/correlated robust yield evaluation now use the backend wrapper for planar stack
+evaluations where practical, while the direct low-level TMM helper remains available for tests and parity checks.
+JSON/Markdown exports include the active backend receipt so downstream tooling can see the method, capability
+boundary, and unsupported future solver classes.
+
+L5.8 is architecture preparation, not new physics. It is still not a 3D Maxwell solver, FEM/FDTD/BEM/RCWA engine,
+arbitrary CAD geometry solver, aperture diffraction model, curved lens solver, sensor-stack transport model,
+material-uncertainty engine, digital twin, or manufacturing certification system.
+
 Recommended next L5 steps:
 
 - Add material-uncertainty modeling only after sourced material data policy, licensing, and validation receipts are stronger.
 - Compile optical coating stacks from future scene elements into planar TMM inputs for normal/oblique validation cases.
-- Prototype a separate 3D engine boundary that can call an external FEM/BEM/RCWA/FDTD backend without mixing it
-  into the current 2D scalar/ray bench API.
+- Add external backend adapters behind the L5.8 registry only after their validation/receipt policies are defined.
 
 ## Local Development
 
