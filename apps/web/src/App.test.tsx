@@ -57,12 +57,12 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L6.4 Maxwell foundry as planar execution plus lens validation without claiming arbitrary 3D EM", () => {
+  it("labels L6.4b Maxwell foundry as planar execution plus guided lens validation without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
     const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
     const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("L6.4 Maxwell Design Foundry");
+    expect(maxwellPanel).toContain("L6.4b Maxwell Design Foundry");
     expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM, L6.4 thin-lens focal validation, slit/order validation, and explainability layer");
     expect(maxwellPanel).toContain("ideal scalar lens diffraction validation plus accessible tooltips; still not a general 3D Maxwell solver, and ExternalFdtdBackend remains scaffold-only");
     expect(maxwellPanel).toContain("Explain mode");
@@ -80,11 +80,23 @@ describe("solver disclosure copy", () => {
     expect(explainability).toContain("validation.analyticReference.airyBessel");
     expect(explainability).toContain("validation.numericalPropagation.huygensFresnel");
     expect(explainability).toContain("validation.residualMap");
+    expect(explainability).toContain("validation.spatialBench");
+    expect(explainability).toContain("validation.whereMeasured");
+    expect(explainability).toContain("validation.radialOverlay");
+    expect(explainability).toContain("validation.residualCurve");
     expect(explainability).toContain("validation.lens.thinLensPhase");
     expect(explainability).toContain("validation.lens.airyRadius");
     expect(explainability).toContain("validation.lens.focusMetric");
     expect(explainability).toContain("backend.planarTmm");
     expect(explainability).toContain("backend.externalFdtdScaffold");
+    expect(explainability).toContain("coating.planarStack");
+    expect(explainability).toContain("coating.incidentMedium");
+    expect(explainability).toContain("coating.substrateMedium");
+    expect(explainability).toContain("coating.rtaMeasurementLocation");
+    expect(explainability).toContain("coating.fieldMonitorLocation");
+    expect(explainability).toContain("optimizer.coatingStack");
+    expect(explainability).toContain("optimizer.candidateMaterials");
+    expect(explainability).toContain("optimizer.applyCandidate");
     expect(explainability).toContain("coating.provenanceReceipt");
     expect(explainability).toContain("coating.reflectance");
     expect(explainability).toContain("robust.p90Score");
@@ -92,6 +104,13 @@ describe("solver disclosure copy", () => {
     expect(explainability).toContain("No full 3D Maxwell, FDTD, FEM, BEM, RCWA");
     expect(maxwellPanel).toContain("L6.0 does not execute 3D Maxwell solves.");
     expect(maxwellPanel).toContain("It defines the 3D problem/result contract and external-backend export scaffold only.");
+    expect(maxwellPanel).toContain("Validation Bench: spatial optical layout");
+    expect(maxwellPanel).toContain("Coating Stack Workbench: planar layer model");
+    expect(maxwellPanel).toContain("z = 0 mm Source");
+    expect(maxwellPanel).toContain("Aperture / Slit / Lens");
+    expect(maxwellPanel).toContain("Light direction");
+    expect(maxwellPanel).toContain("Incident medium");
+    expect(maxwellPanel).toContain("Where is this measured?");
     expect(maxwellPanel).toContain("Validation Bench");
     expect(maxwellPanel).toContain("Physics exam sequence");
     expect(maxwellPanel).toContain("Circular pinhole Airy/Bessel");
@@ -177,22 +196,33 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("MaterialPassport");
     expect(maxwellPanel).toContain("Template JSON");
     expect(maxwellPanel).toContain("Example Pack");
+    expect(maxwellPanel).toContain("Example setup");
+    expect(maxwellPanel).toContain("Incident medium, where light comes from");
+    expect(maxwellPanel).toContain("Substrate medium, where light exits");
+    expect(maxwellPanel).toContain("There is no 3D source-to-substrate distance in this solver.");
     expect(maxwellPanel).toContain("Planar Field Monitor");
     expect(maxwellPanel).toContain("Monitor CSV");
     expect(maxwellPanel).toContain("Design Foundry");
     expect(maxwellPanel).toContain("Apply Best");
-    expect(maxwellPanel).toContain("Coating Search");
-    expect(maxwellPanel).toContain("Run Search");
-    expect(maxwellPanel).toContain("Robust Search");
+    expect(maxwellPanel).toContain("Coating Stack Optimizer");
+    expect(maxwellPanel).toContain("The optimizer tries selected materials, layer orders, and thicknesses.");
+    expect(maxwellPanel).toContain("It does not search the internet or fetch new material data.");
+    expect(maxwellPanel).toContain("Find Candidate Coatings");
+    expect(maxwellPanel).toContain("Robust optimizer");
     expect(maxwellPanel).toContain("CoatingUncertaintyModel");
     expect(maxwellPanel).toContain("Shared deposition scale");
     expect(maxwellPanel).toContain("Shared offset + residual");
     expect(maxwellPanel).toContain("Independent P90");
     expect(maxwellPanel).toContain("formatUncertaintyReceipt");
-    expect(maxwellPanel).toContain("Run Robust Search");
-    expect(maxwellPanel).toContain("Apply Robust");
-    expect(maxwellPanel).toContain("Robust Search JSON");
-    expect(maxwellPanel).toContain("Apply Search");
+    expect(maxwellPanel).toContain("Find Robust Coating Candidates");
+    expect(maxwellPanel).toContain("Apply Robust Coating Candidate");
+    expect(maxwellPanel).toContain("Robust Optimizer JSON");
+    expect(maxwellPanel).toContain("Optimizer JSON");
+    expect(maxwellPanel).toContain("Apply Coating Candidate");
+    expect(maxwellPanel).not.toContain(">Coating Search<");
+    expect(maxwellPanel).not.toContain(">Run Search<");
+    expect(maxwellPanel).not.toContain(">Search JSON<");
+    expect(maxwellPanel).not.toContain(">Apply Search<");
     expect(maxwellPanel).toContain("Tolerance Yield");
     expect(maxwellPanel).toContain("Yield JSON");
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved/i);
@@ -205,7 +235,7 @@ describe("solver disclosure copy", () => {
 
     expect(app).toContain('aria-label="Maxwell simulator"');
     expect(app).toContain("PlanarTmmBackend + Validation Bench");
-    expect(app).toContain("L6.4 Maxwell Design Foundry");
+    expect(app).toContain("L6.4b Maxwell Design Foundry");
     expect(app).toContain("executable planar backend, explainability layer, thin-lens focal validation, slit/order ladder, scaffold-only 3D export");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);

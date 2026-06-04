@@ -263,7 +263,7 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L6.4 Maxwell Design Foundry</p>
+            <p>L6.4b Maxwell Design Foundry</p>
           </div>
         </div>
         <div className="mode-badge">

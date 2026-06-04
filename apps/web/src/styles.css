@@ -762,10 +762,22 @@ h2 {
   gap: 10px;
 }
 
+.maxwell-section-heading h2 {
+  min-width: 0;
+}
+
 .maxwell-section-heading strong {
   color: #263244;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
+}
+
+.maxwell-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
 }
 
 .maxwell-layer-editor,
@@ -781,6 +793,68 @@ h2 {
   border: 1px solid #c8d1dd;
   border-radius: 6px;
   background: #ffffff;
+}
+
+.maxwell-mental-model-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.maxwell-guidance-card,
+.maxwell-how-to-card,
+.maxwell-where-measured {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #d1d9e4;
+  border-radius: 6px;
+  background: #fbfdff;
+}
+
+.maxwell-guidance-card p,
+.maxwell-how-to-card p,
+.maxwell-where-body {
+  color: #4d5b6d;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.maxwell-diagram-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: #607086;
+  font-size: 12px;
+}
+
+.maxwell-diagram-strip span {
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #253247;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.maxwell-diagram-strip i {
+  color: #607086;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.maxwell-where-measured {
+  margin-top: 7px;
+  background: #f8fafc;
+}
+
+.maxwell-where-measured .maxwell-section-heading strong {
+  font-family: inherit;
+  font-size: 12px;
 }
 
 .maxwell-validation-pipeline {
@@ -1630,6 +1704,10 @@ h2 {
   }
 
   .maxwell-only-main .profile-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .maxwell-mental-model-grid {
     grid-template-columns: 1fr;
   }
 

@@ -1,6 +1,6 @@
 export interface ExplainEntry {
   id: string;
-  section: "Validation Bench" | "Backend Panel" | "Coating Materials" | "Search And Robustness" | "Exports";
+  section: "Validation Bench" | "Backend Panel" | "Coating Materials" | "Coating Optimizer And Robustness" | "Exports";
   title: string;
   short: string;
   physicalMeaning?: string;
@@ -15,6 +15,49 @@ export interface ExplainEntry {
 }
 
 export const explainEntries = [
+  {
+    id: "validation.spatialBench",
+    section: "Validation Bench",
+    title: "Validation Bench Spatial Layout",
+    short: "The validation bench places ideal source, aperture/slit/lens, and observation-plane concepts along an optical z-axis.",
+    physicalMeaning: "This is the spatial diffraction validation area, not the planar coating-stack solver.",
+    units: "z positions are shown in millimeters; map dimensions use millimeters or micrometers depending on the benchmark.",
+    limitations: ["Bench objects are ideal scalar validation elements, not full 3D material volumes."]
+  },
+  {
+    id: "validation.opticalZAxis",
+    section: "Validation Bench",
+    title: "Optical Z-Axis",
+    short: "The z-axis is the downstream optical direction used to place source, mask/lens, and observation planes in validation cases.",
+    physicalMeaning: "Moving the observation z changes the propagation distance and diffraction scale.",
+    units: "millimeters in the UI; meters in solver data.",
+    limitations: ["This does not create a general 3D scene solve."]
+  },
+  {
+    id: "validation.whereMeasured",
+    section: "Validation Bench",
+    title: "Where Validation Diagnostics Are Measured",
+    short: "Maps, overlays, and residual curves are extracted from zero-thickness observation planes.",
+    physicalMeaning: "The plots are analysis views of sampled field intensity, not added optical elements.",
+    limitations: ["No finite sensor volume, pixel absorption, or readout electronics are modeled."]
+  },
+  {
+    id: "validation.radialOverlay",
+    section: "Validation Bench",
+    title: "Radial Overlay",
+    short: "Profile comparison extracted from a sampled observation-plane intensity map.",
+    physicalMeaning: "Shows numerical intensity against the analytic reference along a radial or centerline analysis path.",
+    limitations: ["The overlay is not a physical part of the optical bench."]
+  },
+  {
+    id: "validation.residualCurve",
+    section: "Validation Bench",
+    title: "Residual Curve",
+    short: "Signed numerical-minus-analytic mismatch extracted from the sampled observation-plane profile.",
+    physicalMeaning: "Shows where the validation computation differs from the hand-check reference.",
+    formula: "residual = I_numerical - I_analytic",
+    limitations: ["Residual curves are validation diagnostics, not manufacturing tolerances or sensor noise."]
+  },
   {
     id: "validation.source.wavelength",
     section: "Validation Bench",
@@ -271,6 +314,38 @@ export const explainEntries = [
     limitations: ["A capability receipt is metadata; it is not proof of unsupported solver execution."]
   },
   {
+    id: "coating.planarStack",
+    section: "Coating Materials",
+    title: "Planar Coating Stack",
+    short: "A 1D ideal layer stack: incident medium, ordered coating films, and substrate medium.",
+    physicalMeaning: "The executable Maxwell path solves only variation through planar film depth.",
+    limitations: ["No finite beam footprint, curved lens, finite substrate slab, aperture, or 3D source-to-sample distance is modeled."]
+  },
+  {
+    id: "coating.incidentMedium",
+    section: "Coating Materials",
+    title: "Incident Medium",
+    short: "Semi-infinite boundary medium where light comes from before it reaches the first coating layer.",
+    physicalMeaning: "Provides the input-side refractive index for planar TMM boundary matching.",
+    limitations: ["This is not a movable 3D source object."]
+  },
+  {
+    id: "coating.substrateMedium",
+    section: "Coating Materials",
+    title: "Substrate Medium",
+    short: "Semi-infinite boundary medium where light exits after the last coating layer.",
+    physicalMeaning: "Provides the output-side refractive index for planar TMM boundary matching.",
+    limitations: ["This is not a modeled finite glass block or microscope slide thickness."]
+  },
+  {
+    id: "coating.layerOrder",
+    section: "Coating Materials",
+    title: "Coating Layer Order",
+    short: "Layer 1 is closest to the incident side; later layers are closer to the substrate side.",
+    physicalMeaning: "Order changes optical phase accumulation and boundary reflections in the planar stack.",
+    limitations: ["No roughness, wedge, curvature, or lateral patterning is represented."]
+  },
+  {
     id: "coating.materialId",
     section: "Coating Materials",
     title: "Material ID",
@@ -343,8 +418,49 @@ export const explainEntries = [
     limitations: ["No full 3D field volume is solved."]
   },
   {
+    id: "coating.rtaMeasurementLocation",
+    section: "Coating Materials",
+    title: "R/T/A Measurement Location",
+    short: "Reflectance, transmittance, and absorbance are measured across the ideal infinite planar coating stack.",
+    physicalMeaning: "Incident-side flux is before the first layer; substrate-side flux is after the last layer.",
+    formula: "R + T + A ~= 1",
+    limitations: ["No 3D source-to-substrate distance or finite substrate propagation is part of this solver."]
+  },
+  {
+    id: "coating.fieldMonitorLocation",
+    section: "Coating Materials",
+    title: "Field Monitor Location",
+    short: "The field monitor samples through planar layer depth from incident boundary to substrate boundary.",
+    physicalMeaning: "Shows stack-depth diagnostics inside the 1D planar coating model.",
+    limitations: ["Not a 3D volume monitor and not a microscope image-plane sensor."]
+  },
+  {
+    id: "optimizer.coatingStack",
+    section: "Coating Optimizer And Robustness",
+    title: "Coating Stack Optimizer",
+    short: "Finds candidate planar coating stacks from selected local materials, layer orders, and thickness grids.",
+    underTheHood: "The optimizer evaluates candidates through the same planar TMM coating-stack backend used by the editor.",
+    limitations: ["It does not search the internet, fetch new material data, or solve 3D geometry."]
+  },
+  {
+    id: "optimizer.candidateMaterials",
+    section: "Coating Optimizer And Robustness",
+    title: "Candidate Materials",
+    short: "Loaded material records that the optimizer is allowed to combine into coating layers.",
+    physicalMeaning: "Material selection bounds the design space before candidate stacks are generated.",
+    limitations: ["Unselected materials and online catalogs are not searched."]
+  },
+  {
+    id: "optimizer.applyCandidate",
+    section: "Coating Optimizer And Robustness",
+    title: "Apply Coating Candidate",
+    short: "Copies the candidate's material order and thicknesses back into the editable planar stack.",
+    underTheHood: "The current incident/substrate media stay in the editor while the candidate layers replace the layer list.",
+    limitations: ["Applying a candidate is an edit action, not a validation or manufacturing certification."]
+  },
+  {
     id: "search.beamWidth",
-    section: "Search And Robustness",
+    section: "Coating Optimizer And Robustness",
     title: "Beam Width",
     short: "Number of coating candidates retained at each search step. Larger beams explore more candidates but cost more evaluations.",
     physicalMeaning: "Search algorithm setting, not optical beam diameter.",
@@ -352,35 +468,35 @@ export const explainEntries = [
   },
   {
     id: "search.objectiveWeights",
-    section: "Search And Robustness",
+    section: "Coating Optimizer And Robustness",
     title: "Objective Weights",
     short: "Scalar weights that rank reflectance, transmittance, absorbance, and constraints for coating candidates.",
     limitations: ["Objective scores are design heuristics, not certified manufacturing outcomes."]
   },
   {
     id: "robust.independentThickness",
-    section: "Search And Robustness",
+    section: "Coating Optimizer And Robustness",
     title: "Independent Thickness",
     short: "Each layer thickness is perturbed independently for deterministic robust-yield checks.",
     limitations: ["Material n/k uncertainty is held fixed."]
   },
   {
     id: "robust.sharedDepositionScale",
-    section: "Search And Robustness",
+    section: "Coating Optimizer And Robustness",
     title: "Shared Deposition Scale",
     short: "A correlated drift model where all layer thicknesses scale together, representing shared deposition calibration error.",
     limitations: ["This is a deterministic drift model, not Monte Carlo certification."]
   },
   {
     id: "robust.sharedOffsetResidual",
-    section: "Search And Robustness",
+    section: "Coating Optimizer And Robustness",
     title: "Shared Offset + Residual",
     short: "Combines a shared thickness offset with per-layer residual drift to expose correlated manufacturing sensitivity.",
     limitations: ["No thermal, stress, roughness, or metrology calibration model."]
   },
   {
     id: "robust.sampleReduction",
-    section: "Search And Robustness",
+    section: "Coating Optimizer And Robustness",
     title: "Sample Cap / Reduction",
     short: "Limits robust-search sample count when a full deterministic grid would be too large.",
     underTheHood: "The receipt records generated samples versus theoretical samples so reviewers can see when reduction occurred.",
@@ -388,14 +504,14 @@ export const explainEntries = [
   },
   {
     id: "robust.expectedScore",
-    section: "Search And Robustness",
+    section: "Coating Optimizer And Robustness",
     title: "Expected Score",
     short: "Average robust score across deterministic perturbation samples.",
     limitations: ["Deterministic average over selected samples, not a statistical guarantee."]
   },
   {
     id: "robust.p90Score",
-    section: "Search And Robustness",
+    section: "Coating Optimizer And Robustness",
     title: "P90 Robust Score",
     short: "A bad-but-plausible score under deterministic thickness perturbations. Lower p90 score means the stack is less fragile to manufacturing drift.",
     physicalMeaning: "Ranks candidates by tail performance rather than only nominal performance.",
@@ -403,14 +519,14 @@ export const explainEntries = [
   },
   {
     id: "robust.worstCaseScore",
-    section: "Search And Robustness",
+    section: "Coating Optimizer And Robustness",
     title: "Worst-Case Score",
     short: "Worst deterministic perturbation score observed for a robust candidate.",
     limitations: ["Only covers the configured perturbation model and sample set."]
   },
   {
     id: "robust.passRate",
-    section: "Search And Robustness",
+    section: "Coating Optimizer And Robustness",
     title: "Pass Rate",
     short: "Fraction of deterministic perturbation samples meeting the optional pass-score threshold.",
     limitations: ["Not a certified manufacturing yield claim."]
@@ -418,14 +534,14 @@ export const explainEntries = [
   {
     id: "exports.searchJson",
     section: "Exports",
-    title: "Search JSON",
+    title: "Optimizer JSON",
     short: "Exports ranked coating candidates, metrics, material receipts, and limitation language.",
-    limitations: ["Exported search results remain planar TMM design evidence only."]
+    limitations: ["Exported optimizer results remain planar TMM design evidence only."]
   },
   {
     id: "exports.robustSearchJson",
     section: "Exports",
-    title: "Robust Search JSON",
+    title: "Robust Optimizer JSON",
     short: "Exports robust candidate ranking, perturbation receipts, sample reduction evidence, and material fixed-assumption notes.",
     limitations: ["No material uncertainty, Monte Carlo certification, or digital twin claim."]
   },
