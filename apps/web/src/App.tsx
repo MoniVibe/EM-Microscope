@@ -263,13 +263,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L5.2 Maxwell Design Foundry</p>
+            <p>L5.3 Maxwell Design Foundry</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
           <span>Planar Maxwell TMM Foundry</span>
-          <strong>certified coating design and yield special case</strong>
+          <strong>material provenance, coating design, and yield special case</strong>
         </div>
       </header>
 

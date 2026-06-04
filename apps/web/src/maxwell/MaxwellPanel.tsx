@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import {
+  auditMaterialCatalog,
+  createMaterialImportTemplate,
   listL4SpectralMaterials,
+  parseMaterialImportJson,
   runCoatingStack,
   runCoatingDesignFoundry,
   runCoatingYieldAnalysis,
@@ -11,11 +14,13 @@ import {
   type CoatingStackRunResult,
   type CoatingSweepResult,
   type CoatingYieldResult,
+  type MaterialCatalogAudit,
+  type MaterialImportResult,
   type MaxwellPolarization,
   type PlanarFieldMonitorResult,
   type SolverWarning
 } from "@emmicro/core";
-import { FileDown, Plus, Save, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
+import { FileDown, Plus, Save, ShieldCheck, Sparkles, Trash2, Upload } from "lucide-react";
 
 type StackPresetId = "bareGlass" | "quarterWaveAr" | "broadbandAr" | "absorbingFilm";
 
@@ -37,6 +42,7 @@ type StackPreset = {
 
 const materialOptions = listL4SpectralMaterials();
 const layerMaterialOptions = materialOptions.filter((material) => material.family !== "ambient");
+const builtInMaterialAudit = auditMaterialCatalog(materialOptions, "built-in-l4-material-catalog");
 
 const stackPresets = {
   bareGlass: {
@@ -94,6 +100,8 @@ export function MaxwellPanel() {
   const [sweepStartNm, setSweepStartNm] = useState(420);
   const [sweepEndNm, setSweepEndNm] = useState(700);
   const [sweepCount, setSweepCount] = useState(33);
+  const [materialImport, setMaterialImport] = useState<MaterialImportResult | null>(null);
+  const [materialImportError, setMaterialImportError] = useState<string | null>(null);
 
   const stack = useMemo<CoatingStackDefinition>(
     () => ({
@@ -146,7 +154,14 @@ export function MaxwellPanel() {
       }),
     [foundry, presetId]
   );
-  const warnings = useMemo(() => uniquePanelWarnings([...yieldAnalysis.warnings, ...foundry.warnings, ...run.warnings]), [foundry, run, yieldAnalysis]);
+  const materialAudit = useMemo<MaterialCatalogAudit>(
+    () => (materialImport ? auditMaterialCatalog([...materialOptions, ...materialImport.records], "l53-material-catalog-with-import-preview") : builtInMaterialAudit),
+    [materialImport]
+  );
+  const warnings = useMemo(
+    () => uniquePanelWarnings([...materialAudit.warnings, ...(materialImport?.warnings ?? []), ...yieldAnalysis.warnings, ...foundry.warnings, ...run.warnings]),
+    [foundry, materialAudit, materialImport, run, yieldAnalysis]
+  );
 
   function selectPreset(nextPresetId: StackPresetId): void {
     const preset = stackPresets[nextPresetId];
@@ -193,11 +208,23 @@ export function MaxwellPanel() {
     );
   }
 
+  async function importMaterialFile(file: File | null): Promise<void> {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      setMaterialImport(parseMaterialImportJson(text));
+      setMaterialImportError(null);
+    } catch (error) {
+      setMaterialImport(null);
+      setMaterialImportError((error as Error).message);
+    }
+  }
+
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L5.2 Maxwell Design Foundry">
-      <h2>L5.2 Maxwell Design Foundry</h2>
+    <section className="wave-panel maxwell-panel" aria-label="L5.3 Maxwell Design Foundry">
+      <h2>L5.3 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM plus certified design and yield analysis</strong>
+        <strong>frequency-domain Maxwell planar coating-stack TMM plus material provenance, design, and yield analysis</strong>
         <span>not a general 3D Maxwell solver</span>
       </div>
 
@@ -241,6 +268,67 @@ export function MaxwellPanel() {
             <option value="TM">TM</option>
           </select>
         </label>
+      </div>
+
+      <div className="maxwell-material-card">
+        <div className="maxwell-section-heading">
+          <h2>Material Library</h2>
+          <strong>{materialAudit.resultHash.slice(0, 10)}</strong>
+        </div>
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>Records</span>
+            <strong>{materialAudit.recordCount}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Samples</span>
+            <strong>{materialAudit.sampleCount}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Sourced</span>
+            <strong>{materialAudit.sourcedRecordCount}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Diagnostic</span>
+            <strong>{materialAudit.diagnosticRecordCount}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Range</span>
+            <strong>{formatWavelengthRange(materialAudit.wavelengthRangeM)}</strong>
+          </div>
+        </div>
+        {materialImport ? (
+          <div className="maxwell-material-records">
+            {materialImport.records.map((record) => (
+              <div className="compact-stat" key={record.id}>
+                <span>{record.label}</span>
+                <strong>{record.samples.length} samples</strong>
+              </div>
+            ))}
+          </div>
+        ) : materialImportError ? (
+          <div className="error-banner">{materialImportError}</div>
+        ) : (
+          <div className="empty-state">Built-in diagnostic records only.</div>
+        )}
+        <div className="maxwell-layer-actions">
+          <label className="maxwell-file-action">
+            <Upload size={15} />
+            <span>Material JSON</span>
+            <input
+              type="file"
+              accept="application/json,.json"
+              onChange={(event) => {
+                void importMaterialFile(event.currentTarget.files?.[0] ?? null);
+                event.currentTarget.value = "";
+              }}
+            />
+          </label>
+          <button type="button" onClick={exportMaterialTemplateJson}>
+            <FileDown size={15} />
+            <span>Template JSON</span>
+          </button>
+        </div>
       </div>
 
       <div className="maxwell-layer-editor">
@@ -726,6 +814,10 @@ function exportYieldJson(yieldAnalysis: CoatingYieldResult): void {
   downloadText("l52-yield-analysis.json", "application/json", JSON.stringify(yieldAnalysis, null, 2));
 }
 
+function exportMaterialTemplateJson(): void {
+  downloadText("l53-material-import-template.json", "application/json", JSON.stringify(createMaterialImportTemplate(), null, 2));
+}
+
 function exportSweepCsv(sweep: CoatingSweepResult): void {
   const rows = [
     "wavelength_nm,reflectance,transmittance,absorbance,energy_balance_error,result_hash",
@@ -813,6 +905,11 @@ function formatPercent(value: number): string {
 
 function formatInterval(lower: number, upper: number): string {
   return `${formatPercent(lower)}-${formatPercent(upper)}`;
+}
+
+function formatWavelengthRange(range: [number, number] | null): string {
+  if (!range) return "n/a";
+  return `${(range[0] * 1e9).toFixed(0)}-${(range[1] * 1e9).toFixed(0)} nm`;
 }
 
 function formatMetric(metric: string, value: number): string {

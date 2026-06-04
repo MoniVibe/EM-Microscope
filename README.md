@@ -1,6 +1,6 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L5.2 Maxwell Design Foundry planar multilayer
+An EM-first light simulator MVP. The visible web app is now the L5.3 Maxwell Design Foundry planar multilayer
 transfer-matrix workbench; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
@@ -12,17 +12,19 @@ reflection/transmission, R/T/A Poynting-style flux ratios, effective permittivit
 and deterministic hashes. L5.1 adds a declarative planar coating objective layer and deterministic thickness
 optimizer that proposes coating designs, then certifies the selected result by re-running the same Maxwell TMM
 coating-stack path. L5.2 adds deterministic planar coating tolerance/yield analysis: thickness perturbation
-sampling, pass-rate confidence bounds, worst sample, and finite-difference layer sensitivity. It is not a general
-3D Maxwell solver, FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver,
-sensor-stack simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
+sampling, pass-rate confidence bounds, worst sample, and finite-difference layer sensitivity. L5.3 adds a sourced
+material import/provenance boundary with JSON schema validation, unit normalization, passivity warnings, catalog
+audit hashes, and template export. It is not a general 3D Maxwell solver, FEM/BEM/RCWA/FDTD engine, arbitrary CAD
+geometry solver, curved lens solver, aperture solver, sensor-stack simulator, adjoint optimizer, topology optimizer,
+digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L5.2 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
+- `L5.3 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
-  best-candidate re-solve hashes, planar thickness tolerance/yield analysis, JSON/Markdown/CSV export, and strict
-  limitations against arbitrary 3D EM claims.
+  best-candidate re-solve hashes, planar thickness tolerance/yield analysis, material import/audit evidence,
+  JSON/Markdown/CSV export, and strict limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
 
@@ -136,8 +138,8 @@ certified single-wavelength stack run hash. The web panel exposes the objective,
 evaluation count, best thicknesses, Apply Best, and Foundry JSON export.
 
 This is the first layer above simulation: users can ask for a physical coating outcome instead of manually choosing
-every thickness. It is still not adjoint optimization, topology optimization, robust yield analysis, digital-twin
-calibration, PDK rule checking, or sensor-complete design.
+every thickness. By itself, it is still not adjoint optimization, topology optimization, digital-twin calibration,
+PDK rule checking, or sensor-complete design.
 
 ## L5.2 Planar Tolerance Yield
 
@@ -154,9 +156,25 @@ This is useful as an early robust-design gate, but it is still only planar thick
 certified manufacturing yield claim, PDK rule check, digital-twin calibration, thermal/structural multiphysics, or a
 full VVUQ process.
 
+## L5.3 Material Import And Provenance
+
+The material-import layer lives in `packages/core/src/maxwell/materialImport.ts`. It defines the
+`emmicro.materials.v1` JSON package schema for sourced spectral `n,k` records, normalizes wavelength units
+(`m`, `um`, `nm`), validates material family/source/sample fields, clamps negative extinction coefficients with
+warnings, rejects duplicate wavelengths, and produces deterministic import/catalog audit hashes.
+
+The web panel now includes a Material Library card with record/sample counts, sourced versus diagnostic counts,
+wavelength range, import-preview rows, `Material JSON` file preview, and `Template JSON` export. Imported material
+records are audited and visible as provenance evidence, but they are not automatically inserted into editable coating
+stack material selection yet.
+
+This closes the first material-data gap without pretending the built-in records are authoritative. It is still not a
+live refractiveindex.info integration, laboratory fit pipeline, Kramers-Kronig validation, licensing verifier, or
+digital-twin material calibration.
+
 Recommended next L5 steps:
 
-- Add a wavelength-dependent material importer with source metadata, interpolation policy, and passivity checks.
+- Wire imported material packs into selectable coating-stack materials with collision/override policy.
 - Add discrete material/order search so the foundry can propose layer sequences, not just thicknesses.
 - Add drift/correlation controls and robust optimization loops that optimize yield directly, not just nominal score.
 - Compile optical coating stacks from future scene elements into planar TMM inputs for normal/oblique validation cases.

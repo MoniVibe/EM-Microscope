@@ -503,6 +503,7 @@ h2 {
 }
 
 .maxwell-layer-editor,
+.maxwell-material-card,
 .maxwell-monitor-card,
 .maxwell-foundry-card,
 .maxwell-yield-card,
@@ -530,6 +531,25 @@ h2 {
   padding: 0 8px;
   font-weight: 650;
   font-size: 12px;
+}
+
+.maxwell-file-action {
+  height: 30px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  background: #f8fafc;
+  color: #263244;
+  font-weight: 650;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.maxwell-file-action input {
+  display: none;
 }
 
 .maxwell-layer-list {
@@ -604,16 +624,24 @@ h2 {
   gap: 6px;
 }
 
+.maxwell-material-records {
+  display: grid;
+  gap: 6px;
+}
+
 .maxwell-yield-requirements {
   display: grid;
   gap: 6px;
 }
 
+.maxwell-material-card .compact-stat,
 .maxwell-foundry-card .compact-stat,
 .maxwell-yield-card .compact-stat {
   min-width: 0;
 }
 
+.maxwell-material-card .compact-stat span,
+.maxwell-material-card .compact-stat strong,
 .maxwell-foundry-card .compact-stat span,
 .maxwell-foundry-card .compact-stat strong,
 .maxwell-yield-card .compact-stat span,
@@ -622,6 +650,7 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.maxwell-material-card .compact-stat strong,
 .maxwell-foundry-card .compact-stat strong,
 .maxwell-yield-card .compact-stat strong {
   text-align: right;

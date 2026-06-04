@@ -57,15 +57,18 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L5.2 Maxwell foundry as planar TMM-certified design and yield without claiming arbitrary 3D EM", () => {
+  it("labels L5.3 Maxwell foundry as planar material provenance, design, and yield without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM plus certified design and yield analysis");
+    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM plus material provenance, design, and yield analysis");
     expect(maxwellPanel).toContain("not a general 3D Maxwell solver");
     expect(maxwellPanel).toContain("runCoatingStack");
     expect(maxwellPanel).toContain("runCoatingSweep");
     expect(maxwellPanel).toContain("runCoatingDesignFoundry");
     expect(maxwellPanel).toContain("runCoatingYieldAnalysis");
+    expect(maxwellPanel).toContain("parseMaterialImportJson");
+    expect(maxwellPanel).toContain("Material Library");
+    expect(maxwellPanel).toContain("Template JSON");
     expect(maxwellPanel).toContain("Planar Field Monitor");
     expect(maxwellPanel).toContain("Monitor CSV");
     expect(maxwellPanel).toContain("Design Foundry");
@@ -82,7 +85,7 @@ describe("solver disclosure copy", () => {
 
     expect(app).toContain('aria-label="Maxwell simulator"');
     expect(app).toContain("Planar Maxwell TMM Foundry");
-    expect(app).toContain("certified coating design and yield special case");
+    expect(app).toContain("material provenance, coating design, and yield special case");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

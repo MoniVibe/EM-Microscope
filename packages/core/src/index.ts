@@ -25,6 +25,7 @@ export * from "./maxwell/coatingStack";
 export * from "./maxwell/coatingYield";
 export * from "./maxwell/designFoundry";
 export * from "./maxwell/materialCatalog";
+export * from "./maxwell/materialImport";
 export * from "./maxwell/materials";
 export * from "./maxwell/planarFieldMonitor";
 export * from "./maxwell/planarTmm";
