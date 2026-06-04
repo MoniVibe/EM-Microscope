@@ -786,13 +786,92 @@ h2 {
 .maxwell-foundry-card,
 .maxwell-search-card,
 .maxwell-yield-card,
-.maxwell-sweep-card {
+.maxwell-sweep-card,
+.maxwell-study-card,
+.maxwell-workspace-panel {
   display: grid;
   gap: 10px;
   padding: 10px;
   border: 1px solid #c8d1dd;
   border-radius: 6px;
   background: #ffffff;
+}
+
+.maxwell-study-card {
+  background: #fbfdff;
+}
+
+.maxwell-workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.maxwell-workspace-panel {
+  align-content: start;
+  min-width: 0;
+}
+
+.maxwell-study-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.maxwell-study-controls input,
+.maxwell-study-controls select {
+  width: 100%;
+  min-width: 0;
+}
+
+.maxwell-capability-table,
+.maxwell-study-list,
+.maxwell-data-table,
+.maxwell-marker-list {
+  display: grid;
+  gap: 6px;
+}
+
+.maxwell-capability-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 118px minmax(0, 1.2fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 30px;
+  padding: 5px 7px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #253247;
+  font-size: 11px;
+}
+
+.maxwell-capability-row strong {
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+}
+
+.maxwell-capability-row em {
+  color: #607086;
+  font-style: normal;
+  overflow-wrap: anywhere;
+}
+
+.maxwell-capability-row.executable {
+  border-color: #8bc5a2;
+  background: #f0faf4;
+}
+
+.maxwell-capability-row.scaffold-only {
+  border-color: #e7c66c;
+  background: #fff8e6;
+}
+
+.maxwell-capability-row.not-implemented {
+  border-color: #cfd8e3;
+  background: #f3f6fa;
+  color: #536175;
 }
 
 .maxwell-mental-model-grid {
@@ -1716,7 +1795,8 @@ h2 {
   .maxwell-validation-output-grid,
   .maxwell-validation-output-grid.three,
   .maxwell-order-table,
-  .maxwell-advisor-grid {
+  .maxwell-advisor-grid,
+  .maxwell-workspace-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1781,7 +1861,13 @@ h2 {
   .maxwell-search-controls,
   .maxwell-robust-controls,
   .maxwell-search-materials,
-  .maxwell-search-stack {
+  .maxwell-search-stack,
+  .maxwell-study-controls,
+  .maxwell-capability-row {
     grid-template-columns: 1fr;
+  }
+
+  .maxwell-capability-row strong {
+    text-align: left;
   }
 }

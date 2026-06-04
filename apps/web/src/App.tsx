@@ -263,13 +263,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L6.5 Maxwell Design Foundry</p>
+            <p>L6.6 Practical Study Workspace</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>PlanarTmmBackend + Validation Bench</span>
-          <strong>executable planar backend, explainability layer, coherence demonstrator, thin-lens focal validation, slit/order ladder, scaffold-only 3D export</strong>
+          <span>PlanarTmmBackend + Study Workspace</span>
+          <strong>executable planar backend, saved studies, sweeps, measurements, comparisons, capabilities matrix, study bundle exports</strong>
         </div>
       </header>
 

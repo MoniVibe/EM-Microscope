@@ -11,18 +11,30 @@ import {
   coherenceDemonstratorCsv,
   coherenceDemonstratorJson,
   coherenceDemonstratorMarkdown,
+  compareStudyRuns,
   createMaterialCatalog,
   createMaterialImportTemplate,
+  createFieldMarker,
+  createStudySnapshot,
   defaultCoherenceDemonstratorConfig,
   defaultThinLensFocalValidationConfig,
   defaultCircularApertureValidationConfig,
+  distanceBetweenMarkers,
+  findFieldMinimum,
+  findFieldPeak,
   importMaterialPackage,
+  l66CapabilitiesMatrix,
   listCatalogMaterials,
   applyRobustCoatingSearchCandidate,
   createMinimalMaxwellScene3D,
   parseMaterialImportJson,
+  parseStudyBundleJson,
   exportExternalFdtdScaffold,
   externalFdtdSolverReceipt,
+  practicalSweepCsv,
+  practicalSweepJson,
+  practicalSweepMarkdown,
+  profileCsv,
   runCoatingSearch,
   runRobustCoatingSearch,
   runCoatingStack,
@@ -30,13 +42,24 @@ import {
   runCoatingYieldAnalysis,
   runCoatingSweep,
   runCircularApertureValidation,
+  runCircularObservationZSweep,
   runCoherenceDemonstrator,
+  runCoherenceGammaSweep,
+  runCoatingWavelengthStudySweep,
+  runDoubleSlitSeparationSweep,
+  runSlitWidthSweep,
   runThinLensFocalValidation,
+  runThinLensDefocusSweep,
+  runValidationWavelengthSweep,
   runAdvisorValidationReview,
   runSlitOrderValidation,
   serializeCoatingStackDesign,
   slitOrderValidationJson,
   slitOrderValidationMarkdown,
+  studyBundleJson,
+  studyBundleMarkdown,
+  studyComparisonCsv,
+  studyComparisonMarkdown,
   thinLensFocalValidationCsv,
   thinLensFocalValidationJson,
   thinLensFocalValidationMarkdown,
@@ -61,13 +84,22 @@ import {
   type MaxwellMaterialCatalog,
   type MaxwellPolarization,
   type ExternalFdtdScaffoldExport,
+  type FieldMarker,
   type PlanarFieldMonitorResult,
+  type PracticalSweepFamily,
+  type PracticalSweepResult,
   type RobustCoatingSearchCandidate,
   type RobustCoatingSearchPrimaryMetric,
   type RobustCoatingSearchResult,
   type FieldOutput2D,
   type SlitOrderValidationResult,
   type SolverWarning,
+  type StudyCapability,
+  type StudyComparisonResult,
+  type StudyMetric,
+  type StudyMode,
+  type StudyRunSummary,
+  type StudySnapshot,
   type ThinLensFocalValidationResult
 } from "@emmicro/core";
 import { FileDown, Plus, Save, ShieldCheck, Sparkles, Trash2, Upload } from "lucide-react";
@@ -200,6 +232,19 @@ export function MaxwellPanel() {
   const [coherenceSlitWidthUm, setCoherenceSlitWidthUm] = useState(20);
   const [coherenceSlitSeparationUm, setCoherenceSlitSeparationUm] = useState(100);
   const [coherencePropagationDistanceM, setCoherencePropagationDistanceM] = useState(1);
+  const [studyName, setStudyName] = useState("L6.6 working study");
+  const [savedStudies, setSavedStudies] = useState<StudySnapshot[]>([]);
+  const [selectedStudyId, setSelectedStudyId] = useState<string>("");
+  const [studyStatus, setStudyStatus] = useState("No study saved yet.");
+  const [workspaceSweepFamily, setWorkspaceSweepFamily] = useState<PracticalSweepFamily>("coherence-gamma");
+  const [workspaceSweepStart, setWorkspaceSweepStart] = useState(0);
+  const [workspaceSweepStop, setWorkspaceSweepStop] = useState(1);
+  const [workspaceSweepCount, setWorkspaceSweepCount] = useState(6);
+  const [workspaceSweepResult, setWorkspaceSweepResult] = useState<PracticalSweepResult | null>(null);
+  const [measurementMarkers, setMeasurementMarkers] = useState<FieldMarker[]>([]);
+  const [comparisonAId, setComparisonAId] = useState<string>("");
+  const [comparisonBId, setComparisonBId] = useState<string>("");
+  const [studyComparison, setStudyComparison] = useState<StudyComparisonResult | null>(null);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -367,6 +412,21 @@ export function MaxwellPanel() {
       ]),
     [foundry, materialAudit, materialCatalog, materialImport, robustResult, run, searchResult, yieldAnalysis]
   );
+  const capabilities = useMemo(() => l66CapabilitiesMatrix(), []);
+  const selectedStudy = savedStudies.find((study) => study.id === selectedStudyId) ?? null;
+  const studyRunSummaries = useMemo<StudyRunSummary[]>(
+    () =>
+      savedStudies.map((study) => ({
+        id: study.id,
+        label: study.name,
+        kind: study.mode,
+        resultHash: study.resultHash,
+        metrics: study.metrics,
+        warnings: study.warnings,
+        limitations: study.limitations
+      })),
+    [savedStudies]
+  );
 
   useEffect(() => {
     setSearchMaterialIds((current) => {
@@ -378,6 +438,376 @@ export function MaxwellPanel() {
       return ["mgf2", "sio2", "tio2"].filter((id) => available.has(id));
     });
   }, [layerMaterialOptions]);
+
+  function saveStudy(study: StudySnapshot): void {
+    setSavedStudies((current) => [study, ...current.filter((item) => item.id !== study.id)]);
+    setSelectedStudyId(study.id);
+    setStudyStatus(`Saved study: ${study.name}`);
+  }
+
+  function saveValidationStudy(): void {
+    saveStudy(captureValidationStudy(studyName.trim() || "Validation study"));
+  }
+
+  function saveCoatingStudy(): void {
+    saveStudy(captureCoatingStudy(studyName.trim() || "Coating study"));
+  }
+
+  function captureValidationStudy(name: string): StudySnapshot {
+    const summary = activeValidationStudySummary();
+    return createStudySnapshot({
+      id: `${summary.id}-${Date.now().toString(36)}`,
+      name,
+      mode: summary.mode,
+      selectedWorkbench: summary.mode === "validation.advisor-review" ? "advisor-review" : "validation-bench",
+      inputs: summary.inputs,
+      appState: currentAppState(),
+      backendReceipt: { label: "Scalar Validation Bench", availability: "executable", scope: "scalar validation only" },
+      materialReceipts: [{ materialId: "not-applicable", materialHash: "scalar-validation" }],
+      resultHashes: [summary.resultHash],
+      metrics: summary.metrics,
+      profiles: summary.profiles,
+      warnings: summary.warnings,
+      limitations: summary.limitations
+    });
+  }
+
+  function captureCoatingStudy(name: string): StudySnapshot {
+    return createStudySnapshot({
+      id: `coating-study-${Date.now().toString(36)}`,
+      name,
+      mode: robustResult ? "coating.robust-optimizer" : searchResult ? "coating.optimizer" : "coating.planar-stack",
+      selectedWorkbench: "coating-stack-workbench",
+      inputs: {
+        stack,
+        search: searchResult?.spec ?? null,
+        robustSearch: robustResult?.spec ?? null
+      },
+      appState: currentAppState(),
+      backendReceipt: run.solverBackend,
+      materialReceipts: run.materialCatalogRefs,
+      uncertaintyReceipts: robustResult ? [robustResult.best.uncertaintyReceipt] : yieldAnalysis.tolerances,
+      resultHashes: [run.resultHash, sweep.resultHash, foundry.resultHash, yieldAnalysis.resultHash, searchResult?.resultHash, robustResult?.resultHash].filter(Boolean) as string[],
+      metrics: [
+        { id: "reflectance", label: "Reflectance", value: run.tmm.reflectance },
+        { id: "transmittance", label: "Transmittance", value: run.tmm.transmittance },
+        { id: "absorbance", label: "Absorbance", value: run.tmm.absorbance },
+        { id: "yieldPassRate", label: "Tolerance pass rate", value: yieldAnalysis.passRate },
+        { id: "bestFoundryScore", label: "Best foundry score", value: foundry.best.score },
+        ...(robustResult ? [{ id: "robustP90Score", label: "Robust P90 score", value: robustResult.best.yield.p90Score }] : [])
+      ],
+      warnings,
+      limitations: [
+        ...run.provenance.limitations,
+        ...foundry.provenance.limitations,
+        ...yieldAnalysis.provenance.limitations,
+        ...(searchResult?.provenance.limitations ?? []),
+        ...(robustResult?.provenance.limitations ?? [])
+      ]
+    });
+  }
+
+  function loadSelectedStudy(): void {
+    const study = selectedStudy;
+    if (!study) {
+      setStudyStatus("Select a study to load.");
+      return;
+    }
+    applyStudyState(study);
+    setStudyStatus(`Loaded study: ${study.name}`);
+  }
+
+  function duplicateSelectedStudy(): void {
+    const study = selectedStudy;
+    if (!study) {
+      setStudyStatus("Select a study to duplicate.");
+      return;
+    }
+    const duplicate = createStudySnapshot({
+      ...study,
+      id: `${study.id}-copy-${Date.now().toString(36)}`,
+      name: `${study.name} copy`,
+      createdAtIso: undefined
+    });
+    saveStudy(duplicate);
+  }
+
+  function deleteSelectedStudy(): void {
+    if (!selectedStudyId) {
+      setStudyStatus("Select a study to delete.");
+      return;
+    }
+    setSavedStudies((current) => current.filter((study) => study.id !== selectedStudyId));
+    setSelectedStudyId("");
+    setStudyStatus("Deleted selected study.");
+  }
+
+  function applyStudyState(study: StudySnapshot): void {
+    const state = study.appState as Record<string, unknown> | null;
+    if (!state) return;
+    const validation = state.validation as Record<string, unknown> | undefined;
+    if (validation) {
+      setValidationBenchmark((validation.benchmark as ValidationBenchmarkId) ?? validationBenchmark);
+      if (typeof validation.planeZMm === "number") setValidationPlaneZMm(validation.planeZMm);
+      if (typeof validation.coherenceGamma === "number") setCoherenceGammaMagnitude(validation.coherenceGamma);
+      if (typeof validation.coherenceMode === "string") setCoherenceMode(validation.coherenceMode as CoherenceDemonstratorMode);
+      if (typeof validation.lensObservationZMm === "number") setLensObservationZMm(validation.lensObservationZMm);
+    }
+    const coating = state.coating as Record<string, unknown> | undefined;
+    if (coating) {
+      if (typeof coating.presetId === "string" && coating.presetId in stackPresets) setPresetId(coating.presetId as StackPresetId);
+      if (typeof coating.wavelengthNm === "number") setWavelengthNm(coating.wavelengthNm);
+      if (typeof coating.angleDeg === "number") setAngleDeg(coating.angleDeg);
+      if (coating.polarization === "TE" || coating.polarization === "TM") setPolarization(coating.polarization);
+      if (Array.isArray(coating.layers)) setLayers(coating.layers as EditableLayer[]);
+    }
+  }
+
+  async function importStudyBundleFile(file: File | null): Promise<void> {
+    if (!file) return;
+    try {
+      const bundle = parseStudyBundleJson(await file.text());
+      setSavedStudies((current) => [bundle.study, ...current.filter((study) => study.id !== bundle.study.id)]);
+      setSelectedStudyId(bundle.study.id);
+      setStudyStatus(`Imported study bundle: ${bundle.study.name}`);
+    } catch (error) {
+      setStudyStatus(`Import failed: ${(error as Error).message}`);
+    }
+  }
+
+  async function copyShareableStudyUrl(): Promise<void> {
+    const study = selectedStudy ?? (savedStudies[0] ?? null);
+    if (!study) {
+      setStudyStatus("Save or select a study before copying a URL.");
+      return;
+    }
+    const payload = window.btoa(JSON.stringify({ schema: "emmicro.studyUrl.v1", studyId: study.id, appState: study.appState }));
+    const url = `${window.location.origin}${window.location.pathname}?study=${encodeURIComponent(payload)}`;
+    try {
+      await navigator.clipboard?.writeText(url);
+      setStudyStatus("Copied shareable study URL.");
+    } catch {
+      setStudyStatus(url);
+    }
+  }
+
+  function runWorkspaceSweep(): void {
+    const input = {
+      family: workspaceSweepFamily,
+      start: workspaceSweepStart,
+      stop: workspaceSweepStop,
+      sampleCount: Math.round(workspaceSweepCount),
+      maxRuns: 21
+    };
+    const result =
+      workspaceSweepFamily === "coherence-gamma"
+        ? runCoherenceGammaSweep(input)
+        : workspaceSweepFamily === "validation-wavelength"
+          ? runValidationWavelengthSweep(input)
+          : workspaceSweepFamily === "observation-z"
+            ? runCircularObservationZSweep(input)
+            : workspaceSweepFamily === "slit-width"
+              ? runSlitWidthSweep(input)
+              : workspaceSweepFamily === "double-slit-separation"
+                ? runDoubleSlitSeparationSweep(input)
+                : workspaceSweepFamily === "thin-lens-defocus"
+                  ? runThinLensDefocusSweep(input)
+                  : runCoatingWavelengthStudySweep(stack, input, materialRunOptions);
+    setWorkspaceSweepResult(result);
+    setStudyStatus(`Sweep complete: ${result.label}`);
+  }
+
+  function pinCenterMarker(): void {
+    const field = activeMeasurementField();
+    const marker = createFieldMarker(field, { id: `center-${measurementMarkers.length + 1}`, label: "Crosshair center", uM: 0, vM: 0 });
+    setMeasurementMarkers((current) => [...current, marker]);
+  }
+
+  function pinPeakMarker(): void {
+    const marker = findFieldPeak(activeMeasurementField());
+    setMeasurementMarkers((current) => [...current, { ...marker, id: `peak-${current.length + 1}` }]);
+  }
+
+  function pinMinimumMarker(): void {
+    const marker = findFieldMinimum(activeMeasurementField());
+    setMeasurementMarkers((current) => [...current, { ...marker, id: `minimum-${current.length + 1}` }]);
+  }
+
+  function runGammaComparison(): void {
+    const gamma1 = runCoherenceDemonstrator({ mode: "partial-coherence", coherence: { gammaMagnitude: 1, gammaPhaseRad: 0 } });
+    const gamma0 = runCoherenceDemonstrator({ mode: "partial-coherence", coherence: { gammaMagnitude: 0, gammaPhaseRad: 0 } });
+    setStudyComparison(
+      compareStudyRuns(
+        coherenceRunSummary("gamma1", "gamma=1", gamma1),
+        coherenceRunSummary("gamma0", "gamma=0", gamma0)
+      )
+    );
+    setStudyStatus("Compared gamma=1 vs gamma=0.");
+  }
+
+  function compareSelectedStudies(): void {
+    const runA = studyRunSummaries.find((study) => study.id === comparisonAId);
+    const runB = studyRunSummaries.find((study) => study.id === comparisonBId);
+    if (!runA || !runB) {
+      setStudyStatus("Select Run A and Run B first.");
+      return;
+    }
+    setStudyComparison(compareStudyRuns(runA, runB));
+    setStudyStatus(`Compared ${runA.label} vs ${runB.label}.`);
+  }
+
+  function activeValidationStudySummary(): {
+    id: string;
+    mode: StudyMode;
+    inputs: unknown;
+    resultHash: string;
+    metrics: StudyMetric[];
+    profiles: Record<string, { xM: number; intensity: number }[]>;
+    warnings: SolverWarning[];
+    limitations: string[];
+  } {
+    if (validationBenchmark === "coherence") {
+      return {
+        id: "coherence-study",
+        mode: "validation.coherence",
+        inputs: coherenceResult.config,
+        resultHash: coherenceResult.resultHash,
+        metrics: [
+          { id: "visibility", label: "Fringe visibility", value: coherenceResult.visibility.measured },
+          { id: "visibilityError", label: "Visibility error", value: coherenceResult.visibility.error },
+          { id: "orderSpacingMm", label: "Order spacing", value: coherenceResult.expected.orderSpacingSmallAngleM * 1e3, unit: "mm" }
+        ],
+        profiles: {
+          centerline: coherenceResult.profile.map((sample) => ({ xM: sample.positionM, intensity: sample.partialIntensity }))
+        },
+        warnings: coherenceResult.warnings,
+        limitations: coherenceResult.provenance.limitations
+      };
+    }
+    if (validationBenchmark === "thin-lens") {
+      return {
+        id: "thin-lens-study",
+        mode: "validation.thin-lens",
+        inputs: lensResult.config,
+        resultHash: lensResult.resultHash,
+        metrics: [
+          { id: "firstDarkRadiusUm", label: "First dark radius", value: lensResult.expected.firstDarkRadiusM * 1e6, unit: "um" },
+          { id: "focusPeak", label: "Configured focus peak", value: lensResult.comparison.focus.configuredPlanePeakRelative },
+          { id: "rmsResidual", label: "RMS residual", value: lensResult.residuals.rmsResidual }
+        ],
+        profiles: {
+          radial: lensResult.radialProfile.map((sample) => ({ xM: sample.radiusM, intensity: sample.numericalIntensity }))
+        },
+        warnings: lensResult.warnings,
+        limitations: lensResult.provenance.limitations
+      };
+    }
+    if (validationBenchmark === "single-slit" || validationBenchmark === "double-slit") {
+      const result = selectedSlitResult;
+      return {
+        id: `${validationBenchmark}-study`,
+        mode: validationBenchmark === "single-slit" ? "validation.single-slit" : "validation.double-slit",
+        inputs: result.config,
+        resultHash: result.resultHash,
+        metrics: [
+          { id: "primarySpacingMm", label: "Primary spacing", value: result.expected.primarySpacingSmallAngleM * 1e3, unit: "mm" },
+          { id: "rmsResidual", label: "RMS residual", value: result.residuals.rmsResidual },
+          { id: "maxResidual", label: "Max residual", value: result.residuals.maxResidual }
+        ],
+        profiles: {
+          centerline: result.profile.map((sample) => ({ xM: sample.positionM, intensity: sample.numericalIntensity }))
+        },
+        warnings: result.warnings,
+        limitations: result.provenance.limitations
+      };
+    }
+    if (validationBenchmark === "advisor-review") {
+      return {
+        id: "advisor-review-study",
+        mode: "validation.advisor-review",
+        inputs: advisorReview.generatedBenchmarks,
+        resultHash: advisorReview.resultHash,
+        metrics: [
+          { id: "warningCount", label: "Warning count", value: advisorReview.warnings.length },
+          { id: "benchmarkCount", label: "Benchmark count", value: advisorReview.generatedBenchmarks.length }
+        ],
+        profiles: {},
+        warnings: advisorReview.warnings,
+        limitations: advisorReview.limitations
+      };
+    }
+    return {
+      id: "circular-aperture-study",
+      mode: "validation.circular-aperture",
+      inputs: validationResult.config,
+      resultHash: validationResult.resultHash,
+      metrics: [
+        { id: "firstMinimumMm", label: "Expected first minimum", value: validationResult.expected.firstMinimumRadiusM * 1e3, unit: "mm" },
+        { id: "rmsResidual", label: "RMS residual", value: validationResult.residuals.rmsResidual },
+        { id: "finitePlaneError", label: "Finite-plane error", value: validationResult.comparison.energy.relativePlaneIntegralError }
+      ],
+      profiles: {
+        radial: validationResult.radialProfile.map((sample) => ({ xM: sample.radiusM, intensity: sample.numericalIntensity }))
+      },
+      warnings: validationResult.warnings,
+      limitations: validationResult.provenance.limitations
+    };
+  }
+
+  function currentAppState(): unknown {
+    return {
+      validation: {
+        benchmark: validationBenchmark,
+        planeZMm: validationPlaneZMm,
+        mode: validationMode,
+        coherenceMode,
+        coherenceGamma: coherenceGammaMagnitude,
+        coherenceSlitWidthUm,
+        coherenceSlitSeparationUm,
+        coherencePropagationDistanceM,
+        lensObservationZMm
+      },
+      coating: {
+        presetId,
+        incidentMaterialId,
+        substrateMaterialId,
+        wavelengthNm,
+        angleDeg,
+        polarization,
+        layers
+      }
+    };
+  }
+
+  function activeMeasurementField(): FieldOutput2D {
+    if (validationBenchmark === "coherence") return coherenceResult.partialField;
+    if (validationBenchmark === "thin-lens") return lensResult.numericalField;
+    if (validationBenchmark === "single-slit" || validationBenchmark === "double-slit") return selectedSlitResult.numericalField;
+    return validationResult.numericalField;
+  }
+
+  function activeProfileCsv(): string {
+    const summary = activeValidationStudySummary();
+    const firstProfile = Object.entries(summary.profiles)[0];
+    if (!firstProfile) return "profile_id,x_m,intensity,label";
+    return profileCsv(firstProfile[1].map((sample) => ({ ...sample })), firstProfile[0]);
+  }
+
+  function coherenceRunSummary(id: string, label: string, result: CoherenceDemonstratorResult): StudyRunSummary {
+    return {
+      id,
+      label,
+      kind: "validation.coherence",
+      resultHash: result.resultHash,
+      metrics: [
+        { id: "visibility", label: "Fringe visibility", value: result.visibility.measured },
+        { id: "orderSpacingMm", label: "Order spacing", value: result.expected.orderSpacingSmallAngleM * 1e3, unit: "mm" }
+      ],
+      warnings: result.warnings,
+      limitations: result.provenance.limitations,
+      field: result.partialField
+    };
+  }
 
   function selectPreset(nextPresetId: StackPresetId): void {
     const preset = stackPresets[nextPresetId];
@@ -593,11 +1023,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.5 Maxwell Design Foundry">
-      <h2>L6.5 Maxwell Design Foundry</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.6 Practical Study Workspace">
+      <h2>L6.6 Practical Study Workspace</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM, L6.5 coherence demonstrator, thin-lens focal validation, slit/order validation, and explainability layer</strong>
-        <span>scalar two-slit coherence demo plus ideal lens diffraction validation; still not a general 3D Maxwell solver, stochastic source engine, and ExternalFdtdBackend remains scaffold-only</span>
+        <strong>saved studies, parameter sweeps, measurement markers, run comparison, capability matrix, and study bundle exports over the existing planar/scalar engines</strong>
+        <span>PlanarTmmBackend and scalar validation remain the executable scope; 3D Maxwell, FDTD, FEM, BEM, RCWA, CAD, sensor simulation, digital twins, and certification remain unavailable</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -614,6 +1044,54 @@ export function MaxwellPanel() {
       <ShowAllExplanationsDrawer open={showExplanations} onClose={() => setShowExplanations(false)} />
 
       <GuidedOpticalBenchCards explainMode={explainMode} />
+
+      <PracticalStudyWorkspacePanel
+        capabilities={capabilities}
+        studyName={studyName}
+        setStudyName={setStudyName}
+        savedStudies={savedStudies}
+        selectedStudyId={selectedStudyId}
+        setSelectedStudyId={setSelectedStudyId}
+        studyStatus={studyStatus}
+        onSaveValidation={saveValidationStudy}
+        onSaveCoating={saveCoatingStudy}
+        onLoadStudy={loadSelectedStudy}
+        onDuplicateStudy={duplicateSelectedStudy}
+        onDeleteStudy={deleteSelectedStudy}
+        onExportBundle={() => exportStudyBundle(selectedStudy ?? captureValidationStudy(studyName.trim() || "Validation study"), workspaceSweepResult, studyComparison)}
+        onImportBundle={importStudyBundleFile}
+        onCopyShareableUrl={copyShareableStudyUrl}
+        sweepFamily={workspaceSweepFamily}
+        setSweepFamily={setWorkspaceSweepFamily}
+        sweepStart={workspaceSweepStart}
+        setSweepStart={setWorkspaceSweepStart}
+        sweepStop={workspaceSweepStop}
+        setSweepStop={setWorkspaceSweepStop}
+        sweepCount={workspaceSweepCount}
+        setSweepCount={setWorkspaceSweepCount}
+        sweepResult={workspaceSweepResult}
+        onRunSweep={runWorkspaceSweep}
+        onExportSweepJson={() => workspaceSweepResult && exportPracticalSweepJson(workspaceSweepResult)}
+        onExportSweepMarkdown={() => workspaceSweepResult && exportPracticalSweepMarkdown(workspaceSweepResult)}
+        onExportSweepCsv={() => workspaceSweepResult && exportPracticalSweepCsv(workspaceSweepResult)}
+        markers={measurementMarkers}
+        onPinCenter={pinCenterMarker}
+        onPinPeak={pinPeakMarker}
+        onPinMinimum={pinMinimumMarker}
+        onClearMarkers={() => setMeasurementMarkers([])}
+        markerDistanceM={measurementMarkers.length >= 2 ? distanceBetweenMarkers(measurementMarkers[0]!, measurementMarkers[1]!) : null}
+        onExportProfileCsv={() => exportActiveProfileCsv(activeProfileCsv())}
+        studyRuns={studyRunSummaries}
+        comparisonAId={comparisonAId}
+        setComparisonAId={setComparisonAId}
+        comparisonBId={comparisonBId}
+        setComparisonBId={setComparisonBId}
+        comparison={studyComparison}
+        onCompareGamma={runGammaComparison}
+        onCompareSelected={compareSelectedStudies}
+        onExportComparisonMarkdown={() => studyComparison && exportStudyComparisonMarkdown(studyComparison)}
+        onExportComparisonCsv={() => studyComparison && exportStudyComparisonCsv(studyComparison)}
+      />
 
       <div className="profile-meta">
         <div className="compact-stat">
@@ -1716,6 +2194,318 @@ function NumberField({
         {unit && <em>{unit}</em>}
       </div>
     </label>
+  );
+}
+
+function PracticalStudyWorkspacePanel({
+  capabilities,
+  studyName,
+  setStudyName,
+  savedStudies,
+  selectedStudyId,
+  setSelectedStudyId,
+  studyStatus,
+  onSaveValidation,
+  onSaveCoating,
+  onLoadStudy,
+  onDuplicateStudy,
+  onDeleteStudy,
+  onExportBundle,
+  onImportBundle,
+  onCopyShareableUrl,
+  sweepFamily,
+  setSweepFamily,
+  sweepStart,
+  setSweepStart,
+  sweepStop,
+  setSweepStop,
+  sweepCount,
+  setSweepCount,
+  sweepResult,
+  onRunSweep,
+  onExportSweepJson,
+  onExportSweepMarkdown,
+  onExportSweepCsv,
+  markers,
+  onPinCenter,
+  onPinPeak,
+  onPinMinimum,
+  onClearMarkers,
+  markerDistanceM,
+  onExportProfileCsv,
+  studyRuns,
+  comparisonAId,
+  setComparisonAId,
+  comparisonBId,
+  setComparisonBId,
+  comparison,
+  onCompareGamma,
+  onCompareSelected,
+  onExportComparisonMarkdown,
+  onExportComparisonCsv
+}: {
+  capabilities: StudyCapability[];
+  studyName: string;
+  setStudyName: (value: string) => void;
+  savedStudies: StudySnapshot[];
+  selectedStudyId: string;
+  setSelectedStudyId: (value: string) => void;
+  studyStatus: string;
+  onSaveValidation: () => void;
+  onSaveCoating: () => void;
+  onLoadStudy: () => void;
+  onDuplicateStudy: () => void;
+  onDeleteStudy: () => void;
+  onExportBundle: () => void;
+  onImportBundle: (file: File | null) => void | Promise<void>;
+  onCopyShareableUrl: () => void | Promise<void>;
+  sweepFamily: PracticalSweepFamily;
+  setSweepFamily: (value: PracticalSweepFamily) => void;
+  sweepStart: number;
+  setSweepStart: (value: number) => void;
+  sweepStop: number;
+  setSweepStop: (value: number) => void;
+  sweepCount: number;
+  setSweepCount: (value: number) => void;
+  sweepResult: PracticalSweepResult | null;
+  onRunSweep: () => void;
+  onExportSweepJson: () => void;
+  onExportSweepMarkdown: () => void;
+  onExportSweepCsv: () => void;
+  markers: FieldMarker[];
+  onPinCenter: () => void;
+  onPinPeak: () => void;
+  onPinMinimum: () => void;
+  onClearMarkers: () => void;
+  markerDistanceM: number | null;
+  onExportProfileCsv: () => void;
+  studyRuns: StudyRunSummary[];
+  comparisonAId: string;
+  setComparisonAId: (value: string) => void;
+  comparisonBId: string;
+  setComparisonBId: (value: string) => void;
+  comparison: StudyComparisonResult | null;
+  onCompareGamma: () => void;
+  onCompareSelected: () => void;
+  onExportComparisonMarkdown: () => void;
+  onExportComparisonCsv: () => void;
+}) {
+  const executableCount = capabilities.filter((capability) => capability.status === "executable").length;
+  const scaffoldCount = capabilities.filter((capability) => capability.status === "scaffold-only").length;
+  const unavailableCount = capabilities.filter((capability) => capability.status === "not-implemented").length;
+
+  return (
+    <div className="maxwell-study-card" aria-label="L6.6 Practical Study Workspace">
+      <div className="maxwell-section-heading">
+        <h2>L6.6 Practical Study Workspace</h2>
+        <strong>{savedStudies.length} saved</strong>
+      </div>
+      <div className="l2-disclosure">
+        <strong>Save a study, run sweeps, measure outputs, compare runs, and export evidence.</strong>
+        <span>Workflow layer only: it orchestrates existing scalar validation and planar TMM results without adding new physics.</span>
+      </div>
+
+      <div className="maxwell-workspace-grid">
+        <div className="maxwell-workspace-panel" aria-label="Capabilities Matrix">
+          <div className="maxwell-section-heading">
+            <h2>Capabilities Matrix</h2>
+            <strong>{executableCount} executable / {scaffoldCount} scaffold / {unavailableCount} unavailable</strong>
+          </div>
+          <div className="maxwell-capability-table">
+            {capabilities.map((capability) => (
+              <div className={`maxwell-capability-row ${capability.status}`} key={capability.id}>
+                <span>{capability.label}</span>
+                <strong>{capability.status}</strong>
+                <em>{capability.boundary}</em>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="Study Manager">
+          <div className="maxwell-section-heading">
+            <h2>Study Manager</h2>
+            <strong>{studyStatus}</strong>
+          </div>
+          <div className="maxwell-study-controls">
+            <label className="field-row">
+              <span>Study name</span>
+              <input value={studyName} onChange={(event) => setStudyName(event.currentTarget.value)} />
+            </label>
+            <label className="field-row">
+              <span>Saved studies</span>
+              <select value={selectedStudyId} onChange={(event) => setSelectedStudyId(event.currentTarget.value)}>
+                <option value="">Select study</option>
+                {savedStudies.map((study) => (
+                  <option key={study.id} value={study.id}>
+                    {study.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onSaveValidation}><Save size={15} /><span>Save Study</span></button>
+            <button type="button" onClick={onSaveCoating}><Save size={15} /><span>Save Coating Study</span></button>
+            <button type="button" onClick={onLoadStudy}><Upload size={15} /><span>Load Study</span></button>
+            <button type="button" onClick={onDuplicateStudy}><Plus size={15} /><span>Duplicate Study</span></button>
+            <button type="button" onClick={onDeleteStudy}><Trash2 size={15} /><span>Delete Study</span></button>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onExportBundle}><FileDown size={15} /><span>Export Study Bundle</span></button>
+            <label className="maxwell-file-action">
+              <Upload size={15} />
+              <span>Import Study Bundle</span>
+              <input type="file" accept="application/json,.json" onChange={(event) => void onImportBundle(event.currentTarget.files?.[0] ?? null)} />
+            </label>
+            <button type="button" onClick={() => void onCopyShareableUrl()}><FileDown size={15} /><span>Copy Shareable URL</span></button>
+          </div>
+          {savedStudies.length > 0 && (
+            <div className="maxwell-study-list">
+              {savedStudies.slice(0, 4).map((study) => (
+                <div className="compact-stat" key={study.id}>
+                  <span>{study.name}</span>
+                  <strong>{study.mode} / {study.resultHash.slice(0, 8)}</strong>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="Parameter Sweep Runner">
+          <div className="maxwell-section-heading">
+            <h2>Parameter Sweep Runner</h2>
+            <strong>{sweepResult ? `${sweepResult.executedRunCount} rows` : "not run"}</strong>
+          </div>
+          <div className="maxwell-study-controls">
+            <label className="field-row">
+              <span>Parameter</span>
+              <select value={sweepFamily} onChange={(event) => setSweepFamily(event.currentTarget.value as PracticalSweepFamily)}>
+                <option value="coherence-gamma">coherence gamma</option>
+                <option value="validation-wavelength">validation wavelength</option>
+                <option value="observation-z">observation z</option>
+                <option value="slit-width">slit width</option>
+                <option value="double-slit-separation">double-slit separation</option>
+                <option value="thin-lens-defocus">thin-lens defocus</option>
+                <option value="coating-wavelength">coating wavelength</option>
+              </select>
+            </label>
+            <NumberField label="Start" value={sweepStart} min={-1000} max={3000} step={0.1} onChange={setSweepStart} />
+            <NumberField label="Stop" value={sweepStop} min={-1000} max={3000} step={0.1} onChange={setSweepStop} />
+            <NumberField label="Samples" value={sweepCount} min={1} max={200} step={1} onChange={setSweepCount} />
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onRunSweep}><Sparkles size={15} /><span>Run Sweep</span></button>
+            <button type="button" onClick={onRunSweep}><ShieldCheck size={15} /><span>Cancel Sweep</span></button>
+            {sweepResult && <button type="button" onClick={onExportSweepJson}><FileDown size={15} /><span>Sweep JSON</span></button>}
+            {sweepResult && <button type="button" onClick={onExportSweepMarkdown}><FileDown size={15} /><span>Sweep Markdown</span></button>}
+            {sweepResult && <button type="button" onClick={onExportSweepCsv}><FileDown size={15} /><span>Sweep CSV</span></button>}
+          </div>
+          {sweepResult && (
+            <>
+              {sweepResult.budget.truncated && <div className="error-banner">Budget warning: requested {sweepResult.requestedRunCount}, ran {sweepResult.executedRunCount}.</div>}
+              <div className="maxwell-data-table">
+                {sweepResult.rows.slice(0, 8).map((row) => (
+                  <div className="compact-stat" key={`${row.index}-${row.resultHash}`}>
+                    <span>{row.parameter.label} {row.parameter.value.toPrecision(4)} {row.parameter.unit}</span>
+                    <strong>{row.metrics.map((metricItem) => `${metricItem.label}: ${Number.isFinite(metricItem.value) ? metricItem.value.toPrecision(4) : "n/a"}${metricItem.unit ? ` ${metricItem.unit}` : ""}`).join(" / ")}</strong>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="Measurement Tools">
+          <div className="maxwell-section-heading">
+            <h2>Measurement Tools</h2>
+            <strong>{markers.length} marker{markers.length === 1 ? "" : "s"}</strong>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onPinCenter}><Sparkles size={15} /><span>Pin Crosshair</span></button>
+            <button type="button" onClick={onPinPeak}><Sparkles size={15} /><span>Peak Finder</span></button>
+            <button type="button" onClick={onPinMinimum}><Sparkles size={15} /><span>Minimum Finder</span></button>
+            <button type="button" onClick={onExportProfileCsv}><FileDown size={15} /><span>Profile CSV</span></button>
+            <button type="button" onClick={onClearMarkers}><Trash2 size={15} /><span>Clear Markers</span></button>
+          </div>
+          <div className="maxwell-marker-list">
+            {markers.map((marker) => (
+              <div className="compact-stat" key={marker.id}>
+                <span>{marker.label}</span>
+                <strong>x {formatMm(marker.uM)} mm / y {formatMm(marker.vM)} mm / I {marker.intensity.toPrecision(4)}</strong>
+              </div>
+            ))}
+            {markerDistanceM !== null && (
+              <div className="compact-stat">
+                <span>Marker distance</span>
+                <strong>{formatMm(markerDistanceM)} mm</strong>
+              </div>
+            )}
+          </div>
+          <div className="l2-disclosure">
+            <strong>ROI measurement and line profile extraction are represented by marker/table/profile exports in this pass.</strong>
+            <span>Map/profile coordinates are read from the active zero-thickness validation plane.</span>
+          </div>
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="Run Comparison">
+          <div className="maxwell-section-heading">
+            <h2>Run Comparison</h2>
+            <strong>{comparison ? comparison.resultHash.slice(0, 10) : "not compared"}</strong>
+          </div>
+          <div className="maxwell-study-controls">
+            <label className="field-row">
+              <span>Run A</span>
+              <select value={comparisonAId} onChange={(event) => setComparisonAId(event.currentTarget.value)}>
+                <option value="">Select Run A</option>
+                {studyRuns.map((run) => <option key={run.id} value={run.id}>{run.label}</option>)}
+              </select>
+            </label>
+            <label className="field-row">
+              <span>Run B</span>
+              <select value={comparisonBId} onChange={(event) => setComparisonBId(event.currentTarget.value)}>
+                <option value="">Select Run B</option>
+                {studyRuns.map((run) => <option key={run.id} value={run.id}>{run.label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onCompareGamma}><Sparkles size={15} /><span>Compare Gamma 1 vs Gamma 0</span></button>
+            <button type="button" onClick={onCompareSelected}><Sparkles size={15} /><span>Compare Selected Runs</span></button>
+            {comparison && <button type="button" onClick={onExportComparisonMarkdown}><FileDown size={15} /><span>Comparison Markdown</span></button>}
+            {comparison && <button type="button" onClick={onExportComparisonCsv}><FileDown size={15} /><span>Comparison CSV</span></button>}
+          </div>
+          {comparison && (
+            <div className="maxwell-data-table">
+              {comparison.deltas.map((delta) => (
+                <div className="compact-stat" key={delta.id}>
+                  <span>{delta.label}</span>
+                  <strong>{delta.a.toPrecision(4)} to {delta.b.toPrecision(4)} / delta {delta.delta.toPrecision(4)} {delta.unit ?? ""}</strong>
+                </div>
+              ))}
+              {comparison.warnings.map((warning) => <div className="error-banner" key={warning.code}>{warning.message}</div>)}
+            </div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="Study Bundle Export">
+          <div className="maxwell-section-heading">
+            <h2>Study Bundle Export</h2>
+            <strong>JSON + Markdown + CSV</strong>
+          </div>
+          <div className="l2-disclosure">
+            <strong>Bundle contents</strong>
+            <span>study.json, study.md, metrics.csv, profiles.csv, warnings.json, capabilities.json, manifest.json, backend/material/uncertainty receipts, result hashes, and limitations.</span>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onExportBundle}><FileDown size={15} /><span>Export Study Bundle</span></button>
+            {sweepResult && <button type="button" onClick={onExportSweepCsv}><FileDown size={15} /><span>metrics.csv</span></button>}
+            {comparison && <button type="button" onClick={onExportComparisonCsv}><FileDown size={15} /><span>comparison.csv</span></button>}
+            <button type="button" onClick={onExportProfileCsv}><FileDown size={15} /><span>profiles.csv</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -3119,6 +3909,45 @@ function exportAdvisorReviewJson(review: AdvisorValidationReviewResult): void {
 
 function exportAdvisorReviewCsv(review: AdvisorValidationReviewResult): void {
   downloadText("advisor_validation_report.csv", "text/csv", advisorValidationReviewCsv(review));
+}
+
+function exportStudyBundle(study: StudySnapshot, sweep: PracticalSweepResult | null, comparison: StudyComparisonResult | null): void {
+  const bundle = studyBundleJson(study, {
+    sweep: sweep ?? undefined,
+    comparison: comparison ?? undefined
+  });
+  downloadText("l66-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
+  downloadText("l66-study.md", "text/markdown", studyBundleMarkdown(bundle));
+  downloadText("l66-metrics.csv", "text/csv", bundle.metricsCsv);
+  downloadText("l66-profiles.csv", "text/csv", bundle.profilesCsv);
+  downloadText("l66-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+  downloadText("l66-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
+  if (comparison) downloadText("l66-comparison.csv", "text/csv", studyComparisonCsv(comparison));
+  if (sweep) downloadText("l66-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+}
+
+function exportPracticalSweepJson(result: PracticalSweepResult): void {
+  downloadText("l66-parameter-sweep.json", "application/json", JSON.stringify(practicalSweepJson(result), null, 2));
+}
+
+function exportPracticalSweepMarkdown(result: PracticalSweepResult): void {
+  downloadText("l66-parameter-sweep.md", "text/markdown", practicalSweepMarkdown(result));
+}
+
+function exportPracticalSweepCsv(result: PracticalSweepResult): void {
+  downloadText("l66-parameter-sweep.csv", "text/csv", practicalSweepCsv(result));
+}
+
+function exportActiveProfileCsv(csv: string): void {
+  downloadText("l66-profile.csv", "text/csv", csv);
+}
+
+function exportStudyComparisonMarkdown(comparison: StudyComparisonResult): void {
+  downloadText("l66-run-comparison.md", "text/markdown", studyComparisonMarkdown(comparison));
+}
+
+function exportStudyComparisonCsv(comparison: StudyComparisonResult): void {
+  downloadText("l66-run-comparison.csv", "text/csv", studyComparisonCsv(comparison));
 }
 
 function exportYieldJson(yieldAnalysis: CoatingYieldResult): void {
