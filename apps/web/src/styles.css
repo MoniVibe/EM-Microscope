@@ -506,6 +506,7 @@ h2 {
 .maxwell-material-card,
 .maxwell-monitor-card,
 .maxwell-foundry-card,
+.maxwell-search-card,
 .maxwell-yield-card,
 .maxwell-sweep-card {
   display: grid;
@@ -616,6 +617,97 @@ h2 {
 .maxwell-sweep-controls {
   display: grid;
   gap: 8px;
+}
+
+.maxwell-search-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.maxwell-search-controls input {
+  width: 100%;
+  min-width: 0;
+}
+
+.maxwell-search-materials {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.maxwell-material-check {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 7px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #253247;
+  font-size: 12px;
+}
+
+.maxwell-material-check span,
+.maxwell-material-check strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.maxwell-material-check strong {
+  color: #607086;
+  font-size: 11px;
+}
+
+.maxwell-search-results {
+  display: grid;
+  gap: 8px;
+}
+
+.maxwell-search-row {
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #fbfdff;
+}
+
+.maxwell-search-stack {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.maxwell-search-stack strong,
+.maxwell-search-stack em,
+.maxwell-search-stack span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.maxwell-search-stack em {
+  color: #607086;
+  font-size: 11px;
+  font-style: normal;
+}
+
+.maxwell-search-provenance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.maxwell-search-provenance span {
+  padding: 3px 6px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #536175;
+  font-size: 11px;
 }
 
 .maxwell-sweep-plot {
@@ -1130,6 +1222,12 @@ h2 {
   }
 
   .maxwell-material-passport {
+    grid-template-columns: 1fr;
+  }
+
+  .maxwell-search-controls,
+  .maxwell-search-materials,
+  .maxwell-search-stack {
     grid-template-columns: 1fr;
   }
 }
