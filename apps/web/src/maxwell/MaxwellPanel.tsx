@@ -12,6 +12,11 @@ import {
   coherenceDemonstratorJson,
   coherenceDemonstratorMarkdown,
   compareStudyRuns,
+  cameraHistogramCsv,
+  cameraMetricsCsv,
+  cameraProfileCsv,
+  cameraReportBundleJson,
+  cameraRunToMeasuredDataset,
   createMaterialCatalog,
   createMaterialImportTemplate,
   createFieldMarker,
@@ -25,9 +30,10 @@ import {
   compareMeasuredToSimulatedProfile,
   createMeasuredProfileFromImagePixels,
   importMaterialPackage,
-  l67CapabilitiesMatrix,
+  l68CapabilitiesMatrix,
   measuredComparisonBundleJson,
   listCatalogMaterials,
+  opticalInputFromProfile,
   applyRobustCoatingSearchCandidate,
   createMinimalMaxwellScene3D,
   parseMaterialImportJson,
@@ -48,6 +54,7 @@ import {
   runCoatingYieldAnalysis,
   runCoatingSweep,
   runL67DiagnosticFit,
+  runCameraSensorLite,
   runCircularApertureValidation,
   runCircularObservationZSweep,
   runCoherenceDemonstrator,
@@ -98,6 +105,9 @@ import {
   type L67MeasuredComparisonResult,
   type L67MeasuredDataset,
   type L67SimulatedProfile,
+  type L68CameraNoiseMode,
+  type L68CameraRunResult,
+  type L68CameraSettings,
   type PlanarFieldMonitorResult,
   type PracticalSweepFamily,
   type PracticalSweepResult,
@@ -245,7 +255,7 @@ export function MaxwellPanel() {
   const [coherenceSlitWidthUm, setCoherenceSlitWidthUm] = useState(20);
   const [coherenceSlitSeparationUm, setCoherenceSlitSeparationUm] = useState(100);
   const [coherencePropagationDistanceM, setCoherencePropagationDistanceM] = useState(1);
-  const [studyName, setStudyName] = useState("L6.7 working study");
+  const [studyName, setStudyName] = useState("L6.8 working study");
   const [savedStudies, setSavedStudies] = useState<StudySnapshot[]>([]);
   const [selectedStudyId, setSelectedStudyId] = useState<string>("");
   const [studyStatus, setStudyStatus] = useState("No study saved yet.");
@@ -267,6 +277,22 @@ export function MaxwellPanel() {
   const [measuredDataset, setMeasuredDataset] = useState<L67MeasuredDataset | null>(null);
   const [measuredComparison, setMeasuredComparison] = useState<L67MeasuredComparisonResult | null>(null);
   const [measuredFit, setMeasuredFit] = useState<L67DiagnosticFitResult | null>(null);
+  const [cameraSimulatedStudyId, setCameraSimulatedStudyId] = useState("");
+  const [cameraPixelPitchUm, setCameraPixelPitchUm] = useState(6.5);
+  const [cameraWidthPx, setCameraWidthPx] = useState(96);
+  const [cameraHeightPx, setCameraHeightPx] = useState(48);
+  const [cameraQuantumEfficiency, setCameraQuantumEfficiency] = useState(0.6);
+  const [cameraExposureMs, setCameraExposureMs] = useState(10);
+  const [cameraPhotonFluxScale, setCameraPhotonFluxScale] = useState(2_000_000);
+  const [cameraFullWellElectrons, setCameraFullWellElectrons] = useState(30_000);
+  const [cameraReadNoiseElectrons, setCameraReadNoiseElectrons] = useState(2);
+  const [cameraDarkCurrentElectrons, setCameraDarkCurrentElectrons] = useState(1);
+  const [cameraBitDepth, setCameraBitDepth] = useState<L68CameraSettings["bitDepth"]>(12);
+  const [cameraGainDnPerElectron, setCameraGainDnPerElectron] = useState(0.12);
+  const [cameraBlackLevelDn, setCameraBlackLevelDn] = useState(64);
+  const [cameraSeed, setCameraSeed] = useState(1234);
+  const [cameraNoiseMode, setCameraNoiseMode] = useState<L68CameraNoiseMode>("shot-read-dark");
+  const [cameraRun, setCameraRun] = useState<L68CameraRunResult | null>(null);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -434,7 +460,7 @@ export function MaxwellPanel() {
       ]),
     [foundry, materialAudit, materialCatalog, materialImport, robustResult, run, searchResult, yieldAnalysis]
   );
-  const capabilities = useMemo(() => l67CapabilitiesMatrix(), []);
+  const capabilities = useMemo(() => l68CapabilitiesMatrix(), []);
   const selectedStudy = savedStudies.find((study) => study.id === selectedStudyId) ?? null;
   const studyRunSummaries = useMemo<StudyRunSummary[]>(
     () =>
@@ -591,6 +617,24 @@ export function MaxwellPanel() {
       if (typeof measured.roiMaxMm === "number") setMeasuredRoiMaxMm(measured.roiMaxMm);
       if (typeof measured.simulatedStudyId === "string") setMeasuredSimulatedStudyId(measured.simulatedStudyId);
     }
+    const camera = state.camera as Record<string, unknown> | undefined;
+    if (camera) {
+      if (typeof camera.simulatedStudyId === "string") setCameraSimulatedStudyId(camera.simulatedStudyId);
+      if (typeof camera.pixelPitchUm === "number") setCameraPixelPitchUm(camera.pixelPitchUm);
+      if (typeof camera.widthPx === "number") setCameraWidthPx(camera.widthPx);
+      if (typeof camera.heightPx === "number") setCameraHeightPx(camera.heightPx);
+      if (typeof camera.quantumEfficiency === "number") setCameraQuantumEfficiency(camera.quantumEfficiency);
+      if (typeof camera.exposureMs === "number") setCameraExposureMs(camera.exposureMs);
+      if (typeof camera.photonFluxScale === "number") setCameraPhotonFluxScale(camera.photonFluxScale);
+      if (typeof camera.fullWellElectrons === "number") setCameraFullWellElectrons(camera.fullWellElectrons);
+      if (typeof camera.readNoiseElectrons === "number") setCameraReadNoiseElectrons(camera.readNoiseElectrons);
+      if (typeof camera.darkCurrentElectrons === "number") setCameraDarkCurrentElectrons(camera.darkCurrentElectrons);
+      if (camera.bitDepth === 8 || camera.bitDepth === 10 || camera.bitDepth === 12 || camera.bitDepth === 14 || camera.bitDepth === 16) setCameraBitDepth(camera.bitDepth);
+      if (typeof camera.gainDnPerElectron === "number") setCameraGainDnPerElectron(camera.gainDnPerElectron);
+      if (typeof camera.blackLevelDn === "number") setCameraBlackLevelDn(camera.blackLevelDn);
+      if (typeof camera.seed === "number") setCameraSeed(camera.seed);
+      if (camera.noiseMode === "noiseless" || camera.noiseMode === "shot-only" || camera.noiseMode === "shot-read" || camera.noiseMode === "shot-read-dark") setCameraNoiseMode(camera.noiseMode);
+    }
   }
 
   async function importStudyBundleFile(file: File | null): Promise<void> {
@@ -686,8 +730,8 @@ export function MaxwellPanel() {
     setStudyStatus(`Compared ${runA.label} vs ${runB.label}.`);
   }
 
-  function activeL67SimulatedProfile(): L67SimulatedProfile {
-    const selectedMeasuredStudy = savedStudies.find((study) => study.id === measuredSimulatedStudyId && Object.keys(study.profiles).length > 0);
+  function activeL67SimulatedProfile(sourceStudyId = measuredSimulatedStudyId): L67SimulatedProfile {
+    const selectedMeasuredStudy = savedStudies.find((study) => study.id === sourceStudyId && Object.keys(study.profiles).length > 0);
     if (selectedMeasuredStudy) {
       const profileEntry = Object.entries(selectedMeasuredStudy.profiles)[0];
       if (profileEntry) {
@@ -710,6 +754,135 @@ export function MaxwellPanel() {
       profile: profileEntry[1],
       sourceKind: summary.mode
     };
+  }
+
+  function currentCameraSettings(overrides: Partial<L68CameraSettings> = {}): Partial<L68CameraSettings> {
+    return {
+      id: "l68-camera-sensor-lite",
+      label: "L6.8 Camera/Sensor-Lite acquisition",
+      pixelPitchM: clamp(cameraPixelPitchUm, 0.01, 10000) * 1e-6,
+      widthPx: Math.round(clamp(cameraWidthPx, 8, 512)),
+      heightPx: Math.round(clamp(cameraHeightPx, 8, 512)),
+      quantumEfficiency: clamp(cameraQuantumEfficiency, 0, 1),
+      exposureS: clamp(cameraExposureMs, 0, 1_000_000) * 1e-3,
+      photonFluxScale: Math.max(0, cameraPhotonFluxScale),
+      fullWellElectrons: Math.max(1, cameraFullWellElectrons),
+      readNoiseElectronsRms: Math.max(0, cameraReadNoiseElectrons),
+      darkCurrentElectronsPerS: Math.max(0, cameraDarkCurrentElectrons),
+      bitDepth: cameraBitDepth,
+      gainDnPerElectron: Math.max(0, cameraGainDnPerElectron),
+      blackLevelDn: Math.max(0, cameraBlackLevelDn),
+      seed: Math.round(cameraSeed),
+      noiseMode: cameraNoiseMode,
+      ...overrides
+    };
+  }
+
+  function createCameraRunFromSimulated(simulated: L67SimulatedProfile, overrides: Partial<L68CameraSettings> = {}): L68CameraRunResult {
+    return runCameraSensorLite({
+      id: `l68-camera-${Date.now().toString(36)}`,
+      label: "L6.8 Camera/Sensor-Lite acquisition",
+      optical: opticalInputFromProfile(simulated.profile, {
+        id: simulated.id,
+        label: simulated.label,
+        resultHash: simulated.resultHash,
+        kind: simulated.sourceKind,
+        heightPx: Math.round(clamp(cameraHeightPx, 8, 512))
+      }),
+      settings: currentCameraSettings(overrides)
+    });
+  }
+
+  function generateCameraRun(overrides: Partial<L68CameraSettings> = {}): L68CameraRunResult | null {
+    try {
+      const simulated = activeL67SimulatedProfile(cameraSimulatedStudyId);
+      const nextRun = createCameraRunFromSimulated(simulated, overrides);
+      setCameraRun(nextRun);
+      setStudyStatus(`Camera output generated: mean DN ${cameraMetricValue(nextRun, "meanDn").toPrecision(4)}, saturation ${(cameraMetricValue(nextRun, "saturationFraction") * 100).toPrecision(3)}%.`);
+      return nextRun;
+    } catch (error) {
+      setStudyStatus(`Camera output failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function saturateCameraExposure(): void {
+    const exposureMs = Math.max(cameraExposureMs * 20, 250);
+    const photonFluxScale = Math.max(cameraPhotonFluxScale, 50_000_000);
+    const gainDnPerElectron = Math.max(cameraGainDnPerElectron, 0.25);
+    setCameraExposureMs(exposureMs);
+    setCameraPhotonFluxScale(photonFluxScale);
+    setCameraGainDnPerElectron(gainDnPerElectron);
+    generateCameraRun({
+      exposureS: exposureMs * 1e-3,
+      photonFluxScale,
+      gainDnPerElectron
+    });
+  }
+
+  function saveCameraStudy(): void {
+    const nextRun = cameraRun ?? generateCameraRun();
+    if (!nextRun) return;
+    saveStudy(
+      createStudySnapshot({
+        id: `l68-camera-study-${Date.now().toString(36)}`,
+        name: "L6.8 camera sensor-lite study",
+        mode: "camera.sensor-lite",
+        selectedWorkbench: "camera-sensor-lite",
+        inputs: {
+          source: nextRun.source,
+          settings: nextRun.settings
+        },
+        appState: currentAppState(),
+        backendReceipt: { label: "L6.8 Camera/Sensor-Lite", availability: "executable", scope: "detector acquisition post-process over existing optical output only" },
+        resultHashes: [nextRun.source.resultHash, nextRun.resultHash],
+        metrics: nextRun.metrics,
+        profiles: {
+          optical: nextRun.profile.map((point) => ({ xM: point.xM, intensity: point.opticalIntensity, label: "optical intensity" })),
+          photons: nextRun.profile.map((point) => ({ xM: point.xM, intensity: point.photons, label: "photons" })),
+          electrons: nextRun.profile.map((point) => ({ xM: point.xM, intensity: point.electrons, label: "electrons" })),
+          digitalNumbers: nextRun.profile.map((point) => ({ xM: point.xM, intensity: point.digitalNumber, label: "DN" }))
+        },
+        warnings: nextRun.warnings,
+        limitations: nextRun.limitations
+      })
+    );
+  }
+
+  function exportCameraReport(): void {
+    const nextRun = cameraRun ?? generateCameraRun();
+    if (!nextRun) return;
+    const bundle = cameraReportBundleJson(nextRun);
+    downloadText("l68-camera_report.json", "application/json", JSON.stringify(bundle, null, 2));
+    downloadText("l68-camera_report.md", "text/markdown", bundle.cameraReportMarkdown);
+    downloadText("l68-camera_metrics.csv", "text/csv", cameraMetricsCsv(nextRun));
+    downloadText("l68-camera_profile.csv", "text/csv", cameraProfileCsv(nextRun));
+    downloadText("l68-camera_histogram.csv", "text/csv", cameraHistogramCsv(nextRun));
+    downloadText("l68-camera_warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+    setStudyStatus("Exported L6.8 camera report bundle.");
+  }
+
+  function sendCameraToMeasuredComparison(): void {
+    try {
+      const simulated = activeL67SimulatedProfile(cameraSimulatedStudyId);
+      const nextRun = cameraRun?.source.resultHash === simulated.resultHash ? cameraRun : createCameraRunFromSimulated(simulated);
+      setCameraRun(nextRun);
+      const dataset = cameraRunToMeasuredDataset(nextRun);
+      const comparison = compareMeasuredToSimulatedProfile({
+        id: `l68-camera-comparison-${Date.now().toString(36)}`,
+        label: "L6.8 synthetic camera vs clean optical profile",
+        measured: dataset,
+        simulated
+      });
+      setMeasuredDataset(dataset);
+      setMeasuredComparison(comparison);
+      setMeasuredFit(null);
+      setMeasuredSimulatedStudyId(cameraSimulatedStudyId);
+      setMeasuredCsvText(measuredCsvFromDataset(dataset));
+      setStudyStatus(`Synthetic camera image sent to Measured-vs-Simulated: RMS ${comparison.metrics.rmsResidual.toPrecision(4)}.`);
+    } catch (error) {
+      setStudyStatus(`Camera-to-measured comparison failed: ${(error as Error).message}`);
+    }
   }
 
   function generateSyntheticMeasuredCsv(): void {
@@ -1036,6 +1209,25 @@ export function MaxwellPanel() {
         measuredDataHash: measuredDataset?.measuredDataHash ?? null,
         comparisonHash: measuredComparison?.resultHash ?? null,
         fitHash: measuredFit?.resultHash ?? null
+      },
+      camera: {
+        simulatedStudyId: cameraSimulatedStudyId,
+        pixelPitchUm: cameraPixelPitchUm,
+        widthPx: cameraWidthPx,
+        heightPx: cameraHeightPx,
+        quantumEfficiency: cameraQuantumEfficiency,
+        exposureMs: cameraExposureMs,
+        photonFluxScale: cameraPhotonFluxScale,
+        fullWellElectrons: cameraFullWellElectrons,
+        readNoiseElectrons: cameraReadNoiseElectrons,
+        darkCurrentElectrons: cameraDarkCurrentElectrons,
+        bitDepth: cameraBitDepth,
+        gainDnPerElectron: cameraGainDnPerElectron,
+        blackLevelDn: cameraBlackLevelDn,
+        seed: cameraSeed,
+        noiseMode: cameraNoiseMode,
+        cameraRunHash: cameraRun?.resultHash ?? null,
+        sourceResultHash: cameraRun?.source.resultHash ?? null
       }
     };
   }
@@ -1284,11 +1476,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.7 Measured-vs-Simulated Lab Data Workbench">
-      <h2>L6.7 Measured-vs-Simulated Lab Data Workbench</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.8 Camera/Sensor-Lite Acquisition Workbench">
+      <h2>L6.8 Camera/Sensor-Lite Acquisition Workbench</h2>
       <div className="l2-disclosure">
-        <strong>measured CSV/image import, calibration, ROI, residual metrics, diagnostic fit, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines</strong>
-        <span>PlanarTmmBackend and scalar validation remain the executable scope; diagnostic measured comparison is not certified calibration, sensor simulation, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
+        <strong>camera/sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines</strong>
+        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, and detector acquisition post-processing are the executable scope; this is not pixel-level sensor-stack EM, certified calibration, EMVA compliance, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -1319,7 +1511,7 @@ export function MaxwellPanel() {
         onLoadStudy={loadSelectedStudy}
         onDuplicateStudy={duplicateSelectedStudy}
         onDeleteStudy={deleteSelectedStudy}
-        onExportBundle={() => exportStudyBundle(selectedStudy ?? captureValidationStudy(studyName.trim() || "Validation study"), workspaceSweepResult, studyComparison, measuredComparison)}
+        onExportBundle={() => exportStudyBundle(selectedStudy ?? captureValidationStudy(studyName.trim() || "Validation study"), workspaceSweepResult, studyComparison, measuredComparison, cameraRun)}
         onImportBundle={importStudyBundleFile}
         onCopyShareableUrl={copyShareableStudyUrl}
         sweepFamily={workspaceSweepFamily}
@@ -1374,6 +1566,42 @@ export function MaxwellPanel() {
         onRunMeasuredFit={runMeasuredDiagnosticFit}
         onSaveMeasuredComparison={saveMeasuredComparisonStudy}
         onExportMeasuredComparison={exportMeasuredComparisonReport}
+        cameraSimulatedStudyId={cameraSimulatedStudyId}
+        setCameraSimulatedStudyId={setCameraSimulatedStudyId}
+        cameraPixelPitchUm={cameraPixelPitchUm}
+        setCameraPixelPitchUm={setCameraPixelPitchUm}
+        cameraWidthPx={cameraWidthPx}
+        setCameraWidthPx={setCameraWidthPx}
+        cameraHeightPx={cameraHeightPx}
+        setCameraHeightPx={setCameraHeightPx}
+        cameraQuantumEfficiency={cameraQuantumEfficiency}
+        setCameraQuantumEfficiency={setCameraQuantumEfficiency}
+        cameraExposureMs={cameraExposureMs}
+        setCameraExposureMs={setCameraExposureMs}
+        cameraPhotonFluxScale={cameraPhotonFluxScale}
+        setCameraPhotonFluxScale={setCameraPhotonFluxScale}
+        cameraFullWellElectrons={cameraFullWellElectrons}
+        setCameraFullWellElectrons={setCameraFullWellElectrons}
+        cameraReadNoiseElectrons={cameraReadNoiseElectrons}
+        setCameraReadNoiseElectrons={setCameraReadNoiseElectrons}
+        cameraDarkCurrentElectrons={cameraDarkCurrentElectrons}
+        setCameraDarkCurrentElectrons={setCameraDarkCurrentElectrons}
+        cameraBitDepth={cameraBitDepth}
+        setCameraBitDepth={setCameraBitDepth}
+        cameraGainDnPerElectron={cameraGainDnPerElectron}
+        setCameraGainDnPerElectron={setCameraGainDnPerElectron}
+        cameraBlackLevelDn={cameraBlackLevelDn}
+        setCameraBlackLevelDn={setCameraBlackLevelDn}
+        cameraSeed={cameraSeed}
+        setCameraSeed={setCameraSeed}
+        cameraNoiseMode={cameraNoiseMode}
+        setCameraNoiseMode={setCameraNoiseMode}
+        cameraRun={cameraRun}
+        onGenerateCameraRun={() => generateCameraRun()}
+        onSaturateCameraExposure={saturateCameraExposure}
+        onExportCameraReport={exportCameraReport}
+        onSendCameraToMeasured={sendCameraToMeasuredComparison}
+        onSaveCameraStudy={saveCameraStudy}
       />
 
       <div className="profile-meta">
@@ -2547,7 +2775,43 @@ function PracticalStudyWorkspacePanel({
   onCompareMeasured,
   onRunMeasuredFit,
   onSaveMeasuredComparison,
-  onExportMeasuredComparison
+  onExportMeasuredComparison,
+  cameraSimulatedStudyId,
+  setCameraSimulatedStudyId,
+  cameraPixelPitchUm,
+  setCameraPixelPitchUm,
+  cameraWidthPx,
+  setCameraWidthPx,
+  cameraHeightPx,
+  setCameraHeightPx,
+  cameraQuantumEfficiency,
+  setCameraQuantumEfficiency,
+  cameraExposureMs,
+  setCameraExposureMs,
+  cameraPhotonFluxScale,
+  setCameraPhotonFluxScale,
+  cameraFullWellElectrons,
+  setCameraFullWellElectrons,
+  cameraReadNoiseElectrons,
+  setCameraReadNoiseElectrons,
+  cameraDarkCurrentElectrons,
+  setCameraDarkCurrentElectrons,
+  cameraBitDepth,
+  setCameraBitDepth,
+  cameraGainDnPerElectron,
+  setCameraGainDnPerElectron,
+  cameraBlackLevelDn,
+  setCameraBlackLevelDn,
+  cameraSeed,
+  setCameraSeed,
+  cameraNoiseMode,
+  setCameraNoiseMode,
+  cameraRun,
+  onGenerateCameraRun,
+  onSaturateCameraExposure,
+  onExportCameraReport,
+  onSendCameraToMeasured,
+  onSaveCameraStudy
 }: {
   capabilities: StudyCapability[];
   studyName: string;
@@ -2616,20 +2880,59 @@ function PracticalStudyWorkspacePanel({
   onRunMeasuredFit: () => void;
   onSaveMeasuredComparison: () => void;
   onExportMeasuredComparison: () => void;
+  cameraSimulatedStudyId: string;
+  setCameraSimulatedStudyId: (value: string) => void;
+  cameraPixelPitchUm: number;
+  setCameraPixelPitchUm: (value: number) => void;
+  cameraWidthPx: number;
+  setCameraWidthPx: (value: number) => void;
+  cameraHeightPx: number;
+  setCameraHeightPx: (value: number) => void;
+  cameraQuantumEfficiency: number;
+  setCameraQuantumEfficiency: (value: number) => void;
+  cameraExposureMs: number;
+  setCameraExposureMs: (value: number) => void;
+  cameraPhotonFluxScale: number;
+  setCameraPhotonFluxScale: (value: number) => void;
+  cameraFullWellElectrons: number;
+  setCameraFullWellElectrons: (value: number) => void;
+  cameraReadNoiseElectrons: number;
+  setCameraReadNoiseElectrons: (value: number) => void;
+  cameraDarkCurrentElectrons: number;
+  setCameraDarkCurrentElectrons: (value: number) => void;
+  cameraBitDepth: L68CameraSettings["bitDepth"];
+  setCameraBitDepth: (value: L68CameraSettings["bitDepth"]) => void;
+  cameraGainDnPerElectron: number;
+  setCameraGainDnPerElectron: (value: number) => void;
+  cameraBlackLevelDn: number;
+  setCameraBlackLevelDn: (value: number) => void;
+  cameraSeed: number;
+  setCameraSeed: (value: number) => void;
+  cameraNoiseMode: L68CameraNoiseMode;
+  setCameraNoiseMode: (value: L68CameraNoiseMode) => void;
+  cameraRun: L68CameraRunResult | null;
+  onGenerateCameraRun: () => void;
+  onSaturateCameraExposure: () => void;
+  onExportCameraReport: () => void;
+  onSendCameraToMeasured: () => void;
+  onSaveCameraStudy: () => void;
 }) {
   const executableCount = capabilities.filter((capability) => capability.status === "executable").length;
   const scaffoldCount = capabilities.filter((capability) => capability.status === "scaffold-only").length;
   const unavailableCount = capabilities.filter((capability) => capability.status === "not-implemented").length;
+  const cameraMaxDn = cameraRun ? Math.max(1, 2 ** cameraRun.settings.bitDepth - 1) : 1;
+  const cameraMaxHistogram = cameraRun ? Math.max(...cameraRun.histogram.map((bin) => bin.count), 1) : 1;
+  const cameraMetric = (id: string) => (cameraRun ? cameraMetricValue(cameraRun, id) : Number.NaN);
 
   return (
-    <div className="maxwell-study-card" aria-label="L6.7 Measured-vs-Simulated Lab Data Workbench">
+    <div className="maxwell-study-card" aria-label="L6.8 Camera/Sensor-Lite Acquisition Workbench">
       <div className="maxwell-section-heading">
-        <h2>L6.7 Measured-vs-Simulated Lab Data Workbench</h2>
+        <h2>L6.8 Camera/Sensor-Lite Acquisition Workbench</h2>
         <strong>{savedStudies.length} saved</strong>
       </div>
       <div className="l2-disclosure">
-        <strong>Import measured profiles/images, calibrate ROI, compare residuals, run diagnostic fits, save studies, and export evidence.</strong>
-        <span>Workflow layer only: it compares measured data against existing scalar validation and planar TMM results without adding new physics or certified calibration.</span>
+        <strong>Generate synthetic camera acquisition output, compare measured profiles/images, run diagnostic fits, save studies, and export evidence.</strong>
+        <span>Workflow layer only: it converts existing simulated intensity into detector readout and compares profiles without adding new diffraction physics, certified calibration, or sensor-stack EM.</span>
       </div>
 
       <div className="maxwell-workspace-grid">
@@ -2773,6 +3076,97 @@ function PracticalStudyWorkspacePanel({
             <strong>ROI measurement and line profile extraction are represented by marker/table/profile exports in this pass.</strong>
             <span>Map/profile coordinates are read from the active zero-thickness validation plane.</span>
           </div>
+        </div>
+
+        <div className="maxwell-workspace-panel maxwell-camera-panel" aria-label="Camera / Sensor-Lite">
+          <div className="maxwell-section-heading">
+            <h2>Camera / Sensor-Lite</h2>
+            <strong>{cameraRun ? cameraRun.resultHash.slice(0, 10) : "not generated"}</strong>
+          </div>
+          <div className="l2-disclosure">
+            <strong>Convert selected simulated optical intensity into photons, electrons, DN, SNR, saturation, histogram, and line-profile evidence.</strong>
+            <span>Camera/Sensor-Lite converts an existing simulated intensity map into synthetic detector readout; it does not model pixel-level electromagnetic absorption, microlenses, color filters, charge diffusion, semiconductor transport, a calibrated sensor stack, certified EMVA compliance, digital twin behavior, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution.</span>
+          </div>
+          <div className="maxwell-study-controls">
+            <label className="field-row">
+              <span>Simulated optical result</span>
+              <select value={cameraSimulatedStudyId} onChange={(event) => setCameraSimulatedStudyId(event.currentTarget.value)}>
+                <option value="">Active validation profile</option>
+                {savedStudies.filter((study) => Object.keys(study.profiles).length > 0).map((study) => (
+                  <option key={study.id} value={study.id}>{study.name}</option>
+                ))}
+              </select>
+            </label>
+            <NumberField label="Pixel pitch um" value={cameraPixelPitchUm} min={0.01} max={10000} step={0.1} onChange={setCameraPixelPitchUm} />
+            <NumberField label="Sensor width px" value={cameraWidthPx} min={8} max={512} step={1} onChange={setCameraWidthPx} />
+            <NumberField label="Sensor height px" value={cameraHeightPx} min={8} max={512} step={1} onChange={setCameraHeightPx} />
+            <NumberField label="Quantum efficiency QE" value={cameraQuantumEfficiency} min={0} max={1} step={0.01} onChange={setCameraQuantumEfficiency} />
+            <NumberField label="Exposure time ms" value={cameraExposureMs} min={0} max={1000000} step={0.1} onChange={setCameraExposureMs} />
+            <NumberField label="Photon flux scale" value={cameraPhotonFluxScale} min={0} max={1e12} step={1000} onChange={setCameraPhotonFluxScale} />
+            <NumberField label="Full well e-" value={cameraFullWellElectrons} min={1} max={1e9} step={100} onChange={setCameraFullWellElectrons} />
+            <NumberField label="Read noise e- RMS" value={cameraReadNoiseElectrons} min={0} max={100000} step={0.1} onChange={setCameraReadNoiseElectrons} />
+            <NumberField label="Dark current e-/px/s" value={cameraDarkCurrentElectrons} min={0} max={1e9} step={0.1} onChange={setCameraDarkCurrentElectrons} />
+            <label className="field-row">
+              <span>ADC bit depth</span>
+              <select value={cameraBitDepth} onChange={(event) => setCameraBitDepth(Number(event.currentTarget.value) as L68CameraSettings["bitDepth"])}>
+                <option value={8}>8</option>
+                <option value={10}>10</option>
+                <option value={12}>12</option>
+                <option value={14}>14</option>
+                <option value={16}>16</option>
+              </select>
+            </label>
+            <NumberField label="Conversion gain DN/e-" value={cameraGainDnPerElectron} min={0} max={100000} step={0.01} onChange={setCameraGainDnPerElectron} />
+            <NumberField label="Black level DN" value={cameraBlackLevelDn} min={0} max={65535} step={1} onChange={setCameraBlackLevelDn} />
+            <NumberField label="Seed" value={cameraSeed} min={0} max={4294967295} step={1} onChange={setCameraSeed} />
+            <label className="field-row">
+              <span>Noise mode</span>
+              <select value={cameraNoiseMode} onChange={(event) => setCameraNoiseMode(event.currentTarget.value as L68CameraNoiseMode)}>
+                <option value="noiseless">ideal/noiseless</option>
+                <option value="shot-only">shot only</option>
+                <option value="shot-read">shot + read</option>
+                <option value="shot-read-dark">shot + read + dark</option>
+              </select>
+            </label>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onGenerateCameraRun}><Sparkles size={15} /><span>Generate Camera Output</span></button>
+            <button type="button" onClick={onSaturateCameraExposure}><ShieldCheck size={15} /><span>Saturate Exposure</span></button>
+            <button type="button" onClick={onExportCameraReport}><FileDown size={15} /><span>Export Camera Report</span></button>
+            <button type="button" onClick={onSendCameraToMeasured}><Sparkles size={15} /><span>Send synthetic camera image to Measured-vs-Simulated</span></button>
+            <button type="button" onClick={onSaveCameraStudy}><Save size={15} /><span>Save Camera Study</span></button>
+          </div>
+          {cameraRun && (
+            <div className="maxwell-data-table">
+              <div className="maxwell-camera-preview" aria-label="Digital number / raw image">
+                {cameraRun.maps.digitalNumbers.slice(0, 96).map((value, index) => (
+                  <i key={`${value}-${index}`} style={{ opacity: 0.16 + 0.84 * clamp(value / cameraMaxDn, 0, 1) }} title={`DN ${value}`} />
+                ))}
+              </div>
+              <div className="maxwell-camera-histogram" aria-label="Histogram">
+                {cameraRun.histogram.map((bin, index) => (
+                  <i key={`${bin.minDn}-${bin.maxDn}-${index}`} style={{ height: `${Math.max(3, (bin.count / cameraMaxHistogram) * 100)}%` }} title={`${bin.minDn}-${bin.maxDn}: ${bin.count}`} />
+                ))}
+              </div>
+              <div className="maxwell-camera-profile-preview" aria-label="Line profile before/after camera model">
+                {cameraRun.profile.slice(0, 64).map((point, index) => (
+                  <span key={`${point.xM}-${index}`} title={`x=${formatMm(point.xM)} mm optical=${point.opticalIntensity.toPrecision(4)} DN=${point.digitalNumber}`}>
+                    <i style={{ height: `${Math.max(2, clamp(point.opticalIntensity, 0, 1) * 100)}%` }} />
+                    <b style={{ height: `${Math.max(2, clamp(point.digitalNumber / cameraMaxDn, 0, 1) * 100)}%` }} />
+                  </span>
+                ))}
+              </div>
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Mean / peak photons</span><strong>{formatCompact(cameraMetric("meanPhotons"))} / {formatCompact(cameraMetric("peakPhotons"))}</strong></div>
+                <div className="compact-stat"><span>Mean / peak electrons</span><strong>{formatCompact(cameraMetric("meanSignalElectrons"))} / {formatCompact(cameraMetric("peakSignalElectrons"))}</strong></div>
+                <div className="compact-stat"><span>Mean / peak DN</span><strong>{formatCompact(cameraMetric("meanDn"))} / {formatCompact(cameraMetric("peakDn"))}</strong></div>
+                <div className="compact-stat"><span>Saturation fraction</span><strong>{formatPercent(cameraMetric("saturationFraction"))}</strong></div>
+                <div className="compact-stat"><span>Mean / peak SNR</span><strong>{formatCompact(cameraMetric("meanSnr"))} / {formatCompact(cameraMetric("peakSnr"))}</strong></div>
+                <div className="compact-stat"><span>Dynamic range estimate</span><strong>{formatCompact(cameraMetric("dynamicRange"))}</strong></div>
+              </div>
+              {cameraRun.warnings.map((warning) => <div className="error-banner" key={`${warning.code}-${warning.message}`}>{warning.message}</div>)}
+            </div>
+          )}
         </div>
 
         <div className="maxwell-workspace-panel maxwell-measured-panel" aria-label="Measured-vs-Simulated">
@@ -4330,6 +4724,14 @@ function syntheticMeasuredCsvFromProfile(profile: { xM: number; intensity: numbe
   return rows.join("\n");
 }
 
+function measuredCsvFromDataset(dataset: L67MeasuredDataset): string {
+  return ["x_m,intensity", ...dataset.profile.map((point) => `${point.xM},${point.intensity}`)].join("\n");
+}
+
+function cameraMetricValue(run: L68CameraRunResult, metricId: string): number {
+  return run.metrics.find((metric) => metric.id === metricId)?.value ?? Number.NaN;
+}
+
 function normalizeLocalProfile(profile: { xM: number; intensity: number }[]): { xM: number; intensity: number }[] {
   const sorted = [...profile].filter((point) => Number.isFinite(point.xM) && Number.isFinite(point.intensity)).sort((a, b) => a.xM - b.xM);
   const peak = Math.max(0, ...sorted.map((point) => Math.abs(point.intensity)));
@@ -4372,21 +4774,23 @@ async function decodeMeasuredImageFile(file: File): Promise<{ widthPx: number; h
   }
 }
 
-function exportStudyBundle(study: StudySnapshot, sweep: PracticalSweepResult | null, comparison: StudyComparisonResult | null, measuredComparison: L67MeasuredComparisonResult | null): void {
+function exportStudyBundle(study: StudySnapshot, sweep: PracticalSweepResult | null, comparison: StudyComparisonResult | null, measuredComparison: L67MeasuredComparisonResult | null, cameraRun: L68CameraRunResult | null): void {
   const bundle = studyBundleJson(study, {
     sweep: sweep ?? undefined,
     comparison: comparison ?? undefined,
-    measuredComparison: measuredComparison ?? undefined
+    measuredComparison: measuredComparison ?? undefined,
+    cameraRun: cameraRun ?? undefined
   });
-  downloadText("l67-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
-  downloadText("l67-study.md", "text/markdown", studyBundleMarkdown(bundle));
-  downloadText("l67-metrics.csv", "text/csv", bundle.metricsCsv);
-  downloadText("l67-profiles.csv", "text/csv", bundle.profilesCsv);
-  downloadText("l67-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
-  downloadText("l67-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
-  if (comparison) downloadText("l67-comparison.csv", "text/csv", studyComparisonCsv(comparison));
-  if (sweep) downloadText("l67-sweep.csv", "text/csv", practicalSweepCsv(sweep));
-  if (measuredComparison) downloadText("l67-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
+  downloadText("l68-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
+  downloadText("l68-study.md", "text/markdown", studyBundleMarkdown(bundle));
+  downloadText("l68-metrics.csv", "text/csv", bundle.metricsCsv);
+  downloadText("l68-profiles.csv", "text/csv", bundle.profilesCsv);
+  downloadText("l68-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+  downloadText("l68-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
+  if (comparison) downloadText("l68-comparison.csv", "text/csv", studyComparisonCsv(comparison));
+  if (sweep) downloadText("l68-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+  if (measuredComparison) downloadText("l68-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
+  if (cameraRun) downloadText("l68-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
 }
 
 function exportPracticalSweepJson(result: PracticalSweepResult): void {
@@ -4558,7 +4962,14 @@ function degFromRad(value: number): number {
 }
 
 function formatPercent(value: number): string {
+  if (!Number.isFinite(value)) return "n/a";
   return `${(value * 100).toFixed(value < 0.001 ? 4 : 2)}%`;
+}
+
+function formatCompact(value: number): string {
+  if (!Number.isFinite(value)) return "n/a";
+  if (Math.abs(value) >= 1e5 || (Math.abs(value) > 0 && Math.abs(value) < 1e-3)) return value.toExponential(3);
+  return value.toPrecision(4);
 }
 
 function formatMm(valueM: number): string {
