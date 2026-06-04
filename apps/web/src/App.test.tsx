@@ -57,17 +57,34 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L6.2 Maxwell foundry as planar execution plus numerical scalar propagation validation without claiming arbitrary 3D EM", () => {
+  it("labels L6.3 Maxwell foundry as planar execution plus coherent slit/order validation without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.2 numerical scalar propagation checked against Airy/Bessel");
-    expect(maxwellPanel).toContain("not a general 3D Maxwell solver; L6.2 validates scalar diffraction numerically and keeps ExternalFdtdBackend scaffold-only");
+    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.3 coherent slit/order validation and Advisor Review Mode");
+    expect(maxwellPanel).toContain("not a general 3D Maxwell solver; L6.3 validates scalar diffraction benchmarks and keeps ExternalFdtdBackend scaffold-only");
     expect(maxwellPanel).toContain("L6.0 does not execute 3D Maxwell solves.");
     expect(maxwellPanel).toContain("It defines the 3D problem/result contract and external-backend export scaffold only.");
     expect(maxwellPanel).toContain("Validation Bench");
-    expect(maxwellPanel).toContain("Circular pinhole Airy/Bessel benchmark");
+    expect(maxwellPanel).toContain("Physics exam sequence");
+    expect(maxwellPanel).toContain("Circular pinhole Airy/Bessel");
+    expect(maxwellPanel).toContain("Long single slit sinc^2");
+    expect(maxwellPanel).toContain("Double slit / grating orders");
+    expect(maxwellPanel).toContain("Advisor Review Mode");
+    expect(maxwellPanel).toContain("Run Advisor Review");
+    expect(maxwellPanel).toContain("Advisor Markdown");
+    expect(maxwellPanel).toContain("Advisor JSON");
+    expect(maxwellPanel).toContain("Advisor CSV");
+    expect(maxwellPanel).toContain("y1 ~= 5.00 mm");
+    expect(maxwellPanel).toContain("orders every 5.00 mm");
+    expect(maxwellPanel).toContain("Slit JSON");
+    expect(maxwellPanel).toContain("Slit Markdown");
+    expect(maxwellPanel).toContain("runSlitOrderValidation");
+    expect(maxwellPanel).toContain("runAdvisorValidationReview");
+    expect(maxwellPanel).toContain("slitOrderValidationJson");
+    expect(maxwellPanel).toContain("advisorValidationReviewMarkdown");
+    expect(maxwellPanel).toContain("Circular pinhole Airy/Bessel");
     expect(maxwellPanel).toContain("Circular aperture, not long slit");
-    expect(maxwellPanel).toContain("independent numerical scalar propagation compared against analytic Airy, not full 3D Maxwell aperture solving");
+    expect(maxwellPanel).toContain("hand-checkable scalar diffraction benchmarks with numerical results, analytic references, residuals, and report exports");
     expect(maxwellPanel).toContain("Computation mode");
     expect(maxwellPanel).toContain("Analytic Airy reference");
     expect(maxwellPanel).toContain("Numerical scalar propagation");
@@ -145,8 +162,8 @@ describe("solver disclosure copy", () => {
 
     expect(app).toContain('aria-label="Maxwell simulator"');
     expect(app).toContain("PlanarTmmBackend + Validation Bench");
-    expect(app).toContain("L6.2 Maxwell Design Foundry");
-    expect(app).toContain("executable planar backend, numerical scalar propagation validation, scaffold-only 3D export");
+    expect(app).toContain("L6.3 Maxwell Design Foundry");
+    expect(app).toContain("executable planar backend, slit/order validation ladder, scaffold-only 3D export");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

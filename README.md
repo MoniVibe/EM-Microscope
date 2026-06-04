@@ -1,8 +1,8 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.2 Maxwell Design Foundry planar multilayer
-transfer-matrix workbench with independent numerical scalar propagation validation for the circular-aperture
-Airy/Bessel benchmark and a scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
+An EM-first light simulator MVP. The visible web app is now the L6.3 Maxwell Design Foundry planar multilayer
+transfer-matrix workbench with circular-aperture, long-slit, and double-slit scalar diffraction validation plus
+Advisor Review Mode exports and a scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
 L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. L4.1
@@ -30,13 +30,15 @@ adapters. L6.0 adds a 3D Maxwell scene/result schema, deterministic 3D scene val
 manifest types, and an `ExternalFdtdBackend`/Meep-style export scaffold that is registered but not executable.
 L6.1 adds a visible ordered diffraction validation bench for the circular pinhole Airy/Bessel benchmark. L6.2 adds an
 independent numerical scalar propagation path for that same benchmark and compares it against the analytic Airy reference.
+L6.3 adds coherent long-slit `sinc^2`, double-slit/order-spacing validation, and Advisor Review Mode exports that
+combine the circular, single-slit, and double-slit proof reports.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L6.2 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L6.3 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -47,7 +49,8 @@ simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing
   JSON/Markdown/CSV export, a scaffold-only `ExternalFdtdBackend` manifest/Meep-style script export, and an ordered
   scalar diffraction validation bench for the 500 nm source, 1 um circular aperture, independent numerical
   Huygens-Fresnel propagation, analytic Airy/Bessel reference maps, residual maps, radial mismatch curves,
-  convergence controls, finite-plane energy checks,
+  convergence controls, finite-plane energy checks, coherent long-slit `sinc^2` validation, double-slit/grating
+  order validation, Advisor Review Mode Markdown/JSON/CSV exports,
   and strict limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
@@ -414,12 +417,56 @@ first-minimum error.
 L6.2 remains scalar diffraction validation. It does not execute FDTD, FEM, BEM, RCWA, finite-thickness aperture
 material interaction, curved lenses, sensor transport, or microscope digital-twin calibration.
 
+## L6.3 Coherent Slit And Order Validation Bench
+
+L6.3 extends the visible validation ladder beyond the circular-aperture Airy/Bessel case with two hand-checkable
+coherent scalar diffraction benchmarks and a combined advisor export mode.
+
+The long single-slit benchmark uses the default `lambda = 500 nm`, slit width `a = 100 um`, propagation distance
+`L = 1 m`, and a `25 mm` observation width. The expected Fraunhofer minima follow:
+
+```text
+a sin(theta) = m lambda
+y_m ~= m lambda L / a
+I/I0 = sinc^2(pi a sin(theta) / lambda)
+```
+
+For the default geometry, the first minima are expected at about `+/-5.00 mm`. The numerical path integrates the
+coherent aperture field across the open slit and compares the resulting observation-plane profile against the
+analytic `sinc^2` reference, reporting measured minima, RMS residual, max residual, warnings, and deterministic
+hashes.
+
+The double-slit/order benchmark uses the default `lambda = 500 nm`, slit separation `d = 100 um`, slit width
+`a = 20 um`, propagation distance `L = 1 m`, and a `40 mm` observation width. The expected order spacing follows:
+
+```text
+d sin(theta) = m lambda
+Delta y ~= lambda L / d
+I/I0 = sinc^2(pi a sin(theta) / lambda) cos^2(pi d sin(theta) / lambda)
+```
+
+For the default geometry, orders are spaced about `5.00 mm` apart. The visible table reports the expected and
+measured positions for orders around `m = -2..+2`, with the finite-slit envelope kept explicit.
+
+Advisor Review Mode runs the circular aperture, long single-slit, and double-slit/order validations together and
+exports `advisor_validation_report.md`, `advisor_validation_report.json`, and `advisor_validation_report.csv`. This
+mode is meant to give a compact proof packet for review: benchmark name, method, status, key metric, warnings, and
+hash evidence.
+
+L6.3 remains scalar diffraction validation. It does not execute FDTD, FEM, BEM, RCWA, material aperture interaction,
+finite-thickness screens, curved lenses, sensor transport, arbitrary 3D geometry, or microscope digital-twin
+calibration.
+
 Recommended next Maxwell steps:
 
-- Add material-uncertainty modeling only after sourced material data policy, licensing, and validation receipts are stronger.
-- Compile optical coating stacks from future scene elements into planar TMM inputs for normal/oblique validation cases.
-- Add long-slit `sinc^2`, grating/double-slit order, and thin-lens focal-plane validations before moving to
-  finite blockers, matter interaction, and external FDTD proof-of-life.
+- Add a thin-lens focal-plane validation after the slit/order ladder so the next optics milestone has an equally
+  hand-checkable scalar reference.
+- Add a coherence demonstrator that compares coherent field summation against incoherent intensity summation without
+  claiming a full microscope illumination model.
+- Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
+  validation roadmap.
+- Delay real 3D work until an external solver proof-of-life can ingest the L6.0 scene/export scaffold and return
+  auditable field data with clear capability receipts.
 
 ## Local Development
 
