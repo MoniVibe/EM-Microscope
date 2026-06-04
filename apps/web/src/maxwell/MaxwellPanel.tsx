@@ -24,6 +24,7 @@ import {
   runCircularApertureValidation,
   serializeCoatingStackDesign,
   visibleArObjective,
+  type CircularApertureComputationMode,
   type CircularApertureValidationResult,
   type CoatingDesignResult,
   type CoatingSearchCandidate,
@@ -43,6 +44,7 @@ import {
   type RobustCoatingSearchCandidate,
   type RobustCoatingSearchPrimaryMetric,
   type RobustCoatingSearchResult,
+  type FieldOutput2D,
   type SolverWarning
 } from "@emmicro/core";
 import { FileDown, Plus, Save, ShieldCheck, Sparkles, Trash2, Upload } from "lucide-react";
@@ -150,6 +152,11 @@ export function MaxwellPanel() {
   const [robustResult, setRobustResult] = useState<RobustCoatingSearchResult | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [validationPlaneZMm, setValidationPlaneZMm] = useState(20);
+  const [validationMode, setValidationMode] = useState<CircularApertureComputationMode>("compare-numerical-analytic");
+  const [validationResolution, setValidationResolution] = useState(257);
+  const [validationApertureRadialSamples, setValidationApertureRadialSamples] = useState(48);
+  const [validationApertureAngularSamples, setValidationApertureAngularSamples] = useState(96);
+  const [validationRadialSamples, setValidationRadialSamples] = useState(128);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -173,12 +180,21 @@ export function MaxwellPanel() {
   const validationResult = useMemo<CircularApertureValidationResult>(() => {
     const defaults = defaultCircularApertureValidationConfig();
     return runCircularApertureValidation({
+      computationMode: validationMode,
       observationPlane: {
         ...defaults.observationPlane,
-        zM: clamp(validationPlaneZMm, 11, 60) * 1e-3
+        zM: clamp(validationPlaneZMm, 11, 60) * 1e-3,
+        resolution: oddInteger(validationResolution, 65, 513)
+      },
+      radialSamples: oddInteger(validationRadialSamples, 65, 257),
+      numerical: {
+        ...defaults.numerical,
+        apertureRadialSamples: Math.round(clamp(validationApertureRadialSamples, 8, 128)),
+        apertureAngularSamples: Math.round(clamp(validationApertureAngularSamples, 24, 256)),
+        radialObservationSamples: oddInteger(validationRadialSamples, 65, 257)
       }
     });
-  }, [validationPlaneZMm]);
+  }, [validationApertureAngularSamples, validationApertureRadialSamples, validationMode, validationPlaneZMm, validationRadialSamples, validationResolution]);
   const validationPipeline = useMemo(() => circularApertureValidationPipeline(validationResult), [validationResult]);
 
   const stack = useMemo<CoatingStackDefinition>(
@@ -347,8 +363,8 @@ export function MaxwellPanel() {
       const thicknessMaxNm = clamp(Math.max(searchThicknessMinNm, searchThicknessMaxNm), thicknessMinNm, 10000);
       const thicknessStepNm = clamp(searchThicknessStepNm, 1, Math.max(1, thicknessMaxNm - thicknessMinNm));
       const nominalSearch = {
-        id: `l61-${presetId}-coating-search`,
-        label: `L6.0 ${stackPresets[presetId].label} coating search`,
+        id: `l62-${presetId}-coating-search`,
+        label: `L6.2 ${stackPresets[presetId].label} coating search`,
         baseStack: { ...stack, layers: [] },
         wavelengthsM: wavelengthsNm.map((nm) => clamp(nm, 200, 2000) * 1e-9),
         anglesRad: [stack.angleRad],
@@ -424,8 +440,8 @@ export function MaxwellPanel() {
                 };
         const robust = runRobustCoatingSearch(
           {
-            id: `l61-${presetId}-robust-yield-search`,
-            label: `L6.0 ${stackPresets[presetId].label} robust-yield coating search`,
+            id: `l62-${presetId}-robust-yield-search`,
+            label: `L6.2 ${stackPresets[presetId].label} robust-yield coating search`,
             nominalSearch,
             uncertainty: {
               thickness: independentThickness,
@@ -478,11 +494,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L6.1 Maxwell Design Foundry">
-      <h2>L6.1 Maxwell Design Foundry</h2>
+    <section className="wave-panel maxwell-panel" aria-label="L6.2 Maxwell Design Foundry">
+      <h2>L6.2 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.1 scalar circular-aperture Airy/Bessel validation bench</strong>
-        <span>not a general 3D Maxwell solver; L6.1 validates scalar diffraction and keeps ExternalFdtdBackend scaffold-only</span>
+        <strong>frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.2 numerical scalar propagation checked against Airy/Bessel</strong>
+        <span>not a general 3D Maxwell solver; L6.2 validates scalar diffraction numerically and keeps ExternalFdtdBackend scaffold-only</span>
       </div>
 
       <div className="profile-meta">
@@ -588,7 +604,7 @@ export function MaxwellPanel() {
         </div>
         <div className="l2-disclosure">
           <strong>Circular pinhole Airy/Bessel benchmark</strong>
-          <span>scalar diffraction validation, not full 3D Maxwell aperture solving</span>
+          <span>independent numerical scalar propagation compared against analytic Airy, not full 3D Maxwell aperture solving</span>
         </div>
         <div className="maxwell-validation-pipeline">
           {validationPipeline.map((step) => (
@@ -620,13 +636,31 @@ export function MaxwellPanel() {
           <div className="compact-stat">
             <span>Resolution</span>
             <strong>
-              {validationResult.field.width} x {validationResult.field.height}
+              {validationResult.numericalField.width} x {validationResult.numericalField.height}
             </strong>
+          </div>
+          <div className="compact-stat">
+            <span>Numerical method</span>
+            <strong>{validationResult.comparison.numericalMethod}</strong>
           </div>
           <div className="compact-stat">
             <span>External FDTD</span>
             <strong>still scaffold-only</strong>
           </div>
+        </div>
+        <div className="maxwell-validation-controls">
+          <label className="field-row">
+            <span>Computation mode</span>
+            <select value={validationMode} onChange={(event) => setValidationMode(event.currentTarget.value as CircularApertureComputationMode)}>
+              <option value="analytic-reference">Analytic Airy reference</option>
+              <option value="numerical-scalar-propagation">Numerical scalar propagation</option>
+              <option value="compare-numerical-analytic">Compare numerical vs analytic</option>
+            </select>
+          </label>
+          <NumberField label="Map grid" value={validationResolution} unit="px" min={65} max={513} step={2} onChange={(value) => setValidationResolution(oddInteger(value, 65, 513))} />
+          <NumberField label="Radial obs." value={validationRadialSamples} unit="samples" min={65} max={257} step={2} onChange={(value) => setValidationRadialSamples(oddInteger(value, 65, 257))} />
+          <NumberField label="Aperture radial" value={validationApertureRadialSamples} unit="samples" min={8} max={128} step={4} onChange={(value) => setValidationApertureRadialSamples(Math.round(clamp(value, 8, 128)))} />
+          <NumberField label="Aperture angular" value={validationApertureAngularSamples} unit="samples" min={24} max={256} step={8} onChange={(value) => setValidationApertureAngularSamples(Math.round(clamp(value, 24, 256)))} />
         </div>
         <label className="field-row">
           <span>Observation z</span>
@@ -676,25 +710,66 @@ export function MaxwellPanel() {
             <span>Symmetry error</span>
             <strong>{validationResult.residuals.radialSymmetryError.toExponential(2)}</strong>
           </div>
+          <div className="compact-stat">
+            <span>Measured first min</span>
+            <strong>{validationResult.comparison.measuredFirstMinimumRadiusM === null ? validationResult.comparison.firstMinimumSearchStatus : `${formatMm(validationResult.comparison.measuredFirstMinimumRadiusM)} mm`}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>First-min error</span>
+            <strong>{validationResult.comparison.firstMinimumErrorM === null ? "n/a" : `${formatMm(validationResult.comparison.firstMinimumErrorM)} mm`}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Finite-plane energy check</span>
+            <strong>{validationResult.comparison.energy.relativePlaneIntegralError.toExponential(2)}</strong>
+          </div>
         </div>
         <div className="error-banner">
           Expected first Airy minimum: {formatMm(validationResult.expected.firstMinimumRadiusM)} mm from center. Detector half-width: {formatMm(validationResult.expected.detectorHalfWidthM)} mm.
           {!validationResult.expected.firstMinimumInsidePlane && " Warning: first minimum is outside the 10 mm x 10 mm observation plane."}
         </div>
-        <div className="maxwell-validation-output-grid">
-          <div>
-            <div className="maxwell-section-heading">
-              <h2>Intensity Map</h2>
-              <strong>peak-normalized</strong>
+        <div className="maxwell-validation-output-grid three">
+          {validationMode !== "analytic-reference" && (
+            <div>
+              <div className="maxwell-section-heading">
+                <h2>Numerical Intensity Map</h2>
+                <strong>computed</strong>
+              </div>
+              <ValidationIntensityMap field={validationResult.numericalField} tone="numerical" ariaLabel="Numerical scalar propagation intensity map" />
             </div>
-            <ValidationIntensityMap result={validationResult} />
-          </div>
-          <div>
+          )}
+          {validationMode !== "numerical-scalar-propagation" && (
+            <div>
+              <div className="maxwell-section-heading">
+                <h2>Analytic Reference Map</h2>
+                <strong>Airy/Bessel</strong>
+              </div>
+              <ValidationIntensityMap field={validationResult.analyticField} tone="analytic" ariaLabel="Analytic Airy Bessel reference intensity map" />
+            </div>
+          )}
+          {validationMode === "compare-numerical-analytic" && (
+            <div>
+              <div className="maxwell-section-heading">
+                <h2>Residual Map</h2>
+                <strong>|numerical - analytic|</strong>
+              </div>
+              <ValidationIntensityMap field={validationResult.residualField} tone="residual" ariaLabel="Numerical minus analytic scalar propagation residual map" />
+            </div>
+          )}
+        </div>
+        <div className="maxwell-validation-output-grid">
+          <div className="maxwell-validation-profile-panel">
             <div className="maxwell-section-heading">
-              <h2>Radial Airy Overlay</h2>
-              <strong>Bessel reference</strong>
+              <h2>Radial Overlay</h2>
+              <strong>numerical vs Airy</strong>
             </div>
             <ValidationRadialPlot result={validationResult} />
+          </div>
+          <div className="maxwell-validation-profile-panel">
+            <div className="maxwell-section-heading">
+              <h2>Residual Curve</h2>
+              <strong>signed mismatch</strong>
+            </div>
+            <ValidationResidualPlot result={validationResult} />
           </div>
         </div>
         <ul className="warning-list">
@@ -705,7 +780,7 @@ export function MaxwellPanel() {
         <div className="maxwell-layer-actions">
           <button type="button" onClick={() => setValidationPlaneZMm((current) => clamp(current, 11, 60))}>
             <Sparkles size={15} />
-            <span>Run Benchmark</span>
+            <span>Run Comparison</span>
           </button>
           <button type="button" onClick={() => exportValidationJson(validationResult)}>
             <Save size={15} />
@@ -1519,31 +1594,41 @@ function FieldMonitorPlot({ monitor }: { monitor: PlanarFieldMonitorResult }) {
   );
 }
 
-function ValidationIntensityMap({ result }: { result: CircularApertureValidationResult }) {
+function ValidationIntensityMap({ field, tone, ariaLabel }: { field: FieldOutput2D; tone: "numerical" | "analytic" | "residual"; ariaLabel: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const width = result.field.width;
-    const height = result.field.height;
+    const width = field.width;
+    const height = field.height;
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext("2d");
     if (!context) return;
     const image = context.createImageData(width, height);
-    for (let index = 0; index < result.field.intensity.length; index += 1) {
-      const value = Math.pow(clamp(result.field.intensity[index] ?? 0, 0, 1), 0.38);
+    for (let index = 0; index < field.intensity.length; index += 1) {
+      const value = Math.pow(clamp(field.intensity[index] ?? 0, 0, 1), tone === "residual" ? 0.5 : 0.38);
       const offset = index * 4;
-      image.data[offset] = Math.round(18 + 224 * value);
-      image.data[offset + 1] = Math.round(34 + 170 * value);
-      image.data[offset + 2] = Math.round(52 + 72 * value);
+      if (tone === "residual") {
+        image.data[offset] = Math.round(24 + 226 * value);
+        image.data[offset + 1] = Math.round(44 + 120 * (1 - value));
+        image.data[offset + 2] = Math.round(78 + 30 * (1 - value));
+      } else if (tone === "analytic") {
+        image.data[offset] = Math.round(22 + 170 * value);
+        image.data[offset + 1] = Math.round(38 + 190 * value);
+        image.data[offset + 2] = Math.round(66 + 130 * value);
+      } else {
+        image.data[offset] = Math.round(18 + 224 * value);
+        image.data[offset + 1] = Math.round(34 + 170 * value);
+        image.data[offset + 2] = Math.round(52 + 72 * value);
+      }
       image.data[offset + 3] = 255;
     }
     context.putImageData(image, 0, 0);
-  }, [result]);
+  }, [field, tone]);
 
-  return <canvas className="maxwell-validation-map" ref={canvasRef} aria-label="2D scalar circular aperture Airy intensity map" />;
+  return <canvas className={`maxwell-validation-map ${tone}`} ref={canvasRef} aria-label={ariaLabel} />;
 }
 
 function ValidationRadialPlot({ result }: { result: CircularApertureValidationResult }) {
@@ -1585,6 +1670,42 @@ function ValidationRadialPlot({ result }: { result: CircularApertureValidationRe
   );
 }
 
+function ValidationResidualPlot({ result }: { result: CircularApertureValidationResult }) {
+  const width = 720;
+  const height = 190;
+  const pad = 24;
+  const usableWidth = width - pad * 2;
+  const usableHeight = height - pad * 2;
+  const maxRadiusM = result.radialProfile[result.radialProfile.length - 1]?.radiusM ?? 1;
+  const maxResidual = Math.max(1e-12, result.residuals.maxResidual);
+  const zeroY = pad + usableHeight / 2;
+  const points = result.radialProfile
+    .map((sample) => {
+      const x = pad + usableWidth * (sample.radiusM / maxRadiusM);
+      const y = zeroY - (usableHeight / 2) * clamp(sample.residual / maxResidual, -1, 1);
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+
+  return (
+    <svg className="maxwell-validation-profile" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Numerical minus analytic radial residual curve">
+      <rect x="0" y="0" width={width} height={height} />
+      <line className="profile-axis" x1={pad} y1={zeroY} x2={width - pad} y2={zeroY} />
+      <line className="profile-axis" x1={pad} y1={pad} x2={pad} y2={height - pad} />
+      <polyline className="maxwell-validation-residual-line" points={points} />
+      <text x={pad} y={height - 6}>
+        0 mm
+      </text>
+      <text x={width - pad - 76} y={height - 6}>
+        {formatMm(maxRadiusM)} mm
+      </text>
+      <text x={pad + 4} y={pad + 12}>
+        max residual {maxResidual.toExponential(1)}
+      </text>
+    </svg>
+  );
+}
+
 function exportStackJson(
   stack: CoatingStackDefinition,
   materialCatalog: MaxwellMaterialCatalog,
@@ -1594,7 +1715,7 @@ function exportStackJson(
   yieldAnalysis: CoatingYieldResult
 ): void {
   const design = serializeCoatingStackDesign(stack, materialCatalog);
-  downloadText("l61-diffraction-validation-stack.json", "application/json", JSON.stringify({ solverBackend: run.solverBackend, design, run, sweep, foundry, yieldAnalysis }, null, 2));
+  downloadText("l62-numerical-propagation-stack.json", "application/json", JSON.stringify({ solverBackend: run.solverBackend, design, run, sweep, foundry, yieldAnalysis }, null, 2));
 }
 
 function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult, yieldAnalysis: CoatingYieldResult): void {
@@ -1669,23 +1790,23 @@ function exportFoundryJson(foundry: CoatingDesignResult): void {
 }
 
 function exportSearchJson(search: CoatingSearchResult): void {
-  downloadText("l61-diffraction-validation-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l62-numerical-propagation-coating-search.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportRobustSearchJson(search: RobustCoatingSearchResult): void {
-  downloadText("l61-diffraction-validation-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l62-numerical-propagation-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportFdtdScaffoldJson(scaffold: ExternalFdtdScaffoldExport): void {
-  downloadText("l61-3d-fdtd-scaffold.json", "application/json", JSON.stringify(scaffold, null, 2));
+  downloadText("l62-3d-fdtd-scaffold.json", "application/json", JSON.stringify(scaffold, null, 2));
 }
 
 function exportValidationJson(result: CircularApertureValidationResult): void {
-  downloadText("l61-diffraction-validation-bench.json", "application/json", JSON.stringify(circularApertureValidationJson(result), null, 2));
+  downloadText("l62-numerical-propagation-validation-bench.json", "application/json", JSON.stringify(circularApertureValidationJson(result), null, 2));
 }
 
 function exportValidationMarkdown(result: CircularApertureValidationResult): void {
-  downloadText("l61-diffraction-validation-bench.md", "text/markdown", circularApertureValidationMarkdown(result));
+  downloadText("l62-numerical-propagation-validation-bench.md", "text/markdown", circularApertureValidationMarkdown(result));
 }
 
 function exportYieldJson(yieldAnalysis: CoatingYieldResult): void {
@@ -1816,6 +1937,12 @@ function formatSignedExponential(value: number): string {
 function clamp(value: number, min: number, max: number): number {
   const finite = Number.isFinite(value) ? value : min;
   return Math.min(max, Math.max(min, finite));
+}
+
+function oddInteger(value: number, min: number, max: number): number {
+  const bounded = Math.round(clamp(value, min, max));
+  if (bounded % 2 === 1) return bounded;
+  return bounded + 1 <= max ? bounded + 1 : bounded - 1;
 }
 
 function radFromDeg(value: number): number {
