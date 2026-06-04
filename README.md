@@ -1,9 +1,9 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.0 Maxwell Design Foundry planar multilayer
-transfer-matrix workbench with a scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar
-microscope bench code remains in source and tests as historical validation scaffolding, but it is hidden from the
-app shell.
+An EM-first light simulator MVP. The visible web app is now the L6.1 Maxwell Design Foundry planar multilayer
+transfer-matrix workbench with a scalar circular-aperture diffraction validation bench and a scaffold-only 3D
+Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
+historical validation scaffolding, but it is hidden from the app shell.
 
 L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. L4.1
 adds diagnostic wavelength-dependent material records, editable coating stacks, and wavelength sweeps over the same
@@ -28,13 +28,14 @@ L5.8 moves the existing planar stack path behind a solver-neutral backend bounda
 as the only available Maxwell backend and exposing planar-only capability receipts for future RCWA/FDTD/FEM/BEM
 adapters. L6.0 adds a 3D Maxwell scene/result schema, deterministic 3D scene validation and hashing, field dataset
 manifest types, and an `ExternalFdtdBackend`/Meep-style export scaffold that is registered but not executable.
+L6.1 adds a visible ordered diffraction validation bench for the circular pinhole Airy/Bessel benchmark.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L6.0 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L6.1 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -42,7 +43,8 @@ simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing
   imported-material selection, selected-material provenance receipts, deterministic coating material/order/thickness
   search, deterministic independent or correlated thickness-drift robust-yield re-ranking, candidate application,
   independent-thickness comparison metrics, sample reduction receipts, backend capability receipts,
-  JSON/Markdown/CSV export, plus a scaffold-only `ExternalFdtdBackend` manifest/Meep-style script export,
+  JSON/Markdown/CSV export, a scaffold-only `ExternalFdtdBackend` manifest/Meep-style script export, and an ordered
+  scalar diffraction validation bench for the 500 nm source, 1 um circular aperture, and Airy/Bessel radial check,
   and strict limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
@@ -328,12 +330,50 @@ scaffold only. It still does not implement FDTD execution, WebAssembly FDTD, FEM
 lenses, aperture diffraction solves, volumetric E/H solve results from a real backend, sensor-stack electrical
 transport, digital-twin calibration, adjoint/topology optimization, or a GPU/HPC job runner.
 
+## L6.1 Diffraction Validation Bench
+
+L6.1 adds a visible `Validation Bench` card for a hand-checkable scalar diffraction exam:
+
+```text
+source -> propagation to aperture -> circular aperture mask -> propagation to observation plane -> intensity map -> analytic check
+```
+
+The default benchmark is the advisor's "1 um diameter with Bessel check" case interpreted physically as a circular
+pinhole, not a long slit:
+
+- Monochromatic point source at `(0, 0, 0)`, wavelength `500 nm`.
+- Ideal zero-thickness circular amplitude aperture, diameter `1 um`, centered at `z = 10 mm`.
+- Zero-thickness `10 mm x 10 mm` observation plane at `z = 20 mm`, with an observation-z slider.
+- Normalized 2D scalar intensity map.
+- Radial Airy/Bessel profile overlay.
+- JSON and Markdown exports with formulas, expected values, residuals, warnings, hashes, and limitations.
+
+The analytic reference is:
+
+```text
+I/I0 = [2 J1(k a sin(theta)) / (k a sin(theta))]^2
+sin(theta) = rho / sqrt(rho^2 + L^2)
+k a sin(theta) = 3.831705970... at the first Airy minimum
+```
+
+For the default geometry, the first Airy minimum is about `7.7 mm` from the optical axis. The detector half-width is
+`5.0 mm`, and even the half-diagonal is only about `7.07 mm`, so the UI reports that the first minimum is outside
+the `10 mm x 10 mm` observation plane. That warning is intentional validation evidence, not a failure.
+
+This benchmark treats the point emitter as one monochromatic spatial mode and reports time-averaged intensity.
+Multi-point incoherent source summation is a later validation case. Long-slit `sinc^2` diffraction is also a later
+separate benchmark; L6.1 keeps the Bessel/Airy case named as a circular pinhole.
+
+L6.1 is still not a full 3D Maxwell aperture solver. It does not model a finite-thickness metal screen, aperture
+material interaction, edge boundary conditions, subwavelength-aperture vector effects, FDTD/FEM/BEM/RCWA execution,
+curved lenses, sensor transport, or microscope digital-twin calibration.
+
 Recommended next Maxwell steps:
 
 - Add material-uncertainty modeling only after sourced material data policy, licensing, and validation receipts are stronger.
 - Compile optical coating stacks from future scene elements into planar TMM inputs for normal/oblique validation cases.
-- Add the first external FDTD proof-of-life only after the L6.0 manifest/export policy is stable and the runner
-  can prove that an external solver produced the returned field dataset.
+- Add long-slit `sinc^2`, grating/double-slit order, and thin-lens focal-plane validations before moving to
+  finite blockers, matter interaction, and external FDTD proof-of-life.
 
 ## Local Development
 

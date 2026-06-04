@@ -57,13 +57,27 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L6.0 Maxwell foundry as planar execution plus scaffold-only 3D export without claiming arbitrary 3D EM", () => {
+  it("labels L6.1 Maxwell foundry as planar execution plus scalar diffraction validation without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.0 3D problem/result contract and scaffold-only ExternalFdtdBackend export");
-    expect(maxwellPanel).toContain("not a general 3D Maxwell solver; L6.0 does not execute 3D Maxwell solves");
+    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.1 scalar circular-aperture Airy/Bessel validation bench");
+    expect(maxwellPanel).toContain("not a general 3D Maxwell solver; L6.1 validates scalar diffraction and keeps ExternalFdtdBackend scaffold-only");
     expect(maxwellPanel).toContain("L6.0 does not execute 3D Maxwell solves.");
     expect(maxwellPanel).toContain("It defines the 3D problem/result contract and external-backend export scaffold only.");
+    expect(maxwellPanel).toContain("Validation Bench");
+    expect(maxwellPanel).toContain("Circular pinhole Airy/Bessel benchmark");
+    expect(maxwellPanel).toContain("Circular aperture, not long slit");
+    expect(maxwellPanel).toContain("scalar diffraction validation, not full 3D Maxwell aperture solving");
+    expect(maxwellPanel).toContain("Expected first Airy minimum");
+    expect(maxwellPanel).toContain("Warning: first minimum is outside the 10 mm x 10 mm observation plane.");
+    expect(maxwellPanel).toContain("Observation z");
+    expect(maxwellPanel).toContain("Run Benchmark");
+    expect(maxwellPanel).toContain("Validation JSON");
+    expect(maxwellPanel).toContain("Validation Markdown");
+    expect(maxwellPanel).toContain("runCircularApertureValidation");
+    expect(maxwellPanel).toContain("circularApertureValidationPipeline");
+    expect(maxwellPanel).toContain("circularApertureValidationJson");
+    expect(maxwellPanel).toContain("circularApertureValidationMarkdown");
     expect(maxwellPanel).toContain("Active solver backend");
     expect(maxwellPanel).toContain("PlanarTmmBackend");
     expect(maxwellPanel).toContain("ExternalFdtdBackend");
@@ -108,7 +122,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("Apply Search");
     expect(maxwellPanel).toContain("Tolerance Yield");
     expect(maxwellPanel).toContain("Yield JSON");
-    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed/i);
+    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved/i);
   });
 
   it("keeps the visible app shell Maxwell-only", () => {
@@ -117,9 +131,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend + FDTD Scaffold");
-    expect(app).toContain("L6.0 Maxwell Design Foundry");
-    expect(app).toContain("executable planar backend, scaffold-only 3D export, and receipts");
+    expect(app).toContain("PlanarTmmBackend + Validation Bench");
+    expect(app).toContain("L6.1 Maxwell Design Foundry");
+    expect(app).toContain("executable planar backend, scalar Airy/Bessel validation, scaffold-only 3D export");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

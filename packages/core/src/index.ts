@@ -85,6 +85,7 @@ export * from "./validation/fixturesL34b";
 export * from "./validation/fixturesL4";
 export * from "./wave/apertures1d";
 export * from "./wave/angularSpectrum2d";
+export * from "./wave/circularApertureValidation";
 export * from "./wave/complex";
 export * from "./wave/complex2d";
 export * from "./wave/crossSections2d";
