@@ -1,8 +1,10 @@
 import { fnv1a64, stableStringify } from "../scene/hashScene";
 import type { SolverWarning } from "../solvers/Solver";
-import { runCoatingStack, type CoatingStackDefinition, type CoatingStackRunOptions } from "./coatingStack";
+import type { CoatingStackDefinition, CoatingStackRunOptions } from "./coatingStack";
 import { getCatalogMaterial, materialCatalogReferencesForIds, type MaterialCatalogReference, type MaxwellMaterialCatalog } from "./materialCatalog";
 import type { MaxwellPolarization } from "./planarTmm";
+import { solveCoatingStackWithPlanarTmmBackend } from "./planarTmmBackend";
+import { planarTmmSolverReceipt, type MaxwellSolverReceipt } from "./solverBackend";
 
 export type CoatingSearchMetric = "reflectance" | "transmittance" | "absorbance" | "phaseError";
 export type CoatingSearchDirection = "minimize" | "maximize";
@@ -104,6 +106,7 @@ export type CoatingSearchResult = {
   candidates: CoatingSearchCandidate[];
   evaluationCount: number;
   rejectedCount: number;
+  solverBackend: MaxwellSolverReceipt;
   warnings: SolverWarning[];
   resultHash: string;
   provenance: {
@@ -230,6 +233,7 @@ export function runCoatingSearch(spec: CoatingSearchSpec, options: CoatingStackR
     candidates,
     evaluationCount,
     rejectedCount,
+    solverBackend: planarTmmSolverReceipt(),
     warnings: uniqueWarnings([...warnings, ...candidates.flatMap((candidate) => candidate.warnings)]),
     resultHash,
     provenance: coatingSearchProvenance()
@@ -258,7 +262,8 @@ function evaluateSearchStack(spec: CoatingSearchSpec, stack: CoatingStackDefinit
   const metrics = summarizeSamples(samples, spec.objective);
   if (spec.constraints?.maxAbsorbance !== undefined && metrics.maxAbsorbance > spec.constraints.maxAbsorbance) return null;
   const score = scoreMetrics(metrics, spec.objective);
-  const run = runCoatingStack(stack, options);
+  const run = solveCoatingStackWithPlanarTmmBackend(stack, options).coatingStackResult;
+  if (!run) throw new Error("PlanarTmmBackend did not return a direct coating stack result for coating search candidate");
   const resultHash = fnv1a64(
     stableStringify({
       analysisId: "analysis.maxwell.l5.phase5.coatingSearch.candidate",
@@ -295,8 +300,9 @@ function evaluateSample(
 ): { sample: CoatingSearchSample; warnings: SolverWarning[] } {
   const normalized = normalizePolarization(polarization);
   if (normalized === "unpolarized") {
-    const te = runCoatingStack({ ...stack, wavelengthM, angleRad, polarization: "TE" }, options);
-    const tm = runCoatingStack({ ...stack, wavelengthM, angleRad, polarization: "TM" }, options);
+    const te = solveCoatingStackWithPlanarTmmBackend({ ...stack, wavelengthM, angleRad, polarization: "TE" }, options).coatingStackResult;
+    const tm = solveCoatingStackWithPlanarTmmBackend({ ...stack, wavelengthM, angleRad, polarization: "TM" }, options).coatingStackResult;
+    if (!te || !tm) throw new Error("PlanarTmmBackend did not return TE/TM direct coating stack results for unpolarized search sample");
     return {
       sample: {
         wavelengthM,
@@ -310,7 +316,8 @@ function evaluateSample(
     };
   }
 
-  const run = runCoatingStack({ ...stack, wavelengthM, angleRad, polarization: normalized }, options);
+  const run = solveCoatingStackWithPlanarTmmBackend({ ...stack, wavelengthM, angleRad, polarization: normalized }, options).coatingStackResult;
+  if (!run) throw new Error("PlanarTmmBackend did not return a direct coating stack result for coating search sample");
   return {
     sample: {
       wavelengthM,
