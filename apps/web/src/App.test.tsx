@@ -57,14 +57,14 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L6.6 practical study workspace as saved-study workflow over planar/scalar execution without claiming arbitrary 3D EM", () => {
+  it("labels L6.7 measured-vs-simulated lab data workbench over planar/scalar execution without claiming certified calibration or arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
     const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
     const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("L6.6 Practical Study Workspace");
-    expect(maxwellPanel).toContain("saved studies, parameter sweeps, measurement markers, run comparison, capability matrix, and study bundle exports over the existing planar/scalar engines");
-    expect(maxwellPanel).toContain("PlanarTmmBackend and scalar validation remain the executable scope; 3D Maxwell, FDTD, FEM, BEM, RCWA, CAD, sensor simulation, digital twins, and certification remain unavailable");
+    expect(maxwellPanel).toContain("L6.7 Measured-vs-Simulated Lab Data Workbench");
+    expect(maxwellPanel).toContain("measured CSV/image import, calibration, ROI, residual metrics, diagnostic fit, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines");
+    expect(maxwellPanel).toContain("PlanarTmmBackend and scalar validation remain the executable scope; diagnostic measured comparison is not certified calibration, sensor simulation, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution");
     expect(maxwellPanel).toContain("Explain mode");
     expect(maxwellPanel).toContain("Show all explanations");
     expect(maxwellPanel).toContain("Under the hood: Airy/Bessel reference");
@@ -146,6 +146,15 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("Peak Finder");
     expect(maxwellPanel).toContain("Minimum Finder");
     expect(maxwellPanel).toContain("Profile CSV");
+    expect(maxwellPanel).toContain("Measured-vs-Simulated");
+    expect(maxwellPanel).toContain("Generate Synthetic CSV");
+    expect(maxwellPanel).toContain("Import Measured CSV");
+    expect(maxwellPanel).toContain("Import PNG/JPEG/CSV");
+    expect(maxwellPanel).toContain("Compare Measured vs Simulated");
+    expect(maxwellPanel).toContain("Run Diagnostic Fit");
+    expect(maxwellPanel).toContain("Save Comparison Study");
+    expect(maxwellPanel).toContain("Export Comparison Report");
+    expect(maxwellPanel).toContain("diagnostic alignment and residual analysis, not certified instrument calibration");
     expect(maxwellPanel).toContain("Run Comparison");
     expect(maxwellPanel).toContain("Compare Gamma 1 vs Gamma 0");
     expect(maxwellPanel).toContain("Compare Selected Runs");
@@ -155,7 +164,11 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("3D Maxwell solve");
     expect(maxwellPanel).toContain("not-implemented");
     expect(maxwellPanel).toContain("scaffold-only");
-    expect(maxwellPanel).toContain("l66CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("l67CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("compareMeasuredToSimulatedProfile");
+    expect(maxwellPanel).toContain("parseMeasuredCsvProfile");
+    expect(maxwellPanel).toContain("runL67DiagnosticFit");
+    expect(maxwellPanel).toContain("measuredComparisonBundleJson");
     expect(maxwellPanel).toContain("createStudySnapshot");
     expect(maxwellPanel).toContain("studyBundleJson");
     expect(maxwellPanel).toContain("runCoherenceGammaSweep");
@@ -300,7 +313,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toContain(">Apply Search<");
     expect(maxwellPanel).toContain("Tolerance Yield");
     expect(maxwellPanel).toContain("Yield JSON");
-    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|digital twin certified|manufacturing certified/i);
+    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified/i);
   });
 
   it("keeps the visible app shell Maxwell-only", () => {
@@ -309,9 +322,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend + Study Workspace");
-    expect(app).toContain("L6.6 Practical Study Workspace");
-    expect(app).toContain("executable planar backend, saved studies, sweeps, measurements, comparisons, capabilities matrix, study bundle exports");
+    expect(app).toContain("PlanarTmmBackend + Measured Workbench");
+    expect(app).toContain("L6.7 Measured-vs-Simulated Lab Data Workbench");
+    expect(app).toContain("diagnostic measured comparison, executable planar backend, saved studies, sweeps, measurements, comparisons, capabilities matrix, study bundle exports");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

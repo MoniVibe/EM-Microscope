@@ -84,6 +84,7 @@ export * from "./validation/fixturesL34";
 export * from "./validation/fixturesL34b";
 export * from "./validation/fixturesL4";
 export * from "./workspace/studyWorkspace";
+export * from "./workspace/measuredWorkbench";
 export * from "./wave/apertures1d";
 export * from "./wave/angularSpectrum2d";
 export * from "./wave/circularApertureValidation";

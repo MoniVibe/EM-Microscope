@@ -824,6 +824,51 @@ h2 {
   min-width: 0;
 }
 
+.maxwell-measured-panel {
+  grid-column: 1 / -1;
+}
+
+.maxwell-measured-textarea-label {
+  display: grid;
+  gap: 6px;
+  color: #445168;
+  font-size: 11px;
+}
+
+.maxwell-measured-textarea {
+  min-height: 96px;
+  width: 100%;
+  min-width: 0;
+  resize: vertical;
+  padding: 8px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #263244;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.maxwell-residual-preview {
+  display: grid;
+  grid-template-columns: repeat(32, minmax(3px, 1fr));
+  align-items: end;
+  height: 54px;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.maxwell-residual-preview i {
+  display: block;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: #356b8c;
+}
+
 .maxwell-capability-table,
 .maxwell-study-list,
 .maxwell-data-table,

@@ -54,6 +54,7 @@ export type StudyMode =
   | "validation.thin-lens"
   | "validation.coherence"
   | "validation.advisor-review"
+  | "measured.comparison"
   | "coating.planar-stack"
   | "coating.optimizer"
   | "coating.robust-optimizer";
@@ -62,7 +63,7 @@ export type StudySnapshotInput = {
   id?: string;
   name: string;
   mode: StudyMode;
-  selectedWorkbench: "validation-bench" | "coating-stack-workbench" | "advisor-review";
+  selectedWorkbench: "validation-bench" | "coating-stack-workbench" | "advisor-review" | "measured-vs-simulated";
   inputs: unknown;
   appState?: unknown;
   backendReceipt: unknown;
@@ -78,7 +79,7 @@ export type StudySnapshotInput = {
 
 export type StudySnapshot = Required<Omit<StudySnapshotInput, "id" | "materialReceipts" | "uncertaintyReceipts" | "profiles" | "createdAtIso">> & {
   schema: "emmicro.studySnapshot.v1";
-  type: "l66PracticalStudy";
+  type: "l66PracticalStudy" | "l67PracticalStudy";
   id: string;
   createdAtIso: string;
   materialReceipts: unknown[];
@@ -90,9 +91,9 @@ export type StudySnapshot = Required<Omit<StudySnapshotInput, "id" | "materialRe
 
 export type StudyBundle = {
   schema: "emmicro.studyBundle.v1";
-  appVersion: "L6.6 Practical Study Workspace";
+  appVersion: string;
   manifest: {
-    appVersion: "L6.6";
+    appVersion: string;
     studyHash: string;
     resultHashes: string[];
     backendReceipt: unknown;
@@ -107,6 +108,7 @@ export type StudyBundle = {
   warningsJson: SolverWarning[];
   capabilities: StudyCapability[];
   comparison?: StudyComparisonResult;
+  measuredComparison?: unknown;
   sweep?: PracticalSweepResult;
 };
 
@@ -227,7 +229,7 @@ export type StudyComparisonResult = {
   resultHash: string;
 };
 
-export function l66CapabilitiesMatrix(): StudyCapability[] {
+export function l67CapabilitiesMatrix(): StudyCapability[] {
   return [
     executable("planar-tmm-backend", "PlanarTmmBackend", "registered Maxwell backend executing 1D planar transfer-matrix coating stacks"),
     executable("coating-stack-optimizer", "Coating Stack Optimizer", "deterministic local material/order/thickness search over planar TMM runs"),
@@ -237,6 +239,7 @@ export function l66CapabilitiesMatrix(): StudyCapability[] {
     executable("double-slit-validation", "Double slit/order validation", "coherent double-slit order-spacing benchmark"),
     executable("thin-lens-validation", "Thin lens scalar validation", "ideal zero-thickness thin-lens focal-plane scalar benchmark"),
     executable("coherence-demo", "Coherence scalar demo", "scalar double-slit gamma12 interference-term demonstrator"),
+    executable("measured-vs-simulated-workbench", "Measured-vs-Simulated Workbench", "diagnostic profile/image-centerline comparison against existing scalar validation or planar TMM outputs"),
     scaffold("external-fdtd-export", "ExternalFdtdBackend export", "scene/result schema and Meep-style export scaffold only"),
     unavailable("3d-maxwell-solve", "3D Maxwell solve"),
     unavailable("fdtd-fem-bem-rcwa-execution", "FDTD/FEM/BEM/RCWA execution"),
@@ -246,6 +249,10 @@ export function l66CapabilitiesMatrix(): StudyCapability[] {
     unavailable("digital-twin-calibration", "Digital twin calibration"),
     unavailable("manufacturing-certification", "Manufacturing certification")
   ];
+}
+
+export function l66CapabilitiesMatrix(): StudyCapability[] {
+  return l67CapabilitiesMatrix();
 }
 
 export function capabilitiesMarkdown(capabilities: StudyCapability[] = l66CapabilitiesMatrix()): string {
@@ -267,7 +274,7 @@ export function createStudySnapshot(input: StudySnapshotInput): StudySnapshot {
   const createdAtIso = input.createdAtIso ?? new Date().toISOString();
   const base = {
     schema: "emmicro.studySnapshot.v1" as const,
-    type: "l66PracticalStudy" as const,
+    type: "l67PracticalStudy" as const,
     id: input.id ?? slugId(input.name),
     name: input.name,
     mode: input.mode,
@@ -289,19 +296,19 @@ export function createStudySnapshot(input: StudySnapshotInput): StudySnapshot {
   return { ...base, resultHash };
 }
 
-export function studyBundleJson(study: StudySnapshot, options: { sweep?: PracticalSweepResult; comparison?: StudyComparisonResult } = {}): StudyBundle {
+export function studyBundleJson(study: StudySnapshot, options: { sweep?: PracticalSweepResult; comparison?: StudyComparisonResult; measuredComparison?: unknown } = {}): StudyBundle {
   return {
     schema: "emmicro.studyBundle.v1",
-    appVersion: "L6.6 Practical Study Workspace",
+    appVersion: "L6.7 Measured-vs-Simulated Lab Data Workbench",
     manifest: {
-      appVersion: "L6.6",
+      appVersion: "L6.7",
       studyHash: study.resultHash,
       resultHashes: [...study.resultHashes],
       backendReceipt: study.backendReceipt,
       materialReceiptCount: study.materialReceipts.length,
       uncertaintyReceiptCount: study.uncertaintyReceipts.length,
       warningCount: study.warnings.length,
-      capabilityBoundary: "Executable capabilities are scalar validation and planar TMM only; 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD/sensor/digital-twin/certification are not implemented."
+      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, and diagnostic measured-vs-simulated comparison only; certified calibration, 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD/sensor/digital-twin/certification are not implemented."
     },
     study,
     metricsCsv: studyMetricsCsv(study),
@@ -309,6 +316,7 @@ export function studyBundleJson(study: StudySnapshot, options: { sweep?: Practic
     warningsJson: study.warnings,
     capabilities: study.capabilities,
     comparison: options.comparison,
+    measuredComparison: options.measuredComparison,
     sweep: options.sweep
   };
 }

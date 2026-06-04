@@ -22,15 +22,21 @@ import {
   distanceBetweenMarkers,
   findFieldMinimum,
   findFieldPeak,
+  compareMeasuredToSimulatedProfile,
+  createMeasuredProfileFromImagePixels,
   importMaterialPackage,
-  l66CapabilitiesMatrix,
+  l67CapabilitiesMatrix,
+  measuredComparisonBundleJson,
   listCatalogMaterials,
   applyRobustCoatingSearchCandidate,
   createMinimalMaxwellScene3D,
   parseMaterialImportJson,
   parseStudyBundleJson,
+  parseMeasuredCsvProfile,
   exportExternalFdtdScaffold,
   externalFdtdSolverReceipt,
+  fitGridCsv,
+  residualProfileCsv,
   practicalSweepCsv,
   practicalSweepJson,
   practicalSweepMarkdown,
@@ -41,6 +47,7 @@ import {
   runCoatingDesignFoundry,
   runCoatingYieldAnalysis,
   runCoatingSweep,
+  runL67DiagnosticFit,
   runCircularApertureValidation,
   runCircularObservationZSweep,
   runCoherenceDemonstrator,
@@ -56,10 +63,12 @@ import {
   serializeCoatingStackDesign,
   slitOrderValidationJson,
   slitOrderValidationMarkdown,
+  simulatedMetricsCsv,
   studyBundleJson,
   studyBundleMarkdown,
   studyComparisonCsv,
   studyComparisonMarkdown,
+  measuredMetricsCsv,
   thinLensFocalValidationCsv,
   thinLensFocalValidationJson,
   thinLensFocalValidationMarkdown,
@@ -85,6 +94,10 @@ import {
   type MaxwellPolarization,
   type ExternalFdtdScaffoldExport,
   type FieldMarker,
+  type L67DiagnosticFitResult,
+  type L67MeasuredComparisonResult,
+  type L67MeasuredDataset,
+  type L67SimulatedProfile,
   type PlanarFieldMonitorResult,
   type PracticalSweepFamily,
   type PracticalSweepResult,
@@ -232,7 +245,7 @@ export function MaxwellPanel() {
   const [coherenceSlitWidthUm, setCoherenceSlitWidthUm] = useState(20);
   const [coherenceSlitSeparationUm, setCoherenceSlitSeparationUm] = useState(100);
   const [coherencePropagationDistanceM, setCoherencePropagationDistanceM] = useState(1);
-  const [studyName, setStudyName] = useState("L6.6 working study");
+  const [studyName, setStudyName] = useState("L6.7 working study");
   const [savedStudies, setSavedStudies] = useState<StudySnapshot[]>([]);
   const [selectedStudyId, setSelectedStudyId] = useState<string>("");
   const [studyStatus, setStudyStatus] = useState("No study saved yet.");
@@ -245,6 +258,15 @@ export function MaxwellPanel() {
   const [comparisonAId, setComparisonAId] = useState<string>("");
   const [comparisonBId, setComparisonBId] = useState<string>("");
   const [studyComparison, setStudyComparison] = useState<StudyComparisonResult | null>(null);
+  const [measuredCsvText, setMeasuredCsvText] = useState("");
+  const [measuredPixelSizeUm, setMeasuredPixelSizeUm] = useState(50);
+  const [measuredOffsetUm, setMeasuredOffsetUm] = useState(0);
+  const [measuredRoiMinMm, setMeasuredRoiMinMm] = useState(-10);
+  const [measuredRoiMaxMm, setMeasuredRoiMaxMm] = useState(10);
+  const [measuredSimulatedStudyId, setMeasuredSimulatedStudyId] = useState("");
+  const [measuredDataset, setMeasuredDataset] = useState<L67MeasuredDataset | null>(null);
+  const [measuredComparison, setMeasuredComparison] = useState<L67MeasuredComparisonResult | null>(null);
+  const [measuredFit, setMeasuredFit] = useState<L67DiagnosticFitResult | null>(null);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -412,7 +434,7 @@ export function MaxwellPanel() {
       ]),
     [foundry, materialAudit, materialCatalog, materialImport, robustResult, run, searchResult, yieldAnalysis]
   );
-  const capabilities = useMemo(() => l66CapabilitiesMatrix(), []);
+  const capabilities = useMemo(() => l67CapabilitiesMatrix(), []);
   const selectedStudy = savedStudies.find((study) => study.id === selectedStudyId) ?? null;
   const studyRunSummaries = useMemo<StudyRunSummary[]>(
     () =>
@@ -561,6 +583,14 @@ export function MaxwellPanel() {
       if (coating.polarization === "TE" || coating.polarization === "TM") setPolarization(coating.polarization);
       if (Array.isArray(coating.layers)) setLayers(coating.layers as EditableLayer[]);
     }
+    const measured = state.measured as Record<string, unknown> | undefined;
+    if (measured) {
+      if (typeof measured.pixelSizeUm === "number") setMeasuredPixelSizeUm(measured.pixelSizeUm);
+      if (typeof measured.xOffsetUm === "number") setMeasuredOffsetUm(measured.xOffsetUm);
+      if (typeof measured.roiMinMm === "number") setMeasuredRoiMinMm(measured.roiMinMm);
+      if (typeof measured.roiMaxMm === "number") setMeasuredRoiMaxMm(measured.roiMaxMm);
+      if (typeof measured.simulatedStudyId === "string") setMeasuredSimulatedStudyId(measured.simulatedStudyId);
+    }
   }
 
   async function importStudyBundleFile(file: File | null): Promise<void> {
@@ -654,6 +684,227 @@ export function MaxwellPanel() {
     }
     setStudyComparison(compareStudyRuns(runA, runB));
     setStudyStatus(`Compared ${runA.label} vs ${runB.label}.`);
+  }
+
+  function activeL67SimulatedProfile(): L67SimulatedProfile {
+    const selectedMeasuredStudy = savedStudies.find((study) => study.id === measuredSimulatedStudyId && Object.keys(study.profiles).length > 0);
+    if (selectedMeasuredStudy) {
+      const profileEntry = Object.entries(selectedMeasuredStudy.profiles)[0];
+      if (profileEntry) {
+        return {
+          id: selectedMeasuredStudy.id,
+          label: `${selectedMeasuredStudy.name} ${profileEntry[0]}`,
+          resultHash: selectedMeasuredStudy.resultHash,
+          profile: profileEntry[1],
+          sourceKind: selectedMeasuredStudy.mode
+        };
+      }
+    }
+    const summary = activeValidationStudySummary();
+    const profileEntry = Object.entries(summary.profiles)[0];
+    if (!profileEntry) throw new Error("Run or select a validation study with profile data before comparing measured data.");
+    return {
+      id: summary.id,
+      label: `${summary.mode} ${profileEntry[0]}`,
+      resultHash: summary.resultHash,
+      profile: profileEntry[1],
+      sourceKind: summary.mode
+    };
+  }
+
+  function generateSyntheticMeasuredCsv(): void {
+    try {
+      const simulated = activeL67SimulatedProfile();
+      setMeasuredCsvText(syntheticMeasuredCsvFromProfile(simulated.profile, { shiftM: 2e-4, scale: 0.88, background: 0.035 }));
+      setMeasuredDataset(null);
+      setMeasuredComparison(null);
+      setMeasuredFit(null);
+      setStudyStatus("Generated synthetic measured CSV from active simulated profile.");
+    } catch (error) {
+      setStudyStatus(`Synthetic measured CSV failed: ${(error as Error).message}`);
+    }
+  }
+
+  function importMeasuredCsvFromText(): L67MeasuredDataset | null {
+    try {
+      const dataset = parseMeasuredCsvProfile(measuredCsvText, {
+        id: `l67-csv-${Date.now().toString(36)}`,
+        label: "L6.7 measured CSV profile",
+        sourceName: "measured-profile.csv",
+        calibration: {
+          positionUnit: "m",
+          pixelSizeM: measuredPixelSizeUm * 1e-6,
+          xOffsetM: measuredOffsetUm * 1e-6,
+          roi: { xMinM: measuredRoiMinMm * 1e-3, xMaxM: measuredRoiMaxMm * 1e-3 },
+          normalizationMode: "none"
+        },
+        notes: "Imported through L6.7 measured-vs-simulated workspace"
+      });
+      setMeasuredDataset(dataset);
+      setMeasuredComparison(null);
+      setMeasuredFit(null);
+      setStudyStatus(`Imported measured profile: ${dataset.measuredDataHash.slice(0, 10)}`);
+      return dataset;
+    } catch (error) {
+      setStudyStatus(`Measured CSV import failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  async function importMeasuredDataFile(file: File | null): Promise<void> {
+    if (!file) return;
+    try {
+      if (/\.csv$/i.test(file.name) || file.type.includes("csv") || file.type === "text/plain") {
+        setMeasuredCsvText(await file.text());
+        setMeasuredDataset(null);
+        setMeasuredComparison(null);
+        setMeasuredFit(null);
+        setStudyStatus(`Loaded measured CSV file: ${file.name}`);
+        return;
+      }
+      if (!file.type.startsWith("image/")) throw new Error("Measured import supports PNG/JPEG images or CSV profiles.");
+      const decoded = await decodeMeasuredImageFile(file);
+      const dataset = createMeasuredProfileFromImagePixels({
+        id: `l67-image-${Date.now().toString(36)}`,
+        label: "L6.7 measured image centerline",
+        sourceName: file.name,
+        widthPx: decoded.widthPx,
+        heightPx: decoded.heightPx,
+        data: decoded.data,
+        channels: "rgba",
+        calibration: {
+          pixelSizeM: measuredPixelSizeUm * 1e-6,
+          xOffsetM: measuredOffsetUm * 1e-6,
+          roi: { xMinM: measuredRoiMinMm * 1e-3, xMaxM: measuredRoiMaxMm * 1e-3 },
+          normalizationMode: "peak"
+        },
+        notes: "PNG/JPEG decoded to grayscale centerline for diagnostic comparison"
+      });
+      setMeasuredDataset(dataset);
+      setMeasuredComparison(null);
+      setMeasuredFit(null);
+      setStudyStatus(`Imported measured image: ${dataset.measuredDataHash.slice(0, 10)}`);
+    } catch (error) {
+      setStudyStatus(`Measured file import failed: ${(error as Error).message}`);
+    }
+  }
+
+  function runMeasuredVsSimulatedComparison(): void {
+    const dataset = measuredDataset ?? importMeasuredCsvFromText();
+    if (!dataset) return;
+    try {
+      const comparison = compareMeasuredToSimulatedProfile({
+        id: `l67-comparison-${Date.now().toString(36)}`,
+        label: "L6.7 measured-vs-simulated profile comparison",
+        measured: dataset,
+        simulated: activeL67SimulatedProfile()
+      });
+      setMeasuredComparison(comparison);
+      setMeasuredFit(null);
+      setStudyStatus(`Measured comparison complete: RMS ${comparison.metrics.rmsResidual.toPrecision(4)}`);
+    } catch (error) {
+      setStudyStatus(`Measured comparison failed: ${(error as Error).message}`);
+    }
+  }
+
+  function runMeasuredDiagnosticFit(): void {
+    const dataset = measuredDataset ?? importMeasuredCsvFromText();
+    if (!dataset) return;
+    const comparison =
+      measuredComparison ??
+      compareMeasuredToSimulatedProfile({
+        id: `l67-comparison-${Date.now().toString(36)}`,
+        label: "L6.7 measured-vs-simulated profile comparison",
+        measured: dataset,
+        simulated: activeL67SimulatedProfile()
+      });
+    try {
+      const fit = runL67DiagnosticFit({
+        comparison,
+        measured: dataset,
+        simulated: activeL67SimulatedProfile(),
+        settings: {
+          shiftStartM: -5e-4,
+          shiftStopM: 5e-4,
+          shiftSteps: 11,
+          scaleStart: 0.7,
+          scaleStop: 1.2,
+          scaleSteps: 6,
+          backgroundStart: -0.05,
+          backgroundStop: 0.1,
+          backgroundSteps: 7
+        }
+      });
+      const fittedComparison = compareMeasuredToSimulatedProfile({
+        id: comparison.id,
+        label: comparison.label,
+        measured: dataset,
+        simulated: activeL67SimulatedProfile(),
+        shiftM: fit.best.shiftM,
+        intensityScale: fit.best.intensityScale,
+        backgroundOffset: fit.best.backgroundOffset
+      });
+      setMeasuredComparison(fittedComparison);
+      setMeasuredFit(fit);
+      setStudyStatus(`Diagnostic fit improved RMS by ${fit.improvement.rmsResidualDelta.toExponential(3)}.`);
+    } catch (error) {
+      setStudyStatus(`Measured fit failed: ${(error as Error).message}`);
+    }
+  }
+
+  function saveMeasuredComparisonStudy(): void {
+    if (!measuredComparison) {
+      setStudyStatus("Run measured comparison before saving a comparison study.");
+      return;
+    }
+    const bundle = measuredComparisonBundleJson(measuredComparison, measuredFit ?? undefined);
+    saveStudy(
+      createStudySnapshot({
+        id: `l67-measured-comparison-${Date.now().toString(36)}`,
+        name: "L6.7 measured comparison",
+        mode: "measured.comparison",
+        selectedWorkbench: "measured-vs-simulated",
+        inputs: {
+          measured: measuredComparison.measured,
+          simulated: measuredComparison.simulated,
+          alignment: measuredComparison.alignment,
+          fit: measuredFit?.best ?? null
+        },
+        appState: currentAppState(),
+        backendReceipt: { label: "L6.7 Measured-vs-Simulated Workbench", availability: "diagnostic", scope: "existing scalar validation or planar TMM outputs only" },
+        resultHashes: [measuredComparison.resultHash, measuredFit?.resultHash].filter(Boolean) as string[],
+        metrics: [
+          { id: "rmsResidual", label: "RMS residual", value: measuredComparison.metrics.rmsResidual },
+          { id: "maeResidual", label: "MAE residual", value: measuredComparison.metrics.maeResidual },
+          { id: "maxAbsResidual", label: "Max absolute residual", value: measuredComparison.metrics.maxAbsResidual },
+          { id: "normalizedCrossCorrelation", label: "Normalized cross-correlation", value: measuredComparison.metrics.normalizedCrossCorrelation },
+          ...(measuredFit ? [{ id: "fitRmsImprovement", label: "Fit RMS improvement", value: measuredFit.improvement.rmsResidualDelta }] : [])
+        ],
+        profiles: {
+          residual: measuredComparison.residualProfile.map((point) => ({ xM: point.xM, intensity: point.residual })),
+          measured: measuredComparison.residualProfile.map((point) => ({ xM: point.xM, intensity: point.measured })),
+          simulated: measuredComparison.residualProfile.map((point) => ({ xM: point.xM, intensity: point.simulated }))
+        },
+        warnings: bundle.warningsJson,
+        limitations: measuredComparison.limitations
+      })
+    );
+  }
+
+  function exportMeasuredComparisonReport(): void {
+    if (!measuredComparison) {
+      setStudyStatus("Run measured comparison before exporting a report.");
+      return;
+    }
+    const bundle = measuredComparisonBundleJson(measuredComparison, measuredFit ?? undefined);
+    downloadText("l67-comparison_report.json", "application/json", JSON.stringify(bundle, null, 2));
+    downloadText("l67-comparison_report.md", "text/markdown", bundle.comparisonReportMarkdown);
+    downloadText("l67-measured_metrics.csv", "text/csv", measuredMetricsCsv(measuredComparison));
+    downloadText("l67-simulated_metrics.csv", "text/csv", simulatedMetricsCsv(measuredComparison));
+    downloadText("l67-residual_profile.csv", "text/csv", residualProfileCsv(measuredComparison));
+    downloadText("l67-fit_grid.csv", "text/csv", fitGridCsv(measuredFit ?? undefined));
+    downloadText("l67-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+    setStudyStatus("Exported L6.7 measured comparison report bundle.");
   }
 
   function activeValidationStudySummary(): {
@@ -775,6 +1026,16 @@ export function MaxwellPanel() {
         angleDeg,
         polarization,
         layers
+      },
+      measured: {
+        pixelSizeUm: measuredPixelSizeUm,
+        xOffsetUm: measuredOffsetUm,
+        roiMinMm: measuredRoiMinMm,
+        roiMaxMm: measuredRoiMaxMm,
+        simulatedStudyId: measuredSimulatedStudyId,
+        measuredDataHash: measuredDataset?.measuredDataHash ?? null,
+        comparisonHash: measuredComparison?.resultHash ?? null,
+        fitHash: measuredFit?.resultHash ?? null
       }
     };
   }
@@ -1023,11 +1284,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.6 Practical Study Workspace">
-      <h2>L6.6 Practical Study Workspace</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.7 Measured-vs-Simulated Lab Data Workbench">
+      <h2>L6.7 Measured-vs-Simulated Lab Data Workbench</h2>
       <div className="l2-disclosure">
-        <strong>saved studies, parameter sweeps, measurement markers, run comparison, capability matrix, and study bundle exports over the existing planar/scalar engines</strong>
-        <span>PlanarTmmBackend and scalar validation remain the executable scope; 3D Maxwell, FDTD, FEM, BEM, RCWA, CAD, sensor simulation, digital twins, and certification remain unavailable</span>
+        <strong>measured CSV/image import, calibration, ROI, residual metrics, diagnostic fit, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines</strong>
+        <span>PlanarTmmBackend and scalar validation remain the executable scope; diagnostic measured comparison is not certified calibration, sensor simulation, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -1058,7 +1319,7 @@ export function MaxwellPanel() {
         onLoadStudy={loadSelectedStudy}
         onDuplicateStudy={duplicateSelectedStudy}
         onDeleteStudy={deleteSelectedStudy}
-        onExportBundle={() => exportStudyBundle(selectedStudy ?? captureValidationStudy(studyName.trim() || "Validation study"), workspaceSweepResult, studyComparison)}
+        onExportBundle={() => exportStudyBundle(selectedStudy ?? captureValidationStudy(studyName.trim() || "Validation study"), workspaceSweepResult, studyComparison, measuredComparison)}
         onImportBundle={importStudyBundleFile}
         onCopyShareableUrl={copyShareableStudyUrl}
         sweepFamily={workspaceSweepFamily}
@@ -1091,6 +1352,28 @@ export function MaxwellPanel() {
         onCompareSelected={compareSelectedStudies}
         onExportComparisonMarkdown={() => studyComparison && exportStudyComparisonMarkdown(studyComparison)}
         onExportComparisonCsv={() => studyComparison && exportStudyComparisonCsv(studyComparison)}
+        measuredCsvText={measuredCsvText}
+        setMeasuredCsvText={setMeasuredCsvText}
+        measuredPixelSizeUm={measuredPixelSizeUm}
+        setMeasuredPixelSizeUm={setMeasuredPixelSizeUm}
+        measuredOffsetUm={measuredOffsetUm}
+        setMeasuredOffsetUm={setMeasuredOffsetUm}
+        measuredRoiMinMm={measuredRoiMinMm}
+        setMeasuredRoiMinMm={setMeasuredRoiMinMm}
+        measuredRoiMaxMm={measuredRoiMaxMm}
+        setMeasuredRoiMaxMm={setMeasuredRoiMaxMm}
+        measuredSimulatedStudyId={measuredSimulatedStudyId}
+        setMeasuredSimulatedStudyId={setMeasuredSimulatedStudyId}
+        measuredDataset={measuredDataset}
+        measuredComparison={measuredComparison}
+        measuredFit={measuredFit}
+        onGenerateSyntheticMeasuredCsv={generateSyntheticMeasuredCsv}
+        onImportMeasuredCsv={importMeasuredCsvFromText}
+        onImportMeasuredFile={importMeasuredDataFile}
+        onCompareMeasured={runMeasuredVsSimulatedComparison}
+        onRunMeasuredFit={runMeasuredDiagnosticFit}
+        onSaveMeasuredComparison={saveMeasuredComparisonStudy}
+        onExportMeasuredComparison={exportMeasuredComparisonReport}
       />
 
       <div className="profile-meta">
@@ -2242,7 +2525,29 @@ function PracticalStudyWorkspacePanel({
   onCompareGamma,
   onCompareSelected,
   onExportComparisonMarkdown,
-  onExportComparisonCsv
+  onExportComparisonCsv,
+  measuredCsvText,
+  setMeasuredCsvText,
+  measuredPixelSizeUm,
+  setMeasuredPixelSizeUm,
+  measuredOffsetUm,
+  setMeasuredOffsetUm,
+  measuredRoiMinMm,
+  setMeasuredRoiMinMm,
+  measuredRoiMaxMm,
+  setMeasuredRoiMaxMm,
+  measuredSimulatedStudyId,
+  setMeasuredSimulatedStudyId,
+  measuredDataset,
+  measuredComparison,
+  measuredFit,
+  onGenerateSyntheticMeasuredCsv,
+  onImportMeasuredCsv,
+  onImportMeasuredFile,
+  onCompareMeasured,
+  onRunMeasuredFit,
+  onSaveMeasuredComparison,
+  onExportMeasuredComparison
 }: {
   capabilities: StudyCapability[];
   studyName: string;
@@ -2289,20 +2594,42 @@ function PracticalStudyWorkspacePanel({
   onCompareSelected: () => void;
   onExportComparisonMarkdown: () => void;
   onExportComparisonCsv: () => void;
+  measuredCsvText: string;
+  setMeasuredCsvText: (value: string) => void;
+  measuredPixelSizeUm: number;
+  setMeasuredPixelSizeUm: (value: number) => void;
+  measuredOffsetUm: number;
+  setMeasuredOffsetUm: (value: number) => void;
+  measuredRoiMinMm: number;
+  setMeasuredRoiMinMm: (value: number) => void;
+  measuredRoiMaxMm: number;
+  setMeasuredRoiMaxMm: (value: number) => void;
+  measuredSimulatedStudyId: string;
+  setMeasuredSimulatedStudyId: (value: string) => void;
+  measuredDataset: L67MeasuredDataset | null;
+  measuredComparison: L67MeasuredComparisonResult | null;
+  measuredFit: L67DiagnosticFitResult | null;
+  onGenerateSyntheticMeasuredCsv: () => void;
+  onImportMeasuredCsv: () => void;
+  onImportMeasuredFile: (file: File | null) => void | Promise<void>;
+  onCompareMeasured: () => void;
+  onRunMeasuredFit: () => void;
+  onSaveMeasuredComparison: () => void;
+  onExportMeasuredComparison: () => void;
 }) {
   const executableCount = capabilities.filter((capability) => capability.status === "executable").length;
   const scaffoldCount = capabilities.filter((capability) => capability.status === "scaffold-only").length;
   const unavailableCount = capabilities.filter((capability) => capability.status === "not-implemented").length;
 
   return (
-    <div className="maxwell-study-card" aria-label="L6.6 Practical Study Workspace">
+    <div className="maxwell-study-card" aria-label="L6.7 Measured-vs-Simulated Lab Data Workbench">
       <div className="maxwell-section-heading">
-        <h2>L6.6 Practical Study Workspace</h2>
+        <h2>L6.7 Measured-vs-Simulated Lab Data Workbench</h2>
         <strong>{savedStudies.length} saved</strong>
       </div>
       <div className="l2-disclosure">
-        <strong>Save a study, run sweeps, measure outputs, compare runs, and export evidence.</strong>
-        <span>Workflow layer only: it orchestrates existing scalar validation and planar TMM results without adding new physics.</span>
+        <strong>Import measured profiles/images, calibrate ROI, compare residuals, run diagnostic fits, save studies, and export evidence.</strong>
+        <span>Workflow layer only: it compares measured data against existing scalar validation and planar TMM results without adding new physics or certified calibration.</span>
       </div>
 
       <div className="maxwell-workspace-grid">
@@ -2446,6 +2773,88 @@ function PracticalStudyWorkspacePanel({
             <strong>ROI measurement and line profile extraction are represented by marker/table/profile exports in this pass.</strong>
             <span>Map/profile coordinates are read from the active zero-thickness validation plane.</span>
           </div>
+        </div>
+
+        <div className="maxwell-workspace-panel maxwell-measured-panel" aria-label="Measured-vs-Simulated">
+          <div className="maxwell-section-heading">
+            <h2>Measured-vs-Simulated</h2>
+            <strong>{measuredComparison ? measuredComparison.resultHash.slice(0, 10) : measuredDataset ? measuredDataset.measuredDataHash.slice(0, 10) : "no measured data"}</strong>
+          </div>
+          <div className="l2-disclosure">
+            <strong>Compare imported measured CSV/image profiles to the selected scalar validation profile.</strong>
+            <span>This is diagnostic alignment and residual analysis, not certified instrument calibration, sensor simulation, digital twin, or new Maxwell physics.</span>
+          </div>
+          <div className="maxwell-study-controls">
+            <label className="field-row">
+              <span>Simulated run</span>
+              <select value={measuredSimulatedStudyId} onChange={(event) => setMeasuredSimulatedStudyId(event.currentTarget.value)}>
+                <option value="">Active validation profile</option>
+                {savedStudies.filter((study) => Object.keys(study.profiles).length > 0).map((study) => (
+                  <option key={study.id} value={study.id}>{study.name}</option>
+                ))}
+              </select>
+            </label>
+            <NumberField label="Pixel size um" value={measuredPixelSizeUm} min={0.001} max={10000} step={0.1} onChange={setMeasuredPixelSizeUm} />
+            <NumberField label="X offset um" value={measuredOffsetUm} min={-10000} max={10000} step={1} onChange={setMeasuredOffsetUm} />
+            <NumberField label="ROI min mm" value={measuredRoiMinMm} min={-1000} max={1000} step={0.1} onChange={setMeasuredRoiMinMm} />
+            <NumberField label="ROI max mm" value={measuredRoiMaxMm} min={-1000} max={1000} step={0.1} onChange={setMeasuredRoiMaxMm} />
+          </div>
+          <label className="maxwell-measured-textarea-label">
+            <span>Measured CSV profile</span>
+            <textarea
+              className="maxwell-measured-textarea"
+              value={measuredCsvText}
+              onChange={(event) => setMeasuredCsvText(event.currentTarget.value)}
+              placeholder="x_m,intensity&#10;-0.001,0.2&#10;0,1&#10;0.001,0.2"
+            />
+          </label>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onGenerateSyntheticMeasuredCsv}><Sparkles size={15} /><span>Generate Synthetic CSV</span></button>
+            <button type="button" onClick={onImportMeasuredCsv}><Upload size={15} /><span>Import Measured CSV</span></button>
+            <label className="maxwell-file-action">
+              <Upload size={15} />
+              <span>Import PNG/JPEG/CSV</span>
+              <input type="file" accept=".csv,text/csv,image/png,image/jpeg" onChange={(event) => void onImportMeasuredFile(event.currentTarget.files?.[0] ?? null)} />
+            </label>
+            <button type="button" onClick={onCompareMeasured}><Sparkles size={15} /><span>Compare Measured vs Simulated</span></button>
+            <button type="button" onClick={onRunMeasuredFit}><Sparkles size={15} /><span>Run Diagnostic Fit</span></button>
+            <button type="button" onClick={onSaveMeasuredComparison}><Save size={15} /><span>Save Comparison Study</span></button>
+            <button type="button" onClick={onExportMeasuredComparison}><FileDown size={15} /><span>Export Comparison Report</span></button>
+          </div>
+          {measuredComparison && (
+            <div className="maxwell-data-table">
+              <div className="compact-stat">
+                <span>RMS / MAE residual</span>
+                <strong>{measuredComparison.metrics.rmsResidual.toPrecision(4)} / {measuredComparison.metrics.maeResidual.toPrecision(4)}</strong>
+              </div>
+              <div className="compact-stat">
+                <span>Normalized cross-correlation</span>
+                <strong>{measuredComparison.metrics.normalizedCrossCorrelation.toPrecision(4)}</strong>
+              </div>
+              <div className="compact-stat">
+                <span>Peak / centroid error</span>
+                <strong>{formatMm(measuredComparison.metrics.peakPositionErrorM ?? Number.NaN)} mm / {formatMm(measuredComparison.metrics.centroidErrorM ?? Number.NaN)} mm</strong>
+              </div>
+              {measuredFit && (
+                <div className="compact-stat">
+                  <span>Fit best shift / scale / background</span>
+                  <strong>{formatMm(measuredFit.best.shiftM)} mm / {measuredFit.best.intensityScale.toPrecision(4)} / {measuredFit.best.backgroundOffset.toPrecision(4)}</strong>
+                </div>
+              )}
+              {measuredFit && (
+                <div className="compact-stat">
+                  <span>Fit RMS improvement</span>
+                  <strong>{measuredFit.before.rmsResidual.toPrecision(4)} to {measuredFit.best.rmsResidual.toPrecision(4)}</strong>
+                </div>
+              )}
+              <div className="maxwell-residual-preview">
+                {measuredComparison.residualProfile.slice(0, 32).map((point, index) => (
+                  <i key={`${point.xM}-${index}`} style={{ height: `${Math.min(100, Math.abs(point.residual) * 100)}%` }} title={`x=${formatMm(point.xM)} mm residual=${point.residual.toPrecision(4)}`} />
+                ))}
+              </div>
+              {measuredComparison.warnings.map((warning) => <div className="error-banner" key={`${warning.code}-${warning.message}`}>{warning.message}</div>)}
+            </div>
+          )}
         </div>
 
         <div className="maxwell-workspace-panel" aria-label="Run Comparison">
@@ -3911,19 +4320,73 @@ function exportAdvisorReviewCsv(review: AdvisorValidationReviewResult): void {
   downloadText("advisor_validation_report.csv", "text/csv", advisorValidationReviewCsv(review));
 }
 
-function exportStudyBundle(study: StudySnapshot, sweep: PracticalSweepResult | null, comparison: StudyComparisonResult | null): void {
+function syntheticMeasuredCsvFromProfile(profile: { xM: number; intensity: number }[], transform: { shiftM: number; scale: number; background: number }): string {
+  const normalized = normalizeLocalProfile(profile);
+  const rows = ["x_m,intensity"];
+  for (const point of normalized) {
+    const shifted = sampleLocalProfile(normalized, point.xM - transform.shiftM) ?? 0;
+    rows.push(`${point.xM},${shifted * transform.scale + transform.background}`);
+  }
+  return rows.join("\n");
+}
+
+function normalizeLocalProfile(profile: { xM: number; intensity: number }[]): { xM: number; intensity: number }[] {
+  const sorted = [...profile].filter((point) => Number.isFinite(point.xM) && Number.isFinite(point.intensity)).sort((a, b) => a.xM - b.xM);
+  const peak = Math.max(0, ...sorted.map((point) => Math.abs(point.intensity)));
+  return sorted.map((point) => ({ xM: point.xM, intensity: peak > 0 ? point.intensity / peak : point.intensity }));
+}
+
+function sampleLocalProfile(profile: { xM: number; intensity: number }[], xM: number): number | null {
+  if (profile.length === 0 || xM < profile[0]!.xM || xM > profile[profile.length - 1]!.xM) return null;
+  let low = 0;
+  let high = profile.length - 1;
+  while (high - low > 1) {
+    const mid = Math.floor((low + high) / 2);
+    if (profile[mid]!.xM <= xM) low = mid;
+    else high = mid;
+  }
+  const a = profile[low]!;
+  const b = profile[Math.min(profile.length - 1, low + 1)]!;
+  if (a.xM === b.xM) return a.intensity;
+  const t = (xM - a.xM) / (b.xM - a.xM);
+  return a.intensity * (1 - t) + b.intensity * t;
+}
+
+async function decodeMeasuredImageFile(file: File): Promise<{ widthPx: number; heightPx: number; data: number[] }> {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("browser canvas is unavailable for measured image decoding");
+    context.drawImage(bitmap, 0, 0);
+    const image = context.getImageData(0, 0, bitmap.width, bitmap.height);
+    return {
+      widthPx: bitmap.width,
+      heightPx: bitmap.height,
+      data: Array.from(image.data, (value) => value / 255)
+    };
+  } finally {
+    bitmap.close();
+  }
+}
+
+function exportStudyBundle(study: StudySnapshot, sweep: PracticalSweepResult | null, comparison: StudyComparisonResult | null, measuredComparison: L67MeasuredComparisonResult | null): void {
   const bundle = studyBundleJson(study, {
     sweep: sweep ?? undefined,
-    comparison: comparison ?? undefined
+    comparison: comparison ?? undefined,
+    measuredComparison: measuredComparison ?? undefined
   });
-  downloadText("l66-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
-  downloadText("l66-study.md", "text/markdown", studyBundleMarkdown(bundle));
-  downloadText("l66-metrics.csv", "text/csv", bundle.metricsCsv);
-  downloadText("l66-profiles.csv", "text/csv", bundle.profilesCsv);
-  downloadText("l66-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
-  downloadText("l66-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
-  if (comparison) downloadText("l66-comparison.csv", "text/csv", studyComparisonCsv(comparison));
-  if (sweep) downloadText("l66-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+  downloadText("l67-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
+  downloadText("l67-study.md", "text/markdown", studyBundleMarkdown(bundle));
+  downloadText("l67-metrics.csv", "text/csv", bundle.metricsCsv);
+  downloadText("l67-profiles.csv", "text/csv", bundle.profilesCsv);
+  downloadText("l67-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+  downloadText("l67-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
+  if (comparison) downloadText("l67-comparison.csv", "text/csv", studyComparisonCsv(comparison));
+  if (sweep) downloadText("l67-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+  if (measuredComparison) downloadText("l67-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
 }
 
 function exportPracticalSweepJson(result: PracticalSweepResult): void {
