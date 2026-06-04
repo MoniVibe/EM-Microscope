@@ -57,11 +57,35 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L6.3 Maxwell foundry as planar execution plus coherent slit/order validation without claiming arbitrary 3D EM", () => {
+  it("labels L6.3a Maxwell foundry as planar execution plus explainability without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
+    const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
+    const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.3 coherent slit/order validation and Advisor Review Mode");
-    expect(maxwellPanel).toContain("not a general 3D Maxwell solver; L6.3 validates scalar diffraction benchmarks and keeps ExternalFdtdBackend scaffold-only");
+    expect(maxwellPanel).toContain("L6.3a Maxwell Design Foundry");
+    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM, L6.3 slit/order validation, and L6.3a explainability layer");
+    expect(maxwellPanel).toContain("accessible tooltips and under-the-hood snippets; still not a general 3D Maxwell solver, and ExternalFdtdBackend remains scaffold-only");
+    expect(maxwellPanel).toContain("Explain mode");
+    expect(maxwellPanel).toContain("Show all explanations");
+    expect(maxwellPanel).toContain("Under the hood: Airy/Bessel reference");
+    expect(maxwellPanel).toContain("Under the hood: numerical propagation");
+    expect(maxwellPanel).toContain("Under the hood: ExternalFdtdBackend");
+    expect(explainComponents).toContain('role="tooltip"');
+    expect(explainComponents).toContain("aria-describedby");
+    expect(explainComponents).toContain("Escape");
+    expect(explainComponents).toContain("ShowAllExplanationsDrawer");
+    expect(explainComponents).not.toContain("title=");
+    expect(explainability).toContain("validation.source.wavelength");
+    expect(explainability).toContain("validation.analyticReference.airyBessel");
+    expect(explainability).toContain("validation.numericalPropagation.huygensFresnel");
+    expect(explainability).toContain("validation.residualMap");
+    expect(explainability).toContain("backend.planarTmm");
+    expect(explainability).toContain("backend.externalFdtdScaffold");
+    expect(explainability).toContain("coating.provenanceReceipt");
+    expect(explainability).toContain("coating.reflectance");
+    expect(explainability).toContain("robust.p90Score");
+    expect(explainability).toContain("robust.sampleReduction");
+    expect(explainability).toContain("No full 3D Maxwell, FDTD, FEM, BEM, RCWA");
     expect(maxwellPanel).toContain("L6.0 does not execute 3D Maxwell solves.");
     expect(maxwellPanel).toContain("It defines the 3D problem/result contract and external-backend export scaffold only.");
     expect(maxwellPanel).toContain("Validation Bench");
@@ -162,8 +186,8 @@ describe("solver disclosure copy", () => {
 
     expect(app).toContain('aria-label="Maxwell simulator"');
     expect(app).toContain("PlanarTmmBackend + Validation Bench");
-    expect(app).toContain("L6.3 Maxwell Design Foundry");
-    expect(app).toContain("executable planar backend, slit/order validation ladder, scaffold-only 3D export");
+    expect(app).toContain("L6.3a Maxwell Design Foundry");
+    expect(app).toContain("executable planar backend, explainability layer, slit/order validation ladder, scaffold-only 3D export");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

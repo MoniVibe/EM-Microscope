@@ -57,6 +57,8 @@ import {
   type SolverWarning
 } from "@emmicro/core";
 import { FileDown, Plus, Save, ShieldCheck, Sparkles, Trash2, Upload } from "lucide-react";
+import { ExplainButton, ExplainLabel, ShowAllExplanationsDrawer } from "../explainability/Explainability";
+import type { ExplainEntryId } from "../explainabilityContent";
 
 type StackPresetId = "bareGlass" | "quarterWaveAr" | "broadbandAr" | "absorbingFilm";
 type RobustUncertaintyModeId = "independent-thickness" | "shared-scale" | "shared-offset-residual";
@@ -162,6 +164,8 @@ export function MaxwellPanel() {
   const [robustResult, setRobustResult] = useState<RobustCoatingSearchResult | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [validationBenchmark, setValidationBenchmark] = useState<ValidationBenchmarkId>("circular-pinhole");
+  const [explainMode, setExplainMode] = useState(false);
+  const [showExplanations, setShowExplanations] = useState(false);
   const [validationPlaneZMm, setValidationPlaneZMm] = useState(20);
   const [validationMode, setValidationMode] = useState<CircularApertureComputationMode>("compare-numerical-analytic");
   const [validationResolution, setValidationResolution] = useState(257);
@@ -509,16 +513,29 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L6.3 Maxwell Design Foundry">
-      <h2>L6.3 Maxwell Design Foundry</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.3a Maxwell Design Foundry">
+      <h2>L6.3a Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.3 coherent slit/order validation and Advisor Review Mode</strong>
-        <span>not a general 3D Maxwell solver; L6.3 validates scalar diffraction benchmarks and keeps ExternalFdtdBackend scaffold-only</span>
+        <strong>frequency-domain Maxwell planar coating-stack TMM, L6.3 slit/order validation, and L6.3a explainability layer</strong>
+        <span>accessible tooltips and under-the-hood snippets; still not a general 3D Maxwell solver, and ExternalFdtdBackend remains scaffold-only</span>
       </div>
+      <div className="explain-toolbar" aria-label="Explainability controls">
+        <label className="maxwell-material-check">
+          <input type="checkbox" checked={explainMode} onChange={() => setExplainMode((current) => !current)} />
+          <span>Explain mode</span>
+          <strong>highlight help</strong>
+        </label>
+        <button type="button" onClick={() => setShowExplanations(true)}>
+          <Sparkles size={15} />
+          <span>Show all explanations</span>
+        </button>
+        <ExplainButton entryId="backend.planarTmm" label="Under the hood: PlanarTmmBackend" explainMode={explainMode} />
+      </div>
+      <ShowAllExplanationsDrawer open={showExplanations} onClose={() => setShowExplanations(false)} />
 
       <div className="profile-meta">
         <div className="compact-stat">
-          <span>Active solver backend</span>
+          <ExplainLabel entryId="backend.planarTmm" explainMode={explainMode}>Active solver backend</ExplainLabel>
           <strong>{run.solverBackend.label}</strong>
         </div>
         <div className="compact-stat">
@@ -526,7 +543,7 @@ export function MaxwellPanel() {
           <strong>{run.solverBackend.method}</strong>
         </div>
         <div className="compact-stat">
-          <span>Dimensions</span>
+          <ExplainLabel entryId="backend.dimension1dPlanar" explainMode={explainMode}>Dimensions</ExplainLabel>
           <strong>{run.solverBackend.capabilities.dimensions.join(", ")}</strong>
         </div>
         <div className="compact-stat">
@@ -534,7 +551,7 @@ export function MaxwellPanel() {
           <strong>{run.solverBackend.capabilities.availability}</strong>
         </div>
         <div className="compact-stat">
-          <span>Unsupported</span>
+          <ExplainLabel entryId="backend.capabilityReceipt" explainMode={explainMode}>Unsupported</ExplainLabel>
           <strong>3D geometry, apertures, curved surfaces, FEM/FDTD/BEM/RCWA</strong>
         </div>
       </div>
@@ -548,9 +565,13 @@ export function MaxwellPanel() {
           <strong>L6.0 does not execute 3D Maxwell solves.</strong>
           <span>It defines the 3D problem/result contract and external-backend export scaffold only.</span>
         </div>
+        <div className="explain-inline-row">
+          <ExplainButton entryId="backend.externalFdtdScaffold" label="Under the hood: ExternalFdtdBackend" explainMode={explainMode} />
+          <ExplainButton entryId="backend.capabilityReceipt" label="Under the hood: capability receipt" explainMode={explainMode} />
+        </div>
         <div className="profile-meta">
           <div className="compact-stat">
-            <span>Available</span>
+            <ExplainLabel entryId="backend.planarTmm" explainMode={explainMode}>Available</ExplainLabel>
             <strong>{run.solverBackend.label}</strong>
           </div>
           <div className="compact-stat">
@@ -558,11 +579,11 @@ export function MaxwellPanel() {
             <strong>{run.solverBackend.method}</strong>
           </div>
           <div className="compact-stat">
-            <span>Available dimensions</span>
+            <ExplainLabel entryId="backend.dimension1dPlanar" explainMode={explainMode}>Available dimensions</ExplainLabel>
             <strong>{run.solverBackend.capabilities.dimensions.join(", ")}</strong>
           </div>
           <div className="compact-stat">
-            <span>Scaffolded, not executable</span>
+            <ExplainLabel entryId="backend.externalFdtdScaffold" explainMode={explainMode}>Scaffolded, not executable</ExplainLabel>
             <strong>{fdtdBackendReceipt.label}</strong>
           </div>
           <div className="compact-stat">
@@ -609,6 +630,7 @@ export function MaxwellPanel() {
             <FileDown size={15} />
             <span>Export 3D FDTD Scaffold</span>
           </button>
+          <ExplainButton entryId="exports.fdtdScaffold" label="Under the hood: FDTD scaffold export" explainMode={explainMode} />
         </div>
       </div>
 
@@ -620,6 +642,10 @@ export function MaxwellPanel() {
         <div className="l2-disclosure">
           <strong>Physics exam sequence</strong>
           <span>hand-checkable scalar diffraction benchmarks with numerical results, analytic references, residuals, and report exports</span>
+        </div>
+        <div className="explain-inline-row">
+          <ExplainButton entryId="validation.analyticReference.airyBessel" label="Under the hood: Airy/Bessel reference" explainMode={explainMode} />
+          <ExplainButton entryId="validation.numericalPropagation.huygensFresnel" label="Under the hood: numerical propagation" explainMode={explainMode} />
         </div>
         <div className="maxwell-validation-tabs" role="tablist" aria-label="Validation benchmark selector">
           <button type="button" className={validationBenchmark === "circular-pinhole" ? "active" : ""} onClick={() => setValidationBenchmark("circular-pinhole")}>
@@ -649,19 +675,27 @@ export function MaxwellPanel() {
         </div>
         <div className="profile-meta">
           <div className="compact-stat">
+            <ExplainLabel entryId="validation.source.wavelength" explainMode={explainMode}>Wavelength</ExplainLabel>
+            <strong>500 nm</strong>
+          </div>
+          <div className="compact-stat">
+            <ExplainLabel entryId="validation.source.pointSource" explainMode={explainMode}>Point source</ExplainLabel>
+            <strong>0,0,0 mm</strong>
+          </div>
+          <div className="compact-stat">
             <span>Benchmark</span>
             <strong>Circular aperture, not long slit</strong>
           </div>
           <div className="compact-stat">
-            <span>Source</span>
+            <ExplainLabel entryId="validation.source.pointSource" explainMode={explainMode}>Source</ExplainLabel>
             <strong>500 nm point mode at 0,0,0 mm</strong>
           </div>
           <div className="compact-stat">
-            <span>Aperture</span>
+            <ExplainLabel entryId="validation.aperture.circularDiameter" explainMode={explainMode}>Aperture</ExplainLabel>
             <strong>1 um diameter at z=10 mm</strong>
           </div>
           <div className="compact-stat">
-            <span>Observation plane</span>
+            <ExplainLabel entryId="validation.observation.zeroThicknessPlane" explainMode={explainMode}>Observation plane</ExplainLabel>
             <strong>10 mm x 10 mm, zero thickness</strong>
           </div>
           <div className="compact-stat">
@@ -671,7 +705,7 @@ export function MaxwellPanel() {
             </strong>
           </div>
           <div className="compact-stat">
-            <span>Numerical method</span>
+            <ExplainLabel entryId="validation.numericalPropagation.huygensFresnel" explainMode={explainMode}>Numerical method</ExplainLabel>
             <strong>{validationResult.comparison.numericalMethod}</strong>
           </div>
           <div className="compact-stat">
@@ -681,20 +715,20 @@ export function MaxwellPanel() {
         </div>
         <div className="maxwell-validation-controls">
           <label className="field-row">
-            <span>Computation mode</span>
+            <ExplainLabel entryId="validation.numericalPropagation.huygensFresnel" explainMode={explainMode}>Computation mode</ExplainLabel>
             <select value={validationMode} onChange={(event) => setValidationMode(event.currentTarget.value as CircularApertureComputationMode)}>
               <option value="analytic-reference">Analytic Airy reference</option>
               <option value="numerical-scalar-propagation">Numerical scalar propagation</option>
               <option value="compare-numerical-analytic">Compare numerical vs analytic</option>
             </select>
           </label>
-          <NumberField label="Map grid" value={validationResolution} unit="px" min={65} max={513} step={2} onChange={(value) => setValidationResolution(oddInteger(value, 65, 513))} />
-          <NumberField label="Radial obs." value={validationRadialSamples} unit="samples" min={65} max={257} step={2} onChange={(value) => setValidationRadialSamples(oddInteger(value, 65, 257))} />
-          <NumberField label="Aperture radial" value={validationApertureRadialSamples} unit="samples" min={8} max={128} step={4} onChange={(value) => setValidationApertureRadialSamples(Math.round(clamp(value, 8, 128)))} />
-          <NumberField label="Aperture angular" value={validationApertureAngularSamples} unit="samples" min={24} max={256} step={8} onChange={(value) => setValidationApertureAngularSamples(Math.round(clamp(value, 24, 256)))} />
+          <NumberField label="Map grid" explainId="validation.samplingControls" explainMode={explainMode} value={validationResolution} unit="px" min={65} max={513} step={2} onChange={(value) => setValidationResolution(oddInteger(value, 65, 513))} />
+          <NumberField label="Radial obs." explainId="validation.samplingControls" explainMode={explainMode} value={validationRadialSamples} unit="samples" min={65} max={257} step={2} onChange={(value) => setValidationRadialSamples(oddInteger(value, 65, 257))} />
+          <NumberField label="Aperture radial" explainId="validation.samplingControls" explainMode={explainMode} value={validationApertureRadialSamples} unit="samples" min={8} max={128} step={4} onChange={(value) => setValidationApertureRadialSamples(Math.round(clamp(value, 8, 128)))} />
+          <NumberField label="Aperture angular" explainId="validation.samplingControls" explainMode={explainMode} value={validationApertureAngularSamples} unit="samples" min={24} max={256} step={8} onChange={(value) => setValidationApertureAngularSamples(Math.round(clamp(value, 24, 256)))} />
         </div>
         <label className="field-row">
-          <span>Observation z</span>
+          <ExplainLabel entryId="validation.observation.zPlane" explainMode={explainMode}>Observation z</ExplainLabel>
           <div className="maxwell-slider-control">
             <input
               type="range"
@@ -718,11 +752,11 @@ export function MaxwellPanel() {
         </label>
         <div className="profile-meta">
           <div className="compact-stat">
-            <span>Expected first Airy minimum</span>
+            <ExplainLabel entryId="validation.firstAiryMinimum" explainMode={explainMode}>Expected first Airy minimum</ExplainLabel>
             <strong>{formatMm(validationResult.expected.firstMinimumRadiusM)} mm</strong>
           </div>
           <div className="compact-stat">
-            <span>Detector half-width</span>
+            <ExplainLabel entryId="validation.observation.planeSize" explainMode={explainMode}>Detector half-width</ExplainLabel>
             <strong>{formatMm(validationResult.expected.detectorHalfWidthM)} mm</strong>
           </div>
           <div className="compact-stat">
@@ -730,11 +764,11 @@ export function MaxwellPanel() {
             <strong>{formatMm(validationResult.expected.detectorHalfDiagonalM)} mm</strong>
           </div>
           <div className="compact-stat">
-            <span>RMS residual</span>
+            <ExplainLabel entryId="validation.rmsResidual" explainMode={explainMode}>RMS residual</ExplainLabel>
             <strong>{validationResult.residuals.rmsResidual.toExponential(2)}</strong>
           </div>
           <div className="compact-stat">
-            <span>Max residual</span>
+            <ExplainLabel entryId="validation.maxResidual" explainMode={explainMode}>Max residual</ExplainLabel>
             <strong>{validationResult.residuals.maxResidual.toExponential(2)}</strong>
           </div>
           <div className="compact-stat">
@@ -750,7 +784,7 @@ export function MaxwellPanel() {
             <strong>{validationResult.comparison.firstMinimumErrorM === null ? "n/a" : `${formatMm(validationResult.comparison.firstMinimumErrorM)} mm`}</strong>
           </div>
           <div className="compact-stat">
-            <span>Finite-plane energy check</span>
+            <ExplainLabel entryId="validation.finitePlaneEnergy" explainMode={explainMode}>Finite-plane energy check</ExplainLabel>
             <strong>{validationResult.comparison.energy.relativePlaneIntegralError.toExponential(2)}</strong>
           </div>
         </div>
@@ -762,7 +796,7 @@ export function MaxwellPanel() {
           {validationMode !== "analytic-reference" && (
             <div>
               <div className="maxwell-section-heading">
-                <h2>Numerical Intensity Map</h2>
+                <h2><ExplainLabel entryId="validation.numericalPropagation.huygensFresnel" explainMode={explainMode}>Numerical Intensity Map</ExplainLabel></h2>
                 <strong>computed</strong>
               </div>
               <ValidationIntensityMap field={validationResult.numericalField} tone="numerical" ariaLabel="Numerical scalar propagation intensity map" />
@@ -771,7 +805,7 @@ export function MaxwellPanel() {
           {validationMode !== "numerical-scalar-propagation" && (
             <div>
               <div className="maxwell-section-heading">
-                <h2>Analytic Reference Map</h2>
+                <h2><ExplainLabel entryId="validation.analyticReference.airyBessel" explainMode={explainMode}>Analytic Reference Map</ExplainLabel></h2>
                 <strong>Airy/Bessel</strong>
               </div>
               <ValidationIntensityMap field={validationResult.analyticField} tone="analytic" ariaLabel="Analytic Airy Bessel reference intensity map" />
@@ -780,7 +814,7 @@ export function MaxwellPanel() {
           {validationMode === "compare-numerical-analytic" && (
             <div>
               <div className="maxwell-section-heading">
-                <h2>Residual Map</h2>
+                <h2><ExplainLabel entryId="validation.residualMap" explainMode={explainMode}>Residual Map</ExplainLabel></h2>
                 <strong>|numerical - analytic|</strong>
               </div>
               <ValidationIntensityMap field={validationResult.residualField} tone="residual" ariaLabel="Numerical minus analytic scalar propagation residual map" />
@@ -824,7 +858,7 @@ export function MaxwellPanel() {
         </div>
           </>
         )}
-        {(validationBenchmark === "single-slit" || validationBenchmark === "double-slit") && <SlitValidationPanel result={selectedSlitResult} />}
+        {(validationBenchmark === "single-slit" || validationBenchmark === "double-slit") && <SlitValidationPanel result={selectedSlitResult} explainMode={explainMode} />}
         {validationBenchmark === "advisor-review" && <AdvisorReviewPanel review={advisorReview} />}
       </div>
 
@@ -851,7 +885,7 @@ export function MaxwellPanel() {
             <MaterialSelectOptions materials={materialOptions} />
           </select>
         </label>
-        <NumberField label="Wavelength" value={wavelengthNm} unit="nm" min={200} max={2000} step={1} onChange={setWavelengthNm} />
+        <NumberField label="Wavelength" explainId="validation.source.wavelength" explainMode={explainMode} value={wavelengthNm} unit="nm" min={200} max={2000} step={1} onChange={setWavelengthNm} />
         <NumberField label="Angle" value={angleDeg} unit="deg" min={-80} max={80} step={0.25} onChange={setAngleDeg} />
         <label className="field-row">
           <span>Pol.</span>
@@ -864,7 +898,7 @@ export function MaxwellPanel() {
 
       <div className="maxwell-material-card">
         <div className="maxwell-section-heading">
-          <h2>Material Library</h2>
+          <h2><ExplainLabel entryId="coating.provenanceReceipt" explainMode={explainMode}>Material Library</ExplainLabel></h2>
           <strong>{materialAudit.resultHash.slice(0, 10)}</strong>
         </div>
         <div className="profile-meta">
@@ -975,11 +1009,11 @@ export function MaxwellPanel() {
                       />
                       <em>nm</em>
                     </div>
-                    <button className="icon-button danger" type="button" title="Remove layer" onClick={() => removeLayer(layer.id)}>
+                    <button className="icon-button danger" type="button" aria-label="Remove layer" onClick={() => removeLayer(layer.id)}>
                       <Trash2 size={15} />
                     </button>
                   </div>
-                  <MaterialPassport material={selectedMaterial} wavelengthNm={wavelengthNm} />
+                  <MaterialPassport material={selectedMaterial} wavelengthNm={wavelengthNm} explainMode={explainMode} />
                 </div>
               );
             })}
@@ -1018,20 +1052,20 @@ export function MaxwellPanel() {
           <strong>{run.tmm.layerCount}</strong>
         </div>
         <div className="compact-stat">
-          <span>Energy error</span>
+          <ExplainLabel entryId="coating.energyBalance" explainMode={explainMode}>Energy error</ExplainLabel>
           <strong>{run.tmm.energyBalanceError.toExponential(2)}</strong>
         </div>
       </div>
 
       <div className="maxwell-flux" aria-label="Poynting flux ratios">
-        <FluxRow label="R" value={run.tmm.reflectance} />
-        <FluxRow label="T" value={run.tmm.transmittance} />
-        <FluxRow label="A" value={run.tmm.absorbance} />
+        <FluxRow label="R" value={run.tmm.reflectance} explainId="coating.reflectance" explainMode={explainMode} />
+        <FluxRow label="T" value={run.tmm.transmittance} explainId="coating.transmittance" explainMode={explainMode} />
+        <FluxRow label="A" value={run.tmm.absorbance} explainId="coating.absorbance" explainMode={explainMode} />
       </div>
 
       <div className="maxwell-monitor-card">
         <div className="maxwell-section-heading">
-          <h2>Planar Field Monitor</h2>
+          <h2><ExplainLabel entryId="coating.fieldMonitor" explainMode={explainMode}>Planar Field Monitor</ExplainLabel></h2>
           <strong>{run.fieldMonitor.resultHash.slice(0, 10)}</strong>
         </div>
         <FieldMonitorPlot monitor={run.fieldMonitor} />
@@ -1139,16 +1173,16 @@ export function MaxwellPanel() {
           <NumberField label="Min thick" value={searchThicknessMinNm} unit="nm" min={1} max={1000} step={5} onChange={setSearchThicknessMinNm} />
           <NumberField label="Max thick" value={searchThicknessMaxNm} unit="nm" min={1} max={1000} step={5} onChange={setSearchThicknessMaxNm} />
           <NumberField label="Step" value={searchThicknessStepNm} unit="nm" min={1} max={250} step={5} onChange={setSearchThicknessStepNm} />
-          <NumberField label="Beam" value={searchBeamWidth} min={2} max={32} step={1} onChange={setSearchBeamWidth} />
+          <NumberField label="Beam" explainId="search.beamWidth" explainMode={explainMode} value={searchBeamWidth} min={2} max={32} step={1} onChange={setSearchBeamWidth} />
         </div>
         <div className="maxwell-robust-controls">
           <label className="maxwell-material-check">
             <input type="checkbox" checked={robustSearchEnabled} onChange={() => setRobustSearchEnabled((current) => !current)} />
-            <span>Robust Search</span>
+            <ExplainLabel entryId="robust.p90Score" explainMode={explainMode}>Robust Search</ExplainLabel>
             <strong>drift yield</strong>
           </label>
           <label className="field-row">
-            <span>Model</span>
+            <ExplainLabel entryId={robustUncertaintyMode === "shared-scale" ? "robust.sharedDepositionScale" : robustUncertaintyMode === "shared-offset-residual" ? "robust.sharedOffsetResidual" : "robust.independentThickness"} explainMode={explainMode}>Model</ExplainLabel>
             <select value={robustUncertaintyMode} onChange={(event) => setRobustUncertaintyMode(event.currentTarget.value as RobustUncertaintyModeId)}>
               <option value="independent-thickness">Independent thickness</option>
               <option value="shared-scale">Shared deposition scale</option>
@@ -1163,9 +1197,9 @@ export function MaxwellPanel() {
           <NumberField label="Scale sigma" value={robustScaleSigmaPercent} unit="%" min={0} max={20} step={0.1} onChange={setRobustScaleSigmaPercent} />
           <NumberField label="Offset sigma" value={robustOffsetSigmaNm} unit="nm" min={0} max={50} step={0.25} onChange={setRobustOffsetSigmaNm} />
           <NumberField label="Residual" value={robustResidualSigmaNm} unit="nm" min={0} max={20} step={0.25} onChange={setRobustResidualSigmaNm} />
-          <NumberField label="Max samples" value={robustMaxSamples} min={1} max={243} step={1} onChange={setRobustMaxSamples} />
+          <NumberField label="Max samples" explainId="robust.sampleReduction" explainMode={explainMode} value={robustMaxSamples} min={1} max={243} step={1} onChange={setRobustMaxSamples} />
           <label className="field-row">
-            <span>Ranking</span>
+            <ExplainLabel entryId={robustPrimaryMetric === "expectedScore" ? "robust.expectedScore" : robustPrimaryMetric === "worstCaseScore" ? "robust.worstCaseScore" : robustPrimaryMetric === "passRate" ? "robust.passRate" : "robust.p90Score"} explainMode={explainMode}>Ranking</ExplainLabel>
             <select value={robustPrimaryMetric} onChange={(event) => setRobustPrimaryMetric(event.currentTarget.value as RobustCoatingSearchPrimaryMetric)}>
               <option value="p90Score">p90 score</option>
               <option value="expectedScore">expected score</option>
@@ -1204,7 +1238,7 @@ export function MaxwellPanel() {
           <div className="maxwell-search-results">
             <div className="profile-meta">
               <div className="compact-stat">
-                <span>Best p90</span>
+                <ExplainLabel entryId="robust.p90Score" explainMode={explainMode}>Best p90</ExplainLabel>
                 <strong>{robustResult.best.yield.p90Score.toExponential(2)}</strong>
               </div>
               <div className="compact-stat">
@@ -1233,19 +1267,19 @@ export function MaxwellPanel() {
                     <strong>{candidate.nominal.score.toExponential(2)}</strong>
                   </div>
                   <div className="compact-stat">
-                    <span>Expected</span>
+                    <ExplainLabel entryId="robust.expectedScore" explainMode={explainMode}>Expected</ExplainLabel>
                     <strong>{candidate.yield.expectedScore.toExponential(2)}</strong>
                   </div>
                   <div className="compact-stat">
-                    <span>P90</span>
+                    <ExplainLabel entryId="robust.p90Score" explainMode={explainMode}>P90</ExplainLabel>
                     <strong>{candidate.yield.p90Score.toExponential(2)}</strong>
                   </div>
                   <div className="compact-stat">
-                    <span>Worst</span>
+                    <ExplainLabel entryId="robust.worstCaseScore" explainMode={explainMode}>Worst</ExplainLabel>
                     <strong>{candidate.yield.worstCaseScore.toExponential(2)}</strong>
                   </div>
                   <div className="compact-stat">
-                    <span>Pass rate</span>
+                    <ExplainLabel entryId="robust.passRate" explainMode={explainMode}>Pass rate</ExplainLabel>
                     <strong>{candidate.yield.passRate === undefined ? "n/a" : formatPercent(candidate.yield.passRate)}</strong>
                   </div>
                   <div className="compact-stat">
@@ -1473,6 +1507,8 @@ export function MaxwellPanel() {
 
 function NumberField({
   label,
+  explainId,
+  explainMode = false,
   value,
   unit,
   min,
@@ -1481,6 +1517,8 @@ function NumberField({
   onChange
 }: {
   label: string;
+  explainId?: ExplainEntryId;
+  explainMode?: boolean;
   value: number;
   unit?: string;
   min?: number;
@@ -1490,7 +1528,7 @@ function NumberField({
 }) {
   return (
     <label className="field-row">
-      <span>{label}</span>
+      {explainId ? <ExplainLabel entryId={explainId} explainMode={explainMode}>{label}</ExplainLabel> : <span>{label}</span>}
       <div className="number-input">
         <input
           type="number"
@@ -1506,10 +1544,10 @@ function NumberField({
   );
 }
 
-function FluxRow({ label, value }: { label: string; value: number }) {
+function FluxRow({ label, value, explainId, explainMode = false }: { label: string; value: number; explainId?: ExplainEntryId; explainMode?: boolean }) {
   return (
     <div className="maxwell-flux-row">
-      <span>{label}</span>
+      {explainId ? <ExplainLabel entryId={explainId} explainMode={explainMode}>{label}</ExplainLabel> : <span>{label}</span>}
       <div className="maxwell-flux-bar">
         <i style={{ width: `${clamp(value, 0, 1) * 100}%` }} />
       </div>
@@ -1543,18 +1581,19 @@ function MaterialSelectOptions({ materials }: { materials: MaterialCatalogEntry[
   );
 }
 
-function MaterialPassport({ material, wavelengthNm }: { material: MaterialCatalogEntry | undefined; wavelengthNm: number }) {
+function MaterialPassport({ material, wavelengthNm, explainMode = false }: { material: MaterialCatalogEntry | undefined; wavelengthNm: number; explainMode?: boolean }) {
   if (!material) {
     return <div className="maxwell-material-passport warning">Missing material reference</div>;
   }
   const range = materialWavelengthRange(material);
   const outsideRange = range ? wavelengthNm * 1e-9 < range[0] || wavelengthNm * 1e-9 > range[1] : false;
   return (
-    <div className={`maxwell-material-passport${outsideRange ? " warning" : ""}`} title={material.source}>
-      <span>{material.origin === "imported" ? "Imported" : "Built-in diagnostic"}</span>
+    <div className={`maxwell-material-passport${outsideRange ? " warning" : ""}`}>
+      <ExplainLabel entryId="coating.provenanceReceipt" explainMode={explainMode}>{material.origin === "imported" ? "Imported" : "Built-in diagnostic"}</ExplainLabel>
       <strong>{material.materialHash.slice(0, 10)}</strong>
       <span>{formatWavelengthRange(range)}</span>
       <span>{material.origin === "imported" ? material.sourcePackLabel ?? material.sourcePackId ?? "imported pack" : material.sourceRecordId}</span>
+      <span>{material.source}</span>
       {outsideRange && <span>outside wavelength range</span>}
     </div>
   );
@@ -1629,7 +1668,7 @@ function FieldMonitorPlot({ monitor }: { monitor: PlanarFieldMonitorResult }) {
   );
 }
 
-function SlitValidationPanel({ result }: { result: SlitOrderValidationResult }) {
+function SlitValidationPanel({ result, explainMode = false }: { result: SlitOrderValidationResult; explainMode?: boolean }) {
   const isSingle = result.config.kind === "long-single-slit-sinc2";
   const visibleFeatures = result.expected.features.filter((feature) => feature.visible);
 
@@ -1641,15 +1680,15 @@ function SlitValidationPanel({ result }: { result: SlitOrderValidationResult }) 
       </div>
       <div className="profile-meta">
         <div className="compact-stat">
-          <span>Source</span>
+          <ExplainLabel entryId="validation.source.wavelength" explainMode={explainMode}>Source</ExplainLabel>
           <strong>500 nm coherent plane wave</strong>
         </div>
         <div className="compact-stat">
-          <span>Aperture</span>
+          <ExplainLabel entryId="validation.aperture.circularDiameter" explainMode={explainMode}>Aperture</ExplainLabel>
           <strong>{isSingle ? "100 um long slit" : "20 um slits, 100 um separation"}</strong>
         </div>
         <div className="compact-stat">
-          <span>Propagation</span>
+          <ExplainLabel entryId="validation.numericalPropagation.huygensFresnel" explainMode={explainMode}>Propagation</ExplainLabel>
           <strong>1 m to zero-thickness plane</strong>
         </div>
         <div className="compact-stat">
@@ -1657,11 +1696,11 @@ function SlitValidationPanel({ result }: { result: SlitOrderValidationResult }) 
           <strong>{isSingle ? "y1 ~= 5.00 mm" : "orders every 5.00 mm"}</strong>
         </div>
         <div className="compact-stat">
-          <span>RMS residual</span>
+          <ExplainLabel entryId="validation.rmsResidual" explainMode={explainMode}>RMS residual</ExplainLabel>
           <strong>{result.residuals.rmsResidual.toExponential(2)}</strong>
         </div>
         <div className="compact-stat">
-          <span>Max residual</span>
+          <ExplainLabel entryId="validation.maxResidual" explainMode={explainMode}>Max residual</ExplainLabel>
           <strong>{result.residuals.maxResidual.toExponential(2)}</strong>
         </div>
       </div>
