@@ -21,6 +21,7 @@ export * from "./measurement/modelComparison2d";
 export * from "./measurement/residualMaps2d";
 export * from "./measurement/roi2d";
 export * from "./maxwell/complex";
+export * from "./maxwell/coatingRobustSearch";
 export * from "./maxwell/coatingSearch";
 export * from "./maxwell/coatingStack";
 export * from "./maxwell/coatingYield";
