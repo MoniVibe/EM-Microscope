@@ -1,8 +1,8 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.3 Maxwell Design Foundry planar multilayer
-transfer-matrix workbench with circular-aperture, long-slit, and double-slit scalar diffraction validation plus
-Advisor Review Mode exports and a scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
+An EM-first light simulator MVP. The visible web app is now the L6.3a Maxwell Design Foundry planar multilayer
+transfer-matrix workbench with an accessible explainability layer, circular-aperture, long-slit, and double-slit
+scalar diffraction validation, Advisor Review Mode exports, and a scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
 L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. L4.1
@@ -31,14 +31,16 @@ manifest types, and an `ExternalFdtdBackend`/Meep-style export scaffold that is 
 L6.1 adds a visible ordered diffraction validation bench for the circular pinhole Airy/Bessel benchmark. L6.2 adds an
 independent numerical scalar propagation path for that same benchmark and compares it against the analytic Airy reference.
 L6.3 adds coherent long-slit `sinc^2`, double-slit/order-spacing validation, and Advisor Review Mode exports that
-combine the circular, single-slit, and double-slit proof reports.
+combine the circular, single-slit, and double-slit proof reports. L6.3a adds accessible custom tooltips,
+under-the-hood formula/snippet panels, Explain mode highlighting, and a searchable explanation drawer without
+changing solver behavior.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L6.3 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L6.3a Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -50,7 +52,8 @@ simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing
   scalar diffraction validation bench for the 500 nm source, 1 um circular aperture, independent numerical
   Huygens-Fresnel propagation, analytic Airy/Bessel reference maps, residual maps, radial mismatch curves,
   convergence controls, finite-plane energy checks, coherent long-slit `sinc^2` validation, double-slit/grating
-  order validation, Advisor Review Mode Markdown/JSON/CSV exports,
+  order validation, Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
+  formula/snippet panels, Explain mode highlighting, and a searchable explanation drawer,
   and strict limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
@@ -456,6 +459,23 @@ hash evidence.
 L6.3 remains scalar diffraction validation. It does not execute FDTD, FEM, BEM, RCWA, material aperture interaction,
 finite-thickness screens, curved lenses, sensor transport, arbitrary 3D geometry, or microscope digital-twin
 calibration.
+
+## L6.3a Explainability Layer
+
+L6.3a adds a UI/education layer without changing the solvers. Important labels, controls, metrics, panels, badges,
+and result values can expose short custom tooltips on hover or keyboard focus. These tooltips are implemented with
+`aria-describedby` and `role="tooltip"` and are dismissible with Escape; the app does not rely on native `title`
+attributes for the visible Maxwell explainability content.
+
+Richer explanations live outside tooltips in keyboard/touch-accessible under-the-hood panels and the searchable
+`Show all explanations` drawer. Those panels include formulas, snippets, units, assumptions, and limitation notes
+for Airy/Bessel references, scalar Huygens-Fresnel propagation, residual metrics, finite-plane checks,
+`PlanarTmmBackend`, scaffold-only `ExternalFdtdBackend`, material provenance, coating R/T/A, and robust p90/sample
+reduction meanings.
+
+The boundary language stays explicit: diffraction explanations describe scalar validation only, the executable
+Maxwell path remains planar TMM only, and L6.3a does not add full 3D Maxwell, FDTD, FEM, BEM, RCWA, finite-thickness
+aperture, sensor, or digital-twin execution.
 
 Recommended next Maxwell steps:
 
