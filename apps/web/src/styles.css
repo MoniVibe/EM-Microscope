@@ -525,6 +525,33 @@ h2 {
   gap: 7px;
 }
 
+.maxwell-validation-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.maxwell-validation-tabs button {
+  min-height: 34px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #253247;
+  font-size: 12px;
+}
+
+.maxwell-validation-tabs button.active {
+  border-color: #0f766e;
+  background: #e6f4f1;
+  color: #0f4f49;
+  font-weight: 700;
+}
+
+.maxwell-validation-mode-panel {
+  display: grid;
+  gap: 10px;
+}
+
 .maxwell-validation-controls {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -604,6 +631,42 @@ h2 {
   fill: none;
   stroke: #c2410c;
   stroke-width: 2.2;
+}
+
+.maxwell-order-table {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.maxwell-advisor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.maxwell-advisor-card {
+  display: grid;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #fbfdff;
+}
+
+.maxwell-advisor-card.pass {
+  border-color: #8bc5a2;
+  background: #f0faf4;
+}
+
+.maxwell-advisor-card.warning {
+  border-color: #e7c66c;
+  background: #fff8e6;
+}
+
+.maxwell-advisor-card.fail {
+  border-color: #ef9a9a;
+  background: #fff1f2;
 }
 
 .maxwell-slider-control {
@@ -1289,8 +1352,11 @@ h2 {
   }
 
   .maxwell-validation-controls,
+  .maxwell-validation-tabs,
   .maxwell-validation-output-grid,
-  .maxwell-validation-output-grid.three {
+  .maxwell-validation-output-grid.three,
+  .maxwell-order-table,
+  .maxwell-advisor-grid {
     grid-template-columns: 1fr;
   }
 

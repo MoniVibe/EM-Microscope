@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   applyCoatingSearchCandidate,
+  advisorValidationReviewCsv,
+  advisorValidationReviewJson,
+  advisorValidationReviewMarkdown,
   auditMaterialCatalog,
   circularApertureValidationJson,
   circularApertureValidationMarkdown,
@@ -22,8 +25,13 @@ import {
   runCoatingYieldAnalysis,
   runCoatingSweep,
   runCircularApertureValidation,
+  runAdvisorValidationReview,
+  runSlitOrderValidation,
   serializeCoatingStackDesign,
+  slitOrderValidationJson,
+  slitOrderValidationMarkdown,
   visibleArObjective,
+  type AdvisorValidationReviewResult,
   type CircularApertureComputationMode,
   type CircularApertureValidationResult,
   type CoatingDesignResult,
@@ -45,12 +53,14 @@ import {
   type RobustCoatingSearchPrimaryMetric,
   type RobustCoatingSearchResult,
   type FieldOutput2D,
+  type SlitOrderValidationResult,
   type SolverWarning
 } from "@emmicro/core";
 import { FileDown, Plus, Save, ShieldCheck, Sparkles, Trash2, Upload } from "lucide-react";
 
 type StackPresetId = "bareGlass" | "quarterWaveAr" | "broadbandAr" | "absorbingFilm";
 type RobustUncertaintyModeId = "independent-thickness" | "shared-scale" | "shared-offset-residual";
+type ValidationBenchmarkId = "circular-pinhole" | "single-slit" | "double-slit" | "advisor-review";
 
 type EditableLayer = {
   id: string;
@@ -151,6 +161,7 @@ export function MaxwellPanel() {
   const [robustPassThresholdText, setRobustPassThresholdText] = useState("");
   const [robustResult, setRobustResult] = useState<RobustCoatingSearchResult | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [validationBenchmark, setValidationBenchmark] = useState<ValidationBenchmarkId>("circular-pinhole");
   const [validationPlaneZMm, setValidationPlaneZMm] = useState(20);
   const [validationMode, setValidationMode] = useState<CircularApertureComputationMode>("compare-numerical-analytic");
   const [validationResolution, setValidationResolution] = useState(257);
@@ -196,6 +207,10 @@ export function MaxwellPanel() {
     });
   }, [validationApertureAngularSamples, validationApertureRadialSamples, validationMode, validationPlaneZMm, validationRadialSamples, validationResolution]);
   const validationPipeline = useMemo(() => circularApertureValidationPipeline(validationResult), [validationResult]);
+  const singleSlitResult = useMemo<SlitOrderValidationResult>(() => runSlitOrderValidation({ kind: "long-single-slit-sinc2" }), []);
+  const doubleSlitResult = useMemo<SlitOrderValidationResult>(() => runSlitOrderValidation({ kind: "double-slit-orders" }), []);
+  const selectedSlitResult = validationBenchmark === "double-slit" ? doubleSlitResult : singleSlitResult;
+  const advisorReview = useMemo<AdvisorValidationReviewResult>(() => runAdvisorValidationReview(), []);
 
   const stack = useMemo<CoatingStackDefinition>(
     () => ({
@@ -363,8 +378,8 @@ export function MaxwellPanel() {
       const thicknessMaxNm = clamp(Math.max(searchThicknessMinNm, searchThicknessMaxNm), thicknessMinNm, 10000);
       const thicknessStepNm = clamp(searchThicknessStepNm, 1, Math.max(1, thicknessMaxNm - thicknessMinNm));
       const nominalSearch = {
-        id: `l62-${presetId}-coating-search`,
-        label: `L6.2 ${stackPresets[presetId].label} coating search`,
+        id: `l63-${presetId}-coating-search`,
+        label: `L6.3 ${stackPresets[presetId].label} coating search`,
         baseStack: { ...stack, layers: [] },
         wavelengthsM: wavelengthsNm.map((nm) => clamp(nm, 200, 2000) * 1e-9),
         anglesRad: [stack.angleRad],
@@ -440,8 +455,8 @@ export function MaxwellPanel() {
                 };
         const robust = runRobustCoatingSearch(
           {
-            id: `l62-${presetId}-robust-yield-search`,
-            label: `L6.2 ${stackPresets[presetId].label} robust-yield coating search`,
+            id: `l63-${presetId}-robust-yield-search`,
+            label: `L6.3 ${stackPresets[presetId].label} robust-yield coating search`,
             nominalSearch,
             uncertainty: {
               thickness: independentThickness,
@@ -494,11 +509,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L6.2 Maxwell Design Foundry">
-      <h2>L6.2 Maxwell Design Foundry</h2>
+    <section className="wave-panel maxwell-panel" aria-label="L6.3 Maxwell Design Foundry">
+      <h2>L6.3 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.2 numerical scalar propagation checked against Airy/Bessel</strong>
-        <span>not a general 3D Maxwell solver; L6.2 validates scalar diffraction numerically and keeps ExternalFdtdBackend scaffold-only</span>
+        <strong>frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.3 coherent slit/order validation and Advisor Review Mode</strong>
+        <span>not a general 3D Maxwell solver; L6.3 validates scalar diffraction benchmarks and keeps ExternalFdtdBackend scaffold-only</span>
       </div>
 
       <div className="profile-meta">
@@ -603,9 +618,25 @@ export function MaxwellPanel() {
           <strong>{validationResult.resultHash.slice(0, 10)}</strong>
         </div>
         <div className="l2-disclosure">
-          <strong>Circular pinhole Airy/Bessel benchmark</strong>
-          <span>independent numerical scalar propagation compared against analytic Airy, not full 3D Maxwell aperture solving</span>
+          <strong>Physics exam sequence</strong>
+          <span>hand-checkable scalar diffraction benchmarks with numerical results, analytic references, residuals, and report exports</span>
         </div>
+        <div className="maxwell-validation-tabs" role="tablist" aria-label="Validation benchmark selector">
+          <button type="button" className={validationBenchmark === "circular-pinhole" ? "active" : ""} onClick={() => setValidationBenchmark("circular-pinhole")}>
+            Circular pinhole Airy/Bessel
+          </button>
+          <button type="button" className={validationBenchmark === "single-slit" ? "active" : ""} onClick={() => setValidationBenchmark("single-slit")}>
+            Long single slit sinc^2
+          </button>
+          <button type="button" className={validationBenchmark === "double-slit" ? "active" : ""} onClick={() => setValidationBenchmark("double-slit")}>
+            Double slit / grating orders
+          </button>
+          <button type="button" className={validationBenchmark === "advisor-review" ? "active" : ""} onClick={() => setValidationBenchmark("advisor-review")}>
+            Advisor Review Mode
+          </button>
+        </div>
+        {validationBenchmark === "circular-pinhole" && (
+          <>
         <div className="maxwell-validation-pipeline">
           {validationPipeline.map((step) => (
             <div className="compact-stat" key={step.index}>
@@ -791,6 +822,10 @@ export function MaxwellPanel() {
             <span>Validation Markdown</span>
           </button>
         </div>
+          </>
+        )}
+        {(validationBenchmark === "single-slit" || validationBenchmark === "double-slit") && <SlitValidationPanel result={selectedSlitResult} />}
+        {validationBenchmark === "advisor-review" && <AdvisorReviewPanel review={advisorReview} />}
       </div>
 
       <div className="maxwell-grid">
@@ -1594,6 +1629,169 @@ function FieldMonitorPlot({ monitor }: { monitor: PlanarFieldMonitorResult }) {
   );
 }
 
+function SlitValidationPanel({ result }: { result: SlitOrderValidationResult }) {
+  const isSingle = result.config.kind === "long-single-slit-sinc2";
+  const visibleFeatures = result.expected.features.filter((feature) => feature.visible);
+
+  return (
+    <div className="maxwell-validation-mode-panel">
+      <div className="l2-disclosure">
+        <strong>{isSingle ? "Long single slit sinc^2 validation" : "Double slit / grating order validation"}</strong>
+        <span>{isSingle ? "coherent plane wave through a 100 um long slit; hand check y1 ~= lambda L / a = 5.00 mm" : "coherent plane wave through two long slits; hand check order spacing dy ~= lambda L / d = 5.00 mm"}</span>
+      </div>
+      <div className="profile-meta">
+        <div className="compact-stat">
+          <span>Source</span>
+          <strong>500 nm coherent plane wave</strong>
+        </div>
+        <div className="compact-stat">
+          <span>Aperture</span>
+          <strong>{isSingle ? "100 um long slit" : "20 um slits, 100 um separation"}</strong>
+        </div>
+        <div className="compact-stat">
+          <span>Propagation</span>
+          <strong>1 m to zero-thickness plane</strong>
+        </div>
+        <div className="compact-stat">
+          <span>Hand calculation</span>
+          <strong>{isSingle ? "y1 ~= 5.00 mm" : "orders every 5.00 mm"}</strong>
+        </div>
+        <div className="compact-stat">
+          <span>RMS residual</span>
+          <strong>{result.residuals.rmsResidual.toExponential(2)}</strong>
+        </div>
+        <div className="compact-stat">
+          <span>Max residual</span>
+          <strong>{result.residuals.maxResidual.toExponential(2)}</strong>
+        </div>
+      </div>
+      <div className="maxwell-validation-output-grid three">
+        <div>
+          <div className="maxwell-section-heading">
+            <h2>Numerical Slit Map</h2>
+            <strong>computed</strong>
+          </div>
+          <ValidationIntensityMap field={result.numericalField} tone="numerical" ariaLabel={`${result.label} numerical intensity map`} />
+        </div>
+        <div>
+          <div className="maxwell-section-heading">
+            <h2>Analytic Reference Map</h2>
+            <strong>{isSingle ? "sinc^2" : "orders + envelope"}</strong>
+          </div>
+          <ValidationIntensityMap field={result.analyticField} tone="analytic" ariaLabel={`${result.label} analytic reference map`} />
+        </div>
+        <div>
+          <div className="maxwell-section-heading">
+            <h2>Residual Map</h2>
+            <strong>|numerical - analytic|</strong>
+          </div>
+          <ValidationIntensityMap field={result.residualField} tone="residual" ariaLabel={`${result.label} residual map`} />
+        </div>
+      </div>
+      <div className="maxwell-validation-output-grid">
+        <div className="maxwell-validation-profile-panel">
+          <div className="maxwell-section-heading">
+            <h2>{isSingle ? "sinc^2 Centerline" : "Order Centerline"}</h2>
+            <strong>numerical vs analytic</strong>
+          </div>
+          <SlitProfilePlot result={result} />
+        </div>
+        <div className="maxwell-validation-profile-panel">
+          <div className="maxwell-section-heading">
+            <h2>Residual Curve</h2>
+            <strong>signed mismatch</strong>
+          </div>
+          <SlitResidualPlot result={result} />
+        </div>
+      </div>
+      <div className="maxwell-order-table" aria-label={isSingle ? "Single slit minima table" : "Double slit order table"}>
+        {visibleFeatures.map((feature) => (
+          <div className="compact-stat" key={`${feature.kind}-${feature.order}`}>
+            <span>{feature.kind === "minimum" ? "Minimum" : "Order"} m={feature.order}</span>
+            <strong>
+              expected {formatMm(feature.expectedPositionM)} mm / measured {feature.measuredPositionM === null ? "n/a" : `${formatMm(feature.measuredPositionM)} mm`}
+            </strong>
+          </div>
+        ))}
+      </div>
+      <ul className="warning-list">
+        {result.warnings.map((warning) => (
+          <li key={warning.code}>{warning.message}</li>
+        ))}
+      </ul>
+      <div className="maxwell-layer-actions">
+        <button type="button" onClick={() => undefined}>
+          <Sparkles size={15} />
+          <span>Run Slit Benchmark</span>
+        </button>
+        <button type="button" onClick={() => exportSlitValidationJson(result)}>
+          <Save size={15} />
+          <span>Slit JSON</span>
+        </button>
+        <button type="button" onClick={() => exportSlitValidationMarkdown(result)}>
+          <FileDown size={15} />
+          <span>Slit Markdown</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AdvisorReviewPanel({ review }: { review: AdvisorValidationReviewResult }) {
+  const summaries = [review.circular, review.singleSlit, review.doubleSlit];
+  return (
+    <div className="maxwell-validation-mode-panel" aria-label="Advisor Review Mode">
+      <div className="l2-disclosure">
+        <strong>Run Advisor Review</strong>
+        <span>one-click report for circular pinhole, long slit sinc^2, and double-slit order spacing validations</span>
+      </div>
+      <div className="maxwell-advisor-grid">
+        {summaries.map((summary) => (
+          <div className={`maxwell-advisor-card ${summary.status}`} key={summary.id}>
+            <div className="maxwell-section-heading">
+              <h2>{summary.benchmark}</h2>
+              <strong>{summary.status}</strong>
+            </div>
+            <div className="compact-stat">
+              <span>Expected</span>
+              <strong>{summary.expected}</strong>
+            </div>
+            <div className="compact-stat">
+              <span>Measured</span>
+              <strong>{summary.measured}</strong>
+            </div>
+            <div className="compact-stat">
+              <span>Residuals</span>
+              <strong>
+                RMS {summary.rmsResidual.toExponential(2)} / max {summary.maxResidual.toExponential(2)}
+              </strong>
+            </div>
+          </div>
+        ))}
+      </div>
+      <ul className="warning-list">
+        {review.warnings.slice(0, 8).map((warning, index) => (
+          <li key={`${warning.elementId ?? "review"}-${warning.code}-${index}`}>{warning.elementId ? `${warning.elementId}: ` : ""}{warning.message}</li>
+        ))}
+      </ul>
+      <div className="maxwell-layer-actions">
+        <button type="button" onClick={() => exportAdvisorReviewMarkdown(review)}>
+          <FileDown size={15} />
+          <span>Advisor Markdown</span>
+        </button>
+        <button type="button" onClick={() => exportAdvisorReviewJson(review)}>
+          <Save size={15} />
+          <span>Advisor JSON</span>
+        </button>
+        <button type="button" onClick={() => exportAdvisorReviewCsv(review)}>
+          <FileDown size={15} />
+          <span>Advisor CSV</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ValidationIntensityMap({ field, tone, ariaLabel }: { field: FieldOutput2D; tone: "numerical" | "analytic" | "residual"; ariaLabel: string }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -1706,6 +1904,89 @@ function ValidationResidualPlot({ result }: { result: CircularApertureValidation
   );
 }
 
+function SlitProfilePlot({ result }: { result: SlitOrderValidationResult }) {
+  const width = 720;
+  const height = 190;
+  const pad = 24;
+  const usableWidth = width - pad * 2;
+  const usableHeight = height - pad * 2;
+  const minPositionM = result.profile[0]?.positionM ?? -1;
+  const maxPositionM = result.profile[result.profile.length - 1]?.positionM ?? 1;
+  const spanM = maxPositionM - minPositionM;
+  const numericalPoints = result.profile.map((sample) => plotPoint(sample.positionM, sample.numericalIntensity)).join(" ");
+  const analyticPoints = result.profile.map((sample) => plotPoint(sample.positionM, sample.analyticIntensity)).join(" ");
+  const markerLines = result.expected.features
+    .filter((feature) => feature.visible)
+    .map((feature) => {
+      const x = pad + usableWidth * ((feature.expectedPositionM - minPositionM) / spanM);
+      return <line className="maxwell-validation-marker" key={feature.order} x1={x} y1={pad} x2={x} y2={height - pad} />;
+    });
+
+  function plotPoint(positionM: number, intensity: number): string {
+    const x = pad + usableWidth * ((positionM - minPositionM) / spanM);
+    const y = pad + usableHeight * (1 - clamp(intensity, 0, 1));
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  }
+
+  return (
+    <svg className="maxwell-validation-profile" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${result.label} centerline numerical and analytic overlay`}>
+      <rect x="0" y="0" width={width} height={height} />
+      <line className="profile-axis" x1={pad} y1={height - pad} x2={width - pad} y2={height - pad} />
+      <line className="profile-axis" x1={pad} y1={pad} x2={pad} y2={height - pad} />
+      <polyline className="maxwell-validation-analytic-line" points={analyticPoints} />
+      <polyline className="maxwell-validation-model-line" points={numericalPoints} />
+      {markerLines}
+      <text x={pad} y={height - 6}>
+        {formatMm(minPositionM)} mm
+      </text>
+      <text x={width - pad - 82} y={height - 6}>
+        {formatMm(maxPositionM)} mm
+      </text>
+      <text x={pad + 4} y={pad + 12}>
+        {result.config.kind === "long-single-slit-sinc2" ? "minima markers" : "order markers"}
+      </text>
+    </svg>
+  );
+}
+
+function SlitResidualPlot({ result }: { result: SlitOrderValidationResult }) {
+  const width = 720;
+  const height = 190;
+  const pad = 24;
+  const usableWidth = width - pad * 2;
+  const usableHeight = height - pad * 2;
+  const minPositionM = result.profile[0]?.positionM ?? -1;
+  const maxPositionM = result.profile[result.profile.length - 1]?.positionM ?? 1;
+  const spanM = maxPositionM - minPositionM;
+  const maxResidual = Math.max(1e-12, result.residuals.maxResidual);
+  const zeroY = pad + usableHeight / 2;
+  const points = result.profile
+    .map((sample) => {
+      const x = pad + usableWidth * ((sample.positionM - minPositionM) / spanM);
+      const y = zeroY - (usableHeight / 2) * clamp(sample.residual / maxResidual, -1, 1);
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+
+  return (
+    <svg className="maxwell-validation-profile" viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${result.label} signed residual curve`}>
+      <rect x="0" y="0" width={width} height={height} />
+      <line className="profile-axis" x1={pad} y1={zeroY} x2={width - pad} y2={zeroY} />
+      <line className="profile-axis" x1={pad} y1={pad} x2={pad} y2={height - pad} />
+      <polyline className="maxwell-validation-residual-line" points={points} />
+      <text x={pad} y={height - 6}>
+        {formatMm(minPositionM)} mm
+      </text>
+      <text x={width - pad - 82} y={height - 6}>
+        {formatMm(maxPositionM)} mm
+      </text>
+      <text x={pad + 4} y={pad + 12}>
+        max residual {maxResidual.toExponential(1)}
+      </text>
+    </svg>
+  );
+}
+
 function exportStackJson(
   stack: CoatingStackDefinition,
   materialCatalog: MaxwellMaterialCatalog,
@@ -1715,7 +1996,7 @@ function exportStackJson(
   yieldAnalysis: CoatingYieldResult
 ): void {
   const design = serializeCoatingStackDesign(stack, materialCatalog);
-  downloadText("l62-numerical-propagation-stack.json", "application/json", JSON.stringify({ solverBackend: run.solverBackend, design, run, sweep, foundry, yieldAnalysis }, null, 2));
+  downloadText("l63-slit-order-validation-stack.json", "application/json", JSON.stringify({ solverBackend: run.solverBackend, design, run, sweep, foundry, yieldAnalysis }, null, 2));
 }
 
 function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult, yieldAnalysis: CoatingYieldResult): void {
@@ -1790,23 +2071,43 @@ function exportFoundryJson(foundry: CoatingDesignResult): void {
 }
 
 function exportSearchJson(search: CoatingSearchResult): void {
-  downloadText("l62-numerical-propagation-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l63-slit-order-validation-coating-search.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportRobustSearchJson(search: RobustCoatingSearchResult): void {
-  downloadText("l62-numerical-propagation-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l63-slit-order-validation-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportFdtdScaffoldJson(scaffold: ExternalFdtdScaffoldExport): void {
-  downloadText("l62-3d-fdtd-scaffold.json", "application/json", JSON.stringify(scaffold, null, 2));
+  downloadText("l63-3d-fdtd-scaffold.json", "application/json", JSON.stringify(scaffold, null, 2));
 }
 
 function exportValidationJson(result: CircularApertureValidationResult): void {
-  downloadText("l62-numerical-propagation-validation-bench.json", "application/json", JSON.stringify(circularApertureValidationJson(result), null, 2));
+  downloadText("l63-circular-pinhole-validation-bench.json", "application/json", JSON.stringify(circularApertureValidationJson(result), null, 2));
 }
 
 function exportValidationMarkdown(result: CircularApertureValidationResult): void {
-  downloadText("l62-numerical-propagation-validation-bench.md", "text/markdown", circularApertureValidationMarkdown(result));
+  downloadText("l63-circular-pinhole-validation-bench.md", "text/markdown", circularApertureValidationMarkdown(result));
+}
+
+function exportSlitValidationJson(result: SlitOrderValidationResult): void {
+  downloadText(`${result.config.kind}.json`, "application/json", JSON.stringify(slitOrderValidationJson(result), null, 2));
+}
+
+function exportSlitValidationMarkdown(result: SlitOrderValidationResult): void {
+  downloadText(`${result.config.kind}.md`, "text/markdown", slitOrderValidationMarkdown(result));
+}
+
+function exportAdvisorReviewMarkdown(review: AdvisorValidationReviewResult): void {
+  downloadText("advisor_validation_report.md", "text/markdown", advisorValidationReviewMarkdown(review));
+}
+
+function exportAdvisorReviewJson(review: AdvisorValidationReviewResult): void {
+  downloadText("advisor_validation_report.json", "application/json", JSON.stringify(advisorValidationReviewJson(review), null, 2));
+}
+
+function exportAdvisorReviewCsv(review: AdvisorValidationReviewResult): void {
+  downloadText("advisor_validation_report.csv", "text/csv", advisorValidationReviewCsv(review));
 }
 
 function exportYieldJson(yieldAnalysis: CoatingYieldResult): void {
