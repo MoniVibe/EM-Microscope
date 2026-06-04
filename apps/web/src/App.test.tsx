@@ -57,14 +57,14 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L6.5 Maxwell foundry as planar execution plus coherence validation without claiming arbitrary 3D EM", () => {
+  it("labels L6.6 practical study workspace as saved-study workflow over planar/scalar execution without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
     const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
     const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("L6.5 Maxwell Design Foundry");
-    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM, L6.5 coherence demonstrator, thin-lens focal validation, slit/order validation, and explainability layer");
-    expect(maxwellPanel).toContain("scalar two-slit coherence demo plus ideal lens diffraction validation; still not a general 3D Maxwell solver, stochastic source engine, and ExternalFdtdBackend remains scaffold-only");
+    expect(maxwellPanel).toContain("L6.6 Practical Study Workspace");
+    expect(maxwellPanel).toContain("saved studies, parameter sweeps, measurement markers, run comparison, capability matrix, and study bundle exports over the existing planar/scalar engines");
+    expect(maxwellPanel).toContain("PlanarTmmBackend and scalar validation remain the executable scope; 3D Maxwell, FDTD, FEM, BEM, RCWA, CAD, sensor simulation, digital twins, and certification remain unavailable");
     expect(maxwellPanel).toContain("Explain mode");
     expect(maxwellPanel).toContain("Show all explanations");
     expect(maxwellPanel).toContain("Under the hood: Airy/Bessel reference");
@@ -120,6 +120,49 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("Incident medium");
     expect(maxwellPanel).toContain("Where is this measured?");
     expect(maxwellPanel).toContain("Validation Bench");
+    expect(maxwellPanel).toContain("Study Manager");
+    expect(maxwellPanel).toContain("Save Study");
+    expect(maxwellPanel).toContain("Load Study");
+    expect(maxwellPanel).toContain("Duplicate Study");
+    expect(maxwellPanel).toContain("Delete Study");
+    expect(maxwellPanel).toContain("Export Study Bundle");
+    expect(maxwellPanel).toContain("Import Study Bundle");
+    expect(maxwellPanel).toContain("Copy Shareable URL");
+    expect(maxwellPanel).toContain("Parameter Sweep Runner");
+    expect(maxwellPanel).toContain("coherence gamma");
+    expect(maxwellPanel).toContain("validation wavelength");
+    expect(maxwellPanel).toContain("observation z");
+    expect(maxwellPanel).toContain("slit width");
+    expect(maxwellPanel).toContain("double-slit separation");
+    expect(maxwellPanel).toContain("thin-lens defocus");
+    expect(maxwellPanel).toContain("coating wavelength");
+    expect(maxwellPanel).toContain("Run Sweep");
+    expect(maxwellPanel).toContain("Cancel Sweep");
+    expect(maxwellPanel).toContain("Sweep JSON");
+    expect(maxwellPanel).toContain("Sweep Markdown");
+    expect(maxwellPanel).toContain("Sweep CSV");
+    expect(maxwellPanel).toContain("Measurement Tools");
+    expect(maxwellPanel).toContain("Pin Crosshair");
+    expect(maxwellPanel).toContain("Peak Finder");
+    expect(maxwellPanel).toContain("Minimum Finder");
+    expect(maxwellPanel).toContain("Profile CSV");
+    expect(maxwellPanel).toContain("Run Comparison");
+    expect(maxwellPanel).toContain("Compare Gamma 1 vs Gamma 0");
+    expect(maxwellPanel).toContain("Compare Selected Runs");
+    expect(maxwellPanel).toContain("Comparison Markdown");
+    expect(maxwellPanel).toContain("Comparison CSV");
+    expect(maxwellPanel).toContain("Capabilities Matrix");
+    expect(maxwellPanel).toContain("3D Maxwell solve");
+    expect(maxwellPanel).toContain("not-implemented");
+    expect(maxwellPanel).toContain("scaffold-only");
+    expect(maxwellPanel).toContain("l66CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("createStudySnapshot");
+    expect(maxwellPanel).toContain("studyBundleJson");
+    expect(maxwellPanel).toContain("runCoherenceGammaSweep");
+    expect(maxwellPanel).toContain("runCircularObservationZSweep");
+    expect(maxwellPanel).toContain("runThinLensDefocusSweep");
+    expect(maxwellPanel).toContain("compareStudyRuns");
+    expect(maxwellPanel).toContain("createFieldMarker");
     expect(maxwellPanel).toContain("Physics exam sequence");
     expect(maxwellPanel).toContain("Circular pinhole Airy/Bessel");
     expect(maxwellPanel).toContain("Long single slit sinc^2");
@@ -257,7 +300,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toContain(">Apply Search<");
     expect(maxwellPanel).toContain("Tolerance Yield");
     expect(maxwellPanel).toContain("Yield JSON");
-    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed/i);
+    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|digital twin certified|manufacturing certified/i);
   });
 
   it("keeps the visible app shell Maxwell-only", () => {
@@ -266,9 +309,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend + Validation Bench");
-    expect(app).toContain("L6.5 Maxwell Design Foundry");
-    expect(app).toContain("executable planar backend, explainability layer, coherence demonstrator, thin-lens focal validation, slit/order ladder, scaffold-only 3D export");
+    expect(app).toContain("PlanarTmmBackend + Study Workspace");
+    expect(app).toContain("L6.6 Practical Study Workspace");
+    expect(app).toContain("executable planar backend, saved studies, sweeps, measurements, comparisons, capabilities matrix, study bundle exports");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

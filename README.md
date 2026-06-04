@@ -1,10 +1,12 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.5 Maxwell Design Foundry planar multilayer
-transfer-matrix workbench with guided optical-bench terminology, a scalar double-slit coherence demonstrator,
-ideal thin-lens focal-plane validation, an accessible explainability layer, circular-aperture, long-slit, and double-slit scalar diffraction validation, Advisor Review Mode exports, and a
-scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
-historical validation scaffolding, but it is hidden from the app shell.
+An EM-first light simulator MVP. The visible web app is now the L6.6 Practical Study Workspace over the existing
+Maxwell Design Foundry planar multilayer transfer-matrix workbench, with guided optical-bench terminology, saved
+studies, parameter sweeps, measurement markers, run comparison, a capabilities matrix, self-contained study bundle
+exports/imports, a scalar double-slit coherence demonstrator, ideal thin-lens focal-plane validation, an accessible
+explainability layer, circular-aperture, long-slit, and double-slit scalar diffraction validation, Advisor Review
+Mode exports, and a scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code
+remains in source and tests as historical validation scaffolding, but it is hidden from the app shell.
 
 L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. L4.1
 adds diagnostic wavelength-dependent material records, editable coating stacks, and wavelength sweeps over the same
@@ -41,13 +43,16 @@ L6.4b clarifies the UI mental models by separating spatial validation-bench diag
 L6.5 adds a scalar double-slit coherence demonstrator that compares coherent field summation,
 incoherent intensity summation, and partial-coherence `gamma12` interpolation with visibility checks and
 Markdown/JSON/CSV exports.
+L6.6 adds the practical study workspace layer over those existing planar/scalar engines: saved validation/coating
+studies, bounded parameter sweeps, marker/peak/minimum/profile measurement tools, run comparison, a visible
+capabilities matrix, and study bundle exports/imports with receipts and limitations.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, stochastic source engine, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L6.5 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L6.6 Practical Study Workspace`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -62,7 +67,9 @@ simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing
   order validation, ideal thin-lens focal-plane scalar validation with the hand-check `r1 ~= 1.22 lambda f / D`,
   focus scan, scalar double-slit coherence validation with `I = |U1|^2 + |U2|^2 + 2 Re(gamma12 U1 U2*)`,
   measured visibility `V = (Imax - Imin) / (Imax + Imin)`, coherent/partial/incoherent maps, centerline profiles,
-  order-spacing tables, Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
+  order-spacing tables, saved studies, bounded parameter sweeps, marker/peak/minimum/profile measurement exports,
+  gamma and selected-run comparisons, a capabilities matrix, study bundle JSON/Markdown/CSV exports/imports,
+  Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
   formula/snippet panels, Explain mode highlighting, and a searchable explanation drawer,
   and strict limitations against arbitrary 3D EM or stochastic source-engine claims.
 
@@ -559,10 +566,35 @@ order-position table, "Where is this measured?" guidance, and `l65-coherence-dem
 This is a scalar coherence validation demonstrator. It is not a stochastic/vector coherence engine, FDTD/FEM/BEM/RCWA
 solve, real source-statistics model, microscope sensor model, or 3D Maxwell execution path.
 
+## L6.6 Practical Study Workspace
+
+L6.6 is a workflow layer over the existing executable engines. It does not add a new Maxwell solver, but it makes
+the planar/scalar proof surface more useful for repeatable studies:
+
+- `Study Manager`: save the active validation or coating state, load it back into the app, duplicate/delete runs,
+  export a study bundle, import a bundle, and copy a shareable URL containing the current study state.
+- `Parameter Sweep Runner`: run bounded sweeps for coherence `gamma12`, validation wavelength, observation distance,
+  slit width, double-slit separation, thin-lens defocus, coating wavelength, and core robust-coating sigma studies.
+- `Measurement Tools`: pin a crosshair marker, detect a peak/minimum on the active scalar field, measure marker
+  distance, and export centerline profiles as CSV for downstream review.
+- `Run Comparison`: compare the hand-check coherent-versus-incoherent gamma endpoints or compare two saved studies
+  by metric deltas, warnings, limitations, and hash evidence.
+- `Capabilities Matrix`: show which pieces are executable, scaffolded, planned, or unavailable so the UI does not
+  overclaim 3D Maxwell, FDTD, FEM, BEM, RCWA, CAD geometry, sensor simulation, digital twins, or certification.
+- `Study Bundle Export`: produce JSON/Markdown/CSV artifacts with study metadata, metrics, profiles, warnings,
+  capabilities, backend/material/uncertainty receipts, result hashes, and explicit limitations.
+
+The L6.6 core is deterministic and covered by source-level tests for save/reimport, practical sweeps, measurement
+helpers, run comparison, and capability matrix boundaries. Browser smoke should cover the visible capabilities
+matrix, study save/export/import affordances, sweep output, measurement markers, comparison exports, and coating
+study export.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
+- Consider L6.7 measured-versus-simulated import/review work before a real 3D solver, because it can strengthen
+  the study workflow without changing the executable physics scope.
 - Delay real 3D work until an external solver proof-of-life can ingest the L6.0 scene/export scaffold and return
   auditable field data with clear capability receipts.
 
