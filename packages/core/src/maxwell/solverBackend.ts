@@ -1,12 +1,14 @@
 import type { MaxwellProblem, MaxwellProblemValidation } from "./maxwellProblem";
 import type { MaxwellSolveResult } from "./maxwellResult";
 
-export type MaxwellSolverBackendId = "planar-tmm";
+export type MaxwellSolverBackendId = "planar-tmm" | "external-fdtd";
 export type MaxwellSolverMethod = "planar-tmm" | "rcwa" | "fdtd" | "fem-frequency-domain" | "bem-frequency-domain";
 export type MaxwellSolverDimension = "1d-planar" | "2d" | "3d";
 export type MaxwellSolverGeometry = "planar-layers" | "periodic" | "voxel" | "mesh" | "surface-mesh";
+export type MaxwellSolverAvailability = "executable" | "scaffold-only" | "not-installed";
 
 export interface MaxwellSolverCapabilities {
+  availability: MaxwellSolverAvailability;
   dimensions: MaxwellSolverDimension[];
   geometry: MaxwellSolverGeometry[];
   steadyState: boolean;
@@ -35,7 +37,7 @@ export type MaxwellSolverReceipt = {
 };
 
 export interface MaxwellSolverBackend<
-  TProblem extends MaxwellProblem = MaxwellProblem,
+  TProblem = MaxwellProblem,
   TResult extends MaxwellSolveResult = MaxwellSolveResult,
   TOptions = unknown
 > {
@@ -51,7 +53,19 @@ export interface MaxwellSolverBackend<
   solve(problem: TProblem, options?: TOptions): TResult;
 }
 
+export type AnyMaxwellSolverBackend = MaxwellSolverBackend<any, MaxwellSolveResult, any>;
+
+export class UnsupportedBackendError extends Error {
+  readonly code = "maxwell.backend.unsupported";
+
+  constructor(message: string) {
+    super(message);
+    this.name = "UnsupportedBackendError";
+  }
+}
+
 export const planarTmmBackendCapabilities: MaxwellSolverCapabilities = {
+  availability: "executable",
   dimensions: ["1d-planar"],
   geometry: ["planar-layers"],
   steadyState: true,
