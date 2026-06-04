@@ -1,9 +1,10 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.7 Measured-vs-Simulated Lab Data Workbench over
-the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with measured CSV/image import,
-calibration/ROI controls, residual metrics, deterministic diagnostic fitting, report bundles, guided optical-bench
-terminology, saved studies, parameter sweeps, measurement markers, run comparison, a capabilities matrix,
+An EM-first light simulator MVP. The visible web app is now the L6.8 Camera/Sensor-Lite Acquisition Workbench over
+the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with deterministic detector
+acquisition post-processing, photons/electrons/DN conversion, shot/read/dark noise modes, saturation/SNR/histogram
+metrics, measured CSV/image import, calibration/ROI controls, residual metrics, deterministic diagnostic fitting,
+report bundles, guided optical-bench terminology, saved studies, parameter sweeps, measurement markers, run comparison, a capabilities matrix,
 self-contained study bundle exports/imports, a scalar double-slit coherence demonstrator, ideal thin-lens focal-plane
 validation, an accessible explainability layer, circular-aperture, long-slit, and double-slit scalar diffraction
 validation, Advisor Review Mode exports, and a scaffold-only 3D Maxwell/FDTD export runway; the earlier
@@ -51,6 +52,10 @@ capabilities matrix, and study bundle exports/imports with receipts and limitati
 L6.7 adds a measured-vs-simulated lab data workbench: CSV profile import, PNG/JPEG image-centerline import,
 calibration/ROI/normalization controls, profile residual metrics, deterministic shift/scale/background diagnostic
 fit, comparison study save, and Markdown/JSON/CSV report bundle exports.
+L6.8 adds a Camera/Sensor-Lite acquisition workbench that converts existing simulated optical profiles into
+synthetic detector readout with pixel pitch, QE, exposure, photon flux scale, full well, shot/read/dark noise,
+gain, black level, ADC bit depth, deterministic seed, SNR/saturation/histogram/profile metrics, camera report
+exports, study integration, and synthetic-camera handoff into the measured-vs-simulated comparison workflow.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, stochastic source engine, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, certified calibration system, or manufacturing
@@ -58,7 +63,7 @@ certification system.
 
 ## Current Visible Mode
 
-- `L6.7 Measured-vs-Simulated Lab Data Workbench`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L6.8 Camera/Sensor-Lite Acquisition Workbench`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -78,10 +83,15 @@ certification system.
   measured CSV profile import, PNG/JPEG image-centerline import, calibration/ROI/normalization controls,
   measured-vs-simulated residual metrics, deterministic bounded shift/scale/background diagnostic fitting,
   comparison-study save, and comparison report JSON/Markdown/CSV exports,
+  Camera/Sensor-Lite acquisition controls for pixel pitch, sensor width/height, QE, exposure, photon flux scale,
+  full well, read noise, dark current, ADC bit depth, conversion gain, black level, deterministic seed, and
+  noiseless/shot/shot+read/shot+read+dark modes; it shows synthetic raw DN preview, histogram, before/after line
+  profile, mean/peak photons/electrons/DN, saturation fraction, mean/peak SNR, dynamic range estimate, warnings,
+  camera report exports, study save, and synthetic-camera send-to-measured comparison,
   Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
   formula/snippet panels, Explain mode highlighting, and a searchable explanation drawer,
-  and strict limitations against arbitrary 3D EM, certified calibration, digital-twin, sensor-stack, or stochastic
-  source-engine claims.
+  and strict limitations against arbitrary 3D EM, certified calibration, EMVA compliance, digital-twin, pixel-level
+  sensor-stack EM, or stochastic source-engine claims.
 
 ## L2 Validation Fixture
 
@@ -624,12 +634,42 @@ Browser smoke should cover generating/importing a measured CSV profile, comparin
 profile, running the diagnostic fit, exporting the report bundle, saving the comparison study, and re-smoking the
 coating optimizer.
 
+## L6.8 Camera/Sensor-Lite Acquisition Workbench
+
+L6.8 is a detector/acquisition layer over existing scalar validation and planar TMM outputs. It converts a selected
+simulated optical profile into synthetic camera output, then lets that synthetic camera profile enter the L6.7
+measured-vs-simulated comparison workflow.
+
+- `Camera settings`: pixel pitch, sensor width/height, quantum efficiency, exposure, photon flux scale, full well,
+  read noise, dark current, ADC bit depth, conversion gain, black level, deterministic seed, and noise mode.
+- `Noise modes`: ideal/noiseless, shot only, shot + read, and shot + read + dark.
+- `Output maps`: normalized optical intensity, photons, signal electrons, noisy/clipped electrons, DN/raw image,
+  saturation mask, SNR estimates, histogram, and centerline profile.
+- `Metrics and warnings`: mean/peak photons, mean/peak electrons, mean/peak DN, saturation fraction, mean/peak SNR,
+  dynamic range estimate, quantization step, low-signal warnings, saturation warnings, and boundary warnings.
+- `Measured integration`: `Send synthetic camera image to Measured-vs-Simulated` creates a deterministic synthetic
+  measured image-centerline dataset, preserves the source optical result hash and camera run hash, and compares it
+  against the clean simulated profile.
+- `Study and export integration`: camera studies save settings, source hashes, result hashes, metrics, warnings,
+  optical/photon/electron/DN profiles, and limitations. Camera exports include `camera_report.json`,
+  `camera_report.md`, `camera_metrics.csv`, `camera_profile.csv`, `camera_histogram.csv`, and `warnings.json`.
+
+This is not a pixel-level electromagnetic sensor-stack model. It does not model microlenses, color filters,
+passivation, charge diffusion, semiconductor transport, calibrated sensor stacks, certified EMVA 1288
+characterization, certified calibration, digital twins, manufacturing certification, or 3D Maxwell/FDTD/FEM/BEM/RCWA
+execution.
+
+The L6.8 tests cover intensity-to-photon/electron/DN conversion, QE/exposure scaling, full-well and ADC clipping,
+determinism by seed, all noise modes, SNR/saturation/quantization warnings, camera exports, synthetic-camera
+handoff into measured comparison, and capability-boundary rows for camera acquisition versus unavailable
+pixel-level sensor stacks and certified EMVA characterization.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
-- Consider an L6.8 camera/sensor-lite measurement layer only if it stays explicit about being a diagnostic camera
-  model rather than certified EMVA/ISO calibration.
+- Consider an L6.x bundle hygiene pass: lazy-load heavy workbench panels/exports and split large chunks instead of
+  only raising Vite's chunk warning limit.
 - Delay real 3D work until an external solver proof-of-life can ingest the L6.0 scene/export scaffold and return
   auditable field data with clear capability receipts.
 

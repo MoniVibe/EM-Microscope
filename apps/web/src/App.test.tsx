@@ -57,14 +57,42 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L6.7 measured-vs-simulated lab data workbench over planar/scalar execution without claiming certified calibration or arbitrary 3D EM", () => {
+  it("labels L6.8 camera/sensor-lite acquisition over planar/scalar execution without claiming certified calibration, sensor-stack EM, or arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
     const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
     const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("L6.7 Measured-vs-Simulated Lab Data Workbench");
-    expect(maxwellPanel).toContain("measured CSV/image import, calibration, ROI, residual metrics, diagnostic fit, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines");
-    expect(maxwellPanel).toContain("PlanarTmmBackend and scalar validation remain the executable scope; diagnostic measured comparison is not certified calibration, sensor simulation, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution");
+    expect(maxwellPanel).toContain("L6.8 Camera/Sensor-Lite Acquisition Workbench");
+    expect(maxwellPanel).toContain("camera/sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines");
+    expect(maxwellPanel).toContain("PlanarTmmBackend, scalar validation, diagnostic measured comparison, and detector acquisition post-processing are the executable scope");
+    expect(maxwellPanel).toContain("Camera / Sensor-Lite");
+    expect(maxwellPanel).toContain("Convert selected simulated optical intensity into photons, electrons, DN, SNR, saturation, histogram, and line-profile evidence.");
+    expect(maxwellPanel).toContain("Camera/Sensor-Lite converts an existing simulated intensity map into synthetic detector readout");
+    expect(maxwellPanel).toContain("does not model pixel-level electromagnetic absorption, microlenses, color filters, charge diffusion, semiconductor transport, a calibrated sensor stack, certified EMVA compliance, digital twin behavior, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution");
+    expect(maxwellPanel).toContain("Pixel pitch um");
+    expect(maxwellPanel).toContain("Sensor width px");
+    expect(maxwellPanel).toContain("Sensor height px");
+    expect(maxwellPanel).toContain("Quantum efficiency QE");
+    expect(maxwellPanel).toContain("Exposure time ms");
+    expect(maxwellPanel).toContain("Photon flux scale");
+    expect(maxwellPanel).toContain("Full well e-");
+    expect(maxwellPanel).toContain("Read noise e- RMS");
+    expect(maxwellPanel).toContain("Dark current e-/px/s");
+    expect(maxwellPanel).toContain("ADC bit depth");
+    expect(maxwellPanel).toContain("Conversion gain DN/e-");
+    expect(maxwellPanel).toContain("Black level DN");
+    expect(maxwellPanel).toContain("Noise mode");
+    expect(maxwellPanel).toContain("Generate Camera Output");
+    expect(maxwellPanel).toContain("Saturate Exposure");
+    expect(maxwellPanel).toContain("Export Camera Report");
+    expect(maxwellPanel).toContain("Send synthetic camera image to Measured-vs-Simulated");
+    expect(maxwellPanel).toContain("Save Camera Study");
+    expect(maxwellPanel).toContain("Mean / peak photons");
+    expect(maxwellPanel).toContain("Mean / peak electrons");
+    expect(maxwellPanel).toContain("Mean / peak DN");
+    expect(maxwellPanel).toContain("Saturation fraction");
+    expect(maxwellPanel).toContain("Mean / peak SNR");
+    expect(maxwellPanel).toContain("Dynamic range estimate");
     expect(maxwellPanel).toContain("Explain mode");
     expect(maxwellPanel).toContain("Show all explanations");
     expect(maxwellPanel).toContain("Under the hood: Airy/Bessel reference");
@@ -164,7 +192,13 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("3D Maxwell solve");
     expect(maxwellPanel).toContain("not-implemented");
     expect(maxwellPanel).toContain("scaffold-only");
-    expect(maxwellPanel).toContain("l67CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("l68CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("runCameraSensorLite");
+    expect(maxwellPanel).toContain("cameraReportBundleJson");
+    expect(maxwellPanel).toContain("cameraRunToMeasuredDataset");
+    expect(maxwellPanel).toContain("cameraMetricsCsv");
+    expect(maxwellPanel).toContain("cameraProfileCsv");
+    expect(maxwellPanel).toContain("cameraHistogramCsv");
     expect(maxwellPanel).toContain("compareMeasuredToSimulatedProfile");
     expect(maxwellPanel).toContain("parseMeasuredCsvProfile");
     expect(maxwellPanel).toContain("runL67DiagnosticFit");
@@ -313,7 +347,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toContain(">Apply Search<");
     expect(maxwellPanel).toContain("Tolerance Yield");
     expect(maxwellPanel).toContain("Yield JSON");
-    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified/i);
+    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable/i);
   });
 
   it("keeps the visible app shell Maxwell-only", () => {
@@ -322,9 +356,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend + Measured Workbench");
-    expect(app).toContain("L6.7 Measured-vs-Simulated Lab Data Workbench");
-    expect(app).toContain("diagnostic measured comparison, executable planar backend, saved studies, sweeps, measurements, comparisons, capabilities matrix, study bundle exports");
+    expect(app).toContain("PlanarTmmBackend + Camera/Sensor-Lite");
+    expect(app).toContain("L6.8 Camera/Sensor-Lite Acquisition Workbench");
+    expect(app).toContain("deterministic camera acquisition, diagnostic measured comparison, executable planar backend, saved studies, sweeps, measurements, comparisons, capabilities matrix, study bundle exports");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

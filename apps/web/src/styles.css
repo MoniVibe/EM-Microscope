@@ -824,7 +824,8 @@ h2 {
   min-width: 0;
 }
 
-.maxwell-measured-panel {
+.maxwell-measured-panel,
+.maxwell-camera-panel {
   grid-column: 1 / -1;
 }
 
@@ -867,6 +868,74 @@ h2 {
   min-height: 2px;
   border-radius: 2px 2px 0 0;
   background: #356b8c;
+}
+
+.maxwell-camera-preview {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(4px, 1fr));
+  gap: 2px;
+  min-height: 96px;
+  padding: 6px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.maxwell-camera-preview i {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: #263244;
+}
+
+.maxwell-camera-histogram,
+.maxwell-camera-profile-preview {
+  display: grid;
+  align-items: end;
+  gap: 2px;
+  height: 64px;
+  padding: 6px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.maxwell-camera-histogram {
+  grid-template-columns: repeat(32, minmax(3px, 1fr));
+}
+
+.maxwell-camera-histogram i {
+  display: block;
+  min-height: 3px;
+  border-radius: 2px 2px 0 0;
+  background: #607d3b;
+}
+
+.maxwell-camera-profile-preview {
+  grid-template-columns: repeat(64, minmax(2px, 1fr));
+}
+
+.maxwell-camera-profile-preview span {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 1px;
+  height: 100%;
+}
+
+.maxwell-camera-profile-preview i,
+.maxwell-camera-profile-preview b {
+  display: block;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+
+.maxwell-camera-profile-preview i {
+  background: #3a6ea5;
+}
+
+.maxwell-camera-profile-preview b {
+  background: #a65f3a;
 }
 
 .maxwell-capability-table,
