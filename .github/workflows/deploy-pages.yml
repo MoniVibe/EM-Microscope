@@ -1,9 +1,14 @@
 name: Deploy GitHub Pages
 
 on:
+  pull_request:
+    branches:
+      - main
+      - l4-true-em-phase0
   push:
     branches:
       - main
+      - l4-true-em-phase0
   workflow_dispatch:
 
 permissions:
@@ -40,14 +45,17 @@ jobs:
           GITHUB_PAGES: "true"
 
       - name: Configure Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/dist
 
   deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
