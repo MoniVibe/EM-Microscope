@@ -525,10 +525,30 @@ h2 {
   gap: 7px;
 }
 
+.maxwell-validation-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.maxwell-validation-controls input,
+.maxwell-validation-controls select {
+  width: 100%;
+  min-width: 0;
+}
+
 .maxwell-validation-output-grid {
   display: grid;
   grid-template-columns: minmax(0, 0.78fr) minmax(0, 1fr);
   gap: 10px;
+}
+
+.maxwell-validation-output-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.maxwell-validation-profile-panel {
+  min-width: 0;
 }
 
 .maxwell-validation-map {
@@ -539,6 +559,14 @@ h2 {
   border-radius: 6px;
   background: #111827;
   image-rendering: pixelated;
+}
+
+.maxwell-validation-map.analytic {
+  background: #102033;
+}
+
+.maxwell-validation-map.residual {
+  background: #1c1917;
 }
 
 .maxwell-validation-profile {
@@ -570,6 +598,12 @@ h2 {
   stroke: #b45309;
   stroke-width: 1.5;
   stroke-dasharray: 4 3;
+}
+
+.maxwell-validation-residual-line {
+  fill: none;
+  stroke: #c2410c;
+  stroke-width: 2.2;
 }
 
 .maxwell-slider-control {
@@ -1251,6 +1285,12 @@ h2 {
   }
 
   .maxwell-only-main .profile-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .maxwell-validation-controls,
+  .maxwell-validation-output-grid,
+  .maxwell-validation-output-grid.three {
     grid-template-columns: 1fr;
   }
 

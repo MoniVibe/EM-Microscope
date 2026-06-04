@@ -1,8 +1,8 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.1 Maxwell Design Foundry planar multilayer
-transfer-matrix workbench with a scalar circular-aperture diffraction validation bench and a scaffold-only 3D
-Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
+An EM-first light simulator MVP. The visible web app is now the L6.2 Maxwell Design Foundry planar multilayer
+transfer-matrix workbench with independent numerical scalar propagation validation for the circular-aperture
+Airy/Bessel benchmark and a scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
 L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. L4.1
@@ -28,14 +28,15 @@ L5.8 moves the existing planar stack path behind a solver-neutral backend bounda
 as the only available Maxwell backend and exposing planar-only capability receipts for future RCWA/FDTD/FEM/BEM
 adapters. L6.0 adds a 3D Maxwell scene/result schema, deterministic 3D scene validation and hashing, field dataset
 manifest types, and an `ExternalFdtdBackend`/Meep-style export scaffold that is registered but not executable.
-L6.1 adds a visible ordered diffraction validation bench for the circular pinhole Airy/Bessel benchmark.
+L6.1 adds a visible ordered diffraction validation bench for the circular pinhole Airy/Bessel benchmark. L6.2 adds an
+independent numerical scalar propagation path for that same benchmark and compares it against the analytic Airy reference.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L6.1 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L6.2 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -44,7 +45,9 @@ simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing
   search, deterministic independent or correlated thickness-drift robust-yield re-ranking, candidate application,
   independent-thickness comparison metrics, sample reduction receipts, backend capability receipts,
   JSON/Markdown/CSV export, a scaffold-only `ExternalFdtdBackend` manifest/Meep-style script export, and an ordered
-  scalar diffraction validation bench for the 500 nm source, 1 um circular aperture, and Airy/Bessel radial check,
+  scalar diffraction validation bench for the 500 nm source, 1 um circular aperture, independent numerical
+  Huygens-Fresnel propagation, analytic Airy/Bessel reference maps, residual maps, radial mismatch curves,
+  convergence controls, finite-plane energy checks,
   and strict limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
@@ -367,6 +370,49 @@ separate benchmark; L6.1 keeps the Bessel/Airy case named as a circular pinhole.
 L6.1 is still not a full 3D Maxwell aperture solver. It does not model a finite-thickness metal screen, aperture
 material interaction, edge boundary conditions, subwavelength-aperture vector effects, FDTD/FEM/BEM/RCWA execution,
 curved lenses, sensor transport, or microscope digital-twin calibration.
+
+## L6.2 Numerical Scalar Propagation Validation
+
+L6.2 keeps the same circular pinhole geometry, but adds an independent numerical propagation path so the validation
+bench is not just drawing the Airy formula:
+
+```text
+source -> aperture field -> numerical scalar propagation -> observation plane -> analytic comparison -> residual report
+```
+
+The numerical result uses deterministic radial Huygens-Fresnel quadrature over the ideal circular aperture:
+
+```text
+U(rho) ~= integral_aperture exp(i k (R - L)) r dr dphi
+```
+
+That computed radial field is rendered onto the zero-thickness 2D observation plane and compared against the analytic
+Airy/Bessel reference:
+
+```text
+I/I0 = [2 J1(k a sin(theta)) / (k a sin(theta))]^2
+sin(theta) = rho / sqrt(rho^2 + L^2)
+```
+
+The visible `Validation Bench` now includes:
+
+- Computation mode selector: analytic reference, numerical scalar propagation, or numerical-vs-analytic comparison.
+- Convergence controls for observation map grid, radial observation samples, aperture radial samples, and aperture
+  angular samples.
+- Numerical intensity map, analytic reference map, and residual map.
+- Radial numerical-vs-analytic overlay and signed residual curve.
+- RMS residual, max residual, center normalization error, radial symmetry error, measured first-minimum radius when the
+  detector includes it, first-minimum error, and finite-plane peak-normalized energy-integral comparison.
+- JSON and Markdown exports with numerical method, grid/sampling settings, formulas, residuals, warnings, hashes, and
+  limitation language.
+
+For the default `10 mm x 10 mm` observation plane at `z = 20 mm`, L6.2 intentionally preserves the L6.1 warning that
+the expected first Airy minimum is about `7.7 mm` from center and therefore outside the square detector's half-diagonal.
+When the plane is widened enough to include that radius, the numerical profile reports a measured first minimum and
+first-minimum error.
+
+L6.2 remains scalar diffraction validation. It does not execute FDTD, FEM, BEM, RCWA, finite-thickness aperture
+material interaction, curved lenses, sensor transport, or microscope digital-twin calibration.
 
 Recommended next Maxwell steps:
 
