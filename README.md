@@ -1,12 +1,14 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.6 Practical Study Workspace over the existing
-Maxwell Design Foundry planar multilayer transfer-matrix workbench, with guided optical-bench terminology, saved
-studies, parameter sweeps, measurement markers, run comparison, a capabilities matrix, self-contained study bundle
-exports/imports, a scalar double-slit coherence demonstrator, ideal thin-lens focal-plane validation, an accessible
-explainability layer, circular-aperture, long-slit, and double-slit scalar diffraction validation, Advisor Review
-Mode exports, and a scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code
-remains in source and tests as historical validation scaffolding, but it is hidden from the app shell.
+An EM-first light simulator MVP. The visible web app is now the L6.7 Measured-vs-Simulated Lab Data Workbench over
+the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with measured CSV/image import,
+calibration/ROI controls, residual metrics, deterministic diagnostic fitting, report bundles, guided optical-bench
+terminology, saved studies, parameter sweeps, measurement markers, run comparison, a capabilities matrix,
+self-contained study bundle exports/imports, a scalar double-slit coherence demonstrator, ideal thin-lens focal-plane
+validation, an accessible explainability layer, circular-aperture, long-slit, and double-slit scalar diffraction
+validation, Advisor Review Mode exports, and a scaffold-only 3D Maxwell/FDTD export runway; the earlier
+geometric/scalar microscope bench code remains in source and tests as historical validation scaffolding, but it is
+hidden from the app shell.
 
 L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. L4.1
 adds diagnostic wavelength-dependent material records, editable coating stacks, and wavelength sweeps over the same
@@ -46,13 +48,17 @@ Markdown/JSON/CSV exports.
 L6.6 adds the practical study workspace layer over those existing planar/scalar engines: saved validation/coating
 studies, bounded parameter sweeps, marker/peak/minimum/profile measurement tools, run comparison, a visible
 capabilities matrix, and study bundle exports/imports with receipts and limitations.
+L6.7 adds a measured-vs-simulated lab data workbench: CSV profile import, PNG/JPEG image-centerline import,
+calibration/ROI/normalization controls, profile residual metrics, deterministic shift/scale/background diagnostic
+fit, comparison study save, and Markdown/JSON/CSV report bundle exports.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, stochastic source engine, aperture solver, sensor-stack
-simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
+simulator, adjoint optimizer, topology optimizer, digital twin, certified calibration system, or manufacturing
+certification system.
 
 ## Current Visible Mode
 
-- `L6.6 Practical Study Workspace`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L6.7 Measured-vs-Simulated Lab Data Workbench`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -69,9 +75,13 @@ simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing
   measured visibility `V = (Imax - Imin) / (Imax + Imin)`, coherent/partial/incoherent maps, centerline profiles,
   order-spacing tables, saved studies, bounded parameter sweeps, marker/peak/minimum/profile measurement exports,
   gamma and selected-run comparisons, a capabilities matrix, study bundle JSON/Markdown/CSV exports/imports,
+  measured CSV profile import, PNG/JPEG image-centerline import, calibration/ROI/normalization controls,
+  measured-vs-simulated residual metrics, deterministic bounded shift/scale/background diagnostic fitting,
+  comparison-study save, and comparison report JSON/Markdown/CSV exports,
   Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
   formula/snippet panels, Explain mode highlighting, and a searchable explanation drawer,
-  and strict limitations against arbitrary 3D EM or stochastic source-engine claims.
+  and strict limitations against arbitrary 3D EM, certified calibration, digital-twin, sensor-stack, or stochastic
+  source-engine claims.
 
 ## L2 Validation Fixture
 
@@ -589,12 +599,37 @@ helpers, run comparison, and capability matrix boundaries. Browser smoke should 
 matrix, study save/export/import affordances, sweep output, measurement markers, comparison exports, and coating
 study export.
 
+## L6.7 Measured-vs-Simulated Lab Data Workbench
+
+L6.7 is a lab-data comparison layer over the existing scalar validation and planar TMM outputs. It does not add new
+diffraction physics, FDTD/FEM/BEM/RCWA execution, a sensor-stack model, certified calibration, or a microscope
+digital twin.
+
+- `Measured import`: import CSV profiles directly, or import PNG/JPEG images as deterministic grayscale centerline
+  profiles with image/data hashes.
+- `Calibration and ROI`: set pixel size, x offset, ROI min/max, and normalization assumptions before comparing.
+- `Compare`: compare measured profile samples against the selected active validation profile or a saved study
+  profile, then report RMS residual, MAE residual, max residual, normalized cross-correlation, peak/centroid/FWHM
+  errors, first-minimum error where available, visibility error, and area ratio.
+- `Diagnostic fit`: run a bounded deterministic grid search over x shift, intensity scale, and background offset.
+  The fit reports before/after score, best parameters, fit hash, and warnings.
+- `Study integration`: save measured comparisons into the Study Manager with residual, measured, and simulated
+  profiles plus measured-data hashes and fit hashes.
+- `Report bundle`: export `comparison_report.json`, `comparison_report.md`, measured metrics CSV, simulated metrics
+  CSV, residual profile CSV, fit grid CSV, and warnings JSON.
+
+The L6.7 tests cover CSV import, image-centerline import, deterministic hashes, ROI/normalization, profile residual
+metrics, diagnostic shift/scale/background fitting, report bundle contents, and no-overclaim boundary language.
+Browser smoke should cover generating/importing a measured CSV profile, comparing it to an active validation
+profile, running the diagnostic fit, exporting the report bundle, saving the comparison study, and re-smoking the
+coating optimizer.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
-- Consider L6.7 measured-versus-simulated import/review work before a real 3D solver, because it can strengthen
-  the study workflow without changing the executable physics scope.
+- Consider an L6.8 camera/sensor-lite measurement layer only if it stays explicit about being a diagnostic camera
+  model rather than certified EMVA/ISO calibration.
 - Delay real 3D work until an external solver proof-of-life can ingest the L6.0 scene/export scaffold and return
   auditable field data with clear capability receipts.
 
