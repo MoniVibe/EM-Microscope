@@ -1,8 +1,9 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.3a Maxwell Design Foundry planar multilayer
-transfer-matrix workbench with an accessible explainability layer, circular-aperture, long-slit, and double-slit
-scalar diffraction validation, Advisor Review Mode exports, and a scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
+An EM-first light simulator MVP. The visible web app is now the L6.4 Maxwell Design Foundry planar multilayer
+transfer-matrix workbench with ideal thin-lens focal-plane validation, an accessible explainability layer,
+circular-aperture, long-slit, and double-slit scalar diffraction validation, Advisor Review Mode exports, and a
+scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
 L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. L4.1
@@ -33,14 +34,16 @@ independent numerical scalar propagation path for that same benchmark and compar
 L6.3 adds coherent long-slit `sinc^2`, double-slit/order-spacing validation, and Advisor Review Mode exports that
 combine the circular, single-slit, and double-slit proof reports. L6.3a adds accessible custom tooltips,
 under-the-hood formula/snippet panels, Explain mode highlighting, and a searchable explanation drawer without
-changing solver behavior.
+changing solver behavior. L6.4 adds an ideal thin-lens focal-plane validation benchmark with a zero-thickness
+quadratic phase mask, circular pupil, numerical scalar Fresnel propagation, analytic Airy PSF reference, residual
+maps, radial overlays, z focus scan, and JSON/Markdown/CSV exports.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L6.3a Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L6.4 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -52,7 +55,8 @@ simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing
   scalar diffraction validation bench for the 500 nm source, 1 um circular aperture, independent numerical
   Huygens-Fresnel propagation, analytic Airy/Bessel reference maps, residual maps, radial mismatch curves,
   convergence controls, finite-plane energy checks, coherent long-slit `sinc^2` validation, double-slit/grating
-  order validation, Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
+  order validation, ideal thin-lens focal-plane scalar validation with the hand-check `r1 ~= 1.22 lambda f / D`,
+  focus scan, Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
   formula/snippet panels, Explain mode highlighting, and a searchable explanation drawer,
   and strict limitations against arbitrary 3D EM claims.
 
@@ -477,10 +481,41 @@ The boundary language stays explicit: diffraction explanations describe scalar v
 Maxwell path remains planar TMM only, and L6.3a does not add full 3D Maxwell, FDTD, FEM, BEM, RCWA, finite-thickness
 aperture, sensor, or digital-twin execution.
 
+## L6.4 Ideal Thin Lens Focal-Plane Validation
+
+L6.4 extends the ordered scalar validation ladder to the advisor's next physical step:
+
+```text
+source -> lens phase -> circular pupil -> scalar propagation -> focal plane -> Airy check
+```
+
+The default benchmark is deliberately hand-checkable:
+
+- Coherent plane wave, `lambda = 500 nm`.
+- Ideal zero-thickness thin-lens phase mask, `f = 20 mm`.
+- Circular clear pupil, `D = 200 um`.
+- Observation plane at `z = 20 mm`, with a `300 um x 300 um` field of view.
+- Expected first dark ring `r1 ~= 1.22 lambda f / D`, about `61 um`.
+
+The numerical path uses deterministic scalar Fresnel quadrature through the ideal thin-lens phase and circular pupil:
+
+```text
+tau_lens(u,v) = P(u,v) exp[-i k (u^2 + v^2) / (2f)]
+```
+
+It renders a numerical focal-plane map, analytic Airy PSF map, residual map, radial numerical-vs-analytic overlay,
+residual curve, measured first-dark radius when visible, RMS/max residuals, center normalization error, radial
+symmetry error, finite-plane integral comparison, and a focus scan around `z=f`.
+
+L6.4 exports `l64-thin-lens-focal-validation.json`, `.md`, and `.csv`, and Advisor Review Mode now includes the
+thin-lens focal-plane benchmark alongside circular pinhole, single-slit, and double-slit/order checks.
+
+L6.4 remains scalar ideal-lens validation. It does not model curved/thick glass, refractive material volume,
+dispersion, coatings, chromatic aberration, vector polarization, real sensor response, ray tracing, full 3D Maxwell,
+FDTD, FEM, BEM, RCWA, or microscope digital-twin behavior.
+
 Recommended next Maxwell steps:
 
-- Add a thin-lens focal-plane validation after the slit/order ladder so the next optics milestone has an equally
-  hand-checkable scalar reference.
 - Add a coherence demonstrator that compares coherent field summation against incoherent intensity summation without
   claiming a full microscope illumination model.
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the

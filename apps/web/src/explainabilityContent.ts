@@ -162,6 +162,71 @@ export const explainEntries = [
     limitations: ["Coarse sampling can increase residuals without indicating a physics change."]
   },
   {
+    id: "validation.lens.thinLensPhase",
+    section: "Validation Bench",
+    title: "Thin-Lens Phase Mask",
+    short: "Ideal zero-thickness lens model used by the L6.4 focal-plane validation.",
+    physicalMeaning: "Applies the quadratic phase needed to focus a coherent plane wave at focal length f.",
+    units: "phase in radians; focal length in millimeters in the UI.",
+    formula: "tau_lens(u,v) = P(u,v) exp[-i k (u^2 + v^2) / (2f)]",
+    underTheHood: "The numerical path integrates scalar Fresnel propagation through this phase mask and circular pupil, then compares the focal-plane map against an analytic Airy PSF.",
+    snippet: "phase = -k * (u*u + v*v) / (2*f)\nfield *= pupil(u,v) * exp(i * phase)",
+    assumptions: ["Coherent monochromatic plane wave.", "Paraxial scalar thin-lens approximation.", "Zero-thickness phase mask."],
+    limitations: ["No real curved glass geometry, finite thickness, dispersion, coatings, polarization, or aberrations."]
+  },
+  {
+    id: "validation.lens.focalLength",
+    section: "Validation Bench",
+    title: "Focal Length",
+    short: "Distance from the ideal thin lens to the nominal focal plane.",
+    physicalMeaning: "Sets the scale of the Airy spot and the z location where the focus scan should peak.",
+    units: "millimeters.",
+    formula: "r1 ~= 1.22 lambda f / D",
+    limitations: ["This is an ideal paraxial focal length, not a measured thick-lens back focal length."]
+  },
+  {
+    id: "validation.lens.pupil",
+    section: "Validation Bench",
+    title: "Circular Pupil",
+    short: "Finite clear diameter of the ideal lens aperture. It clips the focused wave and creates the diffraction-limited Airy spot.",
+    physicalMeaning: "Controls the numerical aperture estimate and the first dark ring radius.",
+    units: "micrometers.",
+    formula: "P(u,v) = 1 for sqrt(u^2+v^2) <= D/2, otherwise 0",
+    limitations: ["No aperture thickness, edge material, mount, coating, or vector boundary condition is modeled."]
+  },
+  {
+    id: "validation.lens.airyRadius",
+    section: "Validation Bench",
+    title: "Focal-Plane Airy Radius",
+    short: "Hand-check radius of the first dark ring for an ideal focused circular pupil.",
+    physicalMeaning: "For defaults, 500 nm, f=20 mm, and D=200 um predict about 61 um.",
+    units: "micrometers from optical axis.",
+    formula: "r1 ~= 1.22 lambda f / D",
+    snippet: "r1 = 1.21967 * wavelength * focalLength / pupilDiameter",
+    limitations: ["Valid for the ideal scalar diffraction-limited focal plane, not a defocused, aberrated, or material lens."]
+  },
+  {
+    id: "validation.lens.focusMetric",
+    section: "Validation Bench",
+    title: "Focus Metric",
+    short: "Relative center intensity across a z scan around the focal plane.",
+    physicalMeaning: "The coherent field should concentrate near z=f, so the metric peaks near the nominal focus.",
+    units: "relative normalized intensity; z in millimeters.",
+    formula: "metric(z) = I_center(z) / max_z I_center(z)",
+    limitations: ["This is a scalar focus diagnostic, not autofocus, sensor response, or thick-lens metrology."]
+  },
+  {
+    id: "validation.lens.scalarLimitations",
+    section: "Validation Bench",
+    title: "Thin-Lens Scalar Limitations",
+    short: "Boundary language for L6.4: ideal scalar diffraction validation only.",
+    underTheHood: "The lens benchmark validates a hand-checkable diffraction-limited focal plane before any real lens/material solver exists.",
+    limitations: [
+      "No full 3D Maxwell, FDTD, FEM, BEM, RCWA, or ray tracing.",
+      "No finite-thickness glass, dispersion, coatings, polarization, aberrations, sensor transport, or microscope digital twin."
+    ]
+  },
+  {
     id: "validation.exports",
     section: "Exports",
     title: "Validation Exports",

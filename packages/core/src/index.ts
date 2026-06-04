@@ -87,6 +87,7 @@ export * from "./wave/apertures1d";
 export * from "./wave/angularSpectrum2d";
 export * from "./wave/circularApertureValidation";
 export * from "./wave/slitOrderValidation";
+export * from "./wave/thinLensFocalValidation";
 export * from "./wave/complex";
 export * from "./wave/complex2d";
 export * from "./wave/crossSections2d";

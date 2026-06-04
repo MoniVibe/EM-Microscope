@@ -4,6 +4,10 @@ import {
   runCircularApertureValidation,
   type CircularApertureValidationResult
 } from "./circularApertureValidation";
+import {
+  runThinLensFocalValidation,
+  type ThinLensFocalValidationResult
+} from "./thinLensFocalValidation";
 
 export type SlitOrderBenchmarkKind = "long-single-slit-sinc2" | "double-slit-orders";
 
@@ -107,14 +111,15 @@ export type AdvisorValidationSummary = {
 };
 
 export type AdvisorValidationReviewResult = {
-  id: "l63-advisor-validation-review";
-  schema: "emmicro.advisorValidationReview.v1";
-  label: "L6.3 Advisor Review Mode";
+  id: "l64-advisor-validation-review";
+  schema: "emmicro.advisorValidationReview.v2";
+  label: "L6.4 Advisor Review Mode";
   resultHash: string;
-  generatedBenchmarks: ["circular-pinhole-airy-bessel", "long-single-slit-sinc2", "double-slit-orders"];
+  generatedBenchmarks: ["circular-pinhole-airy-bessel", "long-single-slit-sinc2", "double-slit-orders", "ideal-thin-lens-focal-plane"];
   circular: AdvisorValidationSummary;
   singleSlit: AdvisorValidationSummary;
   doubleSlit: AdvisorValidationSummary;
+  thinLens: AdvisorValidationSummary;
   warnings: SolverWarning[];
   limitations: string[];
 };
@@ -313,17 +318,21 @@ export function runAdvisorValidationReview(): AdvisorValidationReviewResult {
   const circular = runCircularApertureValidation();
   const singleSlit = runSlitOrderValidation({ kind: "long-single-slit-sinc2" });
   const doubleSlit = runSlitOrderValidation({ kind: "double-slit-orders" });
+  const thinLens = runThinLensFocalValidation();
   const warnings = [
     ...circular.warnings.map((warning) => ({ ...warning, elementId: "circular-pinhole-airy-bessel" })),
     ...singleSlit.warnings.map((warning) => ({ ...warning, elementId: "long-single-slit-sinc2" })),
-    ...doubleSlit.warnings.map((warning) => ({ ...warning, elementId: "double-slit-orders" }))
+    ...doubleSlit.warnings.map((warning) => ({ ...warning, elementId: "double-slit-orders" })),
+    ...thinLens.warnings.map((warning) => ({ ...warning, elementId: "ideal-thin-lens-focal-plane" }))
   ];
   const circularSummary = circularAdvisorSummary(circular);
   const singleSummary = slitAdvisorSummary(singleSlit);
   const doubleSummary = slitAdvisorSummary(doubleSlit);
+  const thinLensSummary = thinLensAdvisorSummary(thinLens);
   const limitations = [
     "Advisor Review Mode is a scalar diffraction validation report, not a full 3D Maxwell/FDTD/FEM/BEM/RCWA solve.",
     "All aperture/slit elements are ideal zero-thickness masks.",
+    "The ideal thin lens is a zero-thickness quadratic phase mask with a circular pupil.",
     "Reports are hand-checkable benchmark evidence, not manufacturing or microscope digital-twin certification."
   ];
   const resultHash = fnv1a64(
@@ -331,20 +340,22 @@ export function runAdvisorValidationReview(): AdvisorValidationReviewResult {
       circular: circularSummary,
       singleSlit: singleSummary,
       doubleSlit: doubleSummary,
+      thinLens: thinLensSummary,
       warningCodes: warnings.map((warning) => warning.code),
       limitations
     })
   );
 
   return {
-    id: "l63-advisor-validation-review",
-    schema: "emmicro.advisorValidationReview.v1",
-    label: "L6.3 Advisor Review Mode",
+    id: "l64-advisor-validation-review",
+    schema: "emmicro.advisorValidationReview.v2",
+    label: "L6.4 Advisor Review Mode",
     resultHash,
-    generatedBenchmarks: ["circular-pinhole-airy-bessel", "long-single-slit-sinc2", "double-slit-orders"],
+    generatedBenchmarks: ["circular-pinhole-airy-bessel", "long-single-slit-sinc2", "double-slit-orders", "ideal-thin-lens-focal-plane"],
     circular: circularSummary,
     singleSlit: singleSummary,
     doubleSlit: doubleSummary,
+    thinLens: thinLensSummary,
     warnings,
     limitations
   };
@@ -355,7 +366,7 @@ export function advisorValidationReviewJson(review: AdvisorValidationReviewResul
 }
 
 export function advisorValidationReviewMarkdown(review: AdvisorValidationReviewResult): string {
-  const rows = [review.circular, review.singleSlit, review.doubleSlit].map(
+  const rows = [review.circular, review.singleSlit, review.doubleSlit, review.thinLens].map(
     (summary) =>
       `| ${summary.benchmark} | ${summary.expected} | ${summary.measured} | ${summary.rmsResidual.toExponential(3)} | ${summary.maxResidual.toExponential(3)} | ${summary.status} |`
   );
@@ -370,6 +381,7 @@ export function advisorValidationReviewMarkdown(review: AdvisorValidationReviewR
     "- Circular pinhole Airy/Bessel",
     "- Long single slit sinc^2",
     "- Double slit / grating orders",
+    "- Ideal thin lens focal plane",
     "",
     "## Warnings",
     ...(review.warnings.length ? review.warnings.map((warning) => `- ${warning.elementId ?? "benchmark"}: ${warning.message}`) : ["- none"]),
@@ -385,7 +397,7 @@ export function advisorValidationReviewCsv(review: AdvisorValidationReviewResult
   const escape = (value: string) => `"${value.replaceAll("\"", "\"\"")}"`;
   return [
     "benchmark,expected,measured,rms_residual,max_residual,warning_count,status",
-    ...[review.circular, review.singleSlit, review.doubleSlit].map((summary) =>
+    ...[review.circular, review.singleSlit, review.doubleSlit, review.thinLens].map((summary) =>
       [
         escape(summary.benchmark),
         escape(summary.expected),
@@ -709,6 +721,23 @@ function slitAdvisorSummary(result: SlitOrderValidationResult): AdvisorValidatio
     maxResidual: result.residuals.maxResidual,
     warningCount: result.warnings.length,
     status: result.residuals.rmsResidual < 1e-3 && visibleMeasured.length > 0 ? "pass" : "warning"
+  };
+}
+
+function thinLensAdvisorSummary(result: ThinLensFocalValidationResult): AdvisorValidationSummary {
+  const measured =
+    result.comparison.measuredFirstDarkRadiusM === null
+      ? result.comparison.firstDarkSearchStatus
+      : `${formatUm(result.comparison.measuredFirstDarkRadiusM)} um`;
+  return {
+    id: "ideal-thin-lens-focal-plane",
+    benchmark: "Ideal thin lens focal plane",
+    expected: `first dark ${(result.expected.firstDarkRadiusM * 1e6).toFixed(1)} um`,
+    measured,
+    rmsResidual: result.residuals.rmsResidual,
+    maxResidual: result.residuals.maxResidual,
+    warningCount: result.warnings.length,
+    status: result.residuals.rmsResidual < 1e-3 && result.comparison.measuredFirstDarkRadiusM !== null ? "pass" : "warning"
   };
 }
 
