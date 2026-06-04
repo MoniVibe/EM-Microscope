@@ -1,21 +1,26 @@
 import { useMemo, useState } from "react";
 import {
   auditMaterialCatalog,
+  createMaterialCatalog,
   createMaterialImportTemplate,
-  listL4SpectralMaterials,
+  importMaterialPackage,
+  listCatalogMaterials,
   parseMaterialImportJson,
   runCoatingStack,
   runCoatingDesignFoundry,
   runCoatingYieldAnalysis,
   runCoatingSweep,
+  serializeCoatingStackDesign,
   visibleArObjective,
   type CoatingDesignResult,
   type CoatingStackDefinition,
   type CoatingStackRunResult,
   type CoatingSweepResult,
   type CoatingYieldResult,
+  type MaterialCatalogEntry,
   type MaterialCatalogAudit,
   type MaterialImportResult,
+  type MaxwellMaterialCatalog,
   type MaxwellPolarization,
   type PlanarFieldMonitorResult,
   type SolverWarning
@@ -40,9 +45,9 @@ type StackPreset = {
   layers: EditableLayer[];
 };
 
-const materialOptions = listL4SpectralMaterials();
-const layerMaterialOptions = materialOptions.filter((material) => material.family !== "ambient");
-const builtInMaterialAudit = auditMaterialCatalog(materialOptions, "built-in-l4-material-catalog");
+const builtInMaterialCatalog = createMaterialCatalog({ id: "built-in-l54-material-catalog" });
+const builtInMaterialOptions = listCatalogMaterials(builtInMaterialCatalog);
+const builtInMaterialAudit = auditMaterialCatalog(builtInMaterialOptions, "built-in-l54-material-catalog");
 
 const stackPresets = {
   bareGlass: {
@@ -102,6 +107,20 @@ export function MaxwellPanel() {
   const [sweepCount, setSweepCount] = useState(33);
   const [materialImport, setMaterialImport] = useState<MaterialImportResult | null>(null);
   const [materialImportError, setMaterialImportError] = useState<string | null>(null);
+  const materialCatalog = useMemo<MaxwellMaterialCatalog>(
+    () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
+    [materialImport]
+  );
+  const materialOptions = useMemo(() => listCatalogMaterials(materialCatalog), [materialCatalog]);
+  const layerMaterialOptions = useMemo(() => materialOptions.filter((material) => material.family !== "ambient"), [materialOptions]);
+  const importedLayerMaterial = useMemo(() => layerMaterialOptions.find((material) => material.origin === "imported"), [layerMaterialOptions]);
+  const materialRunOptions = useMemo(
+    () => ({
+      materialCatalog,
+      materialResolution: { extrapolation: "clamp" as const }
+    }),
+    [materialCatalog]
+  );
 
   const stack = useMemo<CoatingStackDefinition>(
     () => ({
@@ -114,22 +133,22 @@ export function MaxwellPanel() {
       substrateMaterialId,
       layers: layers.map((layer) => ({
         id: layer.id,
-        label: materialLabel(layer.materialId),
+        label: materialLabel(layer.materialId, materialCatalog),
         materialId: layer.materialId,
         thicknessM: clamp(layer.thicknessNm, 0.1, 10000) * 1e-9
       }))
     }),
-    [angleDeg, incidentMaterialId, layers, polarization, presetId, substrateMaterialId, wavelengthNm]
+    [angleDeg, incidentMaterialId, layers, materialCatalog, polarization, presetId, substrateMaterialId, wavelengthNm]
   );
-  const run = useMemo<CoatingStackRunResult>(() => runCoatingStack(stack), [stack]);
+  const run = useMemo<CoatingStackRunResult>(() => runCoatingStack(stack, materialRunOptions), [materialRunOptions, stack]);
   const sweep = useMemo<CoatingSweepResult>(
     () =>
       runCoatingSweep(stack, {
         startWavelengthM: clamp(sweepStartNm, 200, 2000) * 1e-9,
         endWavelengthM: clamp(Math.max(sweepStartNm, sweepEndNm), 200, 2000) * 1e-9,
         sampleCount: Math.max(3, Math.min(81, Math.round(sweepCount)))
-      }),
-    [stack, sweepCount, sweepEndNm, sweepStartNm]
+      }, materialRunOptions),
+    [materialRunOptions, stack, sweepCount, sweepEndNm, sweepStartNm]
   );
   const foundry = useMemo<CoatingDesignResult>(
     () =>
@@ -138,9 +157,10 @@ export function MaxwellPanel() {
         label: `L5.1 ${stackPresets[presetId].label} design foundry`,
         seedStack: stack,
         objective: visibleArObjective,
-        settings: { passes: 2, samplesPerVariable: 7, candidateCount: 3 }
+        settings: { passes: 2, samplesPerVariable: 7, candidateCount: 3 },
+        ...materialRunOptions
       }),
-    [presetId, stack]
+    [materialRunOptions, presetId, stack]
   );
   const yieldAnalysis = useMemo<CoatingYieldResult>(
     () =>
@@ -150,17 +170,26 @@ export function MaxwellPanel() {
         stack: foundry.best.stack,
         objective: visibleArObjective,
         tolerances: foundry.best.stack.layers.map((layer) => ({ layerId: layer.id, sigmaM: 2e-9 })),
-        settings: { sampleCount: 41, confidenceLevel: 0.95 }
+        settings: { sampleCount: 41, confidenceLevel: 0.95 },
+        ...materialRunOptions
       }),
-    [foundry, presetId]
+    [foundry, materialRunOptions, presetId]
   );
   const materialAudit = useMemo<MaterialCatalogAudit>(
-    () => (materialImport ? auditMaterialCatalog([...materialOptions, ...materialImport.records], "l53-material-catalog-with-import-preview") : builtInMaterialAudit),
-    [materialImport]
+    () => (materialImport ? auditMaterialCatalog(materialOptions, "l54-material-catalog-with-imports") : builtInMaterialAudit),
+    [materialImport, materialOptions]
   );
   const warnings = useMemo(
-    () => uniquePanelWarnings([...materialAudit.warnings, ...(materialImport?.warnings ?? []), ...yieldAnalysis.warnings, ...foundry.warnings, ...run.warnings]),
-    [foundry, materialAudit, materialImport, run, yieldAnalysis]
+    () =>
+      uniquePanelWarnings([
+        ...materialAudit.warnings,
+        ...materialCatalog.warnings,
+        ...(materialImport?.warnings ?? []),
+        ...yieldAnalysis.warnings,
+        ...foundry.warnings,
+        ...run.warnings
+      ]),
+    [foundry, materialAudit, materialCatalog, materialImport, run, yieldAnalysis]
   );
 
   function selectPreset(nextPresetId: StackPresetId): void {
@@ -220,11 +249,21 @@ export function MaxwellPanel() {
     }
   }
 
+  function loadExampleMaterialPack(): void {
+    try {
+      setMaterialImport(importMaterialPackage(createMaterialImportTemplate()));
+      setMaterialImportError(null);
+    } catch (error) {
+      setMaterialImport(null);
+      setMaterialImportError((error as Error).message);
+    }
+  }
+
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L5.3 Maxwell Design Foundry">
-      <h2>L5.3 Maxwell Design Foundry</h2>
+    <section className="wave-panel maxwell-panel" aria-label="L5.4 Maxwell Design Foundry">
+      <h2>L5.4 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM plus material provenance, design, and yield analysis</strong>
+        <strong>frequency-domain Maxwell planar coating-stack TMM plus selectable material provenance, design, and yield analysis</strong>
         <span>not a general 3D Maxwell solver</span>
       </div>
 
@@ -242,21 +281,13 @@ export function MaxwellPanel() {
         <label className="field-row">
           <span>Incident</span>
           <select value={incidentMaterialId} onChange={(event) => setIncidentMaterialId(event.currentTarget.value)}>
-            {materialOptions.map((material) => (
-              <option key={material.id} value={material.id}>
-                {material.label}
-              </option>
-            ))}
+            <MaterialSelectOptions materials={materialOptions} />
           </select>
         </label>
         <label className="field-row">
           <span>Substrate</span>
           <select value={substrateMaterialId} onChange={(event) => setSubstrateMaterialId(event.currentTarget.value)}>
-            {materialOptions.map((material) => (
-              <option key={material.id} value={material.id}>
-                {material.label}
-              </option>
-            ))}
+            <MaterialSelectOptions materials={materialOptions} />
           </select>
         </label>
         <NumberField label="Wavelength" value={wavelengthNm} unit="nm" min={200} max={2000} step={1} onChange={setWavelengthNm} />
@@ -299,10 +330,12 @@ export function MaxwellPanel() {
         </div>
         {materialImport ? (
           <div className="maxwell-material-records">
-            {materialImport.records.map((record) => (
+            {materialOptions
+              .filter((record) => record.origin === "imported")
+              .map((record) => (
               <div className="compact-stat" key={record.id}>
                 <span>{record.label}</span>
-                <strong>{record.samples.length} samples</strong>
+                <strong>{record.materialHash.slice(0, 10)}</strong>
               </div>
             ))}
           </div>
@@ -328,6 +361,10 @@ export function MaxwellPanel() {
             <FileDown size={15} />
             <span>Template JSON</span>
           </button>
+          <button type="button" onClick={loadExampleMaterialPack}>
+            <Upload size={15} />
+            <span>Example Pack</span>
+          </button>
         </div>
       </div>
 
@@ -347,36 +384,44 @@ export function MaxwellPanel() {
               <Plus size={15} />
               <span>Absorber</span>
             </button>
+            {importedLayerMaterial && (
+              <button type="button" onClick={() => addLayer(importedLayerMaterial.id)}>
+                <Plus size={15} />
+                <span>Imported</span>
+              </button>
+            )}
           </div>
         </div>
 
         {layers.length > 0 ? (
           <div className="maxwell-layer-list">
-            {layers.map((layer) => (
-              <div className="maxwell-layer-row" key={layer.id}>
-                <select value={layer.materialId} onChange={(event) => updateLayer(layer.id, (current) => ({ ...current, materialId: event.currentTarget.value }))}>
-                  {layerMaterialOptions.map((material) => (
-                    <option key={material.id} value={material.id}>
-                      {material.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="number-input">
-                  <input
-                    type="number"
-                    value={formatNumberInputValue(layer.thicknessNm)}
-                    min={0.1}
-                    max={10000}
-                    step={1}
-                    onChange={(event) => updateLayer(layer.id, (current) => ({ ...current, thicknessNm: Number(event.currentTarget.value) }))}
-                  />
-                  <em>nm</em>
+            {layers.map((layer) => {
+              const selectedMaterial = materialEntryFor(layer.materialId, materialCatalog);
+              return (
+                <div className="maxwell-layer-item" key={layer.id}>
+                  <div className="maxwell-layer-row">
+                    <select value={layer.materialId} onChange={(event) => updateLayer(layer.id, (current) => ({ ...current, materialId: event.currentTarget.value }))}>
+                      <MaterialSelectOptions materials={layerMaterialOptions} />
+                    </select>
+                    <div className="number-input">
+                      <input
+                        type="number"
+                        value={formatNumberInputValue(layer.thicknessNm)}
+                        min={0.1}
+                        max={10000}
+                        step={1}
+                        onChange={(event) => updateLayer(layer.id, (current) => ({ ...current, thicknessNm: Number(event.currentTarget.value) }))}
+                      />
+                      <em>nm</em>
+                    </div>
+                    <button className="icon-button danger" type="button" title="Remove layer" onClick={() => removeLayer(layer.id)}>
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                  <MaterialPassport material={selectedMaterial} wavelengthNm={wavelengthNm} />
                 </div>
-                <button className="icon-button danger" type="button" title="Remove layer" onClick={() => removeLayer(layer.id)}>
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="empty-state">No coating layer; this is the bare incident/substrate boundary.</div>
@@ -384,7 +429,7 @@ export function MaxwellPanel() {
       </div>
 
       <div className="wave-actions">
-        <button type="button" onClick={() => exportStackJson(run, sweep, foundry, yieldAnalysis)}>
+        <button type="button" onClick={() => exportStackJson(stack, materialCatalog, run, sweep, foundry, yieldAnalysis)}>
           <Save size={17} />
           <span>JSON</span>
         </button>
@@ -673,6 +718,48 @@ function FluxRow({ label, value }: { label: string; value: number }) {
   );
 }
 
+function MaterialSelectOptions({ materials }: { materials: MaterialCatalogEntry[] }) {
+  const builtIn = materials.filter((material) => material.origin === "builtIn");
+  const imported = materials.filter((material) => material.origin === "imported");
+  return (
+    <>
+      <optgroup label="Built-in">
+        {builtIn.map((material) => (
+          <option key={material.id} value={material.id}>
+            {material.label}
+          </option>
+        ))}
+      </optgroup>
+      {imported.length > 0 && (
+        <optgroup label="Imported">
+          {imported.map((material) => (
+            <option key={material.id} value={material.id}>
+              {material.label}
+            </option>
+          ))}
+        </optgroup>
+      )}
+    </>
+  );
+}
+
+function MaterialPassport({ material, wavelengthNm }: { material: MaterialCatalogEntry | undefined; wavelengthNm: number }) {
+  if (!material) {
+    return <div className="maxwell-material-passport warning">Missing material reference</div>;
+  }
+  const range = materialWavelengthRange(material);
+  const outsideRange = range ? wavelengthNm * 1e-9 < range[0] || wavelengthNm * 1e-9 > range[1] : false;
+  return (
+    <div className={`maxwell-material-passport${outsideRange ? " warning" : ""}`} title={material.source}>
+      <span>{material.origin === "imported" ? "Imported" : "Built-in diagnostic"}</span>
+      <strong>{material.materialHash.slice(0, 10)}</strong>
+      <span>{formatWavelengthRange(range)}</span>
+      <span>{material.origin === "imported" ? material.sourcePackLabel ?? material.sourcePackId ?? "imported pack" : material.sourceRecordId}</span>
+      {outsideRange && <span>outside wavelength range</span>}
+    </div>
+  );
+}
+
 function SweepPlot({ sweep }: { sweep: CoatingSweepResult }) {
   const width = 720;
   const height = 150;
@@ -742,13 +829,21 @@ function FieldMonitorPlot({ monitor }: { monitor: PlanarFieldMonitorResult }) {
   );
 }
 
-function exportStackJson(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult, yieldAnalysis: CoatingYieldResult): void {
-  downloadText("l52-coating-design-yield-stack.json", "application/json", JSON.stringify({ run, sweep, foundry, yieldAnalysis }, null, 2));
+function exportStackJson(
+  stack: CoatingStackDefinition,
+  materialCatalog: MaxwellMaterialCatalog,
+  run: CoatingStackRunResult,
+  sweep: CoatingSweepResult,
+  foundry: CoatingDesignResult,
+  yieldAnalysis: CoatingYieldResult
+): void {
+  const design = serializeCoatingStackDesign(stack, materialCatalog);
+  downloadText("l54-coating-material-selection-stack.json", "application/json", JSON.stringify({ design, run, sweep, foundry, yieldAnalysis }, null, 2));
 }
 
 function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult, yieldAnalysis: CoatingYieldResult): void {
   downloadText(
-    "l52-coating-design-yield-stack.md",
+    "l54-coating-material-selection-stack.md",
     "text/markdown",
     [
       `# ${run.label}`,
@@ -767,6 +862,9 @@ function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResul
       `Sweep hash: ${sweep.resultHash}`,
       `Foundry hash: ${foundry.resultHash}`,
       `Yield hash: ${yieldAnalysis.resultHash}`,
+      "",
+      "Material references:",
+      ...run.materialCatalogRefs.map((reference) => `- ${reference.label}: ${reference.materialId} / ${reference.materialHash}`),
       "",
       "Planar field monitor:",
       `- Max |E|^2: ${run.fieldMonitor.maxElectricIntensity.toExponential(3)}`,
@@ -815,7 +913,7 @@ function exportYieldJson(yieldAnalysis: CoatingYieldResult): void {
 }
 
 function exportMaterialTemplateJson(): void {
-  downloadText("l53-material-import-template.json", "application/json", JSON.stringify(createMaterialImportTemplate(), null, 2));
+  downloadText("l54-material-import-template.json", "application/json", JSON.stringify(createMaterialImportTemplate(), null, 2));
 }
 
 function exportSweepCsv(sweep: CoatingSweepResult): void {
@@ -874,8 +972,12 @@ function cloneLayers(layers: EditableLayer[]): EditableLayer[] {
   return layers.map((layer) => ({ ...layer }));
 }
 
-function materialLabel(materialId: string): string {
-  return materialOptions.find((material) => material.id === materialId)?.label ?? materialId;
+function materialEntryFor(materialId: string, materialCatalog: MaxwellMaterialCatalog): MaterialCatalogEntry | undefined {
+  return listCatalogMaterials(materialCatalog).find((material) => material.id === materialId);
+}
+
+function materialLabel(materialId: string, materialCatalog: MaxwellMaterialCatalog): string {
+  return materialEntryFor(materialId, materialCatalog)?.label ?? materialId;
 }
 
 function defaultThicknessNm(materialId: string): number {
@@ -910,6 +1012,12 @@ function formatInterval(lower: number, upper: number): string {
 function formatWavelengthRange(range: [number, number] | null): string {
   if (!range) return "n/a";
   return `${(range[0] * 1e9).toFixed(0)}-${(range[1] * 1e9).toFixed(0)} nm`;
+}
+
+function materialWavelengthRange(material: MaterialCatalogEntry): [number, number] | null {
+  if (material.samples.length === 0) return null;
+  const wavelengths = material.samples.map((sample) => sample.wavelengthM);
+  return [Math.min(...wavelengths), Math.max(...wavelengths)];
 }
 
 function formatMetric(metric: string, value: number): string {

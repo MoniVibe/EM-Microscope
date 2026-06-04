@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { compileCoatingStackToPlanarTmm, l41DefaultCoatingStack, runCoatingStack, runCoatingSweep } from "./coatingStack";
+import {
+  compileCoatingStackToPlanarTmm,
+  deserializeCoatingStackDesign,
+  l41DefaultCoatingStack,
+  runCoatingStack,
+  runCoatingSweep,
+  serializeCoatingStackDesign,
+  type CoatingStackDefinition
+} from "./coatingStack";
+import { createMaterialCatalog, listCatalogMaterials } from "./materialCatalog";
+import { importMaterialPackage } from "./materialImport";
 
 describe("L4.1 coating stack runner", () => {
   it("compiles spectral material IDs into a planar TMM input", () => {
@@ -47,4 +57,75 @@ describe("L4.1 coating stack runner", () => {
 
     expect(sweep.warnings.some((warning) => warning.code === "maxwell.material.wavelengthClamped")).toBe(true);
   });
+
+  it("compiles imported material IDs into Maxwell TMM material receipts", () => {
+    const { catalog, materialId } = importedCatalogFixture();
+    const stack = importedStack(materialId);
+    const compiled = compileCoatingStackToPlanarTmm(stack, stack.wavelengthM, { materialCatalog: catalog });
+    const run = runCoatingStack(stack, { materialCatalog: catalog });
+
+    expect(compiled.input.layers[0]?.material.label).toBe("Imported AR coating");
+    expect(compiled.input.layers[0]?.material.catalogMaterialId).toBe(materialId);
+    expect(compiled.input.layers[0]?.material.sourcePackHash).toBeTruthy();
+    expect(compiled.materialCatalogRefs.some((reference) => reference.materialId === materialId)).toBe(true);
+    expect(run.materialCatalogRefs.some((reference) => reference.materialId === materialId)).toBe(true);
+    expect(run.tmm.energyBalanceError).toBeLessThan(1e-10);
+  });
+
+  it("serializes material references and fails clearly when an imported pack is missing", () => {
+    const { catalog, materialId } = importedCatalogFixture();
+    const stack = importedStack(materialId);
+    const design = serializeCoatingStackDesign(stack, catalog);
+
+    expect(design.schema).toBe("emmicro.coatingStack.v1");
+    expect(design.materialCatalogRefs.some((reference) => reference.materialId === materialId)).toBe(true);
+    expect(deserializeCoatingStackDesign(design, catalog).layers[0]?.materialId).toBe(materialId);
+    expect(() => deserializeCoatingStackDesign(design, createMaterialCatalog())).toThrow(/material pack is not loaded/);
+  });
 });
+
+function importedCatalogFixture(): { catalog: ReturnType<typeof createMaterialCatalog>; materialId: string } {
+  const imported = importMaterialPackage({
+    schema: "emmicro.materials.v1",
+    id: "l54-stack-pack",
+    label: "L5.4 stack material pack",
+    records: [
+      {
+        id: "imported-ar",
+        label: "Imported AR coating",
+        family: "coating",
+        wavelengthUnit: "nm",
+        source: {
+          name: "unit test coating source",
+          reference: "synthetic L5.4 stack fixture",
+          license: "test-only"
+        },
+        samples: [
+          { wavelength: 400, n: 1.32, k: 0 },
+          { wavelength: 550, n: 1.31, k: 0 },
+          { wavelength: 700, n: 1.3, k: 0 }
+        ]
+      }
+    ]
+  });
+  const catalog = createMaterialCatalog({ imports: [imported] });
+  const materialId = listCatalogMaterials(catalog).find((material) => material.origin === "imported")?.id;
+  if (!materialId) throw new Error("missing imported material id");
+  return { catalog, materialId };
+}
+
+function importedStack(materialId: string): CoatingStackDefinition {
+  return {
+    ...l41DefaultCoatingStack,
+    id: "l54-imported-stack",
+    label: "L5.4 imported material stack",
+    layers: [
+      {
+        id: "layer-imported-ar",
+        label: "Imported AR coating",
+        materialId,
+        thicknessM: 96e-9
+      }
+    ]
+  };
+}

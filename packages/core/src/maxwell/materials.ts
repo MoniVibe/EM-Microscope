@@ -12,6 +12,12 @@ export type MaxwellMaterialSample = {
   relativePermeability?: Complex;
   wavelengthRangeM?: [number, number];
   source?: string;
+  catalogMaterialId?: string;
+  sourceRecordId?: string;
+  sourcePackId?: string;
+  sourcePackHash?: string;
+  materialHash?: string;
+  provenanceNotes?: string[];
 };
 
 export function complexIndex(sample: MaxwellMaterialSample): Complex {

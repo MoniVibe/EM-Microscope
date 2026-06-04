@@ -379,7 +379,7 @@ function materialImportProvenance(): MaterialImportResult["provenance"] {
     label: "L5.3 sourced spectral material import and provenance audit",
     limitations: [
       "Imports spectral n,k tables and source metadata only; it does not verify source correctness or licensing.",
-      "Imported records are normalized for the planar Maxwell TMM material API but are not automatically used by editable coating stacks yet.",
+      "Imported records are normalized for the planar Maxwell TMM material API; coating stacks can use them when a material catalog containing the import is supplied.",
       "Passivity checks clamp negative extinction coefficients; they do not validate Kramers-Kronig consistency or physical dispersion models.",
       "This is not a live refractiveindex.info integration, laboratory material fit, digital-twin calibration, or certified material database."
     ]

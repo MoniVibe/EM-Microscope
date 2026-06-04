@@ -1,6 +1,13 @@
 import { fnv1a64, stableStringify } from "../scene/hashScene";
 import type { SolverWarning } from "../solvers/Solver";
-import { getL4SpectralMaterial, sampleSpectralMaterial } from "./materialCatalog";
+import {
+  l54BuiltInMaterialCatalog,
+  materialCatalogReferencesForIds,
+  sampleCatalogMaterial,
+  type MaterialCatalogReference,
+  type MaterialResolutionOptions,
+  type MaxwellMaterialCatalog
+} from "./materialCatalog";
 import { runPlanarFieldMonitor, type PlanarFieldMonitorResult } from "./planarFieldMonitor";
 import { runPlanarTmm, type MaxwellPolarization, type PlanarTmmInput, type PlanarTmmResult } from "./planarTmm";
 
@@ -28,6 +35,7 @@ export type CoatingStackRunResult = {
   type: "l4CoatingStackPlanarTmm";
   analysisId: "analysis.maxwell.l4.phase1.coatingStackPlanarTmm";
   label: string;
+  materialCatalogRefs: MaterialCatalogReference[];
   compiledInput: PlanarTmmInput;
   tmm: PlanarTmmResult;
   fieldMonitor: PlanarFieldMonitorResult;
@@ -37,6 +45,18 @@ export type CoatingStackRunResult = {
     label: "L4.1 wavelength-dependent material coating stack compiled to planar Maxwell TMM";
     limitations: string[];
   };
+};
+
+export type CoatingStackRunOptions = {
+  materialCatalog?: MaxwellMaterialCatalog;
+  materialResolution?: MaterialResolutionOptions;
+};
+
+export type SerializedCoatingStackDesign = {
+  schema: "emmicro.coatingStack.v1";
+  stack: CoatingStackDefinition;
+  materialCatalogRefs: MaterialCatalogReference[];
+  resultHash: string;
 };
 
 export type CoatingSweepDefinition = {
@@ -88,14 +108,22 @@ export const l41DefaultCoatingStack: CoatingStackDefinition = {
   ]
 };
 
-export function compileCoatingStackToPlanarTmm(stack: CoatingStackDefinition, wavelengthM = stack.wavelengthM): { input: PlanarTmmInput; warnings: SolverWarning[] } {
+export function compileCoatingStackToPlanarTmm(
+  stack: CoatingStackDefinition,
+  wavelengthM = stack.wavelengthM,
+  options: CoatingStackRunOptions = {}
+): { input: PlanarTmmInput; warnings: SolverWarning[]; materialCatalogRefs: MaterialCatalogReference[] } {
+  const catalog = options.materialCatalog ?? l54BuiltInMaterialCatalog;
   const warnings = validateCoatingStack(stack, wavelengthM);
-  const incident = sampleSpectralMaterial(getL4SpectralMaterial(stack.incidentMaterialId), wavelengthM);
-  const substrate = sampleSpectralMaterial(getL4SpectralMaterial(stack.substrateMaterialId), wavelengthM);
+  warnings.push(...catalog.warnings);
+  ensureCoatingStackMaterialsLoaded(stack, catalog);
+
+  const incident = sampleCatalogMaterial(stack.incidentMaterialId, wavelengthM, catalog, options.materialResolution);
+  const substrate = sampleCatalogMaterial(stack.substrateMaterialId, wavelengthM, catalog, options.materialResolution);
   warnings.push(...incident.warnings, ...substrate.warnings);
 
   const layers = stack.layers.map((layer) => {
-    const material = sampleSpectralMaterial(getL4SpectralMaterial(layer.materialId), wavelengthM);
+    const material = sampleCatalogMaterial(layer.materialId, wavelengthM, catalog, options.materialResolution);
     warnings.push(...material.warnings.map((warning) => ({ ...warning, elementId: layer.id })));
     return {
       id: layer.id,
@@ -117,12 +145,13 @@ export function compileCoatingStackToPlanarTmm(stack: CoatingStackDefinition, wa
       layers,
       tolerance: stack.tolerance
     },
-    warnings: uniqueWarnings(warnings)
+    warnings: uniqueWarnings(warnings),
+    materialCatalogRefs: materialCatalogRefsForStack(stack, catalog)
   };
 }
 
-export function runCoatingStack(stack: CoatingStackDefinition): CoatingStackRunResult {
-  const compiled = compileCoatingStackToPlanarTmm(stack);
+export function runCoatingStack(stack: CoatingStackDefinition, options: CoatingStackRunOptions = {}): CoatingStackRunResult {
+  const compiled = compileCoatingStackToPlanarTmm(stack, stack.wavelengthM, options);
   const tmm = runPlanarTmm(compiled.input);
   const fieldMonitor = runPlanarFieldMonitor(compiled.input, tmm);
   const warnings = uniqueWarnings([...compiled.warnings, ...tmm.warnings, ...fieldMonitor.warnings]);
@@ -130,6 +159,7 @@ export function runCoatingStack(stack: CoatingStackDefinition): CoatingStackRunR
     stableStringify({
       analysisId: "analysis.maxwell.l4.phase1.coatingStackPlanarTmm",
       stack: hashableStack(stack),
+      materialCatalogRefs: compiled.materialCatalogRefs,
       tmmHash: tmm.resultHash,
       fieldMonitorHash: fieldMonitor.resultHash,
       warningCodes: warnings.map((warning) => warning.code)
@@ -141,6 +171,7 @@ export function runCoatingStack(stack: CoatingStackDefinition): CoatingStackRunR
     type: "l4CoatingStackPlanarTmm",
     analysisId: "analysis.maxwell.l4.phase1.coatingStackPlanarTmm",
     label: stack.label,
+    materialCatalogRefs: compiled.materialCatalogRefs,
     compiledInput: compiled.input,
     tmm,
     fieldMonitor,
@@ -150,7 +181,7 @@ export function runCoatingStack(stack: CoatingStackDefinition): CoatingStackRunR
   };
 }
 
-export function runCoatingSweep(stack: CoatingStackDefinition, sweep: CoatingSweepDefinition): CoatingSweepResult {
+export function runCoatingSweep(stack: CoatingStackDefinition, sweep: CoatingSweepDefinition, options: CoatingStackRunOptions = {}): CoatingSweepResult {
   validateSweep(sweep);
   const samples: CoatingSweepSample[] = [];
   const warnings: SolverWarning[] = [];
@@ -158,7 +189,7 @@ export function runCoatingSweep(stack: CoatingStackDefinition, sweep: CoatingSwe
   for (let i = 0; i < sweep.sampleCount; i += 1) {
     const wavelengthM =
       sweep.sampleCount === 1 ? sweep.startWavelengthM : sweep.startWavelengthM + ((sweep.endWavelengthM - sweep.startWavelengthM) * i) / (sweep.sampleCount - 1);
-    const run = runCoatingStack({ ...stack, wavelengthM });
+    const run = runCoatingStack({ ...stack, wavelengthM }, options);
     warnings.push(...run.warnings);
     samples.push({
       wavelengthM,
@@ -204,6 +235,50 @@ export function runCoatingSweep(stack: CoatingStackDefinition, sweep: CoatingSwe
   };
 }
 
+export function serializeCoatingStackDesign(
+  stack: CoatingStackDefinition,
+  catalog: MaxwellMaterialCatalog = l54BuiltInMaterialCatalog
+): SerializedCoatingStackDesign {
+  ensureCoatingStackMaterialsLoaded(stack, catalog);
+  const materialCatalogRefs = materialCatalogRefsForStack(stack, catalog);
+  const resultHash = fnv1a64(
+    stableStringify({
+      schema: "emmicro.coatingStack.v1",
+      stack: hashableStack(stack),
+      materialCatalogRefs
+    })
+  );
+  return {
+    schema: "emmicro.coatingStack.v1",
+    stack: cloneStack(stack),
+    materialCatalogRefs,
+    resultHash
+  };
+}
+
+export function deserializeCoatingStackDesign(
+  design: SerializedCoatingStackDesign,
+  catalog: MaxwellMaterialCatalog = l54BuiltInMaterialCatalog
+): CoatingStackDefinition {
+  if (design.schema !== "emmicro.coatingStack.v1") throw new Error("unsupported coating stack design schema");
+  for (const reference of design.materialCatalogRefs) {
+    try {
+      const current = materialCatalogReferencesForIds([reference.materialId], catalog)[0];
+      if (!current) throw new Error("missing");
+      if (current.materialHash !== reference.materialHash) {
+        throw new Error(`material '${reference.materialId}' hash changed; expected ${reference.materialHash}, found ${current.materialHash}`);
+      }
+    } catch (error) {
+      if ((error as Error).message.includes("hash changed")) throw error;
+      throw new Error(
+        `Design references imported material ${reference.materialId}, but that material pack is not loaded. Import the original material pack or replace the material.`
+      );
+    }
+  }
+  ensureCoatingStackMaterialsLoaded(design.stack, catalog);
+  return cloneStack(design.stack);
+}
+
 function validateCoatingStack(stack: CoatingStackDefinition, wavelengthM: number): SolverWarning[] {
   if (wavelengthM <= 0 || !Number.isFinite(wavelengthM)) throw new Error("coating stack wavelength must be positive");
   if (!Number.isFinite(stack.angleRad) || Math.abs(stack.angleRad) >= Math.PI / 2) throw new Error("coating stack angle must be finite and below grazing incidence");
@@ -224,6 +299,24 @@ function validateCoatingStack(stack: CoatingStackDefinition, wavelengthM: number
     }
   }
   return warnings;
+}
+
+function ensureCoatingStackMaterialsLoaded(stack: CoatingStackDefinition, catalog: MaxwellMaterialCatalog): void {
+  materialCatalogRefsForStack(stack, catalog);
+}
+
+function materialCatalogRefsForStack(stack: CoatingStackDefinition, catalog: MaxwellMaterialCatalog): MaterialCatalogReference[] {
+  return materialCatalogReferencesForIds(
+    [stack.incidentMaterialId, stack.substrateMaterialId, ...stack.layers.map((layer) => layer.materialId)],
+    catalog
+  );
+}
+
+function cloneStack(stack: CoatingStackDefinition): CoatingStackDefinition {
+  return {
+    ...stack,
+    layers: stack.layers.map((layer) => ({ ...layer }))
+  };
 }
 
 function validateSweep(sweep: CoatingSweepDefinition): void {

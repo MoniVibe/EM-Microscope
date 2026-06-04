@@ -1,6 +1,6 @@
 import { fnv1a64, stableStringify } from "../scene/hashScene";
 import type { SolverWarning } from "../solvers/Solver";
-import { runCoatingStack, type CoatingStackDefinition, type CoatingStackRunResult } from "./coatingStack";
+import { runCoatingStack, type CoatingStackDefinition, type CoatingStackRunOptions, type CoatingStackRunResult } from "./coatingStack";
 
 export type CoatingDesignMetric = "reflectance" | "transmittance" | "absorbance";
 export type CoatingDesignDirection = "minimize" | "maximize";
@@ -48,6 +48,8 @@ export type CoatingDesignProblem = {
   objective: CoatingDesignObjective;
   variables?: CoatingDesignVariable[];
   settings?: CoatingDesignSettings;
+  materialCatalog?: CoatingStackRunOptions["materialCatalog"];
+  materialResolution?: CoatingStackRunOptions["materialResolution"];
 };
 
 export type CoatingDesignMetrics = {
@@ -120,6 +122,10 @@ export const visibleArObjective: CoatingDesignObjective = {
 
 export function runCoatingDesignFoundry(problem: CoatingDesignProblem): CoatingDesignResult {
   validateProblem(problem);
+  const runOptions: CoatingStackRunOptions = {
+    materialCatalog: problem.materialCatalog,
+    materialResolution: problem.materialResolution
+  };
 
   const settings = {
     passes: clampInteger(problem.settings?.passes ?? 3, 1, 8),
@@ -147,7 +153,7 @@ export function runCoatingDesignFoundry(problem: CoatingDesignProblem): CoatingD
     const key = stackKey(stack);
     const cached = evaluationCache.get(key);
     if (cached) return cached;
-    const evaluated = evaluateCoatingDesignStack(stack, problem.objective);
+    const evaluated = evaluateCoatingDesignStack(stack, problem.objective, runOptions);
     evaluationCache.set(key, evaluated);
     allEvaluations.set(key, evaluated);
     return evaluated;
@@ -180,8 +186,8 @@ export function runCoatingDesignFoundry(problem: CoatingDesignProblem): CoatingD
   const rankedEvaluations = [...allEvaluations.values()]
     .sort((a, b) => a.score - b.score)
     .slice(0, settings.candidateCount)
-    .map((evaluation, index) => makeCandidate(evaluation, index + 1, seedEvaluation.score));
-  const seed = makeCandidate(seedEvaluation, 0, seedEvaluation.score);
+    .map((evaluation, index) => makeCandidate(evaluation, index + 1, seedEvaluation.score, runOptions));
+  const seed = makeCandidate(seedEvaluation, 0, seedEvaluation.score, runOptions);
   const best = rankedEvaluations[0] ?? seed;
   warnings.push(...seedEvaluation.warnings, ...bestEvaluation.warnings, ...best.certifiedRun.warnings);
 
@@ -193,7 +199,8 @@ export function runCoatingDesignFoundry(problem: CoatingDesignProblem): CoatingD
         objective: normalizedObjectiveForHash(problem.objective),
         variables,
         settings,
-        seedStack: stackForHash(seed.stack)
+        seedStack: stackForHash(seed.stack),
+        materialCatalogHash: problem.materialCatalog?.resultHash
       },
       seedHash: seed.resultHash,
       bestHash: best.resultHash,
@@ -218,7 +225,11 @@ export function runCoatingDesignFoundry(problem: CoatingDesignProblem): CoatingD
   };
 }
 
-export function evaluateCoatingDesignStack(stack: CoatingStackDefinition, objective: CoatingDesignObjective): CoatingDesignEvaluation {
+export function evaluateCoatingDesignStack(
+  stack: CoatingStackDefinition,
+  objective: CoatingDesignObjective,
+  runOptions: CoatingStackRunOptions = {}
+): CoatingDesignEvaluation {
   const warnings: SolverWarning[] = [];
   const reflectance: number[] = [];
   const transmittance: number[] = [];
@@ -226,7 +237,7 @@ export function evaluateCoatingDesignStack(stack: CoatingStackDefinition, object
   const energyBalanceError: number[] = [];
 
   for (const wavelengthM of objective.wavelengthsM) {
-    const run = runCoatingStack({ ...stack, wavelengthM });
+    const run = runCoatingStack({ ...stack, wavelengthM }, runOptions);
     warnings.push(...run.warnings);
     reflectance.push(run.tmm.reflectance);
     transmittance.push(run.tmm.transmittance);
@@ -306,8 +317,8 @@ function constraintPenalty(stack: CoatingStackDefinition, objective: CoatingDesi
   return penalty;
 }
 
-function makeCandidate(evaluation: CoatingDesignEvaluation, rank: number, seedScore: number): CoatingDesignCandidate {
-  const certifiedRun = runCoatingStack(evaluation.stack);
+function makeCandidate(evaluation: CoatingDesignEvaluation, rank: number, seedScore: number, runOptions: CoatingStackRunOptions = {}): CoatingDesignCandidate {
+  const certifiedRun = runCoatingStack(evaluation.stack, runOptions);
   const resultHash = fnv1a64(
     stableStringify({
       analysisId: "analysis.maxwell.l5.phase1.designFoundry.candidate",

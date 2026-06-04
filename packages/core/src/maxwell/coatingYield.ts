@@ -1,6 +1,6 @@
 import { fnv1a64, stableStringify } from "../scene/hashScene";
 import type { SolverWarning } from "../solvers/Solver";
-import type { CoatingStackDefinition } from "./coatingStack";
+import type { CoatingStackDefinition, CoatingStackRunOptions } from "./coatingStack";
 import { evaluateCoatingDesignStack, type CoatingDesignMetrics, type CoatingDesignObjective } from "./designFoundry";
 
 export type CoatingYieldMetric = keyof Pick<
@@ -45,6 +45,8 @@ export type CoatingYieldProblem = {
   tolerances?: CoatingThicknessTolerance[];
   requirements?: CoatingYieldRequirement[];
   settings?: CoatingYieldSettings;
+  materialCatalog?: CoatingStackRunOptions["materialCatalog"];
+  materialResolution?: CoatingStackRunOptions["materialResolution"];
 };
 
 export type CoatingYieldPerturbation = {
@@ -145,6 +147,10 @@ export function defaultVisibleArYieldRequirements(): CoatingYieldRequirement[] {
 
 export function runCoatingYieldAnalysis(problem: CoatingYieldProblem): CoatingYieldResult {
   validateYieldProblem(problem);
+  const runOptions: CoatingStackRunOptions = {
+    materialCatalog: problem.materialCatalog,
+    materialResolution: problem.materialResolution
+  };
   const settings = {
     sampleCount: clampInteger(problem.settings?.sampleCount ?? 41, 3, 501),
     sigmaClip: clamp(problem.settings?.sigmaClip ?? 3, 0.25, 8),
@@ -167,13 +173,13 @@ export function runCoatingYieldAnalysis(problem: CoatingYieldProblem): CoatingYi
     });
   }
 
-  const nominalEvaluation = evaluateCoatingDesignStack(problem.stack, problem.objective);
+  const nominalEvaluation = evaluateCoatingDesignStack(problem.stack, problem.objective, runOptions);
   warnings.push(...nominalEvaluation.warnings);
 
   const samples: CoatingYieldSample[] = [];
   for (let sampleIndex = 0; sampleIndex < settings.sampleCount; sampleIndex += 1) {
     const { stack, perturbations } = perturbStack(problem.stack, tolerances, sampleIndex, settings.sigmaClip);
-    const evaluation = evaluateCoatingDesignStack(stack, problem.objective);
+    const evaluation = evaluateCoatingDesignStack(stack, problem.objective, runOptions);
     const passed = passesRequirements(evaluation.metrics, requirements);
     warnings.push(...evaluation.warnings);
     samples.push({
@@ -192,7 +198,7 @@ export function runCoatingYieldAnalysis(problem: CoatingYieldProblem): CoatingYi
   const worstSample = [...samples].sort((a, b) => b.score - a.score)[0] ?? nominalSample(problem, nominalEvaluation.metrics, nominalEvaluation.score);
   const bestSample = [...samples].sort((a, b) => a.score - b.score)[0] ?? nominalSample(problem, nominalEvaluation.metrics, nominalEvaluation.score);
   const requirementResults = requirements.map((requirement) => requirementResult(requirement, nominalEvaluation.metrics, samples));
-  const sensitivities = sensitivityResults(problem.stack, problem.objective, tolerances, settings.sensitivityStepSigma);
+  const sensitivities = sensitivityResults(problem.stack, problem.objective, tolerances, settings.sensitivityStepSigma, runOptions);
 
   const resultHash = fnv1a64(
     stableStringify({
@@ -203,7 +209,8 @@ export function runCoatingYieldAnalysis(problem: CoatingYieldProblem): CoatingYi
         objective: normalizedObjectiveForHash(problem.objective),
         tolerances,
         requirements,
-        settings
+        settings,
+        materialCatalogHash: problem.materialCatalog?.resultHash
       },
       nominal: {
         score: roundNumber(nominalEvaluation.score),
@@ -280,9 +287,10 @@ function sensitivityResults(
   stack: CoatingStackDefinition,
   objective: CoatingDesignObjective,
   tolerances: CoatingThicknessTolerance[],
-  sensitivityStepSigma: number
+  sensitivityStepSigma: number,
+  runOptions: CoatingStackRunOptions = {}
 ): CoatingYieldSensitivity[] {
-  const nominal = evaluateCoatingDesignStack(stack, objective);
+  const nominal = evaluateCoatingDesignStack(stack, objective, runOptions);
   return tolerances
     .map((tolerance) => {
       const layer = stack.layers.find((candidate) => candidate.id === tolerance.layerId);
@@ -290,8 +298,8 @@ function sensitivityResults(
       const stepM = Math.max(0.05e-9, tolerance.sigmaM * sensitivityStepSigma);
       const minusStack = setLayerThickness(stack, tolerance.layerId, Math.max(0.1e-9, layer.thicknessM - stepM));
       const plusStack = setLayerThickness(stack, tolerance.layerId, layer.thicknessM + stepM);
-      const minus = evaluateCoatingDesignStack(minusStack, objective);
-      const plus = evaluateCoatingDesignStack(plusStack, objective);
+      const minus = evaluateCoatingDesignStack(minusStack, objective, runOptions);
+      const plus = evaluateCoatingDesignStack(plusStack, objective, runOptions);
       const denominatorNm = Math.max(1e-12, 2 * stepM * 1e9);
       return {
         rank: 0,

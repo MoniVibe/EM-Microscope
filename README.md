@@ -1,6 +1,6 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L5.3 Maxwell Design Foundry planar multilayer
+An EM-first light simulator MVP. The visible web app is now the L5.4 Maxwell Design Foundry planar multilayer
 transfer-matrix workbench; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
@@ -14,17 +14,20 @@ optimizer that proposes coating designs, then certifies the selected result by r
 coating-stack path. L5.2 adds deterministic planar coating tolerance/yield analysis: thickness perturbation
 sampling, pass-rate confidence bounds, worst sample, and finite-difference layer sensitivity. L5.3 adds a sourced
 material import/provenance boundary with JSON schema validation, unit normalization, passivity warnings, catalog
-audit hashes, and template export. It is not a general 3D Maxwell solver, FEM/BEM/RCWA/FDTD engine, arbitrary CAD
-geometry solver, curved lens solver, aperture solver, sensor-stack simulator, adjoint optimizer, topology optimizer,
-digital twin, or manufacturing certification system.
+audit hashes, and template export. L5.4 wires imported material packs into a unified material catalog so coating
+layers can select hash-backed imported material IDs, resolve wavelength-normalized `n,k` into the existing TMM
+solver, and export/load stack designs with material receipts. It is not a general 3D Maxwell solver,
+FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
+simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L5.3 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
+- `L5.4 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
   best-candidate re-solve hashes, planar thickness tolerance/yield analysis, material import/audit evidence,
-  JSON/Markdown/CSV export, and strict limitations against arbitrary 3D EM claims.
+  imported-material selection, selected-material provenance receipts, JSON/Markdown/CSV export, and strict
+  limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
 
@@ -163,18 +166,34 @@ The material-import layer lives in `packages/core/src/maxwell/materialImport.ts`
 (`m`, `um`, `nm`), validates material family/source/sample fields, clamps negative extinction coefficients with
 warnings, rejects duplicate wavelengths, and produces deterministic import/catalog audit hashes.
 
-The web panel now includes a Material Library card with record/sample counts, sourced versus diagnostic counts,
-wavelength range, import-preview rows, `Material JSON` file preview, and `Template JSON` export. Imported material
-records are audited and visible as provenance evidence, but they are not automatically inserted into editable coating
-stack material selection yet.
+The web panel includes a Material Library card with record/sample counts, sourced versus diagnostic counts,
+wavelength range, import-preview rows, `Material JSON` file preview, `Template JSON` export, and an example pack for
+local smoke testing. Imported material records are audited and visible as provenance evidence.
 
 This closes the first material-data gap without pretending the built-in records are authoritative. It is still not a
 live refractiveindex.info integration, laboratory fit pipeline, Kramers-Kronig validation, licensing verifier, or
 digital-twin material calibration.
 
+## L5.4 Material Selection Integration
+
+The material-selection layer extends `packages/core/src/maxwell/materialCatalog.ts` and
+`packages/core/src/maxwell/coatingStack.ts`. Built-in diagnostic materials and imported material packs now share one
+catalog. Built-ins keep stable short IDs such as `mgf2`; imported records receive deterministic hash-backed IDs of
+the form `material:<packHash>:<materialHash>`.
+
+Coating-stack compilation resolves `incidentMaterialId`, `substrateMaterialId`, and every coating-layer
+`materialId` through that catalog before calling the planar TMM solver. Resolved Maxwell material samples carry the
+catalog material ID, source record ID, pack hash, material hash, source text, and provenance notes. Imported material
+extrapolation blocks by default in the core resolver; the web workbench can explicitly clamp for interactive sweeps
+and surfaces warnings when wavelength coverage is exceeded.
+
+Stack design serialization now saves material references with hashes and fails loudly if a saved imported material is
+not loaded. The web panel groups material dropdowns into Built-in and Imported sections, shows a compact provenance
+receipt beside the selected coating material, lets users add the first imported coating as a layer, and includes the
+serialized design document in the L5.4 JSON export.
+
 Recommended next L5 steps:
 
-- Wire imported material packs into selectable coating-stack materials with collision/override policy.
 - Add discrete material/order search so the foundry can propose layer sequences, not just thicknesses.
 - Add drift/correlation controls and robust optimization loops that optimize yield directly, not just nominal score.
 - Compile optical coating stacks from future scene elements into planar TMM inputs for normal/oblique validation cases.
