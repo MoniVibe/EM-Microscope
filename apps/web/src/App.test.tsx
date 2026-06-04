@@ -57,14 +57,14 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L6.4b Maxwell foundry as planar execution plus guided lens validation without claiming arbitrary 3D EM", () => {
+  it("labels L6.5 Maxwell foundry as planar execution plus coherence validation without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
     const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
     const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("L6.4b Maxwell Design Foundry");
-    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM, L6.4 thin-lens focal validation, slit/order validation, and explainability layer");
-    expect(maxwellPanel).toContain("ideal scalar lens diffraction validation plus accessible tooltips; still not a general 3D Maxwell solver, and ExternalFdtdBackend remains scaffold-only");
+    expect(maxwellPanel).toContain("L6.5 Maxwell Design Foundry");
+    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM, L6.5 coherence demonstrator, thin-lens focal validation, slit/order validation, and explainability layer");
+    expect(maxwellPanel).toContain("scalar two-slit coherence demo plus ideal lens diffraction validation; still not a general 3D Maxwell solver, stochastic source engine, and ExternalFdtdBackend remains scaffold-only");
     expect(maxwellPanel).toContain("Explain mode");
     expect(maxwellPanel).toContain("Show all explanations");
     expect(maxwellPanel).toContain("Under the hood: Airy/Bessel reference");
@@ -87,6 +87,14 @@ describe("solver disclosure copy", () => {
     expect(explainability).toContain("validation.lens.thinLensPhase");
     expect(explainability).toContain("validation.lens.airyRadius");
     expect(explainability).toContain("validation.lens.focusMetric");
+    expect(explainability).toContain("coherence.mode");
+    expect(explainability).toContain("coherence.coherentFields");
+    expect(explainability).toContain("coherence.incoherentIntensities");
+    expect(explainability).toContain("coherence.gamma");
+    expect(explainability).toContain("coherence.visibility");
+    expect(explainability).toContain("coherence.formula");
+    expect(explainability).toContain("coherence.orderSpacing");
+    expect(explainability).toContain("coherence.slitGeometry");
     expect(explainability).toContain("backend.planarTmm");
     expect(explainability).toContain("backend.externalFdtdScaffold");
     expect(explainability).toContain("coating.planarStack");
@@ -117,6 +125,27 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("Long single slit sinc^2");
     expect(maxwellPanel).toContain("Double slit / grating orders");
     expect(maxwellPanel).toContain("Ideal thin lens focal plane");
+    expect(maxwellPanel).toContain("Coherence Demonstrator");
+    expect(maxwellPanel).toContain("Coherence Demonstrator: double slit");
+    expect(maxwellPanel).toContain("Degree of coherence |gamma12|");
+    expect(maxwellPanel).toContain("Coherent fields");
+    expect(maxwellPanel).toContain("Incoherent intensities");
+    expect(maxwellPanel).toContain("Partial coherence");
+    expect(maxwellPanel).toContain("Fringe visibility V");
+    expect(maxwellPanel).toContain("V = (Imax - Imin) / (Imax + Imin)");
+    expect(maxwellPanel).toContain("I = |U1|^2 + |U2|^2 + 2 Re(gamma12 U1 U2*)");
+    expect(maxwellPanel).toContain("Gamma 1.00");
+    expect(maxwellPanel).toContain("Gamma 0.50");
+    expect(maxwellPanel).toContain("Gamma 0.00");
+    expect(maxwellPanel).toContain("Coherent Map");
+    expect(maxwellPanel).toContain("Incoherent Map");
+    expect(maxwellPanel).toContain("Partial-Coherence Map");
+    expect(maxwellPanel).toContain("Interference-Term Map");
+    expect(maxwellPanel).toContain("Run Coherence Demo");
+    expect(maxwellPanel).toContain("Coherence JSON");
+    expect(maxwellPanel).toContain("Coherence Markdown");
+    expect(maxwellPanel).toContain("Coherence CSV");
+    expect(maxwellPanel).toContain("Coherence Demonstrator: double slit");
     expect(maxwellPanel).toContain("Advisor Review Mode");
     expect(maxwellPanel).toContain("Run Advisor Review");
     expect(maxwellPanel).toContain("Advisor Markdown");
@@ -140,6 +169,9 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("runThinLensFocalValidation");
     expect(maxwellPanel).toContain("thinLensFocalValidationJson");
     expect(maxwellPanel).toContain("thinLensFocalValidationCsv");
+    expect(maxwellPanel).toContain("runCoherenceDemonstrator");
+    expect(maxwellPanel).toContain("coherenceDemonstratorJson");
+    expect(maxwellPanel).toContain("coherenceDemonstratorCsv");
     expect(maxwellPanel).toContain("runSlitOrderValidation");
     expect(maxwellPanel).toContain("runAdvisorValidationReview");
     expect(maxwellPanel).toContain("slitOrderValidationJson");
@@ -225,7 +257,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toContain(">Apply Search<");
     expect(maxwellPanel).toContain("Tolerance Yield");
     expect(maxwellPanel).toContain("Yield JSON");
-    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved/i);
+    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed/i);
   });
 
   it("keeps the visible app shell Maxwell-only", () => {
@@ -235,8 +267,8 @@ describe("solver disclosure copy", () => {
 
     expect(app).toContain('aria-label="Maxwell simulator"');
     expect(app).toContain("PlanarTmmBackend + Validation Bench");
-    expect(app).toContain("L6.4b Maxwell Design Foundry");
-    expect(app).toContain("executable planar backend, explainability layer, thin-lens focal validation, slit/order ladder, scaffold-only 3D export");
+    expect(app).toContain("L6.5 Maxwell Design Foundry");
+    expect(app).toContain("executable planar backend, explainability layer, coherence demonstrator, thin-lens focal validation, slit/order ladder, scaffold-only 3D export");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

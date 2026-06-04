@@ -59,6 +59,79 @@ export const explainEntries = [
     limitations: ["Residual curves are validation diagnostics, not manufacturing tolerances or sensor noise."]
   },
   {
+    id: "coherence.mode",
+    section: "Validation Bench",
+    title: "Coherence Mode",
+    short: "Selects whether the two slit contributions are combined as coherent fields, incoherent intensities, or a partial-coherence gamma interpolation.",
+    physicalMeaning: "Only the field-combination rule changes; wavelength and geometry remain the same.",
+    limitations: ["This is not a full stochastic source model or vector coherence matrix."]
+  },
+  {
+    id: "coherence.coherentFields",
+    section: "Validation Bench",
+    title: "Coherent Field Summation",
+    short: "Adds complex slit fields first, then squares magnitude. This preserves the interference term and produces sharp fringes.",
+    physicalMeaning: "Coherent light keeps stable phase relation between the two slit contributions.",
+    formula: "Icoh = |U1 + U2|^2",
+    snippet: "U = U1 + U2\nI = abs(U)^2",
+    limitations: ["Scalar field summation only; no vector polarization or real source statistics engine."]
+  },
+  {
+    id: "coherence.incoherentIntensities",
+    section: "Validation Bench",
+    title: "Incoherent Intensity Summation",
+    short: "Squares each slit contribution first, then sums intensities. The interference term is removed.",
+    physicalMeaning: "No stable phase relation remains between slit contributions, so fringes disappear and mostly the slit envelopes remain.",
+    formula: "Iinc = |U1|^2 + |U2|^2",
+    snippet: "I = abs(U1)^2 + abs(U2)^2",
+    limitations: ["This is a scalar demonstrator, not a complete statistical optics source model."]
+  },
+  {
+    id: "coherence.gamma",
+    section: "Validation Bench",
+    title: "Partial Coherence Gamma12",
+    short: "Magnitude |gamma12| scales the two-slit interference term from 0 to 1.",
+    physicalMeaning: "|gamma12| = 1 is coherent, |gamma12| = 0 is incoherent, and intermediate values fade fringe contrast.",
+    units: "unitless magnitude; optional phase in degrees.",
+    formula: "I = |U1|^2 + |U2|^2 + 2 Re(gamma12 U1 U2*)",
+    limitations: ["Gamma12 is a controlled scalar interpolation here, not a full mutual-coherence propagation engine."]
+  },
+  {
+    id: "coherence.visibility",
+    section: "Validation Bench",
+    title: "Fringe Visibility",
+    short: "Contrast metric measured from the centerline profile near a bright fringe and a neighboring dark fringe.",
+    physicalMeaning: "For equal slit intensities, visibility approximately tracks |gamma12|.",
+    formula: "V = (Imax - Imin) / (Imax + Imin)",
+    limitations: ["Finite envelope variation and sampling can make measured V differ slightly from |gamma12|."]
+  },
+  {
+    id: "coherence.formula",
+    section: "Validation Bench",
+    title: "Partial-Coherence Formula",
+    short: "The demonstrator keeps the same two-slit fields and changes only the interference term.",
+    formula: "I = |U1|^2 + |U2|^2 + 2 Re(gamma12 U1 U2*)",
+    underTheHood: "U1 and U2 are scalar Huygens-Fresnel slit contributions. Gamma12 is applied only to U1 U2* before intensity rendering.",
+    limitations: ["No stochastic source ensemble, vector Maxwell solve, FDTD, FEM, BEM, RCWA, sensor, or digital twin execution."]
+  },
+  {
+    id: "coherence.orderSpacing",
+    section: "Validation Bench",
+    title: "Coherent Order Spacing",
+    short: "Double-slit bright orders stay at the same positions even as coherence changes their contrast.",
+    physicalMeaning: "The default lambda=500 nm, d=100 um, L=1 m case has small-angle order spacing near 5 mm.",
+    formula: "d sin(theta) = m lambda",
+    limitations: ["Order visibility depends on coherence; positions remain a coherent-mode hand check."]
+  },
+  {
+    id: "coherence.slitGeometry",
+    section: "Validation Bench",
+    title: "Coherence Slit Geometry",
+    short: "The demonstrator uses two ideal zero-thickness long slits with configurable slit width and separation.",
+    physicalMeaning: "Separation controls order spacing; slit width controls the broad diffraction envelope.",
+    limitations: ["No finite-thickness material, edge boundary, roughness, or vector subwavelength aperture behavior."]
+  },
+  {
     id: "validation.source.wavelength",
     section: "Validation Bench",
     title: "Wavelength",

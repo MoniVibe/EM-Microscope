@@ -8,8 +8,12 @@ import {
   circularApertureValidationJson,
   circularApertureValidationMarkdown,
   circularApertureValidationPipeline,
+  coherenceDemonstratorCsv,
+  coherenceDemonstratorJson,
+  coherenceDemonstratorMarkdown,
   createMaterialCatalog,
   createMaterialImportTemplate,
+  defaultCoherenceDemonstratorConfig,
   defaultThinLensFocalValidationConfig,
   defaultCircularApertureValidationConfig,
   importMaterialPackage,
@@ -26,6 +30,7 @@ import {
   runCoatingYieldAnalysis,
   runCoatingSweep,
   runCircularApertureValidation,
+  runCoherenceDemonstrator,
   runThinLensFocalValidation,
   runAdvisorValidationReview,
   runSlitOrderValidation,
@@ -40,6 +45,8 @@ import {
   type AdvisorValidationReviewResult,
   type CircularApertureComputationMode,
   type CircularApertureValidationResult,
+  type CoherenceDemonstratorMode,
+  type CoherenceDemonstratorResult,
   type CoatingDesignResult,
   type CoatingSearchCandidate,
   type CoatingSearchResult,
@@ -69,7 +76,7 @@ import type { ExplainEntryId } from "../explainabilityContent";
 
 type StackPresetId = "bareGlass" | "quarterWaveAr" | "broadbandAr" | "absorbingFilm";
 type RobustUncertaintyModeId = "independent-thickness" | "shared-scale" | "shared-offset-residual";
-type ValidationBenchmarkId = "circular-pinhole" | "single-slit" | "double-slit" | "thin-lens" | "advisor-review";
+type ValidationBenchmarkId = "circular-pinhole" | "single-slit" | "double-slit" | "thin-lens" | "coherence" | "advisor-review";
 
 type EditableLayer = {
   id: string;
@@ -186,6 +193,13 @@ export function MaxwellPanel() {
   const [lensPlaneSizeUm, setLensPlaneSizeUm] = useState(300);
   const [lensResolution, setLensResolution] = useState(257);
   const [lensFocusRangeMm, setLensFocusRangeMm] = useState(2);
+  const [coherenceMode, setCoherenceMode] = useState<CoherenceDemonstratorMode>("partial-coherence");
+  const [coherenceGammaMagnitude, setCoherenceGammaMagnitude] = useState(1);
+  const [coherenceGammaPhaseDeg, setCoherenceGammaPhaseDeg] = useState(0);
+  const [coherenceWavelengthNm, setCoherenceWavelengthNm] = useState(500);
+  const [coherenceSlitWidthUm, setCoherenceSlitWidthUm] = useState(20);
+  const [coherenceSlitSeparationUm, setCoherenceSlitSeparationUm] = useState(100);
+  const [coherencePropagationDistanceM, setCoherencePropagationDistanceM] = useState(1);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -253,10 +267,29 @@ export function MaxwellPanel() {
   const singleSlitResult = useMemo<SlitOrderValidationResult>(() => runSlitOrderValidation({ kind: "long-single-slit-sinc2" }), []);
   const doubleSlitResult = useMemo<SlitOrderValidationResult>(() => runSlitOrderValidation({ kind: "double-slit-orders" }), []);
   const selectedSlitResult = validationBenchmark === "double-slit" ? doubleSlitResult : singleSlitResult;
+  const coherenceResult = useMemo<CoherenceDemonstratorResult>(() => {
+    const defaults = defaultCoherenceDemonstratorConfig();
+    return runCoherenceDemonstrator({
+      mode: coherenceMode,
+      wavelengthM: clamp(coherenceWavelengthNm, 350, 800) * 1e-9,
+      propagationDistanceM: clamp(coherencePropagationDistanceM, 0.1, 5),
+      aperture: {
+        ...defaults.aperture,
+        slitWidthM: clamp(coherenceSlitWidthUm, 2, 200) * 1e-6,
+        slitSeparationM: clamp(coherenceSlitSeparationUm, Math.max(3, coherenceSlitWidthUm + 1), 1000) * 1e-6
+      },
+      coherence: {
+        gammaMagnitude: clamp(coherenceGammaMagnitude, 0, 1),
+        gammaPhaseRad: radFromDeg(clamp(coherenceGammaPhaseDeg, -180, 180))
+      }
+    });
+  }, [coherenceGammaMagnitude, coherenceGammaPhaseDeg, coherenceMode, coherencePropagationDistanceM, coherenceSlitSeparationUm, coherenceSlitWidthUm, coherenceWavelengthNm]);
   const advisorReview = useMemo<AdvisorValidationReviewResult>(() => runAdvisorValidationReview(), []);
   const activeValidationHash =
     validationBenchmark === "thin-lens"
       ? lensResult.resultHash
+      : validationBenchmark === "coherence"
+        ? coherenceResult.resultHash
       : validationBenchmark === "single-slit" || validationBenchmark === "double-slit"
         ? selectedSlitResult.resultHash
         : validationBenchmark === "advisor-review"
@@ -560,11 +593,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.4b Maxwell Design Foundry">
-      <h2>L6.4b Maxwell Design Foundry</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.5 Maxwell Design Foundry">
+      <h2>L6.5 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM, L6.4 thin-lens focal validation, slit/order validation, and explainability layer</strong>
-        <span>ideal scalar lens diffraction validation plus accessible tooltips; still not a general 3D Maxwell solver, and ExternalFdtdBackend remains scaffold-only</span>
+        <strong>frequency-domain Maxwell planar coating-stack TMM, L6.5 coherence demonstrator, thin-lens focal validation, slit/order validation, and explainability layer</strong>
+        <span>scalar two-slit coherence demo plus ideal lens diffraction validation; still not a general 3D Maxwell solver, stochastic source engine, and ExternalFdtdBackend remains scaffold-only</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -710,6 +743,9 @@ export function MaxwellPanel() {
           </button>
           <button type="button" className={validationBenchmark === "thin-lens" ? "active" : ""} onClick={() => setValidationBenchmark("thin-lens")}>
             Ideal thin lens focal plane
+          </button>
+          <button type="button" className={validationBenchmark === "coherence" ? "active" : ""} onClick={() => setValidationBenchmark("coherence")}>
+            Coherence Demonstrator
           </button>
           <button type="button" className={validationBenchmark === "advisor-review" ? "active" : ""} onClick={() => setValidationBenchmark("advisor-review")}>
             Advisor Review Mode
@@ -948,6 +984,26 @@ export function MaxwellPanel() {
             setResolution={setLensResolution}
             focusRangeMm={lensFocusRangeMm}
             setFocusRangeMm={setLensFocusRangeMm}
+          />
+        )}
+        {validationBenchmark === "coherence" && (
+          <CoherenceValidationPanel
+            result={coherenceResult}
+            explainMode={explainMode}
+            mode={coherenceMode}
+            setMode={setCoherenceMode}
+            gammaMagnitude={coherenceGammaMagnitude}
+            setGammaMagnitude={setCoherenceGammaMagnitude}
+            gammaPhaseDeg={coherenceGammaPhaseDeg}
+            setGammaPhaseDeg={setCoherenceGammaPhaseDeg}
+            wavelengthNm={coherenceWavelengthNm}
+            setWavelengthNm={setCoherenceWavelengthNm}
+            slitWidthUm={coherenceSlitWidthUm}
+            setSlitWidthUm={setCoherenceSlitWidthUm}
+            slitSeparationUm={coherenceSlitSeparationUm}
+            setSlitSeparationUm={setCoherenceSlitSeparationUm}
+            propagationDistanceM={coherencePropagationDistanceM}
+            setPropagationDistanceM={setCoherencePropagationDistanceM}
           />
         )}
         {validationBenchmark === "advisor-review" && <AdvisorReviewPanel review={advisorReview} />}
@@ -2009,6 +2065,241 @@ function SlitValidationPanel({ result, explainMode = false }: { result: SlitOrde
   );
 }
 
+function CoherenceValidationPanel({
+  result,
+  explainMode = false,
+  mode,
+  setMode,
+  gammaMagnitude,
+  setGammaMagnitude,
+  gammaPhaseDeg,
+  setGammaPhaseDeg,
+  wavelengthNm,
+  setWavelengthNm,
+  slitWidthUm,
+  setSlitWidthUm,
+  slitSeparationUm,
+  setSlitSeparationUm,
+  propagationDistanceM,
+  setPropagationDistanceM
+}: {
+  result: CoherenceDemonstratorResult;
+  explainMode?: boolean;
+  mode: CoherenceDemonstratorMode;
+  setMode: (value: CoherenceDemonstratorMode) => void;
+  gammaMagnitude: number;
+  setGammaMagnitude: (value: number) => void;
+  gammaPhaseDeg: number;
+  setGammaPhaseDeg: (value: number) => void;
+  wavelengthNm: number;
+  setWavelengthNm: (value: number) => void;
+  slitWidthUm: number;
+  setSlitWidthUm: (value: number) => void;
+  slitSeparationUm: number;
+  setSlitSeparationUm: (value: number) => void;
+  propagationDistanceM: number;
+  setPropagationDistanceM: (value: number) => void;
+}) {
+  return (
+    <div className="maxwell-validation-mode-panel" aria-label="Coherence Demonstrator">
+      <div className="l2-disclosure">
+        <strong>Coherence Demonstrator: double slit</strong>
+        <span>same double-slit layout, same wavelength, same geometry; only the complex degree of coherence changes the interference term</span>
+      </div>
+      <div className="maxwell-validation-pipeline">
+        {[
+          ["1. Source", `${wavelengthNm.toFixed(0)} nm monochromatic scalar source`],
+          ["2. Slits", `two ideal long slits, d=${slitSeparationUm.toFixed(0)} um, a=${slitWidthUm.toFixed(0)} um`],
+          ["3. Propagation", `${propagationDistanceM.toFixed(2)} m to a zero-thickness observation plane`],
+          ["4. Coherence model", "coherent fields / partial gamma / incoherent intensities"],
+          ["5. Observation", "maps, centerline profile, visibility metric, and order-spacing table"]
+        ].map(([label, detail]) => (
+          <div className="compact-stat" key={label}>
+            <span>{label}</span>
+            <strong>{detail}</strong>
+          </div>
+        ))}
+      </div>
+      <div className="profile-meta">
+        <div className="compact-stat">
+          <ExplainLabel entryId="coherence.mode" explainMode={explainMode}>Mode</ExplainLabel>
+          <strong>{coherenceModeLabel(mode)}</strong>
+        </div>
+        <div className="compact-stat">
+          <ExplainLabel entryId="coherence.gamma" explainMode={explainMode}>Degree of coherence |gamma12|</ExplainLabel>
+          <strong>{result.config.coherence.gammaMagnitude.toFixed(2)}</strong>
+        </div>
+        <div className="compact-stat">
+          <ExplainLabel entryId="coherence.visibility" explainMode={explainMode}>Fringe visibility V</ExplainLabel>
+          <strong>{result.visibility.measured.toFixed(2)}</strong>
+        </div>
+        <div className="compact-stat">
+          <span>Expected V</span>
+          <strong>{result.visibility.expected.toFixed(2)}</strong>
+        </div>
+        <div className="compact-stat">
+          <span>Visibility error</span>
+          <strong>{result.visibility.error.toFixed(2)}</strong>
+        </div>
+        <div className="compact-stat">
+          <ExplainLabel entryId="coherence.orderSpacing" explainMode={explainMode}>Order spacing</ExplainLabel>
+          <strong>{formatMm(result.expected.orderSpacingSmallAngleM)} mm</strong>
+        </div>
+      </div>
+      <div className="maxwell-validation-controls">
+        <label className="field-row">
+          <ExplainLabel entryId="coherence.mode" explainMode={explainMode}>Mode</ExplainLabel>
+          <select value={mode} onChange={(event) => setMode(event.currentTarget.value as CoherenceDemonstratorMode)}>
+            <option value="coherent-fields">Coherent fields</option>
+            <option value="partial-coherence">Partial coherence</option>
+            <option value="incoherent-intensities">Incoherent intensities</option>
+          </select>
+        </label>
+        <NumberField label="Wavelength" explainId="validation.source.wavelength" explainMode={explainMode} value={wavelengthNm} unit="nm" min={350} max={800} step={1} onChange={(value) => setWavelengthNm(clamp(value, 350, 800))} />
+        <NumberField label="Slit width a" explainId="coherence.slitGeometry" explainMode={explainMode} value={slitWidthUm} unit="um" min={2} max={200} step={1} onChange={(value) => setSlitWidthUm(clamp(value, 2, 200))} />
+        <NumberField label="Slit separation d" explainId="coherence.slitGeometry" explainMode={explainMode} value={slitSeparationUm} unit="um" min={3} max={1000} step={1} onChange={(value) => setSlitSeparationUm(clamp(value, Math.max(3, slitWidthUm + 1), 1000))} />
+        <NumberField label="Propagation L" explainId="validation.opticalZAxis" explainMode={explainMode} value={propagationDistanceM} unit="m" min={0.1} max={5} step={0.05} onChange={(value) => setPropagationDistanceM(clamp(value, 0.1, 5))} />
+        <NumberField label="Gamma phase" explainId="coherence.gamma" explainMode={explainMode} value={gammaPhaseDeg} unit="deg" min={-180} max={180} step={1} onChange={(value) => setGammaPhaseDeg(clamp(value, -180, 180))} />
+      </div>
+      <label className="field-row">
+        <ExplainLabel entryId="coherence.gamma" explainMode={explainMode}>Degree of coherence |gamma12|</ExplainLabel>
+        <div className="maxwell-slider-control">
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={clamp(gammaMagnitude, 0, 1)}
+            onChange={(event) => setGammaMagnitude(Number(event.currentTarget.value))}
+            onInput={(event) => setGammaMagnitude(Number(event.currentTarget.value))}
+          />
+          <input
+            type="number"
+            min={0}
+            max={1}
+            step={0.01}
+            value={formatNumberInputValue(gammaMagnitude)}
+            onChange={(event) => setGammaMagnitude(clamp(Number(event.currentTarget.value), 0, 1))}
+          />
+          <strong>{clamp(gammaMagnitude, 0, 1).toFixed(2)}</strong>
+        </div>
+      </label>
+      <div className="maxwell-layer-actions" aria-label="Coherence gamma presets">
+        {[
+          { value: 1, label: "Gamma 1.00" },
+          { value: 0.5, label: "Gamma 0.50" },
+          { value: 0, label: "Gamma 0.00" }
+        ].map((preset) => (
+          <button
+            type="button"
+            key={preset.label}
+            onClick={() => {
+              setMode("partial-coherence");
+              setGammaMagnitude(preset.value);
+              setGammaPhaseDeg(0);
+            }}
+          >
+            <Sparkles size={15} />
+            <span>{preset.label}</span>
+          </button>
+        ))}
+      </div>
+      <div className="l2-disclosure">
+        <strong><ExplainLabel entryId="coherence.formula" explainMode={explainMode}>I = |U1|^2 + |U2|^2 + 2 Re(gamma12 U1 U2*)</ExplainLabel></strong>
+        <span>V = (Imax - Imin) / (Imax + Imin); gamma=1 keeps coherent fringes, gamma=0 removes the interference term, and intermediate gamma fades fringe contrast</span>
+      </div>
+      <div className="explain-inline-row">
+        <ExplainButton entryId="coherence.coherentFields" label="Under the hood: coherent fields" explainMode={explainMode} />
+        <ExplainButton entryId="coherence.incoherentIntensities" label="Under the hood: incoherent intensities" explainMode={explainMode} />
+        <ExplainButton entryId="coherence.gamma" label="Under the hood: gamma12" explainMode={explainMode} />
+        <ExplainButton entryId="coherence.visibility" label="Under the hood: visibility" explainMode={explainMode} />
+      </div>
+      <div className="maxwell-validation-output-grid three">
+        <div>
+          <div className="maxwell-section-heading">
+            <h2><ExplainLabel entryId="coherence.coherentFields" explainMode={explainMode}>Coherent Map</ExplainLabel></h2>
+            <strong>sharp fringes</strong>
+          </div>
+          <ValidationIntensityMap field={result.coherentField} tone="numerical" ariaLabel="Coherent double-slit intensity map" />
+        </div>
+        <div>
+          <div className="maxwell-section-heading">
+            <h2><ExplainLabel entryId="coherence.incoherentIntensities" explainMode={explainMode}>Incoherent Map</ExplainLabel></h2>
+            <strong>summed envelopes</strong>
+          </div>
+          <ValidationIntensityMap field={result.incoherentField} tone="analytic" ariaLabel="Incoherent double-slit intensity map" />
+        </div>
+        <div>
+          <div className="maxwell-section-heading">
+            <h2><ExplainLabel entryId="coherence.gamma" explainMode={explainMode}>Partial-Coherence Map</ExplainLabel></h2>
+            <strong>|gamma12| {result.config.coherence.gammaMagnitude.toFixed(2)}</strong>
+          </div>
+          <ValidationIntensityMap field={result.partialField} tone="numerical" ariaLabel="Partial-coherence double-slit intensity map" />
+        </div>
+      </div>
+      <div className="maxwell-validation-output-grid">
+        <div className="maxwell-validation-profile-panel">
+          <div className="maxwell-section-heading">
+            <h2><ExplainLabel entryId="coherence.visibility" explainMode={explainMode}>Centerline Profile</ExplainLabel></h2>
+            <div className="maxwell-heading-actions">
+              <strong>fringe visibility</strong>
+              <ExplainButton entryId="coherence.visibility" label="Where is this?" explainMode={explainMode} />
+            </div>
+          </div>
+          <CoherenceProfilePlot result={result} />
+          <WhereMeasuredBlock entryId="validation.whereMeasured" explainMode={explainMode}>
+            Profile and visibility are extracted from the zero-thickness observation plane {formatMm(result.config.propagationDistanceM)} mm downstream of the two ideal slits.
+            The profile is an analysis view of the observation plane, not a physical element.
+          </WhereMeasuredBlock>
+        </div>
+        <div className="maxwell-validation-profile-panel">
+          <div className="maxwell-section-heading">
+            <h2>Interference-Term Map</h2>
+            <strong>|partial - incoherent|</strong>
+          </div>
+          <ValidationIntensityMap field={result.interferenceField} tone="residual" ariaLabel="Coherence interference term magnitude map" />
+          <CoherenceInterferencePlot result={result} />
+        </div>
+      </div>
+      <div className="maxwell-order-table" aria-label="Coherence demonstrator order table">
+        {result.expected.features
+          .filter((feature) => Math.abs(feature.order) <= 2)
+          .map((feature) => (
+            <div className="compact-stat" key={feature.order}>
+              <span>Order m={feature.order}</span>
+              <strong>
+                expected {formatMm(feature.expectedPositionM)} mm / measured {feature.measuredPositionM === null ? "n/a" : `${formatMm(feature.measuredPositionM)} mm`}
+              </strong>
+            </div>
+          ))}
+      </div>
+      <ul className="warning-list">
+        {result.warnings.map((warning) => (
+          <li key={warning.code}>{warning.message}</li>
+        ))}
+      </ul>
+      <div className="maxwell-layer-actions">
+        <button type="button" onClick={() => setGammaMagnitude(clamp(gammaMagnitude, 0, 1))}>
+          <Sparkles size={15} />
+          <span>Run Coherence Demo</span>
+        </button>
+        <button type="button" onClick={() => exportCoherenceJson(result)}>
+          <Save size={15} />
+          <span>Coherence JSON</span>
+        </button>
+        <button type="button" onClick={() => exportCoherenceMarkdown(result)}>
+          <FileDown size={15} />
+          <span>Coherence Markdown</span>
+        </button>
+        <button type="button" onClick={() => exportCoherenceCsv(result)}>
+          <FileDown size={15} />
+          <span>Coherence CSV</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ThinLensValidationPanel({
   result,
   pipeline,
@@ -2229,12 +2520,12 @@ function ThinLensValidationPanel({
 }
 
 function AdvisorReviewPanel({ review }: { review: AdvisorValidationReviewResult }) {
-  const summaries = [review.circular, review.singleSlit, review.doubleSlit, review.thinLens];
+  const summaries = [review.circular, review.singleSlit, review.doubleSlit, review.thinLens, review.coherence];
   return (
     <div className="maxwell-validation-mode-panel" aria-label="Advisor Review Mode">
       <div className="l2-disclosure">
         <strong>Run Advisor Review</strong>
-        <span>one-click report for circular pinhole, long slit sinc^2, double-slit order spacing, and ideal thin-lens focal-plane validations</span>
+        <span>one-click report for circular pinhole, long slit sinc^2, double-slit order spacing, ideal thin-lens focal-plane, and coherence demonstrator validations</span>
       </div>
       <div className="maxwell-advisor-grid">
         {summaries.map((summary) => (
@@ -2473,6 +2764,93 @@ function SlitResidualPlot({ result }: { result: SlitOrderValidationResult }) {
       </text>
       <text x={pad + 4} y={pad + 12}>
         max residual {maxResidual.toExponential(1)}
+      </text>
+    </svg>
+  );
+}
+
+function CoherenceProfilePlot({ result }: { result: CoherenceDemonstratorResult }) {
+  const width = 720;
+  const height = 190;
+  const pad = 24;
+  const usableWidth = width - pad * 2;
+  const usableHeight = height - pad * 2;
+  const minPositionM = result.profile[0]?.positionM ?? -1;
+  const maxPositionM = result.profile[result.profile.length - 1]?.positionM ?? 1;
+  const spanM = maxPositionM - minPositionM;
+  const coherentPoints = result.profile.map((sample) => plotPoint(sample.positionM, sample.coherentIntensity)).join(" ");
+  const incoherentPoints = result.profile.map((sample) => plotPoint(sample.positionM, sample.incoherentIntensity)).join(" ");
+  const partialPoints = result.profile.map((sample) => plotPoint(sample.positionM, sample.partialIntensity)).join(" ");
+  const markerLines = result.expected.features
+    .filter((feature) => feature.visible)
+    .map((feature) => {
+      const x = pad + usableWidth * ((feature.expectedPositionM - minPositionM) / spanM);
+      return <line className="maxwell-validation-marker" key={feature.order} x1={x} y1={pad} x2={x} y2={height - pad} />;
+    });
+
+  function plotPoint(positionM: number, intensity: number): string {
+    const x = pad + usableWidth * ((positionM - minPositionM) / spanM);
+    const y = pad + usableHeight * (1 - clamp(intensity, 0, 1));
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  }
+
+  return (
+    <svg className="maxwell-validation-profile" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Coherence demonstrator centerline profile overlay">
+      <rect x="0" y="0" width={width} height={height} />
+      <line className="profile-axis" x1={pad} y1={height - pad} x2={width - pad} y2={height - pad} />
+      <line className="profile-axis" x1={pad} y1={pad} x2={pad} y2={height - pad} />
+      <polyline className="maxwell-validation-analytic-line" points={coherentPoints} />
+      <polyline className="maxwell-validation-residual-line" points={incoherentPoints} />
+      <polyline className="maxwell-validation-model-line" points={partialPoints} />
+      {markerLines}
+      <text x={pad} y={height - 6}>
+        {formatMm(minPositionM)} mm
+      </text>
+      <text x={width - pad - 82} y={height - 6}>
+        {formatMm(maxPositionM)} mm
+      </text>
+      <text x={pad + 4} y={pad + 12}>
+        coherent / incoherent / partial
+      </text>
+      <text x={pad + 4} y={pad + 28}>
+        V {result.visibility.measured.toFixed(2)} expected {result.visibility.expected.toFixed(2)}
+      </text>
+    </svg>
+  );
+}
+
+function CoherenceInterferencePlot({ result }: { result: CoherenceDemonstratorResult }) {
+  const width = 720;
+  const height = 120;
+  const pad = 20;
+  const usableWidth = width - pad * 2;
+  const usableHeight = height - pad * 2;
+  const minPositionM = result.profile[0]?.positionM ?? -1;
+  const maxPositionM = result.profile[result.profile.length - 1]?.positionM ?? 1;
+  const spanM = maxPositionM - minPositionM;
+  const zeroY = pad + usableHeight / 2;
+  const points = result.profile
+    .map((sample) => {
+      const x = pad + usableWidth * ((sample.positionM - minPositionM) / spanM);
+      const y = zeroY - (usableHeight / 2) * clamp(sample.interferenceTerm, -1, 1);
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+
+  return (
+    <svg className="maxwell-validation-profile" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Signed coherence interference term curve">
+      <rect x="0" y="0" width={width} height={height} />
+      <line className="profile-axis" x1={pad} y1={zeroY} x2={width - pad} y2={zeroY} />
+      <line className="profile-axis" x1={pad} y1={pad} x2={pad} y2={height - pad} />
+      <polyline className="maxwell-validation-residual-line" points={points} />
+      <text x={pad} y={height - 6}>
+        {formatMm(minPositionM)} mm
+      </text>
+      <text x={width - pad - 82} y={height - 6}>
+        {formatMm(maxPositionM)} mm
+      </text>
+      <text x={pad + 4} y={pad + 12}>
+        signed interference term
       </text>
     </svg>
   );
@@ -2719,6 +3097,18 @@ function exportThinLensValidationCsv(result: ThinLensFocalValidationResult): voi
   downloadText("l64-thin-lens-focal-validation.csv", "text/csv", thinLensFocalValidationCsv(result));
 }
 
+function exportCoherenceJson(result: CoherenceDemonstratorResult): void {
+  downloadText("l65-coherence-demonstrator.json", "application/json", JSON.stringify(coherenceDemonstratorJson(result), null, 2));
+}
+
+function exportCoherenceMarkdown(result: CoherenceDemonstratorResult): void {
+  downloadText("l65-coherence-demonstrator.md", "text/markdown", coherenceDemonstratorMarkdown(result));
+}
+
+function exportCoherenceCsv(result: CoherenceDemonstratorResult): void {
+  downloadText("l65-coherence-demonstrator.csv", "text/csv", coherenceDemonstratorCsv(result));
+}
+
 function exportAdvisorReviewMarkdown(review: AdvisorValidationReviewResult): void {
   downloadText("advisor_validation_report.md", "text/markdown", advisorValidationReviewMarkdown(review));
 }
@@ -2907,6 +3297,12 @@ function formatMetric(metric: string, value: number): string {
     return formatPercent(value);
   }
   return value.toExponential(2);
+}
+
+function coherenceModeLabel(mode: CoherenceDemonstratorMode): string {
+  if (mode === "coherent-fields") return "Coherent fields";
+  if (mode === "incoherent-intensities") return "Incoherent intensities";
+  return "Partial coherence";
 }
 
 function formatNumberInputValue(value: number): string {

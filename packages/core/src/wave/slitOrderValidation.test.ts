@@ -90,21 +90,30 @@ describe("L6.3 double slit order validation", () => {
   });
 });
 
-describe("L6.3 Advisor Review Mode", () => {
-  it("runs circular aperture, long slit, and double slit validations", () => {
+describe("L6.5 Advisor Review Mode", () => {
+  it("runs circular aperture, long slit, double slit, thin lens, and coherence validations", () => {
     const review = runAdvisorValidationReview();
 
-    expect(review.generatedBenchmarks).toEqual(["circular-pinhole-airy-bessel", "long-single-slit-sinc2", "double-slit-orders", "ideal-thin-lens-focal-plane"]);
+    expect(review.generatedBenchmarks).toEqual([
+      "circular-pinhole-airy-bessel",
+      "long-single-slit-sinc2",
+      "double-slit-orders",
+      "ideal-thin-lens-focal-plane",
+      "coherence-demonstrator-double-slit"
+    ]);
     expect(review.circular.benchmark).toBe("Circular pinhole Airy/Bessel");
     expect(review.singleSlit.benchmark).toBe("Long single slit sinc^2");
     expect(review.doubleSlit.benchmark).toBe("Double slit / grating orders");
     expect(review.thinLens.benchmark).toBe("Ideal thin lens focal plane");
+    expect(review.coherence.benchmark).toBe("Coherence Demonstrator: double slit");
     expect(review.singleSlit.expected).toContain("5");
     expect(review.doubleSlit.expected).toContain("5");
     expect(review.thinLens.expected).toContain("61");
+    expect(review.coherence.expected).toContain("visibility");
     expect(review.singleSlit.status).toBe("pass");
     expect(review.doubleSlit.status).toBe("pass");
     expect(review.thinLens.status).toBe("pass");
+    expect(review.coherence.status).toBe("pass");
   });
 
   it("exports a combined advisor validation report with formulas, residuals, warnings, and limitations", () => {
@@ -115,11 +124,13 @@ describe("L6.3 Advisor Review Mode", () => {
     const single = runSlitOrderValidation({ kind: "long-single-slit-sinc2" });
     const double = runSlitOrderValidation({ kind: "double-slit-orders" });
 
-    expect(json).toContain("emmicro.advisorValidationReview.v2");
+    expect(json).toContain("emmicro.advisorValidationReview.v3");
     expect(markdown).toContain("Circular pinhole Airy/Bessel");
     expect(markdown).toContain("Long single slit sinc^2");
     expect(markdown).toContain("Double slit / grating orders");
     expect(markdown).toContain("Ideal thin lens focal plane");
+    expect(markdown).toContain("Coherence Demonstrator: double slit");
+    expect(markdown).toContain("not a full stochastic source engine");
     expect(markdown).toContain("not a full 3D Maxwell/FDTD/FEM/BEM/RCWA solve");
     expect(csv).toContain("benchmark,expected,measured,rms_residual,max_residual,warning_count,status");
     expect(JSON.stringify(slitOrderValidationJson(single))).toContain("emmicro.slitOrderValidation.v1");
