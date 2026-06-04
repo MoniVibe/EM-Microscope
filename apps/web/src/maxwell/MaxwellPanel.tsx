@@ -7,7 +7,10 @@ import {
   importMaterialPackage,
   listCatalogMaterials,
   applyRobustCoatingSearchCandidate,
+  createMinimalMaxwellScene3D,
   parseMaterialImportJson,
+  exportExternalFdtdScaffold,
+  externalFdtdSolverReceipt,
   runCoatingSearch,
   runRobustCoatingSearch,
   runCoatingStack,
@@ -29,6 +32,7 @@ import {
   type MaterialImportResult,
   type MaxwellMaterialCatalog,
   type MaxwellPolarization,
+  type ExternalFdtdScaffoldExport,
   type PlanarFieldMonitorResult,
   type RobustCoatingSearchCandidate,
   type RobustCoatingSearchPrimaryMetric,
@@ -152,6 +156,12 @@ export function MaxwellPanel() {
       materialResolution: { extrapolation: "clamp" as const }
     }),
     [materialCatalog]
+  );
+  const fdtdBackendReceipt = useMemo(() => externalFdtdSolverReceipt(), []);
+  const fdtdScaffoldScene = useMemo(() => createMinimalMaxwellScene3D({ materialCatalog }), [materialCatalog]);
+  const fdtdScaffold = useMemo<ExternalFdtdScaffoldExport>(
+    () => exportExternalFdtdScaffold(fdtdScaffoldScene, { materialCatalog }),
+    [fdtdScaffoldScene, materialCatalog]
   );
 
   const stack = useMemo<CoatingStackDefinition>(
@@ -320,8 +330,8 @@ export function MaxwellPanel() {
       const thicknessMaxNm = clamp(Math.max(searchThicknessMinNm, searchThicknessMaxNm), thicknessMinNm, 10000);
       const thicknessStepNm = clamp(searchThicknessStepNm, 1, Math.max(1, thicknessMaxNm - thicknessMinNm));
       const nominalSearch = {
-        id: `l58-${presetId}-coating-search`,
-        label: `L5.8 ${stackPresets[presetId].label} coating search`,
+        id: `l60-${presetId}-coating-search`,
+        label: `L6.0 ${stackPresets[presetId].label} coating search`,
         baseStack: { ...stack, layers: [] },
         wavelengthsM: wavelengthsNm.map((nm) => clamp(nm, 200, 2000) * 1e-9),
         anglesRad: [stack.angleRad],
@@ -397,8 +407,8 @@ export function MaxwellPanel() {
                 };
         const robust = runRobustCoatingSearch(
           {
-            id: `l58-${presetId}-robust-yield-search`,
-            label: `L5.8 ${stackPresets[presetId].label} robust-yield coating search`,
+            id: `l60-${presetId}-robust-yield-search`,
+            label: `L6.0 ${stackPresets[presetId].label} robust-yield coating search`,
             nominalSearch,
             uncertainty: {
               thickness: independentThickness,
@@ -451,11 +461,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L5.8 Maxwell Design Foundry">
-      <h2>L5.8 Maxwell Design Foundry</h2>
+    <section className="wave-panel maxwell-panel" aria-label="L6.0 Maxwell Design Foundry">
+      <h2>L6.0 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus drift-aware robust material/order search, provenance, design, and yield analysis</strong>
-        <span>not a general 3D Maxwell solver</span>
+        <strong>frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.0 3D problem/result contract and scaffold-only ExternalFdtdBackend export</strong>
+        <span>not a general 3D Maxwell solver; L6.0 does not execute 3D Maxwell solves</span>
       </div>
 
       <div className="profile-meta">
@@ -472,8 +482,85 @@ export function MaxwellPanel() {
           <strong>{run.solverBackend.capabilities.dimensions.join(", ")}</strong>
         </div>
         <div className="compact-stat">
+          <span>Status</span>
+          <strong>{run.solverBackend.capabilities.availability}</strong>
+        </div>
+        <div className="compact-stat">
           <span>Unsupported</span>
           <strong>3D geometry, apertures, curved surfaces, FEM/FDTD/BEM/RCWA</strong>
+        </div>
+      </div>
+
+      <div className="maxwell-material-card maxwell-backend-card" aria-label="Future 3D Backends">
+        <div className="maxwell-section-heading">
+          <h2>Future 3D Backends</h2>
+          <strong>{fdtdScaffold.resultHash.slice(0, 10)}</strong>
+        </div>
+        <div className="l2-disclosure">
+          <strong>L6.0 does not execute 3D Maxwell solves.</strong>
+          <span>It defines the 3D problem/result contract and external-backend export scaffold only.</span>
+        </div>
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>Available</span>
+            <strong>{run.solverBackend.label}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Available method</span>
+            <strong>{run.solverBackend.method}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Available dimensions</span>
+            <strong>{run.solverBackend.capabilities.dimensions.join(", ")}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Scaffolded, not executable</span>
+            <strong>{fdtdBackendReceipt.label}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Scaffold method</span>
+            <strong>{fdtdBackendReceipt.method}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Scaffold dimensions</span>
+            <strong>{fdtdBackendReceipt.capabilities.dimensions.join(", ")}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Scaffold status</span>
+            <strong>schema/export only in L6.0</strong>
+          </div>
+        </div>
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>3D scene hash</span>
+            <strong>{fdtdScaffold.scene.receipts.sceneHash.slice(0, 10)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Units</span>
+            <strong>{fdtdScaffold.scene.units}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Domain</span>
+            <strong>{fdtdScaffold.scene.domain.size.join(" x ")}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Boundary</span>
+            <strong>{fdtdScaffold.scene.boundaries[0]?.kind ?? "none"}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Source</span>
+            <strong>{fdtdScaffold.scene.sources[0]?.kind ?? "none"}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Monitor</span>
+            <strong>{fdtdScaffold.scene.monitors[0]?.kind ?? "none"}</strong>
+          </div>
+        </div>
+        <div className="maxwell-layer-actions">
+          <button type="button" onClick={() => exportFdtdScaffoldJson(fdtdScaffold)}>
+            <FileDown size={15} />
+            <span>Export 3D FDTD Scaffold</span>
+          </button>
         </div>
       </div>
 
@@ -1287,7 +1374,7 @@ function exportStackJson(
   yieldAnalysis: CoatingYieldResult
 ): void {
   const design = serializeCoatingStackDesign(stack, materialCatalog);
-  downloadText("l58-backend-boundary-stack.json", "application/json", JSON.stringify({ solverBackend: run.solverBackend, design, run, sweep, foundry, yieldAnalysis }, null, 2));
+  downloadText("l60-backend-scaffold-stack.json", "application/json", JSON.stringify({ solverBackend: run.solverBackend, design, run, sweep, foundry, yieldAnalysis }, null, 2));
 }
 
 function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult, yieldAnalysis: CoatingYieldResult): void {
@@ -1362,11 +1449,15 @@ function exportFoundryJson(foundry: CoatingDesignResult): void {
 }
 
 function exportSearchJson(search: CoatingSearchResult): void {
-  downloadText("l58-backend-boundary-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l60-backend-scaffold-coating-search.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportRobustSearchJson(search: RobustCoatingSearchResult): void {
-  downloadText("l58-backend-boundary-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l60-backend-scaffold-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+}
+
+function exportFdtdScaffoldJson(scaffold: ExternalFdtdScaffoldExport): void {
+  downloadText("l60-3d-fdtd-scaffold.json", "application/json", JSON.stringify(scaffold, null, 2));
 }
 
 function exportYieldJson(yieldAnalysis: CoatingYieldResult): void {

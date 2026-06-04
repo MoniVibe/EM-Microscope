@@ -263,13 +263,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L5.8 Maxwell Design Foundry</p>
+            <p>L6.0 Maxwell Design Foundry</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>PlanarTmmBackend Foundry</span>
-          <strong>solver boundary, drift-aware robust search, and receipts</strong>
+          <span>PlanarTmmBackend + FDTD Scaffold</span>
+          <strong>executable planar backend, scaffold-only 3D export, and receipts</strong>
         </div>
       </header>
 

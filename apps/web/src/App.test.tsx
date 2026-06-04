@@ -57,13 +57,23 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L5.8 Maxwell foundry as planar backend-boundary robust search, provenance, design, and yield without claiming arbitrary 3D EM", () => {
+  it("labels L6.0 Maxwell foundry as planar execution plus scaffold-only 3D export without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus drift-aware robust material/order search, provenance, design, and yield analysis");
-    expect(maxwellPanel).toContain("not a general 3D Maxwell solver");
+    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.0 3D problem/result contract and scaffold-only ExternalFdtdBackend export");
+    expect(maxwellPanel).toContain("not a general 3D Maxwell solver; L6.0 does not execute 3D Maxwell solves");
+    expect(maxwellPanel).toContain("L6.0 does not execute 3D Maxwell solves.");
+    expect(maxwellPanel).toContain("It defines the 3D problem/result contract and external-backend export scaffold only.");
     expect(maxwellPanel).toContain("Active solver backend");
     expect(maxwellPanel).toContain("PlanarTmmBackend");
+    expect(maxwellPanel).toContain("ExternalFdtdBackend");
+    expect(maxwellPanel).toContain("Future 3D Backends");
+    expect(maxwellPanel).toContain("Scaffolded, not executable");
+    expect(maxwellPanel).toContain("schema/export only in L6.0");
+    expect(maxwellPanel).toContain("Export 3D FDTD Scaffold");
+    expect(maxwellPanel).toContain("createMinimalMaxwellScene3D");
+    expect(maxwellPanel).toContain("exportExternalFdtdScaffold");
+    expect(maxwellPanel).toContain("externalFdtdSolverReceipt");
     expect(maxwellPanel).toContain("FEM/FDTD/BEM/RCWA");
     expect(maxwellPanel).toContain("solverBackend: run.solverBackend");
     expect(maxwellPanel).toContain("createMaterialCatalog");
@@ -98,7 +108,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("Apply Search");
     expect(maxwellPanel).toContain("Tolerance Yield");
     expect(maxwellPanel).toContain("Yield JSON");
-    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA/i);
+    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed/i);
   });
 
   it("keeps the visible app shell Maxwell-only", () => {
@@ -107,9 +117,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend Foundry");
-    expect(app).toContain("L5.8 Maxwell Design Foundry");
-    expect(app).toContain("solver boundary, drift-aware robust search, and receipts");
+    expect(app).toContain("PlanarTmmBackend + FDTD Scaffold");
+    expect(app).toContain("L6.0 Maxwell Design Foundry");
+    expect(app).toContain("executable planar backend, scaffold-only 3D export, and receipts");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

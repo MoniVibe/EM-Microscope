@@ -1,21 +1,34 @@
+import { externalFdtdBackend } from "./externalFdtdBackend";
 import { planarTmmBackend } from "./planarTmmBackend";
-import type { MaxwellSolverBackend, MaxwellSolverBackendId, MaxwellSolverMethod } from "./solverBackend";
+import type { AnyMaxwellSolverBackend, MaxwellSolverBackendId, MaxwellSolverMethod } from "./solverBackend";
 
 export const futureMaxwellSolverMethods: Exclude<MaxwellSolverMethod, "planar-tmm">[] = ["rcwa", "fdtd", "fem-frequency-domain", "bem-frequency-domain"];
 
-const registry = new Map<MaxwellSolverBackendId, MaxwellSolverBackend>([[planarTmmBackend.id, planarTmmBackend]]);
+const registry = new Map<MaxwellSolverBackendId, AnyMaxwellSolverBackend>([
+  [planarTmmBackend.id, planarTmmBackend],
+  [externalFdtdBackend.id, externalFdtdBackend]
+]);
 
-export function listMaxwellSolverBackends(): MaxwellSolverBackend[] {
+export function listMaxwellSolverBackends(): AnyMaxwellSolverBackend[] {
   return [...registry.values()];
 }
-export function getMaxwellSolverBackend(backendId: MaxwellSolverBackendId): MaxwellSolverBackend {
+
+export function listExecutableMaxwellSolverBackends(): AnyMaxwellSolverBackend[] {
+  return listMaxwellSolverBackends().filter((backend) => backend.capabilities().availability === "executable");
+}
+
+export function listScaffoldedMaxwellSolverBackends(): AnyMaxwellSolverBackend[] {
+  return listMaxwellSolverBackends().filter((backend) => backend.capabilities().availability === "scaffold-only");
+}
+
+export function getMaxwellSolverBackend(backendId: MaxwellSolverBackendId): AnyMaxwellSolverBackend {
   const backend = registry.get(backendId);
   if (!backend) throw new Error(`Maxwell solver backend '${backendId}' is not registered`);
   return backend;
 }
 
 export function isMaxwellSolverMethodAvailable(method: MaxwellSolverMethod): boolean {
-  return listMaxwellSolverBackends().some((backend) => backend.method === method);
+  return listExecutableMaxwellSolverBackends().some((backend) => backend.method === method);
 }
 
 export function unavailableMaxwellSolverMethods(): Exclude<MaxwellSolverMethod, "planar-tmm">[] {

@@ -1,8 +1,9 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L5.8 Maxwell Design Foundry planar multilayer
-transfer-matrix workbench; the earlier geometric/scalar microscope bench code remains in source and tests as
-historical validation scaffolding, but it is hidden from the app shell.
+An EM-first light simulator MVP. The visible web app is now the L6.0 Maxwell Design Foundry planar multilayer
+transfer-matrix workbench with a scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar
+microscope bench code remains in source and tests as historical validation scaffolding, but it is hidden from the
+app shell.
 
 L4 Phase 0 uses a DOM-free frequency-domain planar multilayer transfer-matrix special case for film stacks. L4.1
 adds diagnostic wavelength-dependent material records, editable coating stacks, and wavelength sweeps over the same
@@ -25,22 +26,23 @@ path with deterministic correlated thickness drift models: shared deposition sca
 residuals, layer-group drift, receipt-level sample reduction evidence, and independent-thickness comparison metrics.
 L5.8 moves the existing planar stack path behind a solver-neutral backend boundary, registering `PlanarTmmBackend`
 as the only available Maxwell backend and exposing planar-only capability receipts for future RCWA/FDTD/FEM/BEM
-adapters.
+adapters. L6.0 adds a 3D Maxwell scene/result schema, deterministic 3D scene validation and hashing, field dataset
+manifest types, and an `ExternalFdtdBackend`/Meep-style export scaffold that is registered but not executable.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L5.8 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
-  the registered `PlanarTmmBackend`, with
+- `L6.0 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+  the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
   best-candidate re-solve hashes, planar thickness tolerance/yield analysis, material import/audit evidence,
   imported-material selection, selected-material provenance receipts, deterministic coating material/order/thickness
   search, deterministic independent or correlated thickness-drift robust-yield re-ranking, candidate application,
   independent-thickness comparison metrics, sample reduction receipts, backend capability receipts,
-  JSON/Markdown/CSV export,
+  JSON/Markdown/CSV export, plus a scaffold-only `ExternalFdtdBackend` manifest/Meep-style script export,
   and strict limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
@@ -295,11 +297,43 @@ L5.8 is architecture preparation, not new physics. It is still not a 3D Maxwell 
 arbitrary CAD geometry solver, aperture diffraction model, curved lens solver, sensor-stack transport model,
 material-uncertainty engine, digital twin, or manufacturing certification system.
 
-Recommended next L5 steps:
+## L6.0 3D Maxwell Schema and FDTD Scaffold
+
+L6.0 starts the 3D Maxwell runway without turning the browser app into a fake 3D solver. It adds
+`maxwell3dTypes.ts`, `maxwell3dValidation.ts`, `fieldDatasetManifest.ts`, `externalFdtdBackend.ts`, and
+`meepExport.ts` to define a minimal 3D scene contract:
+
+- `MaxwellScene3D` with units, domain size/resolution, background material, PML/periodic/PEC boundaries, objects,
+  sources, monitors, material receipts, and a deterministic scene hash.
+- Minimal geometry: boxes and spheres.
+- Minimal source/monitor contracts: plane-wave sources, field-volume monitors, and flux-plane monitors.
+- Field dataset manifest types for future openPMD/HDF5-style external field outputs.
+- `ExternalFdtdBackend`, registered as `scaffold-only` with `method: "fdtd"` and `dimensions: ["3d"]`.
+
+`ExternalFdtdBackend` advertises the future 3D/FDTD capability boundary but throws `UnsupportedBackendError` on
+`solve()` in L6.0. The backend registry therefore distinguishes registered scaffolds from executable solvers:
+`PlanarTmmBackend` remains the only executable backend, and `fdtd` remains unavailable for in-app solves.
+
+The web panel shows a `Future 3D Backends` section with `ExternalFdtdBackend` marked as
+`schema/export only in L6.0`. `Export 3D FDTD Scaffold` downloads a deterministic JSON payload containing the
+3D scene manifest, material receipts, scaffold backend receipt, deterministic scene/export hashes, and a Meep-style
+Python script skeleton. The script is labeled:
+
+```text
+Generated scaffold only; not yet validated as an executable Meep workflow.
+```
+
+L6.0 does not execute 3D Maxwell solves. It defines the 3D problem/result contract and external-backend export
+scaffold only. It still does not implement FDTD execution, WebAssembly FDTD, FEM, BEM, RCWA, CAD import, curved
+lenses, aperture diffraction solves, volumetric E/H solve results from a real backend, sensor-stack electrical
+transport, digital-twin calibration, adjoint/topology optimization, or a GPU/HPC job runner.
+
+Recommended next Maxwell steps:
 
 - Add material-uncertainty modeling only after sourced material data policy, licensing, and validation receipts are stronger.
 - Compile optical coating stacks from future scene elements into planar TMM inputs for normal/oblique validation cases.
-- Add external backend adapters behind the L5.8 registry only after their validation/receipt policies are defined.
+- Add the first external FDTD proof-of-life only after the L6.0 manifest/export policy is stable and the runner
+  can prove that an external solver produced the returned field dataset.
 
 ## Local Development
 
