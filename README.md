@@ -1,8 +1,8 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.4b Maxwell Design Foundry planar multilayer
-transfer-matrix workbench with guided optical-bench terminology, ideal thin-lens focal-plane validation, an accessible explainability layer,
-circular-aperture, long-slit, and double-slit scalar diffraction validation, Advisor Review Mode exports, and a
+An EM-first light simulator MVP. The visible web app is now the L6.5 Maxwell Design Foundry planar multilayer
+transfer-matrix workbench with guided optical-bench terminology, a scalar double-slit coherence demonstrator,
+ideal thin-lens focal-plane validation, an accessible explainability layer, circular-aperture, long-slit, and double-slit scalar diffraction validation, Advisor Review Mode exports, and a
 scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
@@ -38,13 +38,16 @@ changing solver behavior. L6.4 adds an ideal thin-lens focal-plane validation be
 quadratic phase mask, circular pupil, numerical scalar Fresnel propagation, analytic Airy PSF reference, residual
 maps, radial overlays, z focus scan, and JSON/Markdown/CSV exports.
 L6.4b clarifies the UI mental models by separating spatial validation-bench diagnostics from the planar coating-stack workbench.
+L6.5 adds a scalar double-slit coherence demonstrator that compares coherent field summation,
+incoherent intensity summation, and partial-coherence `gamma12` interpolation with visibility checks and
+Markdown/JSON/CSV exports.
 It is not a general 3D Maxwell solver,
-FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
+FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, stochastic source engine, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L6.4b Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L6.5 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -57,9 +60,11 @@ simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing
   Huygens-Fresnel propagation, analytic Airy/Bessel reference maps, residual maps, radial mismatch curves,
   convergence controls, finite-plane energy checks, coherent long-slit `sinc^2` validation, double-slit/grating
   order validation, ideal thin-lens focal-plane scalar validation with the hand-check `r1 ~= 1.22 lambda f / D`,
-  focus scan, Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
+  focus scan, scalar double-slit coherence validation with `I = |U1|^2 + |U2|^2 + 2 Re(gamma12 U1 U2*)`,
+  measured visibility `V = (Imax - Imin) / (Imax + Imin)`, coherent/partial/incoherent maps, centerline profiles,
+  order-spacing tables, Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
   formula/snippet panels, Explain mode highlighting, and a searchable explanation drawer,
-  and strict limitations against arbitrary 3D EM claims.
+  and strict limitations against arbitrary 3D EM or stochastic source-engine claims.
 
 ## L2 Validation Fixture
 
@@ -535,10 +540,27 @@ The visible former Search UI is renamed to `Coating Stack Optimizer`: `Find Cand
 and `Apply Coating Candidate`. The helper copy states that the optimizer tries selected local materials, layer
 orders, and thicknesses; it does not search the internet or fetch new material data.
 
+## L6.5 Coherence Demonstrator
+
+L6.5 adds a Validation Bench entry named `Coherence Demonstrator` for the same hand-checkable double-slit geometry:
+`lambda=500 nm`, slit width `a=20 um`, slit separation `d=100 um`, and propagation distance `L=1 m`.
+
+The demonstrator computes separate scalar slit fields `U1` and `U2`, then renders:
+
+- coherent fields: `|U1 + U2|^2`
+- incoherent intensities: `|U1|^2 + |U2|^2`
+- partial coherence: `|U1|^2 + |U2|^2 + 2 Re(gamma12 U1 U2*)`
+
+The `|gamma12|` control runs from `0` to `1` and defaults to `1`. The measured fringe visibility is reported as
+`V = (Imax - Imin) / (Imax + Imin)` and should approximately track `|gamma12|` for equal slit intensities.
+The panel shows coherent, incoherent, partial-coherence, and interference-term maps, a centerline profile,
+order-position table, "Where is this measured?" guidance, and `l65-coherence-demonstrator` Markdown/JSON/CSV exports.
+
+This is a scalar coherence validation demonstrator. It is not a stochastic/vector coherence engine, FDTD/FEM/BEM/RCWA
+solve, real source-statistics model, microscope sensor model, or 3D Maxwell execution path.
+
 Recommended next Maxwell steps:
 
-- Add a coherence demonstrator that compares coherent field summation against incoherent intensity summation without
-  claiming a full microscope illumination model.
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
 - Delay real 3D work until an external solver proof-of-life can ingest the L6.0 scene/export scaffold and return
