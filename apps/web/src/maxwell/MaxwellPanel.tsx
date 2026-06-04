@@ -10,6 +10,7 @@ import {
   circularApertureValidationPipeline,
   createMaterialCatalog,
   createMaterialImportTemplate,
+  defaultThinLensFocalValidationConfig,
   defaultCircularApertureValidationConfig,
   importMaterialPackage,
   listCatalogMaterials,
@@ -25,11 +26,16 @@ import {
   runCoatingYieldAnalysis,
   runCoatingSweep,
   runCircularApertureValidation,
+  runThinLensFocalValidation,
   runAdvisorValidationReview,
   runSlitOrderValidation,
   serializeCoatingStackDesign,
   slitOrderValidationJson,
   slitOrderValidationMarkdown,
+  thinLensFocalValidationCsv,
+  thinLensFocalValidationJson,
+  thinLensFocalValidationMarkdown,
+  thinLensFocalValidationPipeline,
   visibleArObjective,
   type AdvisorValidationReviewResult,
   type CircularApertureComputationMode,
@@ -54,7 +60,8 @@ import {
   type RobustCoatingSearchResult,
   type FieldOutput2D,
   type SlitOrderValidationResult,
-  type SolverWarning
+  type SolverWarning,
+  type ThinLensFocalValidationResult
 } from "@emmicro/core";
 import { FileDown, Plus, Save, ShieldCheck, Sparkles, Trash2, Upload } from "lucide-react";
 import { ExplainButton, ExplainLabel, ShowAllExplanationsDrawer } from "../explainability/Explainability";
@@ -62,7 +69,7 @@ import type { ExplainEntryId } from "../explainabilityContent";
 
 type StackPresetId = "bareGlass" | "quarterWaveAr" | "broadbandAr" | "absorbingFilm";
 type RobustUncertaintyModeId = "independent-thickness" | "shared-scale" | "shared-offset-residual";
-type ValidationBenchmarkId = "circular-pinhole" | "single-slit" | "double-slit" | "advisor-review";
+type ValidationBenchmarkId = "circular-pinhole" | "single-slit" | "double-slit" | "thin-lens" | "advisor-review";
 
 type EditableLayer = {
   id: string;
@@ -172,6 +179,13 @@ export function MaxwellPanel() {
   const [validationApertureRadialSamples, setValidationApertureRadialSamples] = useState(48);
   const [validationApertureAngularSamples, setValidationApertureAngularSamples] = useState(96);
   const [validationRadialSamples, setValidationRadialSamples] = useState(128);
+  const [lensWavelengthNm, setLensWavelengthNm] = useState(500);
+  const [lensFocalLengthMm, setLensFocalLengthMm] = useState(20);
+  const [lensPupilDiameterUm, setLensPupilDiameterUm] = useState(200);
+  const [lensObservationZMm, setLensObservationZMm] = useState(20);
+  const [lensPlaneSizeUm, setLensPlaneSizeUm] = useState(300);
+  const [lensResolution, setLensResolution] = useState(257);
+  const [lensFocusRangeMm, setLensFocusRangeMm] = useState(2);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -211,10 +225,43 @@ export function MaxwellPanel() {
     });
   }, [validationApertureAngularSamples, validationApertureRadialSamples, validationMode, validationPlaneZMm, validationRadialSamples, validationResolution]);
   const validationPipeline = useMemo(() => circularApertureValidationPipeline(validationResult), [validationResult]);
+  const lensResult = useMemo<ThinLensFocalValidationResult>(() => {
+    const defaults = defaultThinLensFocalValidationConfig();
+    return runThinLensFocalValidation({
+      wavelengthM: clamp(lensWavelengthNm, 350, 800) * 1e-9,
+      lens: {
+        ...defaults.lens,
+        focalLengthM: clamp(lensFocalLengthMm, 1, 100) * 1e-3
+      },
+      pupil: {
+        ...defaults.pupil,
+        diameterM: clamp(lensPupilDiameterUm, 20, 1000) * 1e-6
+      },
+      observationPlane: {
+        ...defaults.observationPlane,
+        zM: clamp(lensObservationZMm, 1, 120) * 1e-3,
+        sizeM: clamp(lensPlaneSizeUm, 40, 1200) * 1e-6,
+        resolution: oddInteger(lensResolution, 65, 513)
+      },
+      numerical: {
+        ...defaults.numerical,
+        focusScanHalfRangeM: clamp(lensFocusRangeMm, 0.2, 10) * 1e-3
+      }
+    });
+  }, [lensFocalLengthMm, lensFocusRangeMm, lensObservationZMm, lensPlaneSizeUm, lensPupilDiameterUm, lensResolution, lensWavelengthNm]);
+  const lensPipeline = useMemo(() => thinLensFocalValidationPipeline(lensResult), [lensResult]);
   const singleSlitResult = useMemo<SlitOrderValidationResult>(() => runSlitOrderValidation({ kind: "long-single-slit-sinc2" }), []);
   const doubleSlitResult = useMemo<SlitOrderValidationResult>(() => runSlitOrderValidation({ kind: "double-slit-orders" }), []);
   const selectedSlitResult = validationBenchmark === "double-slit" ? doubleSlitResult : singleSlitResult;
   const advisorReview = useMemo<AdvisorValidationReviewResult>(() => runAdvisorValidationReview(), []);
+  const activeValidationHash =
+    validationBenchmark === "thin-lens"
+      ? lensResult.resultHash
+      : validationBenchmark === "single-slit" || validationBenchmark === "double-slit"
+        ? selectedSlitResult.resultHash
+        : validationBenchmark === "advisor-review"
+          ? advisorReview.resultHash
+          : validationResult.resultHash;
 
   const stack = useMemo<CoatingStackDefinition>(
     () => ({
@@ -513,11 +560,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.3a Maxwell Design Foundry">
-      <h2>L6.3a Maxwell Design Foundry</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.4 Maxwell Design Foundry">
+      <h2>L6.4 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM, L6.3 slit/order validation, and L6.3a explainability layer</strong>
-        <span>accessible tooltips and under-the-hood snippets; still not a general 3D Maxwell solver, and ExternalFdtdBackend remains scaffold-only</span>
+        <strong>frequency-domain Maxwell planar coating-stack TMM, L6.4 thin-lens focal validation, slit/order validation, and explainability layer</strong>
+        <span>ideal scalar lens diffraction validation plus accessible tooltips; still not a general 3D Maxwell solver, and ExternalFdtdBackend remains scaffold-only</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -637,7 +684,7 @@ export function MaxwellPanel() {
       <div className="maxwell-material-card maxwell-validation-card" aria-label="Validation Bench">
         <div className="maxwell-section-heading">
           <h2>Validation Bench</h2>
-          <strong>{validationResult.resultHash.slice(0, 10)}</strong>
+          <strong>{activeValidationHash.slice(0, 10)}</strong>
         </div>
         <div className="l2-disclosure">
           <strong>Physics exam sequence</strong>
@@ -646,6 +693,7 @@ export function MaxwellPanel() {
         <div className="explain-inline-row">
           <ExplainButton entryId="validation.analyticReference.airyBessel" label="Under the hood: Airy/Bessel reference" explainMode={explainMode} />
           <ExplainButton entryId="validation.numericalPropagation.huygensFresnel" label="Under the hood: numerical propagation" explainMode={explainMode} />
+          <ExplainButton entryId="validation.lens.thinLensPhase" label="Under the hood: thin lens phase" explainMode={explainMode} />
         </div>
         <div className="maxwell-validation-tabs" role="tablist" aria-label="Validation benchmark selector">
           <button type="button" className={validationBenchmark === "circular-pinhole" ? "active" : ""} onClick={() => setValidationBenchmark("circular-pinhole")}>
@@ -656,6 +704,9 @@ export function MaxwellPanel() {
           </button>
           <button type="button" className={validationBenchmark === "double-slit" ? "active" : ""} onClick={() => setValidationBenchmark("double-slit")}>
             Double slit / grating orders
+          </button>
+          <button type="button" className={validationBenchmark === "thin-lens" ? "active" : ""} onClick={() => setValidationBenchmark("thin-lens")}>
+            Ideal thin lens focal plane
           </button>
           <button type="button" className={validationBenchmark === "advisor-review" ? "active" : ""} onClick={() => setValidationBenchmark("advisor-review")}>
             Advisor Review Mode
@@ -859,6 +910,27 @@ export function MaxwellPanel() {
           </>
         )}
         {(validationBenchmark === "single-slit" || validationBenchmark === "double-slit") && <SlitValidationPanel result={selectedSlitResult} explainMode={explainMode} />}
+        {validationBenchmark === "thin-lens" && (
+          <ThinLensValidationPanel
+            result={lensResult}
+            pipeline={lensPipeline}
+            explainMode={explainMode}
+            wavelengthNm={lensWavelengthNm}
+            setWavelengthNm={setLensWavelengthNm}
+            focalLengthMm={lensFocalLengthMm}
+            setFocalLengthMm={setLensFocalLengthMm}
+            pupilDiameterUm={lensPupilDiameterUm}
+            setPupilDiameterUm={setLensPupilDiameterUm}
+            observationZMm={lensObservationZMm}
+            setObservationZMm={setLensObservationZMm}
+            planeSizeUm={lensPlaneSizeUm}
+            setPlaneSizeUm={setLensPlaneSizeUm}
+            resolution={lensResolution}
+            setResolution={setLensResolution}
+            focusRangeMm={lensFocusRangeMm}
+            setFocusRangeMm={setLensFocusRangeMm}
+          />
+        )}
         {validationBenchmark === "advisor-review" && <AdvisorReviewPanel review={advisorReview} />}
       </div>
 
@@ -1776,13 +1848,217 @@ function SlitValidationPanel({ result, explainMode = false }: { result: SlitOrde
   );
 }
 
+function ThinLensValidationPanel({
+  result,
+  pipeline,
+  explainMode = false,
+  wavelengthNm,
+  setWavelengthNm,
+  focalLengthMm,
+  setFocalLengthMm,
+  pupilDiameterUm,
+  setPupilDiameterUm,
+  observationZMm,
+  setObservationZMm,
+  planeSizeUm,
+  setPlaneSizeUm,
+  resolution,
+  setResolution,
+  focusRangeMm,
+  setFocusRangeMm
+}: {
+  result: ThinLensFocalValidationResult;
+  pipeline: ReturnType<typeof thinLensFocalValidationPipeline>;
+  explainMode?: boolean;
+  wavelengthNm: number;
+  setWavelengthNm: (value: number) => void;
+  focalLengthMm: number;
+  setFocalLengthMm: (value: number) => void;
+  pupilDiameterUm: number;
+  setPupilDiameterUm: (value: number) => void;
+  observationZMm: number;
+  setObservationZMm: (value: number) => void;
+  planeSizeUm: number;
+  setPlaneSizeUm: (value: number) => void;
+  resolution: number;
+  setResolution: (value: number) => void;
+  focusRangeMm: number;
+  setFocusRangeMm: (value: number) => void;
+}) {
+  const minZMm = Math.max(1, focalLengthMm - focusRangeMm);
+  const maxZMm = focalLengthMm + focusRangeMm;
+  const sliderZMm = clamp(observationZMm, minZMm, maxZMm);
+
+  return (
+    <div className="maxwell-validation-mode-panel">
+      <div className="l2-disclosure">
+        <strong>Ideal thin lens focal-plane validation</strong>
+        <span>coherent plane wave through a circular pupil and zero-thickness lens phase mask; hand check r1 ~= 1.22 lambda f / D = 61 um</span>
+      </div>
+      <div className="maxwell-validation-pipeline">
+        {pipeline.map((step) => (
+          <div className="compact-stat" key={step.index}>
+            <span>
+              {step.index}. {step.label}
+            </span>
+            <strong>{step.detail}</strong>
+          </div>
+        ))}
+      </div>
+      <div className="profile-meta">
+        <div className="compact-stat">
+          <ExplainLabel entryId="validation.source.wavelength" explainMode={explainMode}>Source</ExplainLabel>
+          <strong>{wavelengthNm.toFixed(0)} nm coherent plane wave</strong>
+        </div>
+        <div className="compact-stat">
+          <ExplainLabel entryId="validation.lens.thinLensPhase" explainMode={explainMode}>Lens phase</ExplainLabel>
+          <strong>zero-thickness quadratic mask</strong>
+        </div>
+        <div className="compact-stat">
+          <ExplainLabel entryId="validation.lens.pupil" explainMode={explainMode}>Pupil</ExplainLabel>
+          <strong>{pupilDiameterUm.toFixed(0)} um circular clear aperture</strong>
+        </div>
+        <div className="compact-stat">
+          <ExplainLabel entryId="validation.lens.airyRadius" explainMode={explainMode}>Expected first dark</ExplainLabel>
+          <strong>{formatUm(result.expected.firstDarkRadiusM)} um</strong>
+        </div>
+        <div className="compact-stat">
+          <span>Measured first dark</span>
+          <strong>{result.comparison.measuredFirstDarkRadiusM === null ? result.comparison.firstDarkSearchStatus : `${formatUm(result.comparison.measuredFirstDarkRadiusM)} um`}</strong>
+        </div>
+        <div className="compact-stat">
+          <ExplainLabel entryId="validation.rmsResidual" explainMode={explainMode}>RMS residual</ExplainLabel>
+          <strong>{result.residuals.rmsResidual.toExponential(2)}</strong>
+        </div>
+        <div className="compact-stat">
+          <ExplainLabel entryId="validation.maxResidual" explainMode={explainMode}>Max residual</ExplainLabel>
+          <strong>{result.residuals.maxResidual.toExponential(2)}</strong>
+        </div>
+        <div className="compact-stat">
+          <ExplainLabel entryId="validation.lens.focusMetric" explainMode={explainMode}>Best focus z</ExplainLabel>
+          <strong>{formatMm(result.comparison.focus.bestFocusZM)} mm</strong>
+        </div>
+      </div>
+      <div className="maxwell-validation-controls">
+        <NumberField label="Wavelength" explainId="validation.source.wavelength" explainMode={explainMode} value={wavelengthNm} unit="nm" min={350} max={800} step={1} onChange={(value) => setWavelengthNm(clamp(value, 350, 800))} />
+        <NumberField label="Focal length" explainId="validation.lens.focalLength" explainMode={explainMode} value={focalLengthMm} unit="mm" min={1} max={100} step={0.25} onChange={(value) => setFocalLengthMm(clamp(value, 1, 100))} />
+        <NumberField label="Pupil D" explainId="validation.lens.pupil" explainMode={explainMode} value={pupilDiameterUm} unit="um" min={20} max={1000} step={5} onChange={(value) => setPupilDiameterUm(clamp(value, 20, 1000))} />
+        <NumberField label="Plane size" explainId="validation.observation.planeSize" explainMode={explainMode} value={planeSizeUm} unit="um" min={40} max={1200} step={5} onChange={(value) => setPlaneSizeUm(clamp(value, 40, 1200))} />
+        <NumberField label="Map grid" explainId="validation.samplingControls" explainMode={explainMode} value={resolution} unit="px" min={65} max={513} step={2} onChange={(value) => setResolution(oddInteger(value, 65, 513))} />
+        <NumberField label="Focus range" explainId="validation.lens.focusMetric" explainMode={explainMode} value={focusRangeMm} unit="mm" min={0.2} max={10} step={0.1} onChange={(value) => setFocusRangeMm(clamp(value, 0.2, 10))} />
+      </div>
+      <label className="field-row">
+        <ExplainLabel entryId="validation.observation.zPlane" explainMode={explainMode}>Observation z</ExplainLabel>
+        <div className="maxwell-slider-control">
+          <input
+            type="range"
+            min={minZMm}
+            max={maxZMm}
+            step={0.05}
+            value={sliderZMm}
+            onChange={(event) => setObservationZMm(Number(event.currentTarget.value))}
+            onInput={(event) => setObservationZMm(Number(event.currentTarget.value))}
+          />
+          <input
+            type="number"
+            min={1}
+            max={120}
+            step={0.05}
+            value={formatNumberInputValue(observationZMm)}
+            onChange={(event) => setObservationZMm(clamp(Number(event.currentTarget.value), 1, 120))}
+          />
+          <strong>{observationZMm.toFixed(2)} mm</strong>
+        </div>
+      </label>
+      <div className="error-banner">
+        Expected first dark ring is {formatUm(result.expected.firstDarkRadiusM)} um. Current plane half-width is {formatUm(result.expected.planeHalfWidthM)} um.
+        {!result.expected.firstDarkInsidePlane && " Warning: the field of view does not include the first dark ring."}
+      </div>
+      <div className="explain-inline-row">
+        <ExplainButton entryId="validation.lens.thinLensPhase" label="Under the hood: thin-lens phase" explainMode={explainMode} />
+        <ExplainButton entryId="validation.lens.airyRadius" label="Under the hood: focal Airy radius" explainMode={explainMode} />
+        <ExplainButton entryId="validation.lens.scalarLimitations" label="Under the hood: lens limitations" explainMode={explainMode} />
+      </div>
+      <div className="maxwell-validation-output-grid three">
+        <div>
+          <div className="maxwell-section-heading">
+            <h2><ExplainLabel entryId="validation.numericalPropagation.huygensFresnel" explainMode={explainMode}>Numerical Focal Map</ExplainLabel></h2>
+            <strong>computed</strong>
+          </div>
+          <ValidationIntensityMap field={result.numericalField} tone="numerical" ariaLabel="Ideal thin lens numerical focal-plane intensity map" />
+        </div>
+        <div>
+          <div className="maxwell-section-heading">
+            <h2><ExplainLabel entryId="validation.lens.airyRadius" explainMode={explainMode}>Analytic Airy Map</ExplainLabel></h2>
+            <strong>Airy PSF</strong>
+          </div>
+          <ValidationIntensityMap field={result.analyticField} tone="analytic" ariaLabel="Ideal thin lens analytic Airy focal-plane map" />
+        </div>
+        <div>
+          <div className="maxwell-section-heading">
+            <h2><ExplainLabel entryId="validation.residualMap" explainMode={explainMode}>Residual Map</ExplainLabel></h2>
+            <strong>|numerical - analytic|</strong>
+          </div>
+          <ValidationIntensityMap field={result.residualField} tone="residual" ariaLabel="Ideal thin lens focal-plane residual map" />
+        </div>
+      </div>
+      <div className="maxwell-validation-output-grid">
+        <div className="maxwell-validation-profile-panel">
+          <div className="maxwell-section-heading">
+            <h2>Radial Overlay</h2>
+            <strong>numerical vs Airy</strong>
+          </div>
+          <ThinLensRadialPlot result={result} />
+        </div>
+        <div className="maxwell-validation-profile-panel">
+          <div className="maxwell-section-heading">
+            <h2>Residual Curve</h2>
+            <strong>signed mismatch</strong>
+          </div>
+          <ThinLensResidualPlot result={result} />
+        </div>
+      </div>
+      <div className="maxwell-validation-profile-panel">
+        <div className="maxwell-section-heading">
+          <h2><ExplainLabel entryId="validation.lens.focusMetric" explainMode={explainMode}>Focus Scan</ExplainLabel></h2>
+          <strong>peak near z=f</strong>
+        </div>
+        <ThinLensFocusScanPlot result={result} />
+      </div>
+      <ul className="warning-list">
+        {result.warnings.map((warning) => (
+          <li key={warning.code}>{warning.message}</li>
+        ))}
+      </ul>
+      <div className="maxwell-layer-actions">
+        <button type="button" onClick={() => setObservationZMm(focalLengthMm)}>
+          <Sparkles size={15} />
+          <span>Run Lens Benchmark</span>
+        </button>
+        <button type="button" onClick={() => exportThinLensValidationJson(result)}>
+          <Save size={15} />
+          <span>Lens JSON</span>
+        </button>
+        <button type="button" onClick={() => exportThinLensValidationMarkdown(result)}>
+          <FileDown size={15} />
+          <span>Lens Markdown</span>
+        </button>
+        <button type="button" onClick={() => exportThinLensValidationCsv(result)}>
+          <FileDown size={15} />
+          <span>Lens CSV</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AdvisorReviewPanel({ review }: { review: AdvisorValidationReviewResult }) {
-  const summaries = [review.circular, review.singleSlit, review.doubleSlit];
+  const summaries = [review.circular, review.singleSlit, review.doubleSlit, review.thinLens];
   return (
     <div className="maxwell-validation-mode-panel" aria-label="Advisor Review Mode">
       <div className="l2-disclosure">
         <strong>Run Advisor Review</strong>
-        <span>one-click report for circular pinhole, long slit sinc^2, and double-slit order spacing validations</span>
+        <span>one-click report for circular pinhole, long slit sinc^2, double-slit order spacing, and ideal thin-lens focal-plane validations</span>
       </div>
       <div className="maxwell-advisor-grid">
         {summaries.map((summary) => (
@@ -2026,6 +2302,124 @@ function SlitResidualPlot({ result }: { result: SlitOrderValidationResult }) {
   );
 }
 
+function ThinLensRadialPlot({ result }: { result: ThinLensFocalValidationResult }) {
+  const width = 720;
+  const height = 190;
+  const pad = 24;
+  const usableWidth = width - pad * 2;
+  const usableHeight = height - pad * 2;
+  const maxRadiusM = result.radialProfile[result.radialProfile.length - 1]?.radiusM ?? 1;
+  const numericalPoints = result.radialProfile.map((sample) => plotPoint(sample.radiusM, sample.numericalIntensity)).join(" ");
+  const analyticPoints = result.radialProfile.map((sample) => plotPoint(sample.radiusM, sample.analyticIntensity)).join(" ");
+  const markerX = pad + usableWidth * Math.min(1, result.expected.firstDarkRadiusM / maxRadiusM);
+  const markerLabel = result.expected.firstDarkRadiusM <= maxRadiusM ? "first dark" : "first dark outside";
+
+  function plotPoint(radiusM: number, intensity: number): string {
+    const x = pad + usableWidth * (radiusM / maxRadiusM);
+    const y = pad + usableHeight * (1 - clamp(intensity, 0, 1));
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  }
+
+  return (
+    <svg className="maxwell-validation-profile" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Thin lens focal-plane radial Airy overlay">
+      <rect x="0" y="0" width={width} height={height} />
+      <line className="profile-axis" x1={pad} y1={height - pad} x2={width - pad} y2={height - pad} />
+      <line className="profile-axis" x1={pad} y1={pad} x2={pad} y2={height - pad} />
+      <polyline className="maxwell-validation-analytic-line" points={analyticPoints} />
+      <polyline className="maxwell-validation-model-line" points={numericalPoints} />
+      <line className="maxwell-validation-marker" x1={markerX} y1={pad} x2={markerX} y2={height - pad} />
+      <text x={Math.max(pad + 4, markerX - 100)} y={pad + 13}>
+        {markerLabel}
+      </text>
+      <text x={pad} y={height - 6}>
+        0 um
+      </text>
+      <text x={width - pad - 84} y={height - 6}>
+        {formatUm(maxRadiusM)} um
+      </text>
+    </svg>
+  );
+}
+
+function ThinLensResidualPlot({ result }: { result: ThinLensFocalValidationResult }) {
+  const width = 720;
+  const height = 190;
+  const pad = 24;
+  const usableWidth = width - pad * 2;
+  const usableHeight = height - pad * 2;
+  const maxRadiusM = result.radialProfile[result.radialProfile.length - 1]?.radiusM ?? 1;
+  const maxResidual = Math.max(1e-12, result.residuals.maxResidual);
+  const zeroY = pad + usableHeight / 2;
+  const points = result.radialProfile
+    .map((sample) => {
+      const x = pad + usableWidth * (sample.radiusM / maxRadiusM);
+      const y = zeroY - (usableHeight / 2) * clamp(sample.residual / maxResidual, -1, 1);
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+
+  return (
+    <svg className="maxwell-validation-profile" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Thin lens numerical minus analytic radial residual curve">
+      <rect x="0" y="0" width={width} height={height} />
+      <line className="profile-axis" x1={pad} y1={zeroY} x2={width - pad} y2={zeroY} />
+      <line className="profile-axis" x1={pad} y1={pad} x2={pad} y2={height - pad} />
+      <polyline className="maxwell-validation-residual-line" points={points} />
+      <text x={pad} y={height - 6}>
+        0 um
+      </text>
+      <text x={width - pad - 84} y={height - 6}>
+        {formatUm(maxRadiusM)} um
+      </text>
+      <text x={pad + 4} y={pad + 12}>
+        max residual {maxResidual.toExponential(1)}
+      </text>
+    </svg>
+  );
+}
+
+function ThinLensFocusScanPlot({ result }: { result: ThinLensFocalValidationResult }) {
+  const width = 720;
+  const height = 190;
+  const pad = 24;
+  const usableWidth = width - pad * 2;
+  const usableHeight = height - pad * 2;
+  const minZM = result.focusScan[0]?.zM ?? result.config.lens.focalLengthM;
+  const maxZM = result.focusScan[result.focusScan.length - 1]?.zM ?? result.config.lens.focalLengthM;
+  const spanZM = Math.max(1e-12, maxZM - minZM);
+  const points = result.focusScan
+    .map((sample) => {
+      const x = pad + usableWidth * ((sample.zM - minZM) / spanZM);
+      const y = pad + usableHeight * (1 - clamp(sample.centerIntensityRelative, 0, 1));
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(" ");
+  const focalX = pad + usableWidth * ((result.config.lens.focalLengthM - minZM) / spanZM);
+  const currentX = pad + usableWidth * ((result.config.observationPlane.zM - minZM) / spanZM);
+
+  return (
+    <svg className="maxwell-validation-profile" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Thin lens relative center intensity focus scan">
+      <rect x="0" y="0" width={width} height={height} />
+      <line className="profile-axis" x1={pad} y1={height - pad} x2={width - pad} y2={height - pad} />
+      <line className="profile-axis" x1={pad} y1={pad} x2={pad} y2={height - pad} />
+      <polyline className="maxwell-validation-model-line" points={points} />
+      <line className="maxwell-validation-marker" x1={focalX} y1={pad} x2={focalX} y2={height - pad} />
+      <line className="maxwell-validation-residual-line" x1={currentX} y1={pad} x2={currentX} y2={height - pad} />
+      <text x={Math.max(pad + 4, focalX - 44)} y={pad + 13}>
+        z=f
+      </text>
+      <text x={pad} y={height - 6}>
+        {formatMm(minZM)} mm
+      </text>
+      <text x={width - pad - 82} y={height - 6}>
+        {formatMm(maxZM)} mm
+      </text>
+      <text x={pad + 4} y={pad + 30}>
+        current {formatMm(result.config.observationPlane.zM)} mm
+      </text>
+    </svg>
+  );
+}
+
 function exportStackJson(
   stack: CoatingStackDefinition,
   materialCatalog: MaxwellMaterialCatalog,
@@ -2135,6 +2529,18 @@ function exportSlitValidationJson(result: SlitOrderValidationResult): void {
 
 function exportSlitValidationMarkdown(result: SlitOrderValidationResult): void {
   downloadText(`${result.config.kind}.md`, "text/markdown", slitOrderValidationMarkdown(result));
+}
+
+function exportThinLensValidationJson(result: ThinLensFocalValidationResult): void {
+  downloadText("l64-thin-lens-focal-validation.json", "application/json", JSON.stringify(thinLensFocalValidationJson(result), null, 2));
+}
+
+function exportThinLensValidationMarkdown(result: ThinLensFocalValidationResult): void {
+  downloadText("l64-thin-lens-focal-validation.md", "text/markdown", thinLensFocalValidationMarkdown(result));
+}
+
+function exportThinLensValidationCsv(result: ThinLensFocalValidationResult): void {
+  downloadText("l64-thin-lens-focal-validation.csv", "text/csv", thinLensFocalValidationCsv(result));
 }
 
 function exportAdvisorReviewMarkdown(review: AdvisorValidationReviewResult): void {
@@ -2299,6 +2705,10 @@ function formatPercent(value: number): string {
 
 function formatMm(valueM: number): string {
   return (valueM * 1e3).toFixed(valueM < 0.001 ? 3 : 2).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+function formatUm(valueM: number): string {
+  return (valueM * 1e6).toFixed(valueM < 1e-4 ? 3 : 2).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 function formatInterval(lower: number, upper: number): string {
