@@ -2,17 +2,18 @@ import { describe, expect, it } from "vitest";
 import { l41DefaultCoatingStack, serializeCoatingStackDesign } from "./coatingStack";
 import { applyRobustCoatingSearchCandidate, runRobustCoatingSearch, type RobustCoatingSearchPrimaryMetric, type RobustCoatingSearchSpec } from "./coatingRobustSearch";
 import type { CoatingSearchSpec } from "./coatingSearch";
+import type { CoatingUncertaintyModel } from "./coatingUncertainty";
 import { createMaterialCatalog, listCatalogMaterials } from "./materialCatalog";
 import { importMaterialPackage } from "./materialImport";
 
-describe("L5.6 robust-yield coating search", () => {
+describe("L5.7 robust-yield coating search with drift/correlation", () => {
   it("returns deterministic robust candidates for a fixed nominal spec and thickness uncertainty model", () => {
     const spec = robustSpec();
     const a = runRobustCoatingSearch(spec);
     const b = runRobustCoatingSearch(structuredClone(spec));
 
     expect(a.type).toBe("maxwellRobustYieldCoatingSearch");
-    expect(a.analysisId).toBe("analysis.maxwell.l5.phase6.robustYieldCoatingSearch");
+    expect(a.analysisId).toBe("analysis.maxwell.l5.phase7.driftCorrelationRobustYieldSearch");
     expect(a.best.resultHash).toBe(b.best.resultHash);
     expect(a.resultHash).toBe(b.resultHash);
     expect(a.sampleEvaluationCount).toBeGreaterThan(0);
@@ -28,6 +29,43 @@ describe("L5.6 robust-yield coating search", () => {
     expect(result.best.yield.p90Score).toBeGreaterThanOrEqual(result.best.yield.medianScore);
     expect(result.best.yield.worstCaseScore).toBeGreaterThanOrEqual(result.best.yield.p90Score);
     expect(result.best.yield.sampleCount).toBe(result.best.samples.length);
+  });
+
+  it("supports shared deposition scale drift with comparison against independent thickness", () => {
+    const result = runRobustCoatingSearch(
+      robustSpec({
+        uncertaintyModel: {
+          mode: "correlated-thickness",
+          preset: "shared-scale",
+          globalThicknessScale: { sigmaFraction: 0.03, sigmaLevels: [-2, 0, 2] },
+          maxSamplesPerCandidate: 9
+        }
+      })
+    );
+
+    expect(result.best.uncertaintyReceipt.model).toBe("correlated-thickness");
+    expect(result.best.uncertaintyReceipt.label).toBe("Shared deposition scale");
+    expect(result.best.uncertaintyReceipt.globalThicknessScale?.sigmaFraction).toBe(0.03);
+    expect(result.best.comparison?.independentThickness.sampleCount).toBeGreaterThan(0);
+    expect(result.best.comparison?.selectedModel.p90Score).toBe(result.best.yield.p90Score);
+  });
+
+  it("changes robust metrics when correlated drift is enabled", () => {
+    const independent = runRobustCoatingSearch(robustSpec({ sigmaNm: 2 }));
+    const correlated = runRobustCoatingSearch(
+      robustSpec({
+        uncertaintyModel: {
+          mode: "correlated-thickness",
+          preset: "shared-offset-residual",
+          globalThicknessOffsetNm: { sigmaNm: 6, sigmaLevels: [-2, 0, 2] },
+          perLayerResidualNm: { sigmaNm: 1, sigmaLevels: [-1, 0, 1] },
+          maxSamplesPerCandidate: 15
+        }
+      })
+    );
+
+    expect(correlated.best.yield.p90Score).not.toBe(independent.best.yield.p90Score);
+    expect(correlated.best.uncertaintyReceipt.sampleReduction).toMatch(/none|deterministic-cap/);
   });
 
   it("can rank by expected, p90, worst-case, and pass-rate metrics", () => {
@@ -68,6 +106,7 @@ describe("L5.6 robust-yield coating search", () => {
 
     expect(result.best.samples.length).toBeLessThanOrEqual(9);
     expect(result.best.uncertaintyReceipt.maxSamplesPerCandidate).toBe(9);
+    expect(result.best.uncertaintyReceipt.generatedSamplesPerCandidate).toBeLessThanOrEqual(9);
   });
 
   it("preserves imported material provenance receipts and records fixed imported n/k assumption", () => {
@@ -114,8 +153,28 @@ describe("L5.6 robust-yield coating search", () => {
     expect(json).toContain("maxwellRobustYieldCoatingSearch");
     expect(json).toContain("\"sigmaNm\":3");
     expect(json).toContain("\"sigmaLevels\":[-2,0,2]");
+    expect(json).toContain("independent-thickness");
     expect(json).toContain("thickness-only");
     expect(json).toContain("not certified manufacturing yield");
+  });
+
+  it("serializes correlated uncertainty receipts in JSON output", () => {
+    const result = runRobustCoatingSearch(
+      robustSpec({
+        uncertaintyModel: {
+          mode: "correlated-thickness",
+          preset: "shared-scale",
+          globalThicknessScale: { sigmaFraction: 0.01, sigmaLevels: [-2, 0, 2] },
+          maxSamplesPerCandidate: 5
+        }
+      })
+    );
+    const json = JSON.stringify(result);
+
+    expect(json).toContain("correlated-thickness");
+    expect(json).toContain("globalThicknessScale");
+    expect(json).toContain("sampleReduction");
+    expect(json).toContain("importedMaterialNkAssumption");
   });
 });
 
@@ -129,11 +188,12 @@ function robustSpec(
     candidateMaterialIds?: string[];
     layerCountMin?: number;
     layerCountMax?: number;
+    uncertaintyModel?: CoatingUncertaintyModel;
   } = {}
 ): RobustCoatingSearchSpec {
   return {
-    id: "l56-test-robust-search",
-    label: "L5.6 test robust search",
+    id: "l57-test-robust-search",
+    label: "L5.7 test robust search",
     nominalSearch: basicNominalSpec(overrides),
     uncertainty: {
       thickness: {
@@ -141,7 +201,8 @@ function robustSpec(
         sigmaNm: overrides.sigmaNm ?? 2,
         sigmaLevels: overrides.sigmaLevels ?? [-2, 0, 2],
         maxSamplesPerCandidate: overrides.maxSamplesPerCandidate ?? 81
-      }
+      },
+      model: overrides.uncertaintyModel
     },
     robustObjective: {
       primary: overrides.primary ?? "p90Score",
@@ -162,8 +223,8 @@ function basicNominalSpec(
   } = {}
 ): CoatingSearchSpec {
   return {
-    id: "l56-test-nominal-search",
-    label: "L5.6 nominal precursor search",
+    id: "l57-test-nominal-search",
+    label: "L5.7 nominal precursor search",
     baseStack: {
       ...l41DefaultCoatingStack,
       layers: []

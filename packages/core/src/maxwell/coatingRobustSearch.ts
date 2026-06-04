@@ -2,6 +2,14 @@ import { fnv1a64, stableStringify } from "../scene/hashScene";
 import type { SolverWarning } from "../solvers/Solver";
 import { runCoatingStack, type CoatingStackDefinition, type CoatingStackRunOptions } from "./coatingStack";
 import {
+  applyCoatingUncertaintySample,
+  generateCoatingUncertaintySamples,
+  type CoatingUncertaintyModel,
+  type CoatingUncertaintyPerturbation,
+  type CoatingUncertaintyReceipt,
+  type CoatingUncertaintySample
+} from "./coatingUncertainty";
+import {
   applyCoatingSearchCandidate,
   runCoatingSearch,
   type CoatingCandidateMetrics,
@@ -42,26 +50,20 @@ export type RobustCoatingSearchSpec = {
   label: string;
   nominalSearch: CoatingSearchSpec;
   uncertainty: {
-    thickness: RobustThicknessUncertainty;
+    thickness?: RobustThicknessUncertainty;
+    model?: CoatingUncertaintyModel;
   };
   robustObjective: RobustCoatingObjective;
   candidateLimit?: number;
 };
 
-export type RobustLayerPerturbation = {
-  layerId: string;
-  label: string;
-  materialId: string;
-  nominalThicknessM: number;
-  sigmaMultiplier: number;
-  deltaM: number;
-  sampledThicknessM: number;
-};
+export type RobustLayerPerturbation = CoatingUncertaintyPerturbation;
 
 export type RobustCoatingSample = {
   index: number;
   label: string;
-  sigmaMultipliers: number[];
+  uncertaintySampleId: string;
+  layerThicknessDeltasNm: number[];
   score: number;
   passed?: boolean;
   metrics: CoatingCandidateMetrics;
@@ -84,12 +86,14 @@ export type RobustYieldMetrics = {
 };
 
 export type RobustUncertaintyReceipt = {
-  model: "thickness-only";
-  mode: "deterministic-grid";
-  sigmaNm: number;
-  sigmaLevels: number[];
-  maxSamplesPerCandidate: number;
-  generatedSamplesPerCandidate: number;
+  importedMaterialNkAssumption: "fixed";
+  legacyModel?: "thickness-only";
+} & CoatingUncertaintyReceipt;
+
+export type RobustUncertaintyComparison = {
+  independentThickness: RobustYieldMetrics;
+  selectedModel: RobustYieldMetrics;
+  receipt: RobustUncertaintyReceipt;
   importedMaterialNkAssumption: "fixed";
 };
 
@@ -107,6 +111,7 @@ export type RobustCoatingSearchCandidate = {
     resultHash: string;
   };
   yield: RobustYieldMetrics;
+  comparison?: RobustUncertaintyComparison;
   samples: RobustCoatingSample[];
   uncertaintyReceipt: RobustUncertaintyReceipt;
   warnings: SolverWarning[];
@@ -116,7 +121,7 @@ export type RobustCoatingSearchCandidate = {
 export type RobustCoatingSearchResult = {
   id: string;
   type: "maxwellRobustYieldCoatingSearch";
-  analysisId: "analysis.maxwell.l5.phase6.robustYieldCoatingSearch";
+  analysisId: "analysis.maxwell.l5.phase7.driftCorrelationRobustYieldSearch";
   label: string;
   spec: RobustCoatingSearchSpec;
   nominalSearchResult: CoatingSearchResult;
@@ -127,31 +132,29 @@ export type RobustCoatingSearchResult = {
   warnings: SolverWarning[];
   resultHash: string;
   provenance: {
-    label: "L5.6 deterministic planar coating robust-yield search";
+    label: "L5.7 deterministic planar coating drift/correlation robust-yield search";
     limitations: string[];
   };
 };
-
-type NormalizedThicknessModel = Required<RobustThicknessUncertainty>;
 
 type WorkingRobustCandidate = Omit<RobustCoatingSearchCandidate, "rank">;
 
 export function runRobustCoatingSearch(spec: RobustCoatingSearchSpec, options: CoatingStackRunOptions = {}): RobustCoatingSearchResult {
   validateRobustSpec(spec);
-  const thickness = normalizeThicknessModel(spec.uncertainty.thickness);
+  const uncertaintyModel = uncertaintyModelFromSpec(spec);
   const nominalSearchResult = runCoatingSearch(spec.nominalSearch, options);
   const candidateLimit = clampInteger(spec.candidateLimit ?? nominalSearchResult.candidates.length, 1, nominalSearchResult.candidates.length);
   const warnings: SolverWarning[] = [
     {
-      code: "maxwell.robustSearch.planarThicknessOnly",
+      code: "maxwell.robustSearch.planarThicknessDriftOnly",
       message:
-        "L5.6 robust search wraps L5.5 nominal coating candidates with deterministic thickness-only perturbations and re-solves each sample through the existing planar Maxwell TMM path; this is not material n/k uncertainty, correlated drift, Monte Carlo certification, 3D FEM/BEM/RCWA/FDTD, digital-twin calibration, or manufacturing certification."
+        "L5.7 robust search wraps L5.5 nominal coating candidates with deterministic thickness uncertainty samples, including optional correlated drift, and re-solves each sample through the existing planar Maxwell TMM path; this is not material n/k uncertainty, Monte Carlo certification, 3D FEM/BEM/RCWA/FDTD, digital-twin calibration, or manufacturing certification."
     }
   ];
 
   const candidates = nominalSearchResult.candidates
     .slice(0, candidateLimit)
-    .map((candidate) => evaluateRobustCandidate(spec, candidate, thickness, options))
+    .map((candidate) => evaluateRobustCandidate(spec, candidate, uncertaintyModel, options))
     .sort(compareWorkingCandidates)
     .map((candidate, index) => ({ ...candidate, rank: index + 1 }));
 
@@ -160,8 +163,8 @@ export function runRobustCoatingSearch(spec: RobustCoatingSearchSpec, options: C
   const sampleEvaluationCount = candidates.reduce((sum, candidate) => sum + candidate.samples.length, 0);
   const resultHash = fnv1a64(
     stableStringify({
-      analysisId: "analysis.maxwell.l5.phase6.robustYieldCoatingSearch",
-      spec: specForHash(spec, thickness),
+      analysisId: "analysis.maxwell.l5.phase7.driftCorrelationRobustYieldSearch",
+      spec: specForHash(spec, uncertaintyModel),
       nominalSearchHash: nominalSearchResult.resultHash,
       candidates: candidates.map((candidate) => ({
         rank: candidate.rank,
@@ -178,7 +181,7 @@ export function runRobustCoatingSearch(spec: RobustCoatingSearchSpec, options: C
   return {
     id: spec.id,
     type: "maxwellRobustYieldCoatingSearch",
-    analysisId: "analysis.maxwell.l5.phase6.robustYieldCoatingSearch",
+    analysisId: "analysis.maxwell.l5.phase7.driftCorrelationRobustYieldSearch",
     label: spec.label,
     spec: cloneSpec(spec),
     nominalSearchResult,
@@ -199,35 +202,33 @@ export function applyRobustCoatingSearchCandidate(baseStack: CoatingStackDefinit
 function evaluateRobustCandidate(
   spec: RobustCoatingSearchSpec,
   nominalCandidate: CoatingSearchCandidate,
-  thickness: NormalizedThicknessModel,
+  uncertaintyModel: CoatingUncertaintyModel,
   options: CoatingStackRunOptions
 ): WorkingRobustCandidate {
-  const sigmaVectors = deterministicSigmaVectors(nominalCandidate.stack.layers.length, thickness.sigmaLevels, thickness.maxSamplesPerCandidate);
-  const samples = sigmaVectors.map((sigmaMultipliers, index) => evaluateRobustSample(spec, nominalCandidate.stack, thickness.sigmaNm, sigmaMultipliers, index, options));
+  const sampleSet = generateCoatingUncertaintySamples(nominalCandidate.stack, uncertaintyModel);
+  const samples = sampleSet.samples.map((sample, index) => evaluateRobustSample(spec, nominalCandidate.stack, sample, index, options));
   const yieldMetrics = summarizeRobustSamples(samples);
   const robustScore = scoreRobustMetrics(nominalCandidate.score, yieldMetrics, spec.robustObjective);
   const uncertaintyReceipt: RobustUncertaintyReceipt = {
-    model: "thickness-only",
-    mode: thickness.mode,
-    sigmaNm: thickness.sigmaNm,
-    sigmaLevels: [...thickness.sigmaLevels],
-    maxSamplesPerCandidate: thickness.maxSamplesPerCandidate,
-    generatedSamplesPerCandidate: samples.length,
+    ...sampleSet.receipt,
     importedMaterialNkAssumption: "fixed"
   };
+  if (sampleSet.receipt.model === "independent-thickness") uncertaintyReceipt.legacyModel = "thickness-only";
+  const comparison = comparisonForCandidate(spec, nominalCandidate.stack, uncertaintyModel, yieldMetrics, options);
   const warnings: SolverWarning[] = [
     {
       code: "maxwell.robustSearch.importedNkFixed",
       message:
-        "L5.6 robust search keeps imported and built-in material n/k records fixed while perturbing layer thicknesses; material source uncertainty is recorded as out of scope."
+        "L5.7 robust search keeps imported and built-in material n/k records fixed while perturbing layer thicknesses; material source uncertainty is recorded as out of scope."
     }
   ];
   const resultHash = fnv1a64(
     stableStringify({
-      analysisId: "analysis.maxwell.l5.phase6.robustYieldCandidate",
+      analysisId: "analysis.maxwell.l5.phase7.robustYieldCandidate",
       nominalHash: nominalCandidate.resultHash,
       robustScore: roundNumber(robustScore),
       yield: roundYieldMetrics(yieldMetrics),
+      comparison: comparison ? roundYieldMetrics(comparison.independentThickness) : undefined,
       receipt: uncertaintyReceipt,
       sampleHashes: samples.map((sample) => sample.resultHash)
     })
@@ -246,6 +247,7 @@ function evaluateRobustCandidate(
       resultHash: nominalCandidate.resultHash
     },
     yield: yieldMetrics,
+    comparison,
     samples,
     uncertaintyReceipt,
     warnings: uniqueWarnings([...warnings, ...nominalCandidate.warnings, ...samples.flatMap((sample) => sample.metrics.samples.flatMap(() => []))]),
@@ -256,22 +258,21 @@ function evaluateRobustCandidate(
 function evaluateRobustSample(
   spec: RobustCoatingSearchSpec,
   nominalStack: CoatingStackDefinition,
-  sigmaNm: number,
-  sigmaMultipliers: number[],
+  uncertaintySample: CoatingUncertaintySample,
   index: number,
   options: CoatingStackRunOptions
 ): RobustCoatingSample {
-  const { stack, perturbations } = perturbStack(nominalStack, sigmaNm * 1e-9, sigmaMultipliers);
+  const { stack, perturbations } = applyCoatingUncertaintySample(nominalStack, uncertaintySample);
   const metrics = evaluateStackMetrics(spec.nominalSearch, stack, options);
   const score = scoreMetrics(metrics, spec.nominalSearch.objective);
   const passed = spec.robustObjective.passThreshold === undefined ? undefined : score <= spec.robustObjective.passThreshold;
-  const label = sigmaMultipliers.length === 0 ? "nominal" : sigmaMultipliers.map((value) => `${value >= 0 ? "+" : ""}${formatMultiplier(value)}`).join(",");
   const resultHash = fnv1a64(
     stableStringify({
-      analysisId: "analysis.maxwell.l5.phase6.robustYieldSample",
+      analysisId: "analysis.maxwell.l5.phase7.robustYieldSample",
       index,
       stack: stackForHash(stack),
-      sigmaMultipliers: sigmaMultipliers.map(roundNumber),
+      uncertaintySampleHash: uncertaintySample.resultHash,
+      layerThicknessDeltasNm: uncertaintySample.layerThicknessDeltasNm.map(roundNumber),
       score: roundNumber(score),
       passed,
       metrics: metricsForHash(metrics)
@@ -280,13 +281,43 @@ function evaluateRobustSample(
 
   return {
     index,
-    label,
-    sigmaMultipliers: sigmaMultipliers.map(roundNumber),
+    label: uncertaintySample.label,
+    uncertaintySampleId: uncertaintySample.id,
+    layerThicknessDeltasNm: uncertaintySample.layerThicknessDeltasNm.map(roundNumber),
     score,
     passed,
     metrics,
     perturbations,
     resultHash
+  };
+}
+
+function comparisonForCandidate(
+  spec: RobustCoatingSearchSpec,
+  stack: CoatingStackDefinition,
+  uncertaintyModel: CoatingUncertaintyModel,
+  selectedModelMetrics: RobustYieldMetrics,
+  options: CoatingStackRunOptions
+): RobustUncertaintyComparison | undefined {
+  if (uncertaintyModel.mode !== "correlated-thickness") return undefined;
+  const independentModel = {
+    mode: "independent-thickness" as const,
+    sigmaNm: spec.uncertainty.thickness?.sigmaNm ?? 2,
+    sigmaLevels: spec.uncertainty.thickness?.sigmaLevels ?? [-2, 0, 2],
+    maxSamplesPerCandidate: spec.uncertainty.thickness?.maxSamplesPerCandidate ?? uncertaintyModel.maxSamplesPerCandidate ?? 81
+  };
+  const sampleSet = generateCoatingUncertaintySamples(stack, independentModel);
+  const samples = sampleSet.samples.map((sample, index) => evaluateRobustSample(spec, stack, sample, index, options));
+  const receipt: RobustUncertaintyReceipt = {
+    ...sampleSet.receipt,
+    legacyModel: "thickness-only",
+    importedMaterialNkAssumption: "fixed"
+  };
+  return {
+    independentThickness: summarizeRobustSamples(samples),
+    selectedModel: selectedModelMetrics,
+    receipt,
+    importedMaterialNkAssumption: "fixed"
   };
 }
 
@@ -427,107 +458,25 @@ function robustMetricValue(metrics: RobustYieldMetrics, metric: RobustCoatingSea
   return metrics.p90Score;
 }
 
-function deterministicSigmaVectors(layerCount: number, levels: number[], maxSamples: number): number[][] {
-  if (layerCount === 0) return [[]];
-  const normalizedLevels = uniqueNumbers(levels).sort((a, b) => Math.abs(a) - Math.abs(b) || a - b);
-  const fullCount = normalizedLevels.length ** layerCount;
-  if (fullCount <= maxSamples) {
-    return cartesianSigmaVectors(layerCount, normalizedLevels).sort(compareSigmaVectors);
-  }
-
-  const vectors: number[][] = [Array.from({ length: layerCount }, () => 0)];
-  const nonzero = normalizedLevels.filter((level) => level !== 0).sort((a, b) => Math.abs(a) - Math.abs(b) || a - b);
-  for (const level of nonzero) {
-    vectors.push(Array.from({ length: layerCount }, () => level));
-  }
-  for (let layerIndex = 0; layerIndex < layerCount; layerIndex += 1) {
-    for (const level of nonzero) {
-      const vector = Array.from({ length: layerCount }, () => 0);
-      vector[layerIndex] = level;
-      vectors.push(vector);
-    }
-  }
-
-  return uniqueSigmaVectors(vectors).sort(compareSigmaVectors).slice(0, maxSamples);
-}
-
-function cartesianSigmaVectors(layerCount: number, levels: number[]): number[][] {
-  let output: number[][] = [[]];
-  for (let index = 0; index < layerCount; index += 1) {
-    const next: number[][] = [];
-    for (const prefix of output) {
-      for (const level of levels) next.push([...prefix, level]);
-    }
-    output = next;
-  }
-  return uniqueSigmaVectors(output);
-}
-
-function compareSigmaVectors(a: number[], b: number[]): number {
-  const aMag = a.reduce((sum, value) => sum + Math.abs(value), 0);
-  const bMag = b.reduce((sum, value) => sum + Math.abs(value), 0);
-  if (aMag !== bMag) return aMag - bMag;
-  for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
-    const delta = (a[index] ?? 0) - (b[index] ?? 0);
-    if (delta !== 0) return delta;
-  }
-  return 0;
-}
-
-function uniqueSigmaVectors(vectors: number[][]): number[][] {
-  const seen = new Set<string>();
-  const output: number[][] = [];
-  for (const vector of vectors) {
-    const key = vector.map(roundNumber).join(",");
-    if (seen.has(key)) continue;
-    seen.add(key);
-    output.push(vector.map(roundNumber));
-  }
-  return output;
-}
-
-function perturbStack(stack: CoatingStackDefinition, sigmaM: number, sigmaMultipliers: number[]): { stack: CoatingStackDefinition; perturbations: RobustLayerPerturbation[] } {
-  const perturbations: RobustLayerPerturbation[] = [];
-  const layers = stack.layers.map((layer, index) => {
-    const sigmaMultiplier = sigmaMultipliers[index] ?? 0;
-    const deltaM = sigmaM * sigmaMultiplier;
-    const sampledThicknessM = Math.max(0.1e-9, layer.thicknessM + deltaM);
-    perturbations.push({
-      layerId: layer.id,
-      label: layer.label,
-      materialId: layer.materialId,
-      nominalThicknessM: layer.thicknessM,
-      sigmaMultiplier,
-      deltaM,
-      sampledThicknessM
-    });
-    return { ...layer, thicknessM: sampledThicknessM };
-  });
-  return { stack: { ...stack, layers }, perturbations };
-}
-
 function validateRobustSpec(spec: RobustCoatingSearchSpec): void {
   if (!spec.id) throw new Error("robust coating search spec id is required");
   if (!spec.label) throw new Error("robust coating search label is required");
   if (spec.robustObjective.primary === "passRate" && spec.robustObjective.passThreshold === undefined) {
     throw new Error("robust pass-rate ranking requires a pass threshold");
   }
-  normalizeThicknessModel(spec.uncertainty.thickness);
+  uncertaintyModelFromSpec(spec);
 }
 
-function normalizeThicknessModel(model: RobustThicknessUncertainty): NormalizedThicknessModel {
-  if (model.mode !== "deterministic-grid") throw new Error("robust coating search only supports deterministic-grid thickness uncertainty in L5.6");
-  const sigmaNm = clamp(model.sigmaNm, 0, 1000);
-  if (!Number.isFinite(sigmaNm)) throw new Error("robust thickness sigma must be finite");
-  const sigmaLevels = uniqueNumbers(model.sigmaLevels ?? [-2, 0, 2]);
-  if (sigmaLevels.length === 0) throw new Error("robust sigma levels must include at least one value");
-  if (!sigmaLevels.includes(0)) sigmaLevels.push(0);
-  const maxSamplesPerCandidate = clampInteger(model.maxSamplesPerCandidate ?? 81, 1, 1000);
+function uncertaintyModelFromSpec(spec: RobustCoatingSearchSpec): CoatingUncertaintyModel {
+  if (spec.uncertainty.model) return cloneUncertaintyModel(spec.uncertainty.model);
+  const thickness = spec.uncertainty.thickness;
+  if (!thickness) throw new Error("robust coating search requires an uncertainty model");
+  if (thickness.mode !== "deterministic-grid") throw new Error("legacy robust thickness uncertainty must use deterministic-grid mode");
   return {
-    mode: "deterministic-grid",
-    sigmaNm,
-    sigmaLevels: sigmaLevels.sort((a, b) => a - b),
-    maxSamplesPerCandidate
+    mode: "independent-thickness",
+    sigmaNm: thickness.sigmaNm,
+    sigmaLevels: thickness.sigmaLevels ? [...thickness.sigmaLevels] : undefined,
+    maxSamplesPerCandidate: thickness.maxSamplesPerCandidate
   };
 }
 
@@ -560,10 +509,13 @@ function cloneSpec(spec: RobustCoatingSearchSpec): RobustCoatingSearchSpec {
       search: spec.nominalSearch.search ? { ...spec.nominalSearch.search } : undefined
     },
     uncertainty: {
-      thickness: {
-        ...spec.uncertainty.thickness,
-        sigmaLevels: spec.uncertainty.thickness.sigmaLevels ? [...spec.uncertainty.thickness.sigmaLevels] : undefined
-      }
+      thickness: spec.uncertainty.thickness
+        ? {
+            ...spec.uncertainty.thickness,
+            sigmaLevels: spec.uncertainty.thickness.sigmaLevels ? [...spec.uncertainty.thickness.sigmaLevels] : undefined
+          }
+        : undefined,
+      model: spec.uncertainty.model ? cloneUncertaintyModel(spec.uncertainty.model) : undefined
     },
     robustObjective: {
       ...spec.robustObjective,
@@ -572,11 +524,39 @@ function cloneSpec(spec: RobustCoatingSearchSpec): RobustCoatingSearchSpec {
   };
 }
 
-function specForHash(spec: RobustCoatingSearchSpec, thickness: NormalizedThicknessModel): unknown {
+function specForHash(spec: RobustCoatingSearchSpec, uncertaintyModel: CoatingUncertaintyModel): unknown {
   return {
     ...cloneSpec(spec),
-    uncertainty: { thickness },
+    uncertaintyModel,
     robustObjective: { ...spec.robustObjective, weights: spec.robustObjective.weights ? { ...spec.robustObjective.weights } : undefined }
+  };
+}
+
+function cloneUncertaintyModel(model: CoatingUncertaintyModel): CoatingUncertaintyModel {
+  if (model.mode === "independent-thickness") {
+    return {
+      ...model,
+      sigmaLevels: model.sigmaLevels ? [...model.sigmaLevels] : undefined
+    };
+  }
+  return {
+    ...model,
+    globalThicknessScale: model.globalThicknessScale
+      ? { ...model.globalThicknessScale, sigmaLevels: model.globalThicknessScale.sigmaLevels ? [...model.globalThicknessScale.sigmaLevels] : undefined }
+      : undefined,
+    globalThicknessOffsetNm: model.globalThicknessOffsetNm
+      ? { ...model.globalThicknessOffsetNm, sigmaLevels: model.globalThicknessOffsetNm.sigmaLevels ? [...model.globalThicknessOffsetNm.sigmaLevels] : undefined }
+      : undefined,
+    perLayerResidualNm: model.perLayerResidualNm
+      ? { ...model.perLayerResidualNm, sigmaLevels: model.perLayerResidualNm.sigmaLevels ? [...model.perLayerResidualNm.sigmaLevels] : undefined }
+      : undefined,
+    layerGroupDrift: model.layerGroupDrift
+      ? model.layerGroupDrift.map((group) => ({
+          ...group,
+          layerIndices: [...group.layerIndices],
+          sigmaLevels: group.sigmaLevels ? [...group.sigmaLevels] : undefined
+        }))
+      : undefined
   };
 }
 
@@ -641,13 +621,13 @@ function roundYieldMetrics(metrics: RobustYieldMetrics): RobustYieldMetrics {
 
 function robustSearchProvenance(): RobustCoatingSearchResult["provenance"] {
   return {
-    label: "L5.6 deterministic planar coating robust-yield search",
+    label: "L5.7 deterministic planar coating drift/correlation robust-yield search",
     limitations: [
-      "Runs L5.5 nominal material/order/thickness search first, then re-ranks selected candidates under deterministic thickness perturbations.",
-      "Perturbs scalar coating thicknesses only and re-solves each sample through the planar Maxwell TMM coating-stack path.",
-      "Imported and built-in material n/k records are fixed in L5.6; material source uncertainty is recorded but not sampled.",
+      "Runs L5.5 nominal material/order/thickness search first, then re-ranks selected candidates under deterministic independent or correlated thickness perturbations.",
+      "Models shared deposition scale, shared offset, layer-group drift, and per-layer residual thickness errors only.",
+      "Imported and built-in material n/k records are fixed in L5.7; material source uncertainty is recorded but not sampled.",
       "Deterministic robust metrics are workbench estimates, not certified manufacturing yield or full VVUQ.",
-      "This is not correlated drift modeling, material n/k perturbation, Monte Carlo confidence intervals, 3D FEM/BEM/RCWA/FDTD, digital-twin calibration, or sensor electrical transport."
+      "This is not material n/k perturbation, Monte Carlo confidence intervals, 3D FEM/BEM/RCWA/FDTD, digital-twin calibration, or sensor electrical transport."
     ]
   };
 }
@@ -668,29 +648,6 @@ function wrapPhase(value: number): number {
   while (output > Math.PI) output -= 2 * Math.PI;
   while (output < -Math.PI) output += 2 * Math.PI;
   return output;
-}
-
-function uniqueNumbers(values: number[]): number[] {
-  const seen = new Set<string>();
-  const output: number[] = [];
-  for (const value of values) {
-    if (!Number.isFinite(value)) throw new Error("robust sigma levels must be finite");
-    const rounded = roundNumber(value);
-    const key = `${rounded}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    output.push(rounded);
-  }
-  return output;
-}
-
-function formatMultiplier(value: number): string {
-  if (Number.isInteger(value)) return value.toFixed(0);
-  return value.toFixed(2);
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }
 
 function clampInteger(value: number, min: number, max: number): number {

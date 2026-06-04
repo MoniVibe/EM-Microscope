@@ -57,10 +57,10 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L5.6 Maxwell foundry as planar robust material search, provenance, design, and yield without claiming arbitrary 3D EM", () => {
+  it("labels L5.7 Maxwell foundry as planar drift-aware robust search, provenance, design, and yield without claiming arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM plus robust material/order search, provenance, design, and yield analysis");
+    expect(maxwellPanel).toContain("frequency-domain Maxwell planar coating-stack TMM plus drift-aware robust material/order search, provenance, design, and yield analysis");
     expect(maxwellPanel).toContain("not a general 3D Maxwell solver");
     expect(maxwellPanel).toContain("createMaterialCatalog");
     expect(maxwellPanel).toContain("listCatalogMaterials");
@@ -83,6 +83,11 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("Coating Search");
     expect(maxwellPanel).toContain("Run Search");
     expect(maxwellPanel).toContain("Robust Search");
+    expect(maxwellPanel).toContain("CoatingUncertaintyModel");
+    expect(maxwellPanel).toContain("Shared deposition scale");
+    expect(maxwellPanel).toContain("Shared offset + residual");
+    expect(maxwellPanel).toContain("Independent P90");
+    expect(maxwellPanel).toContain("formatUncertaintyReceipt");
     expect(maxwellPanel).toContain("Run Robust Search");
     expect(maxwellPanel).toContain("Apply Robust");
     expect(maxwellPanel).toContain("Robust Search JSON");
@@ -99,7 +104,8 @@ describe("solver disclosure copy", () => {
 
     expect(app).toContain('aria-label="Maxwell simulator"');
     expect(app).toContain("Planar Maxwell TMM Foundry");
-    expect(app).toContain("robust material search, provenance, coating design, and yield special case");
+    expect(app).toContain("L5.7 Maxwell Design Foundry");
+    expect(app).toContain("drift-aware robust search, provenance, and yield receipts");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

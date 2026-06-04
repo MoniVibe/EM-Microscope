@@ -23,6 +23,7 @@ import {
   type CoatingStackRunResult,
   type CoatingSweepResult,
   type CoatingYieldResult,
+  type CoatingUncertaintyModel,
   type MaterialCatalogEntry,
   type MaterialCatalogAudit,
   type MaterialImportResult,
@@ -37,6 +38,7 @@ import {
 import { FileDown, Plus, Save, ShieldCheck, Sparkles, Trash2, Upload } from "lucide-react";
 
 type StackPresetId = "bareGlass" | "quarterWaveAr" | "broadbandAr" | "absorbingFilm";
+type RobustUncertaintyModeId = "independent-thickness" | "shared-scale" | "shared-offset-residual";
 
 type EditableLayer = {
   id: string;
@@ -126,8 +128,12 @@ export function MaxwellPanel() {
   const [searchMaterialIds, setSearchMaterialIds] = useState<string[]>(["mgf2", "sio2", "tio2"]);
   const [searchResult, setSearchResult] = useState<CoatingSearchResult | null>(null);
   const [robustSearchEnabled, setRobustSearchEnabled] = useState(false);
+  const [robustUncertaintyMode, setRobustUncertaintyMode] = useState<RobustUncertaintyModeId>("independent-thickness");
   const [robustThicknessSigmaNm, setRobustThicknessSigmaNm] = useState(2);
   const [robustSigmaLevelsText, setRobustSigmaLevelsText] = useState("-2, 0, 2");
+  const [robustScaleSigmaPercent, setRobustScaleSigmaPercent] = useState(1);
+  const [robustOffsetSigmaNm, setRobustOffsetSigmaNm] = useState(1);
+  const [robustResidualSigmaNm, setRobustResidualSigmaNm] = useState(0.5);
   const [robustMaxSamples, setRobustMaxSamples] = useState(81);
   const [robustPrimaryMetric, setRobustPrimaryMetric] = useState<RobustCoatingSearchPrimaryMetric>("p90Score");
   const [robustPassThresholdText, setRobustPassThresholdText] = useState("");
@@ -314,8 +320,8 @@ export function MaxwellPanel() {
       const thicknessMaxNm = clamp(Math.max(searchThicknessMinNm, searchThicknessMaxNm), thicknessMinNm, 10000);
       const thicknessStepNm = clamp(searchThicknessStepNm, 1, Math.max(1, thicknessMaxNm - thicknessMinNm));
       const nominalSearch = {
-        id: `l56-${presetId}-coating-search`,
-        label: `L5.6 ${stackPresets[presetId].label} coating search`,
+        id: `l57-${presetId}-coating-search`,
+        label: `L5.7 ${stackPresets[presetId].label} coating search`,
         baseStack: { ...stack, layers: [] },
         wavelengthsM: wavelengthsNm.map((nm) => clamp(nm, 200, 2000) * 1e-9),
         anglesRad: [stack.angleRad],
@@ -343,7 +349,7 @@ export function MaxwellPanel() {
           beamWidth: Math.max(2, Math.min(32, Math.round(searchBeamWidth))),
           maxCandidates: 5,
           refinementPasses: 1,
-          seed: 56
+          seed: 57
         }
       };
       if (robustSearchEnabled) {
@@ -351,18 +357,52 @@ export function MaxwellPanel() {
         if (sigmaLevels.length === 0) throw new Error("Enter at least one robust sigma level.");
         const passThreshold = parseOptionalNumber(robustPassThresholdText);
         if (robustPrimaryMetric === "passRate" && passThreshold === undefined) throw new Error("Pass-rate robust ranking requires a pass score threshold.");
+        const maxSamplesPerCandidate = Math.max(1, Math.min(1000, Math.round(robustMaxSamples)));
+        const independentThickness = {
+          mode: "deterministic-grid" as const,
+          sigmaNm: clamp(robustThicknessSigmaNm, 0, 1000),
+          sigmaLevels,
+          maxSamplesPerCandidate
+        };
+        const uncertaintyModel: CoatingUncertaintyModel =
+          robustUncertaintyMode === "shared-scale"
+            ? {
+                mode: "correlated-thickness",
+                preset: "shared-scale",
+                globalThicknessScale: {
+                  sigmaFraction: clamp(robustScaleSigmaPercent, 0, 100) / 100,
+                  sigmaLevels
+                },
+                maxSamplesPerCandidate
+              }
+            : robustUncertaintyMode === "shared-offset-residual"
+              ? {
+                  mode: "correlated-thickness",
+                  preset: "shared-offset-residual",
+                  globalThicknessOffsetNm: {
+                    sigmaNm: clamp(robustOffsetSigmaNm, 0, 1000),
+                    sigmaLevels
+                  },
+                  perLayerResidualNm: {
+                    sigmaNm: clamp(robustResidualSigmaNm, 0, 1000),
+                    sigmaLevels: [-1, 0, 1]
+                  },
+                  maxSamplesPerCandidate
+                }
+              : {
+                  mode: "independent-thickness",
+                  sigmaNm: independentThickness.sigmaNm,
+                  sigmaLevels,
+                  maxSamplesPerCandidate
+                };
         const robust = runRobustCoatingSearch(
           {
-            id: `l56-${presetId}-robust-yield-search`,
-            label: `L5.6 ${stackPresets[presetId].label} robust-yield coating search`,
+            id: `l57-${presetId}-robust-yield-search`,
+            label: `L5.7 ${stackPresets[presetId].label} robust-yield coating search`,
             nominalSearch,
             uncertainty: {
-              thickness: {
-                mode: "deterministic-grid",
-                sigmaNm: clamp(robustThicknessSigmaNm, 0, 1000),
-                sigmaLevels,
-                maxSamplesPerCandidate: Math.max(1, Math.min(1000, Math.round(robustMaxSamples)))
-              }
+              thickness: independentThickness,
+              model: uncertaintyModel
             },
             robustObjective: {
               primary: robustPrimaryMetric,
@@ -411,10 +451,10 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L5.6 Maxwell Design Foundry">
-      <h2>L5.6 Maxwell Design Foundry</h2>
+    <section className="wave-panel maxwell-panel" aria-label="L5.7 Maxwell Design Foundry">
+      <h2>L5.7 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM plus robust material/order search, provenance, design, and yield analysis</strong>
+        <strong>frequency-domain Maxwell planar coating-stack TMM plus drift-aware robust material/order search, provenance, design, and yield analysis</strong>
         <span>not a general 3D Maxwell solver</span>
       </div>
 
@@ -735,13 +775,24 @@ export function MaxwellPanel() {
           <label className="maxwell-material-check">
             <input type="checkbox" checked={robustSearchEnabled} onChange={() => setRobustSearchEnabled((current) => !current)} />
             <span>Robust Search</span>
-            <strong>thickness yield</strong>
+            <strong>drift yield</strong>
+          </label>
+          <label className="field-row">
+            <span>Model</span>
+            <select value={robustUncertaintyMode} onChange={(event) => setRobustUncertaintyMode(event.currentTarget.value as RobustUncertaintyModeId)}>
+              <option value="independent-thickness">Independent thickness</option>
+              <option value="shared-scale">Shared deposition scale</option>
+              <option value="shared-offset-residual">Shared offset + residual</option>
+            </select>
           </label>
           <NumberField label="Sigma" value={robustThicknessSigmaNm} unit="nm" min={0} max={50} step={0.25} onChange={setRobustThicknessSigmaNm} />
           <label className="field-row">
             <span>Levels</span>
             <input value={robustSigmaLevelsText} onChange={(event) => setRobustSigmaLevelsText(event.currentTarget.value)} />
           </label>
+          <NumberField label="Scale sigma" value={robustScaleSigmaPercent} unit="%" min={0} max={20} step={0.1} onChange={setRobustScaleSigmaPercent} />
+          <NumberField label="Offset sigma" value={robustOffsetSigmaNm} unit="nm" min={0} max={50} step={0.25} onChange={setRobustOffsetSigmaNm} />
+          <NumberField label="Residual" value={robustResidualSigmaNm} unit="nm" min={0} max={20} step={0.25} onChange={setRobustResidualSigmaNm} />
           <NumberField label="Max samples" value={robustMaxSamples} min={1} max={243} step={1} onChange={setRobustMaxSamples} />
           <label className="field-row">
             <span>Ranking</span>
@@ -787,6 +838,10 @@ export function MaxwellPanel() {
                 <strong>{robustResult.best.yield.p90Score.toExponential(2)}</strong>
               </div>
               <div className="compact-stat">
+                <span>Model</span>
+                <strong>{robustResult.best.uncertaintyReceipt.label}</strong>
+              </div>
+              <div className="compact-stat">
                 <span>Robust samples</span>
                 <strong>{robustResult.sampleEvaluationCount}</strong>
               </div>
@@ -827,6 +882,18 @@ export function MaxwellPanel() {
                     <span>Samples</span>
                     <strong>{candidate.yield.sampleCount}</strong>
                   </div>
+                  {candidate.comparison && (
+                    <>
+                      <div className="compact-stat">
+                        <span>Independent P90</span>
+                        <strong>{candidate.comparison.independentThickness.p90Score.toExponential(2)}</strong>
+                      </div>
+                      <div className="compact-stat">
+                        <span>P90 delta</span>
+                        <strong>{formatSignedExponential(candidate.yield.p90Score - candidate.comparison.independentThickness.p90Score)}</strong>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="profile-meta">
                   <div className="compact-stat">
@@ -843,9 +910,9 @@ export function MaxwellPanel() {
                   </div>
                 </div>
                 <div className="maxwell-search-provenance">
-                  <span>
-                    thickness-only {candidate.uncertaintyReceipt.sigmaNm.toFixed(2)} nm / {candidate.uncertaintyReceipt.generatedSamplesPerCandidate} samples
-                  </span>
+                  <span>{formatUncertaintyReceipt(candidate.uncertaintyReceipt)}</span>
+                  <span>{formatUncertaintySamples(candidate.uncertaintyReceipt)}</span>
+                  {candidate.comparison && <span>baseline independent P90 {candidate.comparison.independentThickness.p90Score.toExponential(2)}</span>}
                   {candidate.materialCatalogRefs.map((reference) => (
                     <span key={reference.materialId}>
                       {reference.label} {reference.materialHash.slice(0, 8)}
@@ -1276,7 +1343,7 @@ function exportSearchJson(search: CoatingSearchResult): void {
 }
 
 function exportRobustSearchJson(search: RobustCoatingSearchResult): void {
-  downloadText("l56-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l57-drift-correlation-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportYieldJson(yieldAnalysis: CoatingYieldResult): void {
@@ -1383,6 +1450,25 @@ function parseOptionalNumber(value: string): number | undefined {
 function formatSearchStack(candidate: CoatingSearchCandidate): string {
   if (candidate.layers.length === 0) return "Bare boundary";
   return candidate.layers.map((layer) => `${layer.label} ${(layer.thicknessM * 1e9).toFixed(1)} nm`).join(" / ");
+}
+
+function formatUncertaintyReceipt(receipt: RobustCoatingSearchCandidate["uncertaintyReceipt"]): string {
+  const parts = [receipt.label];
+  if (receipt.model === "independent-thickness") parts.push(`${(receipt.sigmaNm ?? 0).toFixed(2)} nm sigma`);
+  if (receipt.globalThicknessScale) parts.push(`${formatPercent(receipt.globalThicknessScale.sigmaFraction)} scale sigma`);
+  if (receipt.globalThicknessOffsetNm) parts.push(`${receipt.globalThicknessOffsetNm.sigmaNm.toFixed(2)} nm offset sigma`);
+  if (receipt.perLayerResidualNm) parts.push(`${receipt.perLayerResidualNm.sigmaNm.toFixed(2)} nm residual sigma`);
+  if (receipt.layerGroupDrift?.length) parts.push(`${receipt.layerGroupDrift.length} group driver${receipt.layerGroupDrift.length === 1 ? "" : "s"}`);
+  return parts.join(" / ");
+}
+
+function formatUncertaintySamples(receipt: RobustCoatingSearchCandidate["uncertaintyReceipt"]): string {
+  const reduction = receipt.sampleReduction === "none" ? "full grid" : "deterministic cap";
+  return `${receipt.generatedSamplesPerCandidate}/${receipt.theoreticalSamplesPerCandidate} samples / ${reduction}`;
+}
+
+function formatSignedExponential(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toExponential(2)}`;
 }
 
 function clamp(value: number, min: number, max: number): number {

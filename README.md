@@ -1,6 +1,6 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L5.6 Maxwell Design Foundry planar multilayer
+An EM-first light simulator MVP. The visible web app is now the L5.7 Maxwell Design Foundry planar multilayer
 transfer-matrix workbench; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
@@ -20,18 +20,22 @@ solver, and export/load stack designs with material receipts. L5.5 adds determin
 search over that catalog so the workbench can rank planar coating candidates and apply a selected result back to
 the coating editor. L5.6 adds deterministic robust-yield coating search that wraps L5.5 nominal candidates with
 thickness-only perturbation samples, ranks by p90/expected/worst/pass-rate robust score, records fixed material
-`n,k` assumptions, and applies the selected robust candidate back to the coating editor. It is not a general 3D Maxwell solver,
+`n,k` assumptions, and applies the selected robust candidate back to the coating editor. L5.7 upgrades that robust
+path with deterministic correlated thickness drift models: shared deposition scale, shared offset, per-layer
+residuals, layer-group drift, receipt-level sample reduction evidence, and independent-thickness comparison metrics.
+It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L5.6 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
+- `L5.7 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
   best-candidate re-solve hashes, planar thickness tolerance/yield analysis, material import/audit evidence,
   imported-material selection, selected-material provenance receipts, deterministic coating material/order/thickness
-  search, deterministic thickness-only robust-yield re-ranking, candidate application, JSON/Markdown/CSV export,
+  search, deterministic independent or correlated thickness-drift robust-yield re-ranking, candidate application,
+  independent-thickness comparison metrics, sample reduction receipts, JSON/Markdown/CSV export,
   and strict limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
@@ -237,9 +241,31 @@ This makes coating design manufacturing-aware without introducing correlated dri
 Monte Carlo confidence intervals, 3D geometry, FEM/FDTD/BEM/RCWA, digital-twin calibration, or sensor electrical
 transport.
 
+## L5.7 Drift/Correlation Robust Yield
+
+The drift/correlation layer adds `packages/core/src/maxwell/coatingUncertainty.ts` and extends
+`coatingRobustSearch.ts`. The robust search still starts from the L5.5 nominal material/order/thickness beam search
+and re-solves every robust sample through the same planar Maxwell TMM stack path. The new uncertainty model can
+run the L5.6 independent layer-thickness grid or correlated deterministic drivers for shared deposition scale,
+shared thickness offset, per-layer residual thickness, and layer-group drift.
+
+Receipts now record the selected uncertainty model, generated versus theoretical samples, whether the deterministic
+sample cap reduced the full Cartesian set, and the material `n,k` fixed-assumption boundary. Correlated robust
+candidates also carry comparison metrics against an independent-thickness baseline so users can see whether shared
+process drift changed p90/expected/worst yield behavior instead of only receiving a new ranking.
+
+The web panel exposes a robust model selector with `Independent thickness`, `Shared deposition scale`, and
+`Shared offset + residual`, plus sigma controls for thickness, scale, offset, residual, sample cap, ranking mode, and
+pass-score threshold. Result rows show the chosen model receipt, sample reduction, correlated-vs-independent p90
+comparison, material hashes, and `Apply Robust`.
+
+L5.7 is still a deterministic planar coating workbench. It does not sample material-data uncertainty, roughness,
+stress/thermal drift, metrology calibration data, Monte Carlo confidence intervals, 3D Maxwell geometry, RCWA
+gratings, FEM/BEM/FDTD meshes, sensor transport, or manufacturing certification.
+
 Recommended next L5 steps:
 
-- Add drift/correlation controls and material-uncertainty models after the thickness-only robust path is stable.
+- Add material-uncertainty modeling only after sourced material data policy, licensing, and validation receipts are stronger.
 - Compile optical coating stacks from future scene elements into planar TMM inputs for normal/oblique validation cases.
 - Prototype a separate 3D engine boundary that can call an external FEM/BEM/RCWA/FDTD backend without mixing it
   into the current 2D scalar/ray bench API.
