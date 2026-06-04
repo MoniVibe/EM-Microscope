@@ -1,11 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  applyCoatingSearchCandidate,
   auditMaterialCatalog,
   createMaterialCatalog,
   createMaterialImportTemplate,
   importMaterialPackage,
   listCatalogMaterials,
   parseMaterialImportJson,
+  runCoatingSearch,
   runCoatingStack,
   runCoatingDesignFoundry,
   runCoatingYieldAnalysis,
@@ -13,6 +15,8 @@ import {
   serializeCoatingStackDesign,
   visibleArObjective,
   type CoatingDesignResult,
+  type CoatingSearchCandidate,
+  type CoatingSearchResult,
   type CoatingStackDefinition,
   type CoatingStackRunResult,
   type CoatingSweepResult,
@@ -107,6 +111,16 @@ export function MaxwellPanel() {
   const [sweepCount, setSweepCount] = useState(33);
   const [materialImport, setMaterialImport] = useState<MaterialImportResult | null>(null);
   const [materialImportError, setMaterialImportError] = useState<string | null>(null);
+  const [searchWavelengthsText, setSearchWavelengthsText] = useState("450, 550, 650");
+  const [searchLayerMin, setSearchLayerMin] = useState(1);
+  const [searchLayerMax, setSearchLayerMax] = useState(3);
+  const [searchThicknessMinNm, setSearchThicknessMinNm] = useState(40);
+  const [searchThicknessMaxNm, setSearchThicknessMaxNm] = useState(180);
+  const [searchThicknessStepNm, setSearchThicknessStepNm] = useState(35);
+  const [searchBeamWidth, setSearchBeamWidth] = useState(8);
+  const [searchMaterialIds, setSearchMaterialIds] = useState<string[]>(["mgf2", "sio2", "tio2"]);
+  const [searchResult, setSearchResult] = useState<CoatingSearchResult | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -192,6 +206,17 @@ export function MaxwellPanel() {
     [foundry, materialAudit, materialCatalog, materialImport, run, yieldAnalysis]
   );
 
+  useEffect(() => {
+    setSearchMaterialIds((current) => {
+      const available = new Set(layerMaterialOptions.map((material) => material.id));
+      const imported = layerMaterialOptions.filter((material) => material.origin === "imported").map((material) => material.id);
+      const retained = current.filter((id) => available.has(id));
+      const next = [...retained, ...imported.filter((id) => !retained.includes(id))];
+      if (next.length > 0) return next;
+      return ["mgf2", "sio2", "tio2"].filter((id) => available.has(id));
+    });
+  }, [layerMaterialOptions]);
+
   function selectPreset(nextPresetId: StackPresetId): void {
     const preset = stackPresets[nextPresetId];
     setPresetId(nextPresetId);
@@ -259,11 +284,81 @@ export function MaxwellPanel() {
     }
   }
 
+  function toggleSearchMaterial(materialId: string): void {
+    setSearchMaterialIds((current) => (current.includes(materialId) ? current.filter((id) => id !== materialId) : [...current, materialId]));
+  }
+
+  function runSearch(): void {
+    try {
+      const candidateMaterialIds = searchMaterialIds.filter((id) => layerMaterialOptions.some((material) => material.id === id));
+      const wavelengthsNm = parseNumberList(searchWavelengthsText);
+      if (candidateMaterialIds.length === 0) throw new Error("Select at least one coating search material.");
+      if (wavelengthsNm.length === 0) throw new Error("Enter at least one target wavelength.");
+      const layerMin = Math.max(0, Math.round(Math.min(searchLayerMin, searchLayerMax)));
+      const layerMax = Math.max(layerMin, Math.round(Math.max(searchLayerMin, searchLayerMax)));
+      const thicknessMinNm = clamp(Math.min(searchThicknessMinNm, searchThicknessMaxNm), 0.1, 10000);
+      const thicknessMaxNm = clamp(Math.max(searchThicknessMinNm, searchThicknessMaxNm), thicknessMinNm, 10000);
+      const thicknessStepNm = clamp(searchThicknessStepNm, 1, Math.max(1, thicknessMaxNm - thicknessMinNm));
+      const result = runCoatingSearch(
+        {
+          id: `l55-${presetId}-coating-search`,
+          label: `L5.5 ${stackPresets[presetId].label} coating search`,
+          baseStack: { ...stack, layers: [] },
+          wavelengthsM: wavelengthsNm.map((nm) => clamp(nm, 200, 2000) * 1e-9),
+          anglesRad: [stack.angleRad],
+          polarizations: ["unpolarized"],
+          candidateMaterialIds,
+          layerCount: { min: layerMin, max: layerMax },
+          thicknessM: {
+            min: thicknessMinNm * 1e-9,
+            max: thicknessMaxNm * 1e-9,
+            step: thicknessStepNm * 1e-9
+          },
+          constraints: {
+            disallowAdjacentSameMaterial: true,
+            maxTotalThicknessM: layerMax * thicknessMaxNm * 1e-9,
+            maxAbsorbance: 0.02
+          },
+          objective: {
+            terms: [
+              { metric: "reflectance", direction: "minimize", weight: 1 },
+              { metric: "absorbance", direction: "minimize", weight: 0.2 }
+            ]
+          },
+          search: {
+            mode: "beam",
+            beamWidth: Math.max(2, Math.min(32, Math.round(searchBeamWidth))),
+            maxCandidates: 5,
+            refinementPasses: 1,
+            seed: 55
+          }
+        },
+        materialRunOptions
+      );
+      setSearchResult(result);
+      setSearchError(null);
+    } catch (error) {
+      setSearchResult(null);
+      setSearchError((error as Error).message);
+    }
+  }
+
+  function applySearchCandidate(candidate: CoatingSearchCandidate): void {
+    const applied = applyCoatingSearchCandidate(stack, candidate);
+    setLayers(
+      applied.layers.map((layer) => ({
+        id: layer.id,
+        materialId: layer.materialId,
+        thicknessNm: layer.thicknessM * 1e9
+      }))
+    );
+  }
+
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L5.4 Maxwell Design Foundry">
-      <h2>L5.4 Maxwell Design Foundry</h2>
+    <section className="wave-panel maxwell-panel" aria-label="L5.5 Maxwell Design Foundry">
+      <h2>L5.5 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM plus selectable material provenance, design, and yield analysis</strong>
+        <strong>frequency-domain Maxwell planar coating-stack TMM plus material/order search, provenance, design, and yield analysis</strong>
         <span>not a general 3D Maxwell solver</span>
       </div>
 
@@ -561,6 +656,107 @@ export function MaxwellPanel() {
             <span>Foundry JSON</span>
           </button>
         </div>
+      </div>
+
+      <div className="maxwell-search-card">
+        <div className="maxwell-section-heading">
+          <h2>Coating Search</h2>
+          <strong>{searchResult ? searchResult.resultHash.slice(0, 10) : "not run"}</strong>
+        </div>
+        <div className="maxwell-search-controls">
+          <label className="field-row">
+            <span>Targets</span>
+            <input value={searchWavelengthsText} onChange={(event) => setSearchWavelengthsText(event.currentTarget.value)} />
+          </label>
+          <NumberField label="Layer min" value={searchLayerMin} min={0} max={6} step={1} onChange={setSearchLayerMin} />
+          <NumberField label="Layer max" value={searchLayerMax} min={1} max={6} step={1} onChange={setSearchLayerMax} />
+          <NumberField label="Min thick" value={searchThicknessMinNm} unit="nm" min={1} max={1000} step={5} onChange={setSearchThicknessMinNm} />
+          <NumberField label="Max thick" value={searchThicknessMaxNm} unit="nm" min={1} max={1000} step={5} onChange={setSearchThicknessMaxNm} />
+          <NumberField label="Step" value={searchThicknessStepNm} unit="nm" min={1} max={250} step={5} onChange={setSearchThicknessStepNm} />
+          <NumberField label="Beam" value={searchBeamWidth} min={2} max={32} step={1} onChange={setSearchBeamWidth} />
+        </div>
+        <div className="maxwell-search-materials">
+          {layerMaterialOptions.map((material) => (
+            <label key={material.id} className="maxwell-material-check">
+              <input type="checkbox" checked={searchMaterialIds.includes(material.id)} onChange={() => toggleSearchMaterial(material.id)} />
+              <span>{material.label}</span>
+              <strong>{material.origin === "imported" ? "imported" : "built-in"}</strong>
+            </label>
+          ))}
+        </div>
+        <div className="maxwell-layer-actions">
+          <button type="button" onClick={runSearch}>
+            <Sparkles size={15} />
+            <span>Run Search</span>
+          </button>
+          {searchResult && (
+            <button type="button" onClick={() => exportSearchJson(searchResult)}>
+              <FileDown size={15} />
+              <span>Search JSON</span>
+            </button>
+          )}
+        </div>
+        {searchError && <div className="error-banner">{searchError}</div>}
+        {searchResult ? (
+          <div className="maxwell-search-results">
+            <div className="profile-meta">
+              <div className="compact-stat">
+                <span>Best mean R</span>
+                <strong>{formatPercent(searchResult.best.metrics.meanReflectance)}</strong>
+              </div>
+              <div className="compact-stat">
+                <span>Evaluations</span>
+                <strong>{searchResult.evaluationCount}</strong>
+              </div>
+              <div className="compact-stat">
+                <span>Rejected</span>
+                <strong>{searchResult.rejectedCount}</strong>
+              </div>
+            </div>
+            {searchResult.candidates.map((candidate) => (
+              <div className="maxwell-search-row" key={candidate.resultHash}>
+                <div className="maxwell-search-stack">
+                  <span>#{candidate.rank}</span>
+                  <strong>{formatSearchStack(candidate)}</strong>
+                  <em>{candidate.materialCatalogRefs.some((reference) => reference.origin === "imported") ? "imported material" : "built-in only"}</em>
+                </div>
+                <div className="profile-meta">
+                  <div className="compact-stat">
+                    <span>Score</span>
+                    <strong>{candidate.score.toExponential(2)}</strong>
+                  </div>
+                  <div className="compact-stat">
+                    <span>Mean R</span>
+                    <strong>{formatPercent(candidate.metrics.meanReflectance)}</strong>
+                  </div>
+                  <div className="compact-stat">
+                    <span>Mean T</span>
+                    <strong>{formatPercent(candidate.metrics.meanTransmittance)}</strong>
+                  </div>
+                  <div className="compact-stat">
+                    <span>Mean A</span>
+                    <strong>{formatPercent(candidate.metrics.meanAbsorbance)}</strong>
+                  </div>
+                </div>
+                <div className="maxwell-search-provenance">
+                  {candidate.materialCatalogRefs.map((reference) => (
+                    <span key={reference.materialId}>
+                      {reference.label} {reference.materialHash.slice(0, 8)}
+                    </span>
+                  ))}
+                </div>
+                <div className="maxwell-layer-actions">
+                  <button type="button" onClick={() => applySearchCandidate(candidate)}>
+                    <Sparkles size={15} />
+                    <span>Apply Search</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">Run search to rank planar coating material/order/thickness candidates.</div>
+        )}
       </div>
 
       <div className="maxwell-yield-card">
@@ -908,6 +1104,10 @@ function exportFoundryJson(foundry: CoatingDesignResult): void {
   downloadText("l51-design-foundry.json", "application/json", JSON.stringify(foundry, null, 2));
 }
 
+function exportSearchJson(search: CoatingSearchResult): void {
+  downloadText("l55-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+}
+
 function exportYieldJson(yieldAnalysis: CoatingYieldResult): void {
   downloadText("l52-yield-analysis.json", "application/json", JSON.stringify(yieldAnalysis, null, 2));
 }
@@ -986,6 +1186,18 @@ function defaultThicknessNm(materialId: string): number {
   if (materialId === "chromiumLossy") return 18;
   if (materialId === "silicon") return 200;
   return 100;
+}
+
+function parseNumberList(value: string): number[] {
+  return value
+    .split(/[,;\s]+/)
+    .map((part) => Number(part.trim()))
+    .filter((part) => Number.isFinite(part) && part > 0);
+}
+
+function formatSearchStack(candidate: CoatingSearchCandidate): string {
+  if (candidate.layers.length === 0) return "Bare boundary";
+  return candidate.layers.map((layer) => `${layer.label} ${(layer.thicknessM * 1e9).toFixed(1)} nm`).join(" / ");
 }
 
 function clamp(value: number, min: number, max: number): number {

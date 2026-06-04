@@ -1,6 +1,6 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L5.4 Maxwell Design Foundry planar multilayer
+An EM-first light simulator MVP. The visible web app is now the L5.5 Maxwell Design Foundry planar multilayer
 transfer-matrix workbench; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
 
@@ -16,18 +16,20 @@ sampling, pass-rate confidence bounds, worst sample, and finite-difference layer
 material import/provenance boundary with JSON schema validation, unit normalization, passivity warnings, catalog
 audit hashes, and template export. L5.4 wires imported material packs into a unified material catalog so coating
 layers can select hash-backed imported material IDs, resolve wavelength-normalized `n,k` into the existing TMM
-solver, and export/load stack designs with material receipts. It is not a general 3D Maxwell solver,
+solver, and export/load stack designs with material receipts. L5.5 adds deterministic material/order/thickness
+search over that catalog so the workbench can rank planar coating candidates and apply a selected result back to
+the coating editor. It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L5.4 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
+- `L5.5 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
   best-candidate re-solve hashes, planar thickness tolerance/yield analysis, material import/audit evidence,
-  imported-material selection, selected-material provenance receipts, JSON/Markdown/CSV export, and strict
-  limitations against arbitrary 3D EM claims.
+  imported-material selection, selected-material provenance receipts, deterministic coating material/order/thickness
+  search, candidate application, JSON/Markdown/CSV export, and strict limitations against arbitrary 3D EM claims.
 
 ## L2 Validation Fixture
 
@@ -192,9 +194,27 @@ not loaded. The web panel groups material dropdowns into Built-in and Imported s
 receipt beside the selected coating material, lets users add the first imported coating as a layer, and includes the
 serialized design document in the L5.4 JSON export.
 
+## L5.5 Coating Material/Order Search
+
+The search layer lives in `packages/core/src/maxwell/coatingSearch.ts`. It accepts a search spec with target
+wavelengths, angles, polarizations, candidate material IDs, layer-count bounds, thickness bounds, objective terms,
+constraints, and deterministic beam-search settings. Each candidate is evaluated through `runCoatingStack`, so the
+reported R/T/A metrics are still the existing planar Maxwell TMM special case rather than a separate optimizer-only
+surrogate.
+
+The first algorithm is intentionally bounded: it builds candidate material orders with a deterministic beam, samples
+a coarse thickness grid for each extension, refines surviving candidates locally, ranks by weighted objective terms,
+and preserves L5.4 material catalog receipts for every candidate. It supports reflectance minimization,
+transmittance maximization, absorbance minimization, layer-count/thickness/total-thickness constraints, adjacent
+duplicate rejection, imported material IDs, and serializable candidate application.
+
+The web panel now includes a Coating Search card. Users can choose candidate materials from the active catalog,
+including imported pack records, set target wavelengths and layer/thickness bounds, run the search, inspect ranked
+candidate metrics and material hashes, export `Search JSON`, and apply a chosen candidate back into the coating
+stack editor.
+
 Recommended next L5 steps:
 
-- Add discrete material/order search so the foundry can propose layer sequences, not just thicknesses.
 - Add drift/correlation controls and robust optimization loops that optimize yield directly, not just nominal score.
 - Compile optical coating stacks from future scene elements into planar TMM inputs for normal/oblique validation cases.
 - Prototype a separate 3D engine boundary that can call an external FEM/BEM/RCWA/FDTD backend without mixing it
