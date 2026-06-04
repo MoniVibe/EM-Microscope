@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   applyCoatingSearchCandidate,
   advisorValidationReviewCsv,
@@ -560,8 +560,8 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.4 Maxwell Design Foundry">
-      <h2>L6.4 Maxwell Design Foundry</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.4b Maxwell Design Foundry">
+      <h2>L6.4b Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
         <strong>frequency-domain Maxwell planar coating-stack TMM, L6.4 thin-lens focal validation, slit/order validation, and explainability layer</strong>
         <span>ideal scalar lens diffraction validation plus accessible tooltips; still not a general 3D Maxwell solver, and ExternalFdtdBackend remains scaffold-only</span>
@@ -579,6 +579,8 @@ export function MaxwellPanel() {
         <ExplainButton entryId="backend.planarTmm" label="Under the hood: PlanarTmmBackend" explainMode={explainMode} />
       </div>
       <ShowAllExplanationsDrawer open={showExplanations} onClose={() => setShowExplanations(false)} />
+
+      <GuidedOpticalBenchCards explainMode={explainMode} />
 
       <div className="profile-meta">
         <div className="compact-stat">
@@ -695,6 +697,7 @@ export function MaxwellPanel() {
           <ExplainButton entryId="validation.numericalPropagation.huygensFresnel" label="Under the hood: numerical propagation" explainMode={explainMode} />
           <ExplainButton entryId="validation.lens.thinLensPhase" label="Under the hood: thin lens phase" explainMode={explainMode} />
         </div>
+        <ValidationBenchGuide explainMode={explainMode} />
         <div className="maxwell-validation-tabs" role="tablist" aria-label="Validation benchmark selector">
           <button type="button" className={validationBenchmark === "circular-pinhole" ? "active" : ""} onClick={() => setValidationBenchmark("circular-pinhole")}>
             Circular pinhole Airy/Bessel
@@ -875,17 +878,33 @@ export function MaxwellPanel() {
         <div className="maxwell-validation-output-grid">
           <div className="maxwell-validation-profile-panel">
             <div className="maxwell-section-heading">
-              <h2>Radial Overlay</h2>
-              <strong>numerical vs Airy</strong>
+              <h2><ExplainLabel entryId="validation.radialOverlay" explainMode={explainMode}>Radial Overlay</ExplainLabel></h2>
+              <div className="maxwell-heading-actions">
+                <strong>numerical vs Airy</strong>
+                <ExplainButton entryId="validation.radialOverlay" label="Where is this?" explainMode={explainMode} />
+              </div>
             </div>
             <ValidationRadialPlot result={validationResult} />
+            <WhereMeasuredBlock entryId="validation.whereMeasured" explainMode={explainMode}>
+              Extracted from the zero-thickness observation plane at z = {formatMm(validationResult.config.observationPlane.zM)} mm.
+              Source is at z = 0 mm, the circular aperture is at z = {formatMm(validationResult.config.aperture.zM)} mm,
+              and the plane is {formatMm(validationResult.config.observationPlane.sizeM)} mm x {formatMm(validationResult.config.observationPlane.sizeM)} mm.
+              The radial overlay is an analysis view, not a physical element.
+            </WhereMeasuredBlock>
           </div>
           <div className="maxwell-validation-profile-panel">
             <div className="maxwell-section-heading">
-              <h2>Residual Curve</h2>
-              <strong>signed mismatch</strong>
+              <h2><ExplainLabel entryId="validation.residualCurve" explainMode={explainMode}>Residual Curve</ExplainLabel></h2>
+              <div className="maxwell-heading-actions">
+                <strong>signed mismatch</strong>
+                <ExplainButton entryId="validation.residualCurve" label="Where is this?" explainMode={explainMode} />
+              </div>
             </div>
             <ValidationResidualPlot result={validationResult} />
+            <WhereMeasuredBlock entryId="validation.whereMeasured" explainMode={explainMode}>
+              Computed at the same zero-thickness observation plane at z = {formatMm(validationResult.config.observationPlane.zM)} mm.
+              The residual curve compares sampled numerical intensity against the Airy reference along the analysis profile.
+            </WhereMeasuredBlock>
           </div>
         </div>
         <ul className="warning-list">
@@ -934,9 +953,11 @@ export function MaxwellPanel() {
         {validationBenchmark === "advisor-review" && <AdvisorReviewPanel review={advisorReview} />}
       </div>
 
+      <CoatingStackGuide explainMode={explainMode} />
+
       <div className="maxwell-grid">
         <label className="field-row">
-          <span>Preset</span>
+          <span>Example setup</span>
           <select value={presetId} onChange={(event) => selectPreset(event.currentTarget.value as StackPresetId)}>
             {presetEntries.map(([id, preset]) => (
               <option key={id} value={id}>
@@ -946,13 +967,13 @@ export function MaxwellPanel() {
           </select>
         </label>
         <label className="field-row">
-          <span>Incident</span>
+          <ExplainLabel entryId="coating.incidentMedium" explainMode={explainMode}>Incident medium, where light comes from</ExplainLabel>
           <select value={incidentMaterialId} onChange={(event) => setIncidentMaterialId(event.currentTarget.value)}>
             <MaterialSelectOptions materials={materialOptions} />
           </select>
         </label>
         <label className="field-row">
-          <span>Substrate</span>
+          <ExplainLabel entryId="coating.substrateMedium" explainMode={explainMode}>Substrate medium, where light exits</ExplainLabel>
           <select value={substrateMaterialId} onChange={(event) => setSubstrateMaterialId(event.currentTarget.value)}>
             <MaterialSelectOptions materials={materialOptions} />
           </select>
@@ -966,6 +987,10 @@ export function MaxwellPanel() {
             <option value="TM">TM</option>
           </select>
         </label>
+      </div>
+      <div className="explain-inline-row">
+        <ExplainButton entryId="coating.incidentMedium" label="Where is this? Incident medium" explainMode={explainMode} />
+        <ExplainButton entryId="coating.substrateMedium" label="Where is this? Substrate medium" explainMode={explainMode} />
       </div>
 
       <div className="maxwell-material-card">
@@ -1134,13 +1159,24 @@ export function MaxwellPanel() {
         <FluxRow label="T" value={run.tmm.transmittance} explainId="coating.transmittance" explainMode={explainMode} />
         <FluxRow label="A" value={run.tmm.absorbance} explainId="coating.absorbance" explainMode={explainMode} />
       </div>
+      <WhereMeasuredBlock entryId="coating.rtaMeasurementLocation" explainMode={explainMode}>
+        R/T/A are measured across an ideal infinite planar coating stack. The incident side is before the first
+        coating layer; the substrate side is after the last layer. There is no 3D source-to-substrate distance in this solver.
+      </WhereMeasuredBlock>
 
       <div className="maxwell-monitor-card">
         <div className="maxwell-section-heading">
           <h2><ExplainLabel entryId="coating.fieldMonitor" explainMode={explainMode}>Planar Field Monitor</ExplainLabel></h2>
-          <strong>{run.fieldMonitor.resultHash.slice(0, 10)}</strong>
+          <div className="maxwell-heading-actions">
+            <strong>{run.fieldMonitor.resultHash.slice(0, 10)}</strong>
+            <ExplainButton entryId="coating.fieldMonitorLocation" label="Where is this?" explainMode={explainMode} />
+          </div>
         </div>
         <FieldMonitorPlot monitor={run.fieldMonitor} />
+        <WhereMeasuredBlock entryId="coating.fieldMonitorLocation" explainMode={explainMode}>
+          Samples are taken through planar stack depth: incident boundary, layer fronts/middles/backs, and substrate boundary.
+          This monitor is a 1D coating-stack diagnostic, not a volumetric 3D field probe.
+        </WhereMeasuredBlock>
         <div className="profile-meta">
           <div className="compact-stat">
             <span>Max |E|^2</span>
@@ -1232,8 +1268,15 @@ export function MaxwellPanel() {
 
       <div className="maxwell-search-card">
         <div className="maxwell-section-heading">
-          <h2>Coating Search</h2>
-          <strong>{robustResult ? robustResult.resultHash.slice(0, 10) : searchResult ? searchResult.resultHash.slice(0, 10) : "not run"}</strong>
+          <h2><ExplainLabel entryId="optimizer.coatingStack" explainMode={explainMode}>Coating Stack Optimizer</ExplainLabel></h2>
+          <div className="maxwell-heading-actions">
+            <strong>{robustResult ? robustResult.resultHash.slice(0, 10) : searchResult ? searchResult.resultHash.slice(0, 10) : "not run"}</strong>
+            <ExplainButton entryId="optimizer.coatingStack" label="Where is this?" explainMode={explainMode} />
+          </div>
+        </div>
+        <div className="l2-disclosure">
+          <strong>Planar coating candidate finder</strong>
+          <span>The optimizer tries selected materials, layer orders, and thicknesses. It does not search the internet or fetch new material data.</span>
         </div>
         <div className="maxwell-search-controls">
           <label className="field-row">
@@ -1250,7 +1293,7 @@ export function MaxwellPanel() {
         <div className="maxwell-robust-controls">
           <label className="maxwell-material-check">
             <input type="checkbox" checked={robustSearchEnabled} onChange={() => setRobustSearchEnabled((current) => !current)} />
-            <ExplainLabel entryId="robust.p90Score" explainMode={explainMode}>Robust Search</ExplainLabel>
+            <ExplainLabel entryId="robust.p90Score" explainMode={explainMode}>Robust optimizer</ExplainLabel>
             <strong>drift yield</strong>
           </label>
           <label className="field-row">
@@ -1293,15 +1336,19 @@ export function MaxwellPanel() {
             </label>
           ))}
         </div>
+        <WhereMeasuredBlock entryId="optimizer.candidateMaterials" explainMode={explainMode}>
+          Candidate materials are selected from the loaded material catalog. The optimizer only combines those fixed records
+          into planar layer stacks for the configured incident and substrate media.
+        </WhereMeasuredBlock>
         <div className="maxwell-layer-actions">
           <button type="button" onClick={runSearch}>
             <Sparkles size={15} />
-            <span>{robustSearchEnabled ? "Run Robust Search" : "Run Search"}</span>
+            <span>{robustSearchEnabled ? "Find Robust Coating Candidates" : "Find Candidate Coatings"}</span>
           </button>
           {(robustResult || searchResult) && (
             <button type="button" onClick={() => (robustResult ? exportRobustSearchJson(robustResult) : searchResult ? exportSearchJson(searchResult) : undefined)}>
               <FileDown size={15} />
-              <span>{robustResult ? "Robust Search JSON" : "Search JSON"}</span>
+              <span>{robustResult ? "Robust Optimizer JSON" : "Optimizer JSON"}</span>
             </button>
           )}
         </div>
@@ -1398,7 +1445,7 @@ export function MaxwellPanel() {
                 <div className="maxwell-layer-actions">
                   <button type="button" onClick={() => applyRobustSearchCandidate(candidate)}>
                     <Sparkles size={15} />
-                    <span>Apply Robust</span>
+                    <span>Apply Robust Coating Candidate</span>
                   </button>
                 </div>
               </div>
@@ -1455,14 +1502,14 @@ export function MaxwellPanel() {
                 <div className="maxwell-layer-actions">
                   <button type="button" onClick={() => applySearchCandidate(candidate)}>
                     <Sparkles size={15} />
-                    <span>Apply Search</span>
+                    <ExplainLabel entryId="optimizer.applyCandidate" explainMode={explainMode}>Apply Coating Candidate</ExplainLabel>
                   </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="empty-state">Run search to rank planar coating material/order/thickness candidates.</div>
+          <div className="empty-state">Find candidate coatings to rank planar material/order/thickness designs.</div>
         )}
       </div>
 
@@ -1740,6 +1787,105 @@ function FieldMonitorPlot({ monitor }: { monitor: PlanarFieldMonitorResult }) {
   );
 }
 
+function GuidedOpticalBenchCards({ explainMode = false }: { explainMode?: boolean }) {
+  return (
+    <div className="maxwell-mental-model-grid" aria-label="Guided optical bench mental models">
+      <div className="maxwell-guidance-card">
+        <div className="maxwell-section-heading">
+          <h2><ExplainLabel entryId="validation.spatialBench" explainMode={explainMode}>Validation Bench: spatial optical layout</ExplainLabel></h2>
+          <strong>placed along z</strong>
+        </div>
+        <div className="maxwell-diagram-strip" aria-label="Validation bench optical axis diagram">
+          <span>z = 0 mm Source</span>
+          <i>-&gt;</i>
+          <span>Aperture / Slit / Lens</span>
+          <i>-&gt;</i>
+          <span>Observation Plane</span>
+        </div>
+        <p>Use this section for source, aperture, slit, lens, and observation-plane validation along the optical z-axis.</p>
+        <ExplainButton entryId="validation.spatialBench" label="Where is this?" explainMode={explainMode} />
+      </div>
+      <div className="maxwell-guidance-card">
+        <div className="maxwell-section-heading">
+          <h2><ExplainLabel entryId="coating.planarStack" explainMode={explainMode}>Coating Stack Workbench: planar layer model</ExplainLabel></h2>
+          <strong>boundary media</strong>
+        </div>
+        <div className="maxwell-diagram-strip" aria-label="Planar coating stack diagram">
+          <span>Light direction</span>
+          <i>-&gt;</i>
+          <span>Incident medium</span>
+          <i>-&gt;</i>
+          <span>Coating layers</span>
+          <i>-&gt;</i>
+          <span>Substrate medium</span>
+        </div>
+        <p>Use this section for an ideal infinite planar stack: incident medium, ordered coating layers, then substrate medium.</p>
+        <ExplainButton entryId="coating.planarStack" label="Where is this?" explainMode={explainMode} />
+      </div>
+    </div>
+  );
+}
+
+function ValidationBenchGuide({ explainMode = false }: { explainMode?: boolean }) {
+  return (
+    <div className="maxwell-how-to-card" aria-label="Validation Bench usage">
+      <div className="maxwell-section-heading">
+        <h2><ExplainLabel entryId="validation.opticalZAxis" explainMode={explainMode}>How to use this section</ExplainLabel></h2>
+        <strong>spatial bench</strong>
+      </div>
+      <div className="maxwell-diagram-strip" aria-label="Example spatial validation bench">
+        <span>z = 0 mm Source</span>
+        <i>-&gt;</i>
+        <span>z = 10 mm Aperture / Slit / Lens</span>
+        <i>-&gt;</i>
+        <span>z = 20 mm Observation Plane</span>
+      </div>
+      <p>
+        Select a benchmark, adjust its physical controls, then read the map, radial overlay, residual curve, and exported
+        report as measurements at the observation plane. Each benchmark below lists its exact z and plane values.
+      </p>
+    </div>
+  );
+}
+
+function CoatingStackGuide({ explainMode = false }: { explainMode?: boolean }) {
+  return (
+    <div className="maxwell-how-to-card" aria-label="Coating Stack Workbench usage">
+      <div className="maxwell-section-heading">
+        <h2><ExplainLabel entryId="coating.planarStack" explainMode={explainMode}>How to use this section</ExplainLabel></h2>
+        <strong>planar stack</strong>
+      </div>
+      <div className="maxwell-diagram-strip" aria-label="Coating stack order">
+        <span>Light direction</span>
+        <i>-&gt;</i>
+        <span>Incident medium</span>
+        <i>-&gt;</i>
+        <span>Layer 1</span>
+        <i>-&gt;</i>
+        <span>Layer 2</span>
+        <i>-&gt;</i>
+        <span>Substrate medium</span>
+      </div>
+      <p>
+        Load an example setup, choose the boundary media, then edit ordered coating layers. This solver has no 3D source
+        distance, curved lens geometry, or finite substrate thickness.
+      </p>
+    </div>
+  );
+}
+
+function WhereMeasuredBlock({ entryId, explainMode = false, children }: { entryId: ExplainEntryId; explainMode?: boolean; children: ReactNode }) {
+  return (
+    <div className="maxwell-where-measured">
+      <div className="maxwell-section-heading">
+        <strong>Where is this measured?</strong>
+        <ExplainButton entryId={entryId} label="Where is this?" explainMode={explainMode} />
+      </div>
+      <div className="maxwell-where-body">{children}</div>
+    </div>
+  );
+}
+
 function SlitValidationPanel({ result, explainMode = false }: { result: SlitOrderValidationResult; explainMode?: boolean }) {
   const isSingle = result.config.kind === "long-single-slit-sinc2";
   const visibleFeatures = result.expected.features.filter((feature) => feature.visible);
@@ -1803,16 +1949,31 @@ function SlitValidationPanel({ result, explainMode = false }: { result: SlitOrde
         <div className="maxwell-validation-profile-panel">
           <div className="maxwell-section-heading">
             <h2>{isSingle ? "sinc^2 Centerline" : "Order Centerline"}</h2>
-            <strong>numerical vs analytic</strong>
+            <div className="maxwell-heading-actions">
+              <strong>numerical vs analytic</strong>
+              <ExplainButton entryId="validation.radialOverlay" label="Where is this?" explainMode={explainMode} />
+            </div>
           </div>
           <SlitProfilePlot result={result} />
+          <WhereMeasuredBlock entryId="validation.whereMeasured" explainMode={explainMode}>
+            Extracted from the zero-thickness observation plane {formatMm(result.config.propagationDistanceM)} mm downstream of the slit.
+            The plane is {formatMm(result.config.observationPlane.widthM)} mm wide by {formatMm(result.config.observationPlane.heightM)} mm high.
+            The centerline is an analysis view, not another optical element.
+          </WhereMeasuredBlock>
         </div>
         <div className="maxwell-validation-profile-panel">
           <div className="maxwell-section-heading">
-            <h2>Residual Curve</h2>
-            <strong>signed mismatch</strong>
+            <h2><ExplainLabel entryId="validation.residualCurve" explainMode={explainMode}>Residual Curve</ExplainLabel></h2>
+            <div className="maxwell-heading-actions">
+              <strong>signed mismatch</strong>
+              <ExplainButton entryId="validation.residualCurve" label="Where is this?" explainMode={explainMode} />
+            </div>
           </div>
           <SlitResidualPlot result={result} />
+          <WhereMeasuredBlock entryId="validation.whereMeasured" explainMode={explainMode}>
+            Computed on the same zero-thickness observation plane as the slit map. The residual curve compares the sampled
+            centerline against the analytic slit/order formula.
+          </WhereMeasuredBlock>
         </div>
       </div>
       <div className="maxwell-order-table" aria-label={isSingle ? "Single slit minima table" : "Double slit order table"}>
@@ -2005,17 +2166,32 @@ function ThinLensValidationPanel({
       <div className="maxwell-validation-output-grid">
         <div className="maxwell-validation-profile-panel">
           <div className="maxwell-section-heading">
-            <h2>Radial Overlay</h2>
-            <strong>numerical vs Airy</strong>
+            <h2><ExplainLabel entryId="validation.radialOverlay" explainMode={explainMode}>Radial Overlay</ExplainLabel></h2>
+            <div className="maxwell-heading-actions">
+              <strong>numerical vs Airy</strong>
+              <ExplainButton entryId="validation.radialOverlay" label="Where is this?" explainMode={explainMode} />
+            </div>
           </div>
           <ThinLensRadialPlot result={result} />
+          <WhereMeasuredBlock entryId="validation.whereMeasured" explainMode={explainMode}>
+            Extracted from the zero-thickness focal observation plane at z = {formatMm(result.config.observationPlane.zM)} mm.
+            The ideal lens plane is at z = {formatMm(result.config.lens.zM)} mm and the sampled field of view is {formatUm(result.config.observationPlane.sizeM)} um x {formatUm(result.config.observationPlane.sizeM)} um.
+            The radial overlay is an analysis view, not a physical element.
+          </WhereMeasuredBlock>
         </div>
         <div className="maxwell-validation-profile-panel">
           <div className="maxwell-section-heading">
-            <h2>Residual Curve</h2>
-            <strong>signed mismatch</strong>
+            <h2><ExplainLabel entryId="validation.residualCurve" explainMode={explainMode}>Residual Curve</ExplainLabel></h2>
+            <div className="maxwell-heading-actions">
+              <strong>signed mismatch</strong>
+              <ExplainButton entryId="validation.residualCurve" label="Where is this?" explainMode={explainMode} />
+            </div>
           </div>
           <ThinLensResidualPlot result={result} />
+          <WhereMeasuredBlock entryId="validation.whereMeasured" explainMode={explainMode}>
+            Computed at the same zero-thickness focal observation plane. The residual curve compares sampled numerical
+            focal intensity against the analytic Airy PSF profile.
+          </WhereMeasuredBlock>
         </div>
       </div>
       <div className="maxwell-validation-profile-panel">
@@ -2504,11 +2680,11 @@ function exportFoundryJson(foundry: CoatingDesignResult): void {
 }
 
 function exportSearchJson(search: CoatingSearchResult): void {
-  downloadText("l63-slit-order-validation-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l64b-coating-stack-optimizer.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportRobustSearchJson(search: RobustCoatingSearchResult): void {
-  downloadText("l63-slit-order-validation-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l64b-robust-coating-stack-optimizer.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportFdtdScaffoldJson(scaffold: ExternalFdtdScaffoldExport): void {

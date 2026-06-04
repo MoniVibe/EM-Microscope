@@ -1,7 +1,7 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.4 Maxwell Design Foundry planar multilayer
-transfer-matrix workbench with ideal thin-lens focal-plane validation, an accessible explainability layer,
+An EM-first light simulator MVP. The visible web app is now the L6.4b Maxwell Design Foundry planar multilayer
+transfer-matrix workbench with guided optical-bench terminology, ideal thin-lens focal-plane validation, an accessible explainability layer,
 circular-aperture, long-slit, and double-slit scalar diffraction validation, Advisor Review Mode exports, and a
 scaffold-only 3D Maxwell/FDTD export runway; the earlier geometric/scalar microscope bench code remains in source and tests as
 historical validation scaffolding, but it is hidden from the app shell.
@@ -37,13 +37,14 @@ under-the-hood formula/snippet panels, Explain mode highlighting, and a searchab
 changing solver behavior. L6.4 adds an ideal thin-lens focal-plane validation benchmark with a zero-thickness
 quadratic phase mask, circular pupil, numerical scalar Fresnel propagation, analytic Airy PSF reference, residual
 maps, radial overlays, z focus scan, and JSON/Markdown/CSV exports.
+L6.4b clarifies the UI mental models by separating spatial validation-bench diagnostics from the planar coating-stack workbench.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, or manufacturing certification system.
 
 ## Current Visible Mode
 
-- `L6.4 Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L6.4b Maxwell Design Foundry`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -237,10 +238,10 @@ and preserves L5.4 material catalog receipts for every candidate. It supports re
 transmittance maximization, absorbance minimization, layer-count/thickness/total-thickness constraints, adjacent
 duplicate rejection, imported material IDs, and serializable candidate application.
 
-The web panel now includes a Coating Search card. Users can choose candidate materials from the active catalog,
-including imported pack records, set target wavelengths and layer/thickness bounds, run the search, inspect ranked
-candidate metrics and material hashes, export `Search JSON`, and apply a chosen candidate back into the coating
-stack editor.
+The web panel now presents this as the `Coating Stack Optimizer`. Users can choose candidate materials from the
+active catalog, including imported pack records, set target wavelengths and layer/thickness bounds, find candidate
+coatings, inspect ranked candidate metrics and material hashes, export `Optimizer JSON`, and apply a chosen
+candidate back into the coating stack editor.
 
 ## L5.6 Robust-Yield Coating Search
 
@@ -257,8 +258,9 @@ TMM coating-stack path and the result records nominal metrics, expected/p90/wors
 configured, sample count, material hashes, imported pack hashes, and a receipt that imported and built-in material
 `n,k` values were held fixed.
 
-The web panel adds robust controls inside the Coating Search card: `Robust Search`, thickness sigma, sigma levels,
-max samples, ranking mode, optional pass score, `Run Robust Search`, `Robust Search JSON`, and `Apply Robust`.
+The web panel adds robust controls inside the Coating Stack Optimizer: `Robust optimizer`, thickness sigma, sigma
+levels, max samples, ranking mode, optional pass score, `Find Robust Coating Candidates`, `Robust Optimizer JSON`,
+and `Apply Robust Coating Candidate`.
 This makes coating design manufacturing-aware without introducing correlated drift, material uncertainty,
 Monte Carlo confidence intervals, 3D geometry, FEM/FDTD/BEM/RCWA, digital-twin calibration, or sensor electrical
 transport.
@@ -513,6 +515,25 @@ thin-lens focal-plane benchmark alongside circular pinhole, single-slit, and dou
 L6.4 remains scalar ideal-lens validation. It does not model curved/thick glass, refractive material volume,
 dispersion, coatings, chromatic aberration, vector polarization, real sensor response, ray tracing, full 3D Maxwell,
 FDTD, FEM, BEM, RCWA, or microscope digital-twin behavior.
+
+## L6.4b Guided Optical Bench Terminology
+
+L6.4b is a UI/readability patch, not a physics change. It separates the two active mental models:
+
+- `Validation Bench: spatial optical layout` for source -> aperture/slit/lens -> observation-plane scalar
+  validation along the optical z-axis.
+- `Coating Stack Workbench: planar layer model` for light direction -> incident medium -> coating layers ->
+  substrate medium in the executable planar TMM solver.
+
+The validation plots now show "Where is this measured?" notes explaining that radial overlays, centerline overlays,
+residual curves, and focus diagnostics are extracted from zero-thickness observation planes. The coating R/T/A and
+field-monitor panels now state that measurements are across an ideal infinite planar stack, with the incident side
+before the first layer and the substrate side after the last layer. There is no 3D source-to-substrate distance in
+the coating solver.
+
+The visible former Search UI is renamed to `Coating Stack Optimizer`: `Find Candidate Coatings`, `Optimizer JSON`,
+and `Apply Coating Candidate`. The helper copy states that the optimizer tries selected local materials, layer
+orders, and thicknesses; it does not search the internet or fetch new material data.
 
 Recommended next Maxwell steps:
 
