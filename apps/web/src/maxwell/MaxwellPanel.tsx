@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   applyCoatingSearchCandidate,
   auditMaterialCatalog,
+  circularApertureValidationJson,
+  circularApertureValidationMarkdown,
+  circularApertureValidationPipeline,
   createMaterialCatalog,
   createMaterialImportTemplate,
+  defaultCircularApertureValidationConfig,
   importMaterialPackage,
   listCatalogMaterials,
   applyRobustCoatingSearchCandidate,
@@ -17,8 +21,10 @@ import {
   runCoatingDesignFoundry,
   runCoatingYieldAnalysis,
   runCoatingSweep,
+  runCircularApertureValidation,
   serializeCoatingStackDesign,
   visibleArObjective,
+  type CircularApertureValidationResult,
   type CoatingDesignResult,
   type CoatingSearchCandidate,
   type CoatingSearchResult,
@@ -143,6 +149,7 @@ export function MaxwellPanel() {
   const [robustPassThresholdText, setRobustPassThresholdText] = useState("");
   const [robustResult, setRobustResult] = useState<RobustCoatingSearchResult | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [validationPlaneZMm, setValidationPlaneZMm] = useState(20);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -163,6 +170,16 @@ export function MaxwellPanel() {
     () => exportExternalFdtdScaffold(fdtdScaffoldScene, { materialCatalog }),
     [fdtdScaffoldScene, materialCatalog]
   );
+  const validationResult = useMemo<CircularApertureValidationResult>(() => {
+    const defaults = defaultCircularApertureValidationConfig();
+    return runCircularApertureValidation({
+      observationPlane: {
+        ...defaults.observationPlane,
+        zM: clamp(validationPlaneZMm, 11, 60) * 1e-3
+      }
+    });
+  }, [validationPlaneZMm]);
+  const validationPipeline = useMemo(() => circularApertureValidationPipeline(validationResult), [validationResult]);
 
   const stack = useMemo<CoatingStackDefinition>(
     () => ({
@@ -330,7 +347,7 @@ export function MaxwellPanel() {
       const thicknessMaxNm = clamp(Math.max(searchThicknessMinNm, searchThicknessMaxNm), thicknessMinNm, 10000);
       const thicknessStepNm = clamp(searchThicknessStepNm, 1, Math.max(1, thicknessMaxNm - thicknessMinNm));
       const nominalSearch = {
-        id: `l60-${presetId}-coating-search`,
+        id: `l61-${presetId}-coating-search`,
         label: `L6.0 ${stackPresets[presetId].label} coating search`,
         baseStack: { ...stack, layers: [] },
         wavelengthsM: wavelengthsNm.map((nm) => clamp(nm, 200, 2000) * 1e-9),
@@ -407,7 +424,7 @@ export function MaxwellPanel() {
                 };
         const robust = runRobustCoatingSearch(
           {
-            id: `l60-${presetId}-robust-yield-search`,
+            id: `l61-${presetId}-robust-yield-search`,
             label: `L6.0 ${stackPresets[presetId].label} robust-yield coating search`,
             nominalSearch,
             uncertainty: {
@@ -461,11 +478,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className="wave-panel maxwell-panel" aria-label="L6.0 Maxwell Design Foundry">
-      <h2>L6.0 Maxwell Design Foundry</h2>
+    <section className="wave-panel maxwell-panel" aria-label="L6.1 Maxwell Design Foundry">
+      <h2>L6.1 Maxwell Design Foundry</h2>
       <div className="l2-disclosure">
-        <strong>frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.0 3D problem/result contract and scaffold-only ExternalFdtdBackend export</strong>
-        <span>not a general 3D Maxwell solver; L6.0 does not execute 3D Maxwell solves</span>
+        <strong>frequency-domain Maxwell planar coating-stack TMM through PlanarTmmBackend plus L6.1 scalar circular-aperture Airy/Bessel validation bench</strong>
+        <span>not a general 3D Maxwell solver; L6.1 validates scalar diffraction and keeps ExternalFdtdBackend scaffold-only</span>
       </div>
 
       <div className="profile-meta">
@@ -560,6 +577,143 @@ export function MaxwellPanel() {
           <button type="button" onClick={() => exportFdtdScaffoldJson(fdtdScaffold)}>
             <FileDown size={15} />
             <span>Export 3D FDTD Scaffold</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="maxwell-material-card maxwell-validation-card" aria-label="Validation Bench">
+        <div className="maxwell-section-heading">
+          <h2>Validation Bench</h2>
+          <strong>{validationResult.resultHash.slice(0, 10)}</strong>
+        </div>
+        <div className="l2-disclosure">
+          <strong>Circular pinhole Airy/Bessel benchmark</strong>
+          <span>scalar diffraction validation, not full 3D Maxwell aperture solving</span>
+        </div>
+        <div className="maxwell-validation-pipeline">
+          {validationPipeline.map((step) => (
+            <div className="compact-stat" key={step.index}>
+              <span>
+                {step.index}. {step.label}
+              </span>
+              <strong>{step.detail}</strong>
+            </div>
+          ))}
+        </div>
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>Benchmark</span>
+            <strong>Circular aperture, not long slit</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Source</span>
+            <strong>500 nm point mode at 0,0,0 mm</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Aperture</span>
+            <strong>1 um diameter at z=10 mm</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Observation plane</span>
+            <strong>10 mm x 10 mm, zero thickness</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Resolution</span>
+            <strong>
+              {validationResult.field.width} x {validationResult.field.height}
+            </strong>
+          </div>
+          <div className="compact-stat">
+            <span>External FDTD</span>
+            <strong>still scaffold-only</strong>
+          </div>
+        </div>
+        <label className="field-row">
+          <span>Observation z</span>
+          <div className="maxwell-slider-control">
+            <input
+              type="range"
+              min={11}
+              max={60}
+              step={1}
+              value={validationPlaneZMm}
+              onChange={(event) => setValidationPlaneZMm(Number(event.currentTarget.value))}
+              onInput={(event) => setValidationPlaneZMm(Number(event.currentTarget.value))}
+            />
+            <input
+              type="number"
+              min={11}
+              max={60}
+              step={1}
+              value={formatNumberInputValue(validationPlaneZMm)}
+              onChange={(event) => setValidationPlaneZMm(clamp(Number(event.currentTarget.value), 11, 60))}
+            />
+            <strong>{validationPlaneZMm.toFixed(0)} mm</strong>
+          </div>
+        </label>
+        <div className="profile-meta">
+          <div className="compact-stat">
+            <span>Expected first Airy minimum</span>
+            <strong>{formatMm(validationResult.expected.firstMinimumRadiusM)} mm</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Detector half-width</span>
+            <strong>{formatMm(validationResult.expected.detectorHalfWidthM)} mm</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Detector half-diagonal</span>
+            <strong>{formatMm(validationResult.expected.detectorHalfDiagonalM)} mm</strong>
+          </div>
+          <div className="compact-stat">
+            <span>RMS residual</span>
+            <strong>{validationResult.residuals.rmsResidual.toExponential(2)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Max residual</span>
+            <strong>{validationResult.residuals.maxResidual.toExponential(2)}</strong>
+          </div>
+          <div className="compact-stat">
+            <span>Symmetry error</span>
+            <strong>{validationResult.residuals.radialSymmetryError.toExponential(2)}</strong>
+          </div>
+        </div>
+        <div className="error-banner">
+          Expected first Airy minimum: {formatMm(validationResult.expected.firstMinimumRadiusM)} mm from center. Detector half-width: {formatMm(validationResult.expected.detectorHalfWidthM)} mm.
+          {!validationResult.expected.firstMinimumInsidePlane && " Warning: first minimum is outside the 10 mm x 10 mm observation plane."}
+        </div>
+        <div className="maxwell-validation-output-grid">
+          <div>
+            <div className="maxwell-section-heading">
+              <h2>Intensity Map</h2>
+              <strong>peak-normalized</strong>
+            </div>
+            <ValidationIntensityMap result={validationResult} />
+          </div>
+          <div>
+            <div className="maxwell-section-heading">
+              <h2>Radial Airy Overlay</h2>
+              <strong>Bessel reference</strong>
+            </div>
+            <ValidationRadialPlot result={validationResult} />
+          </div>
+        </div>
+        <ul className="warning-list">
+          {validationResult.warnings.map((warning) => (
+            <li key={warning.code}>{warning.message}</li>
+          ))}
+        </ul>
+        <div className="maxwell-layer-actions">
+          <button type="button" onClick={() => setValidationPlaneZMm((current) => clamp(current, 11, 60))}>
+            <Sparkles size={15} />
+            <span>Run Benchmark</span>
+          </button>
+          <button type="button" onClick={() => exportValidationJson(validationResult)}>
+            <Save size={15} />
+            <span>Validation JSON</span>
+          </button>
+          <button type="button" onClick={() => exportValidationMarkdown(validationResult)}>
+            <FileDown size={15} />
+            <span>Validation Markdown</span>
           </button>
         </div>
       </div>
@@ -1365,6 +1519,72 @@ function FieldMonitorPlot({ monitor }: { monitor: PlanarFieldMonitorResult }) {
   );
 }
 
+function ValidationIntensityMap({ result }: { result: CircularApertureValidationResult }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const width = result.field.width;
+    const height = result.field.height;
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    const image = context.createImageData(width, height);
+    for (let index = 0; index < result.field.intensity.length; index += 1) {
+      const value = Math.pow(clamp(result.field.intensity[index] ?? 0, 0, 1), 0.38);
+      const offset = index * 4;
+      image.data[offset] = Math.round(18 + 224 * value);
+      image.data[offset + 1] = Math.round(34 + 170 * value);
+      image.data[offset + 2] = Math.round(52 + 72 * value);
+      image.data[offset + 3] = 255;
+    }
+    context.putImageData(image, 0, 0);
+  }, [result]);
+
+  return <canvas className="maxwell-validation-map" ref={canvasRef} aria-label="2D scalar circular aperture Airy intensity map" />;
+}
+
+function ValidationRadialPlot({ result }: { result: CircularApertureValidationResult }) {
+  const width = 720;
+  const height = 190;
+  const pad = 24;
+  const usableWidth = width - pad * 2;
+  const usableHeight = height - pad * 2;
+  const maxRadiusM = result.radialProfile[result.radialProfile.length - 1]?.radiusM ?? 1;
+  const modelPoints = result.radialProfile.map((sample) => plotPoint(sample.radiusM, sample.modelIntensity)).join(" ");
+  const analyticPoints = result.radialProfile.map((sample) => plotPoint(sample.radiusM, sample.analyticIntensity)).join(" ");
+  const markerX = pad + usableWidth * Math.min(1, result.expected.firstMinimumRadiusM / maxRadiusM);
+  const markerLabel = result.expected.firstMinimumRadiusM <= maxRadiusM ? "first min" : "first min outside";
+
+  function plotPoint(radiusM: number, intensity: number): string {
+    const x = pad + usableWidth * (radiusM / maxRadiusM);
+    const y = pad + usableHeight * (1 - clamp(intensity, 0, 1));
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  }
+
+  return (
+    <svg className="maxwell-validation-profile" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Radial Airy Bessel analytic overlay and model profile">
+      <rect x="0" y="0" width={width} height={height} />
+      <line className="profile-axis" x1={pad} y1={height - pad} x2={width - pad} y2={height - pad} />
+      <line className="profile-axis" x1={pad} y1={pad} x2={pad} y2={height - pad} />
+      <polyline className="maxwell-validation-analytic-line" points={analyticPoints} />
+      <polyline className="maxwell-validation-model-line" points={modelPoints} />
+      <line className="maxwell-validation-marker" x1={markerX} y1={pad} x2={markerX} y2={height - pad} />
+      <text x={Math.max(pad + 4, markerX - 92)} y={pad + 13}>
+        {markerLabel}
+      </text>
+      <text x={pad} y={height - 6}>
+        0 mm
+      </text>
+      <text x={width - pad - 76} y={height - 6}>
+        {formatMm(maxRadiusM)} mm
+      </text>
+    </svg>
+  );
+}
+
 function exportStackJson(
   stack: CoatingStackDefinition,
   materialCatalog: MaxwellMaterialCatalog,
@@ -1374,7 +1594,7 @@ function exportStackJson(
   yieldAnalysis: CoatingYieldResult
 ): void {
   const design = serializeCoatingStackDesign(stack, materialCatalog);
-  downloadText("l60-backend-scaffold-stack.json", "application/json", JSON.stringify({ solverBackend: run.solverBackend, design, run, sweep, foundry, yieldAnalysis }, null, 2));
+  downloadText("l61-diffraction-validation-stack.json", "application/json", JSON.stringify({ solverBackend: run.solverBackend, design, run, sweep, foundry, yieldAnalysis }, null, 2));
 }
 
 function exportStackSummary(run: CoatingStackRunResult, sweep: CoatingSweepResult, foundry: CoatingDesignResult, yieldAnalysis: CoatingYieldResult): void {
@@ -1449,15 +1669,23 @@ function exportFoundryJson(foundry: CoatingDesignResult): void {
 }
 
 function exportSearchJson(search: CoatingSearchResult): void {
-  downloadText("l60-backend-scaffold-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l61-diffraction-validation-coating-search.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportRobustSearchJson(search: RobustCoatingSearchResult): void {
-  downloadText("l60-backend-scaffold-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
+  downloadText("l61-diffraction-validation-robust-coating-search.json", "application/json", JSON.stringify(search, null, 2));
 }
 
 function exportFdtdScaffoldJson(scaffold: ExternalFdtdScaffoldExport): void {
-  downloadText("l60-3d-fdtd-scaffold.json", "application/json", JSON.stringify(scaffold, null, 2));
+  downloadText("l61-3d-fdtd-scaffold.json", "application/json", JSON.stringify(scaffold, null, 2));
+}
+
+function exportValidationJson(result: CircularApertureValidationResult): void {
+  downloadText("l61-diffraction-validation-bench.json", "application/json", JSON.stringify(circularApertureValidationJson(result), null, 2));
+}
+
+function exportValidationMarkdown(result: CircularApertureValidationResult): void {
+  downloadText("l61-diffraction-validation-bench.md", "text/markdown", circularApertureValidationMarkdown(result));
 }
 
 function exportYieldJson(yieldAnalysis: CoatingYieldResult): void {
@@ -1600,6 +1828,10 @@ function degFromRad(value: number): number {
 
 function formatPercent(value: number): string {
   return `${(value * 100).toFixed(value < 0.001 ? 4 : 2)}%`;
+}
+
+function formatMm(valueM: number): string {
+  return (valueM * 1e3).toFixed(valueM < 0.001 ? 3 : 2).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 function formatInterval(lower: number, upper: number): string {

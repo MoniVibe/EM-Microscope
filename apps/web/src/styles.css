@@ -520,6 +520,70 @@ h2 {
   background: #ffffff;
 }
 
+.maxwell-validation-pipeline {
+  display: grid;
+  gap: 7px;
+}
+
+.maxwell-validation-output-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.maxwell-validation-map {
+  width: 100%;
+  aspect-ratio: 1;
+  display: block;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #111827;
+  image-rendering: pixelated;
+}
+
+.maxwell-validation-profile {
+  width: 100%;
+  height: auto;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.maxwell-validation-profile rect {
+  fill: #fbfdff;
+}
+
+.maxwell-validation-model-line {
+  fill: none;
+  stroke: #0f766e;
+  stroke-width: 2.5;
+}
+
+.maxwell-validation-analytic-line {
+  fill: none;
+  stroke: #334155;
+  stroke-width: 1.8;
+  stroke-dasharray: 6 4;
+}
+
+.maxwell-validation-marker {
+  stroke: #b45309;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.maxwell-slider-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 78px 72px;
+  align-items: center;
+  gap: 10px;
+}
+
+.maxwell-slider-control input[type="range"],
+.maxwell-slider-control input[type="number"] {
+  width: 100%;
+}
+
 .maxwell-layer-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1187,6 +1251,10 @@ h2 {
   }
 
   .maxwell-only-main .profile-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .maxwell-validation-output-grid {
     grid-template-columns: 1fr;
   }
 }
