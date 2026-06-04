@@ -630,6 +630,22 @@ h2 {
   min-width: 0;
 }
 
+.maxwell-robust-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.maxwell-robust-controls input,
+.maxwell-robust-controls select {
+  width: 100%;
+  min-width: 0;
+}
+
 .maxwell-search-materials {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1226,6 +1242,7 @@ h2 {
   }
 
   .maxwell-search-controls,
+  .maxwell-robust-controls,
   .maxwell-search-materials,
   .maxwell-search-stack {
     grid-template-columns: 1fr;
