@@ -155,7 +155,8 @@ export const l80ReleaseTrail = [
   { milestone: "L7.2", label: "Geometry/distortion", runnable: "dot-grid fit report" },
   { milestone: "L7.3", label: "Measured target detection", runnable: "ROI-limited detection confidence report" },
   { milestone: "L7.6", label: "External detector bridge", runnable: "detector JSON/CSV receipt validation" },
-  { milestone: "L8.0", label: "Sequential Simulation Builder", runnable: "grid/source/elements/material validation report" }
+  { milestone: "L8.0", label: "Sequential Simulation Builder", runnable: "grid/source/elements/material validation report" },
+  { milestone: "L8.1", label: "External FDTD field maps", runnable: "manifest/script export plus imported flux/field validation" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -583,6 +584,18 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       label: "Absorbing slab validation",
       status: "executable" as const,
       evidence: "Beer-Lambert attenuation residual and energy balance"
+    },
+    {
+      id: "external-fdtd-manifest-export",
+      label: "External FDTD manifest export",
+      status: "executable" as const,
+      evidence: "L8.1 exports supported Simulation Builder slab scenes with readiness, geometry, material, monitor, and boundary evidence"
+    },
+    {
+      id: "external-fdtd-field-import",
+      label: "External FDTD field/flux import",
+      status: "executable" as const,
+      evidence: "L8.1 imports external receipt, flux summary, and field-slice CSV evidence for comparison against L8.0 analytic/TMM targets"
     },
     {
       id: "arbitrary-3d-material-geometry",

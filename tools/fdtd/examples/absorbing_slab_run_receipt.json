@@ -1,0 +1,20 @@
+{
+  "schema": "emmicro.fdtd.runReceipt.v1",
+  "runId": "l81-example-absorbing-slab",
+  "sourceScenarioHash": "b1a3c346ded7d3c4",
+  "manifestHash": "97456226b4de4a72",
+  "scriptHash": "2cc5b1c81b043467",
+  "tool": {
+    "name": "example-fixture",
+    "version": "emmicro.l81.fixture",
+    "postprocessorVersion": "emmicro.fdtd.postprocess.fixture.v1"
+  },
+  "createdAtIso": "2026-06-06T00:00:00.000Z",
+  "settings": {
+    "resolution": 20,
+    "until": 200,
+    "pmlThicknessUm": 0.75
+  },
+  "warnings": [],
+  "receiptHash": "6df59a19e3b80ce0"
+}

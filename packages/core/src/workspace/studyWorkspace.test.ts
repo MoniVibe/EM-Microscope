@@ -84,7 +84,11 @@ describe("L6.6 Practical Study Workspace core", () => {
     expect(l76Capabilities.find((capability) => capability.id === "opencv-detector-json-import")?.status).toBe("executable");
     expect(l76Capabilities.find((capability) => capability.id === "detector-roundtrip-wizard")?.status).toBe("executable");
     expect(l76Capabilities.find((capability) => capability.id === "detector-roundtrip-acceptance-reports")?.status).toBe("executable");
-    expect(capabilities.find((capability) => capability.id === "external-fdtd-export")?.status).toBe("scaffold-only");
+    expect(capabilities.find((capability) => capability.id === "external-fdtd-scene-manifest-export")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "external-meep-script-export")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "external-fdtd-result-import")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "external-fdtd-backend-runner")?.status).toBe("scaffold-only");
+    expect(capabilities.find((capability) => capability.id === "browser-fdtd-execution")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "3d-maxwell-solve")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "fdtd-fem-bem-rcwa-execution")?.status).toBe("not-implemented");
     expect(l68Capabilities.find((capability) => capability.id === "pixel-level-sensor-stack")?.status).toBe("not-implemented");
@@ -114,7 +118,8 @@ describe("L6.6 Practical Study Workspace core", () => {
     expect(markdown).toContain("OpenCV ChArUco external helper");
     expect(markdown).toContain("Detector round-trip wizard");
     expect(markdown).toContain("Detector round-trip acceptance reports");
-    expect(csv).toContain("ExternalFdtdBackend export");
+    expect(csv).toContain("External FDTD scene manifest export");
+    expect(csv).toContain("External FDTD result import");
     expect(`${markdown}\n${csv}`).not.toMatch(/3D Maxwell solve executed|FDTD solver executable|FEM\/BEM\/RCWA available|digital twin certified|certified EMVA characterization executable|EMVA 1288 certification executable|pixel-level sensor stack executable|ISO 12233 certification executable|Imatest-equivalent certification executable|pure lens-only MTF certification executable|calibrated optical model fitting executable|certified camera calibration executable|lab-accredited metrology executable|certified metrology report executable|lab accreditation executable|full 3D pose calibration executable|stereo calibration executable|AprilTag detector executable|browser-native OpenCV.js\/ArUco detector executable/i);
   });
 

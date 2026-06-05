@@ -1,10 +1,13 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L8.0 Sequential Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L8.1 External FDTD Field Maps Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L8.0 adds an ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+Real Detector Bridge. L8.1 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
 workflow, optical-axis placement, transparent dielectric Fresnel validation, ideal mirror validation, absorbing slab
-Beer-Lambert validation, scenario/report exports, and a milestone trail that states iteration count is not validation.
+Beer-Lambert validation, scenario/report exports, and a milestone trail that states iteration count is not validation,
+then adds external FDTD scene manifest export, deterministic Meep helper script export, importable run receipt/flux
+summary/field-slice CSV evidence, field-map preview, R/T/A energy-balance comparison against the L8.0 analytic/TMM
+target result, deterministic fixtures, and optional helper scripts under `tools/fdtd/`.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
@@ -124,7 +127,7 @@ certification system.
 
 ## Current Visible Mode
 
-- `L8.0 Sequential Optical Bench + Surface Interaction Validation`: a top-level Simulation Builder workflow that
+- `L8.1 Sequential Optical Bench + External FDTD Field Maps`: a top-level Simulation Builder workflow that
   follows `Grid -> Source -> Elements -> Target / Material -> Compute -> Validate`. It lets users define domain
   units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
   of apertures, ideal lenses, planar material interfaces/slabs, mirrors, and absorbers. The optical-axis diagram shows
@@ -136,10 +139,13 @@ certification system.
   - absorbing slab: Beer-Lambert attenuation check where transmission decreases with thickness and residuals are
     reported against `I = I0 exp(-alpha d)`.
 
-  L8.0 exports `simulation_builder_scenario.json`, `validation_report.md`, `validation_report.json`, and
-  `validation_metrics.csv`. It also adds a "What has been added since first review?" milestone panel and explicitly
-  states that iteration count is not validation. Boundary: this is limited ordered optical-bench validation only, not
-  arbitrary 3D material geometry, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, finite-thickness
+  L8.1 exports `simulation_builder_scenario.json`, `validation_report.md`, `validation_report.json`,
+  `validation_metrics.csv`, `fdtd_scene_manifest.json`, `meep_scene.py`, imported field-slice CSV evidence, and FDTD
+  validation reports. It also imports receipt/flux/field-slice artifacts, previews the imported field map, compares
+  imported R/T/A against the L8.0 analytic/TMM target result, provides transparent and absorbing slab fixtures, and
+  keeps optional external helper scripts in `tools/fdtd/`. Boundary: this is limited ordered optical-bench validation
+  plus external FDTD export/import evidence only, not browser FDTD execution, arbitrary 3D material geometry,
+  FEM/BEM/RCWA execution, real curved material lens solving, finite-thickness
   metal aperture Maxwell solving, sensor-stack EM, digital twin behavior, or manufacturing certification.
 
 - `L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge`: frequency-domain Maxwell planar multilayer transfer-matrix special case through

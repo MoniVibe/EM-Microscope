@@ -1,0 +1,5 @@
+metric,expected,imported,residual,status
+reflectance,0,0,0,pass
+transmittance,0.6065306597126334,0.6065306597126334,0,pass
+absorbance,0.3934693402873666,0.3934693402873666,0,pass
+energy_balance,1,1,0,pass
