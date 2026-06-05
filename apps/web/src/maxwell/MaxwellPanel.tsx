@@ -35,7 +35,7 @@ import {
   compareMeasuredToSimulatedProfile,
   createMeasuredProfileFromImagePixels,
   importMaterialPackage,
-  l75CapabilitiesMatrix,
+  l76CapabilitiesMatrix,
   l69ExampleCalibrationCsv,
   linePairContrastCsv,
   measuredComparisonBundleJson,
@@ -55,6 +55,9 @@ import {
   compareFocusFieldMtf,
   defaultL71QualificationSpec,
   distortionMapCsv,
+  detectorBridgeReportJson,
+  detectorBridgeReportMarkdown,
+  detectorComparisonCsv,
   fieldMtfMapCsv,
   fiducialBoardManifestJson,
   fiducialDetectionReportJson,
@@ -62,6 +65,7 @@ import {
   fiducialMatchedPointsCsv,
   fiducialRejectedPointsCsv,
   fitFiducialBoardDetection,
+  fitExternalDetectorImport,
   fitGeometricCalibration,
   fitGridCsv,
   finalizeFocusSweep,
@@ -70,6 +74,9 @@ import {
   generateFiducialBoard,
   generateGeometricCalibrationTarget,
   generateSyntheticFiducialDetection,
+  exampleExternalDetectorJson,
+  exampleExternalDetectorMarkerCsv,
+  externalDetectorBoardInstructionsMarkdown,
   geometricCalibrationReportJson,
   geometricCalibrationReportMarkdown,
   geometricComparisonCsv,
@@ -85,6 +92,8 @@ import {
   detectionReportMarkdown,
   normalizeTargetImage,
   matchFiducialBoardDetection,
+  compareExternalDetectors,
+  importedDetectionsCsv,
   pointSetFromDetection,
   rejectedPointsCsv,
   targetImageFromGeometricTarget,
@@ -102,6 +111,8 @@ import {
   l74SyntheticFramesFromManifest,
   outliersCsv,
   parseFiducialDetectionJson,
+  parseExternalDetectorJson,
+  parseExternalDetectorMarkerCsv,
   parseL74SessionManifestCsv,
   runL74SessionQa,
   sessionMetricsCsv,
@@ -221,6 +232,8 @@ import {
   type L75FiducialDetectionBundle,
   type L75FiducialFitResult,
   type L75FiducialMatchResult,
+  type L76DetectorComparisonResult,
+  type L76ExternalDetectorImportResult,
   type SlantedEdgeMtfResult,
   type PlanarFieldMonitorResult,
   type PracticalSweepFamily,
@@ -369,7 +382,7 @@ export function MaxwellPanel() {
   const [coherenceSlitWidthUm, setCoherenceSlitWidthUm] = useState(20);
   const [coherenceSlitSeparationUm, setCoherenceSlitSeparationUm] = useState(100);
   const [coherencePropagationDistanceM, setCoherencePropagationDistanceM] = useState(1);
-  const [studyName, setStudyName] = useState("L7.5 fiducial working study");
+  const [studyName, setStudyName] = useState("L7.6 detector bridge working study");
   const [savedStudies, setSavedStudies] = useState<StudySnapshot[]>([]);
   const [selectedStudyId, setSelectedStudyId] = useState<string>("");
   const [studyStatus, setStudyStatus] = useState("No study saved yet.");
@@ -495,6 +508,10 @@ export function MaxwellPanel() {
   const [l75Match, setL75Match] = useState<L75FiducialMatchResult | null>(null);
   const [l75Fit, setL75Fit] = useState<L75FiducialFitResult | null>(null);
   const [l75SelectedMarkerId, setL75SelectedMarkerId] = useState("");
+  const [l76DetectorJsonText, setL76DetectorJsonText] = useState(exampleExternalDetectorJson());
+  const [l76DetectorCsvText, setL76DetectorCsvText] = useState(exampleExternalDetectorMarkerCsv());
+  const [l76DetectorImport, setL76DetectorImport] = useState<L76ExternalDetectorImportResult | null>(null);
+  const [l76DetectorComparison, setL76DetectorComparison] = useState<L76DetectorComparisonResult | null>(null);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -662,7 +679,7 @@ export function MaxwellPanel() {
       ]),
     [foundry, materialAudit, materialCatalog, materialImport, robustResult, run, searchResult, yieldAnalysis]
   );
-  const capabilities = useMemo(() => l75CapabilitiesMatrix(), []);
+  const capabilities = useMemo(() => l76CapabilitiesMatrix(), []);
   const selectedStudy = savedStudies.find((study) => study.id === selectedStudyId) ?? null;
   const studyRunSummaries = useMemo<StudyRunSummary[]>(
     () =>
@@ -2112,6 +2129,10 @@ export function MaxwellPanel() {
     setL75Match(null);
     setL75Fit(null);
     setL75SelectedMarkerId(board.markers[0]?.id.toString() ?? "");
+    setL76DetectorImport(null);
+    setL76DetectorComparison(null);
+    setL76DetectorJsonText(exampleExternalDetectorJson(board));
+    setL76DetectorCsvText(exampleExternalDetectorMarkerCsv(board));
     setStudyStatus(`Generated L7.5 fiducial board: ${board.markers.length} markers / ${board.charucoCorners.length} ChArUco-style corners / ${board.resultHash.slice(0, 10)}.`);
     return board;
   }
@@ -2342,6 +2363,232 @@ export function MaxwellPanel() {
           residuals: result.fit?.residuals.map((residual, index) => ({ xM: index, intensity: residual.residualPx, label: residual.pointId })) ?? []
         },
         warnings: [...board.warnings, ...detection.warnings, ...result.match.warnings, ...result.warnings, ...(result.fit?.warnings ?? [])],
+        limitations: result.limitations
+      })
+    );
+  }
+
+  function applyL76DetectorImport(imported: L76ExternalDetectorImportResult): void {
+    setL76DetectorImport(imported);
+    setL76DetectorComparison(null);
+    setL75Detection(imported.detection);
+    setL75Match(imported.match);
+    setL75Fit(null);
+    if (imported.match) {
+      setL72ImportedPointSet(imported.match.pointSet);
+      setL72Fit(null);
+      setL72Comparison(null);
+    }
+    setL75SelectedMarkerId(imported.detection.markers[0]?.id.toString() ?? "");
+  }
+
+  function loadExampleL76DetectorJson(): void {
+    const board = l75Board ?? generateL75Board();
+    setL76DetectorJsonText(exampleExternalDetectorJson(board));
+    setStudyStatus("Loaded L7.6 example external detector JSON.");
+  }
+
+  function loadExampleL76DetectorCsv(): void {
+    const board = l75Board ?? generateL75Board();
+    setL76DetectorCsvText(exampleExternalDetectorMarkerCsv(board));
+    setStudyStatus("Loaded L7.6 example external detector CSV.");
+  }
+
+  function importL76DetectorJson(): L76ExternalDetectorImportResult | null {
+    try {
+      const board = l75Board ?? generateL75Board();
+      const imported = parseExternalDetectorJson(l76DetectorJsonText, {
+        id: `l76-detector-json-${Date.now().toString(36)}`,
+        label: "L7.6 external detector JSON import",
+        board,
+        expectedBoardHash: board.resultHash,
+        expectedImageHash: board.image.imageHash,
+        minConfidence: 0.8
+      });
+      applyL76DetectorImport(imported);
+      setStudyStatus(`Imported L7.6 detector JSON: ${imported.detection.markers.length} markers / ${imported.receipt.warningCodes.length} warning code(s) / receipt ${imported.receipt.resultHash.slice(0, 10)}.`);
+      return imported;
+    } catch (error) {
+      setStudyStatus(`L7.6 detector JSON import failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function importL76DetectorCsv(): L76ExternalDetectorImportResult | null {
+    try {
+      const board = l75Board ?? generateL75Board();
+      const imported = parseExternalDetectorMarkerCsv(l76DetectorCsvText, {
+        id: `l76-detector-csv-${Date.now().toString(36)}`,
+        label: "L7.6 external detector CSV import",
+        board,
+        expectedBoardHash: board.resultHash,
+        expectedImageHash: board.image.imageHash,
+        image: {
+          sourceName: "frame_001.png",
+          imageHash: board.image.imageHash,
+          widthPx: board.image.widthPx,
+          heightPx: board.image.heightPx
+        }
+      });
+      applyL76DetectorImport(imported);
+      setStudyStatus(`Imported L7.6 detector CSV: ${imported.detection.markers.length} markers / receipt ${imported.receipt.resultHash.slice(0, 10)}.`);
+      return imported;
+    } catch (error) {
+      setStudyStatus(`L7.6 detector CSV import failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function validateL76DetectorImport(): L76ExternalDetectorImportResult | null {
+    const imported = l76DetectorImport ?? importL76DetectorJson();
+    if (!imported) return null;
+    setStudyStatus(`Validated L7.6 detector receipt: ${imported.detector.name} ${imported.detector.version} / detection ${imported.detection.resultHash.slice(0, 10)} / warnings ${imported.warnings.length}.`);
+    return imported;
+  }
+
+  function compareL76SyntheticVsImported(): L76DetectorComparisonResult | null {
+    try {
+      const board = l75Board ?? generateL75Board();
+      const imported = l76DetectorImport ?? importL76DetectorJson();
+      if (!imported) return null;
+      const synthetic = createL75SyntheticDetectionForBoard(board);
+      const comparison = compareExternalDetectors({
+        id: `l76-detector-comparison-${Date.now().toString(36)}`,
+        label: "L7.6 synthetic vs imported detector comparison",
+        comparisonKind: "synthetic-vs-imported",
+        board,
+        model: "similarity",
+        a: synthetic,
+        b: imported
+      });
+      setL76DetectorComparison(comparison);
+      setStudyStatus(`Compared synthetic vs imported detector output: ${comparison.matchedMarkerIds.length} marker IDs / mean corner delta ${formatNullableMetric(comparison.meanCornerDeltaPx)} px.`);
+      return comparison;
+    } catch (error) {
+      setStudyStatus(`L7.6 detector comparison failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function runL76DetectorGeometryFit(model: L72FitModel = l72FitModel): L75FiducialFitResult | null {
+    try {
+      const board = l75Board ?? generateL75Board();
+      const imported = l76DetectorImport ?? importL76DetectorJson();
+      if (!imported) return null;
+      const result = fitExternalDetectorImport({
+        id: `l76-detector-fit-${Date.now().toString(36)}`,
+        label: `L7.6 external detector ${model} geometry handoff`,
+        importResult: imported,
+        board,
+        model
+      });
+      setL75Fit(result);
+      setL75Match(result.match);
+      setL72FitModel(model);
+      setL72ImportedPointSet(result.match.pointSet);
+      setL72Fit(result.fit);
+      setL72Comparison(null);
+      setStudyStatus(`L7.6 detector ${model} fit ${result.status.toUpperCase()}: ${result.match.matchedPointCount} points${result.fit ? ` / RMS ${result.fit.metrics.rmsResidualPx.toPrecision(4)} px` : ""}.`);
+      return result;
+    } catch (error) {
+      setStudyStatus(`L7.6 detector geometry fit failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function exportL76BoardForDetector(): void {
+    const board = l75Board ?? generateL75Board();
+    downloadText("board_manifest.json", "application/json", fiducialBoardManifestJson(board));
+    downloadText("detector_readme.md", "text/markdown", externalDetectorBoardInstructionsMarkdown(board));
+    setStudyStatus("Exported L7.6 board manifest and detector_readme.md for external detector runners.");
+  }
+
+  function exportL76DetectorBridgeReport(): void {
+    const board = l75Board ?? generateL75Board();
+    const imported = l76DetectorImport ?? importL76DetectorJson();
+    if (!imported) return;
+    const fit = l75Fit ?? fitExternalDetectorImport({
+      id: `l76-detector-export-fit-${Date.now().toString(36)}`,
+      label: "L7.6 external detector export fit",
+      importResult: imported,
+      board,
+      model: "similarity"
+    });
+    const comparison = l76DetectorComparison ?? compareExternalDetectors({
+      id: `l76-detector-export-comparison-${Date.now().toString(36)}`,
+      label: "L7.6 detector export comparison",
+      comparisonKind: "synthetic-vs-imported",
+      board,
+      model: "similarity",
+      a: createL75SyntheticDetectionForBoard(board),
+      b: imported
+    });
+    setL76DetectorComparison(comparison);
+    downloadText("detector_bridge_report.md", "text/markdown", detectorBridgeReportMarkdown(imported, comparison, fit));
+    downloadText("detector_bridge_report.json", "application/json", detectorBridgeReportJson(imported, comparison, fit));
+    downloadText("imported_detections.csv", "text/csv", importedDetectionsCsv(imported));
+    downloadText("detector_comparison.csv", "text/csv", detectorComparisonCsv(comparison));
+    setStudyStatus("Exported L7.6 detector bridge report bundle.");
+  }
+
+  function addL76DetectorToSessionQa(): L74SessionQaResult | null {
+    const result = l75Fit ?? runL76DetectorGeometryFit("similarity");
+    if (!result) return null;
+    try {
+      const manifestText = "frame_id,type,path_or_name,notes\next_001,fiducial_board,external_detector_import.json,L7.6 external detector bridge handoff";
+      const manifest = parseL74SessionManifestCsv(manifestText);
+      const frame = l74FrameFromFiducialFit(manifest.rows[0]!, result);
+      const session = runL74SessionQa({
+        id: `l76-detector-session-qa-${Date.now().toString(36)}`,
+        label: "L7.6 external detector session QA handoff",
+        manifestHash: manifest.manifestHash,
+        frames: [frame],
+        thresholds: l74Thresholds(),
+        warnings: manifest.warnings
+      });
+      setL74ManifestText(manifestText);
+      setL74SessionQa(session);
+      setStudyStatus(`Added L7.6 external detector frame to L7.4 session QA: ${session.status.toUpperCase()} / ${session.aggregates.length} aggregate metrics.`);
+      return session;
+    } catch (error) {
+      setStudyStatus(`L7.6 detector session handoff failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function saveL76DetectorBridgeStudy(): void {
+    const board = l75Board ?? generateL75Board();
+    const imported = l76DetectorImport ?? importL76DetectorJson();
+    if (!imported) return;
+    const result = l75Fit ?? runL76DetectorGeometryFit("similarity");
+    if (!result) return;
+    saveStudy(
+      createStudySnapshot({
+        id: `l76-detector-bridge-study-${Date.now().toString(36)}`,
+        name: "L7.6 external detector bridge diagnostic study",
+        mode: "image-quality.external-detector-bridge",
+        selectedWorkbench: "external-detector-bridge",
+        inputs: {
+          board: board.settings,
+          detectorReceipt: imported.receipt,
+          detection: imported.detection,
+          match: result.match,
+          fit: result.fit,
+          comparison: l76DetectorComparison
+        },
+        appState: currentAppState(),
+        backendReceipt: {
+          label: "L7.6 Real Detector Bridge / External CV Integration",
+          availability: "executable",
+          scope: "diagnostic external detector JSON/CSV import, receipt validation, comparison, L7.5 fiducial matching, L7.2 geometry handoff, and L7.4 session QA handoff only; browser-native OpenCV ArUco detector is not implemented, AprilTag decoding is not implemented, and certified camera calibration/full 3D pose/stereo/hardware/3D Maxwell are not implemented"
+        },
+        resultHashes: [board.resultHash, imported.resultHash, imported.receipt.resultHash, imported.detection.resultHash, result.match.resultHash, result.fit?.resultHash, result.resultHash, l76DetectorComparison?.resultHash].filter(Boolean) as string[],
+        metrics: l75StudyMetrics(result),
+        profiles: {
+          matchedPoints: result.match.matchedPoints.map((point, index) => ({ xM: index, intensity: point.xPx, label: point.id })),
+          detectorComparison: l76DetectorComparison?.rows.filter((row) => row.deltaPx !== null).map((row, index) => ({ xM: index, intensity: row.deltaPx ?? 0, label: `${row.kind}-${row.id}-${row.cornerIndex ?? "c"}` })) ?? []
+        },
+        warnings: [...imported.warnings, ...result.warnings, ...(result.fit?.warnings ?? [])],
         limitations: result.limitations
       })
     );
@@ -2891,6 +3138,13 @@ export function MaxwellPanel() {
         matchHash: l75Match?.resultHash ?? null,
         fitHash: l75Fit?.resultHash ?? null,
         selectedMarkerId: l75SelectedMarkerId
+      },
+      externalDetectorBridge: {
+        importHash: l76DetectorImport?.resultHash ?? null,
+        receiptHash: l76DetectorImport?.receipt.resultHash ?? null,
+        comparisonHash: l76DetectorComparison?.resultHash ?? null,
+        detectorName: l76DetectorImport?.detector.name ?? null,
+        warningCount: l76DetectorImport?.warnings.length ?? 0
       }
     };
   }
@@ -3139,11 +3393,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.5 Fiducial Board / ChArUco-style Target Workflow">
-      <h2>L7.5 Fiducial Board / ChArUco-style Target Workflow</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.6 Real Detector Bridge / External CV Integration">
+      <h2>L7.6 Real Detector Bridge / External CV Integration</h2>
       <div className="l2-disclosure">
-        <strong>diagnostic fiducial board generation, imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA, measured target ROI handling, focus/field MTF, camera diagnostics, saved studies, capabilities, and exports over the existing planar/scalar engines</strong>
-        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, and L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/session handoff are the executable scope; this is not pixel-level sensor-stack EM, certified camera calibration, certified metrology reports, lab-accredited metrology, lab accreditation workflows, hardware control, full 3D pose/stereo calibration, real OpenCV ArUco/ChArUco marker decoding, AprilTag decoding, a digital twin, manufacturing certification, or 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution</span>
+        <strong>diagnostic external detector JSON/CSV import, receipt validation, detector comparison, fiducial board generation, imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA, measured target ROI handling, focus/field MTF, camera diagnostics, saved studies, capabilities, and exports over the existing planar/scalar engines</strong>
+        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/session handoff, and L7.6 external detector JSON/CSV import, detector receipt validation, comparison, and report exports are the executable scope; this is not pixel-level sensor-stack EM, certified camera calibration, certified metrology reports, lab-accredited metrology, lab accreditation workflows, hardware control, full 3D pose/stereo calibration, browser-native OpenCV ArUco detector execution, AprilTag decoding, a digital twin, manufacturing certification, or 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -3196,7 +3450,9 @@ export function MaxwellPanel() {
             l74SessionQa,
             l75Board,
             l75Detection,
-            l75Fit
+            l75Fit,
+            l76DetectorImport,
+            l76DetectorComparison
           )
         }
         onImportBundle={importStudyBundleFile}
@@ -3437,6 +3693,23 @@ export function MaxwellPanel() {
         onExportFiducialBundle={exportL75FiducialBundle}
         onAddFiducialToSession={addL75FiducialToSessionQa}
         onSaveFiducialStudy={saveL75FiducialStudy}
+        detectorJsonText={l76DetectorJsonText}
+        setDetectorJsonText={setL76DetectorJsonText}
+        detectorCsvText={l76DetectorCsvText}
+        setDetectorCsvText={setL76DetectorCsvText}
+        detectorImport={l76DetectorImport}
+        detectorComparison={l76DetectorComparison}
+        onExportBoardForDetector={exportL76BoardForDetector}
+        onLoadDetectorJsonExample={loadExampleL76DetectorJson}
+        onLoadDetectorCsvExample={loadExampleL76DetectorCsv}
+        onImportDetectorJson={importL76DetectorJson}
+        onImportDetectorCsv={importL76DetectorCsv}
+        onValidateDetectorImport={validateL76DetectorImport}
+        onCompareSyntheticVsDetector={compareL76SyntheticVsImported}
+        onRunDetectorFit={runL76DetectorGeometryFit}
+        onAddDetectorToSession={addL76DetectorToSessionQa}
+        onExportDetectorBridge={exportL76DetectorBridgeReport}
+        onSaveDetectorBridgeStudy={saveL76DetectorBridgeStudy}
         sessionQa={l74SessionQa}
       />
 
@@ -4970,6 +5243,23 @@ function GeometricCalibrationWorkbenchPanel({
   onExportFiducialBundle,
   onAddFiducialToSession,
   onSaveFiducialStudy,
+  detectorJsonText,
+  setDetectorJsonText,
+  detectorCsvText,
+  setDetectorCsvText,
+  detectorImport,
+  detectorComparison,
+  onExportBoardForDetector,
+  onLoadDetectorJsonExample,
+  onLoadDetectorCsvExample,
+  onImportDetectorJson,
+  onImportDetectorCsv,
+  onValidateDetectorImport,
+  onCompareSyntheticVsDetector,
+  onRunDetectorFit,
+  onAddDetectorToSession,
+  onExportDetectorBridge,
+  onSaveDetectorBridgeStudy,
   sessionQa
 }: {
   targetKind: L72TargetKind;
@@ -5080,6 +5370,23 @@ function GeometricCalibrationWorkbenchPanel({
   onExportFiducialBundle: () => void;
   onAddFiducialToSession: () => void;
   onSaveFiducialStudy: () => void;
+  detectorJsonText: string;
+  setDetectorJsonText: (value: string) => void;
+  detectorCsvText: string;
+  setDetectorCsvText: (value: string) => void;
+  detectorImport: L76ExternalDetectorImportResult | null;
+  detectorComparison: L76DetectorComparisonResult | null;
+  onExportBoardForDetector: () => void;
+  onLoadDetectorJsonExample: () => void;
+  onLoadDetectorCsvExample: () => void;
+  onImportDetectorJson: () => void;
+  onImportDetectorCsv: () => void;
+  onValidateDetectorImport: () => void;
+  onCompareSyntheticVsDetector: () => void;
+  onRunDetectorFit: (model?: L72FitModel) => void;
+  onAddDetectorToSession: () => void;
+  onExportDetectorBridge: () => void;
+  onSaveDetectorBridgeStudy: () => void;
   sessionQa: L74SessionQaResult | null;
 }) {
   const activePoints = importedPointSet?.points ?? target?.points ?? [];
@@ -5110,6 +5417,8 @@ function GeometricCalibrationWorkbenchPanel({
   });
   const fiducialCoverage = fiducialFit?.match ?? fiducialMatch;
   const fiducialExportNames = ["board_manifest.json", "fiducial_detection_report.md", "fiducial_detection_report.json", "matched_points.csv", "rejected_points.csv"];
+  const detectorExportNames = ["detector_bridge_report.md", "detector_bridge_report.json", "imported_detections.csv", "detector_comparison.csv"];
+  const detectorReceiptWarnings = detectorImport?.receipt.warningCodes.slice(0, 6) ?? [];
 
   return (
     <div className="maxwell-study-card maxwell-l72-panel" aria-label="L7.3 Measured Target Detection and ROI Hardening">
@@ -5224,6 +5533,98 @@ function GeometricCalibrationWorkbenchPanel({
           </div>
         </div>
 
+        <div className="maxwell-workspace-panel maxwell-l75-panel maxwell-l76-panel" aria-label="L7.6 Real Detector Bridge / External CV Integration">
+          <div className="maxwell-section-heading">
+            <h2>External Detector Bridge</h2>
+            <strong>{detectorImport ? detectorImport.detector.name : "import detector"}</strong>
+          </div>
+          <div className="l2-disclosure">
+            <strong>L7.6 Real Detector Bridge / External CV Integration</strong>
+            <span>External detector JSON/CSV import, detector receipt validation, synthetic-vs-imported comparison, L7.5 matching/manual review handoff, L7.2 geometry fit handoff, and L7.4 session QA handoff are executable; browser-native OpenCV ArUco detector is not implemented, AprilTag decoding is not implemented, certified camera calibration and full 3D pose/stereo calibration are not implemented.</span>
+          </div>
+          <label className="maxwell-measured-textarea-label">
+            <span>Detector JSON import</span>
+            <textarea
+              className="maxwell-measured-textarea maxwell-l75-textarea"
+              value={detectorJsonText}
+              spellCheck={false}
+              onChange={(event) => setDetectorJsonText(event.currentTarget.value)}
+              aria-label="L7.6 external detector JSON"
+            />
+          </label>
+          <label className="maxwell-measured-textarea-label">
+            <span>Detector marker CSV import</span>
+            <textarea
+              className="maxwell-measured-textarea maxwell-l75-textarea"
+              value={detectorCsvText}
+              spellCheck={false}
+              onChange={(event) => setDetectorCsvText(event.currentTarget.value)}
+              aria-label="L7.6 external detector CSV"
+            />
+          </label>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onExportBoardForDetector}><FileDown size={15} /><span>Export Board for Detector</span></button>
+            <button type="button" onClick={onLoadDetectorJsonExample}><Sparkles size={15} /><span>Load Example Detector JSON</span></button>
+            <button type="button" onClick={onLoadDetectorCsvExample}><Sparkles size={15} /><span>Load Example Detector CSV</span></button>
+            <button type="button" onClick={onImportDetectorJson}><Upload size={15} /><span>Import Detector JSON</span></button>
+            <button type="button" onClick={onImportDetectorCsv}><Upload size={15} /><span>Import Detector CSV</span></button>
+            <button type="button" onClick={onValidateDetectorImport}><ShieldCheck size={15} /><span>Validate Detection</span></button>
+            <button type="button" onClick={onCompareSyntheticVsDetector}><ShieldCheck size={15} /><span>Compare Synthetic vs Imported</span></button>
+            <button type="button" onClick={() => onRunDetectorFit("similarity")}><ShieldCheck size={15} /><span>Run Detector Geometry Fit</span></button>
+            <button type="button" onClick={onAddDetectorToSession}><ShieldCheck size={15} /><span>Add Detector Frame to Session QA</span></button>
+            <button type="button" onClick={onExportDetectorBridge}><FileDown size={15} /><span>Export Detector Bridge Report</span></button>
+            <button type="button" onClick={onSaveDetectorBridgeStudy}><Save size={15} /><span>Save Detector Bridge Study</span></button>
+          </div>
+          {detectorImport ? (
+            <div className="maxwell-data-table" aria-label="L7.6 detector bridge import smoke preview">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Source format</span><strong>{detectorImport.sourceFormat}</strong></div>
+                <div className="compact-stat"><span>Markers</span><strong>{detectorImport.detection.markers.length}</strong></div>
+                <div className="compact-stat"><span>ChArUco corners</span><strong>{detectorImport.detection.charucoCorners.length}</strong></div>
+                <div className="compact-stat"><span>Detection hash</span><strong>{detectorImport.detection.resultHash.slice(0, 10)}</strong></div>
+              </div>
+            </div>
+          ) : (
+            <div className="empty-state" aria-label="L7.6 detector bridge import smoke preview">Import external detector JSON or marker CSV to create a receipted L7.5 fiducial detection bundle.</div>
+          )}
+          {detectorImport ? (
+            <div className="maxwell-data-table" aria-label="L7.6 detector receipt smoke preview">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Detector</span><strong>{detectorImport.detector.name}</strong></div>
+                <div className="compact-stat"><span>Receipt hash</span><strong>{detectorImport.receipt.resultHash.slice(0, 10)}</strong></div>
+                <div className="compact-stat"><span>Board hash</span><strong>{detectorImport.board.hashMatchesExpected === false ? "mismatch" : "checked"}</strong></div>
+                <div className="compact-stat"><span>Image hash</span><strong>{detectorImport.image.hashMatchesExpected === false ? "mismatch" : "checked"}</strong></div>
+              </div>
+              {detectorReceiptWarnings.length ? detectorReceiptWarnings.map((code, index) => <div className="error-banner" key={`${code}-${index}`}>{code}</div>) : <div className="empty-state">Detector receipt validation has no warning codes.</div>}
+            </div>
+          ) : (
+            <div className="empty-state" aria-label="L7.6 detector receipt smoke preview">Validate an import to preserve detector name/version, image hash, board hash, warning codes, and deterministic result hash.</div>
+          )}
+          {detectorComparison ? (
+            <div className="maxwell-data-table" aria-label="L7.6 detector comparison smoke preview">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Matched markers</span><strong>{detectorComparison.matchedMarkerIds.length}</strong></div>
+                <div className="compact-stat"><span>Mean corner delta</span><strong>{formatNullableMetric(detectorComparison.meanCornerDeltaPx)} px</strong></div>
+                <div className="compact-stat"><span>Max corner delta</span><strong>{formatNullableMetric(detectorComparison.maxCornerDeltaPx)} px</strong></div>
+                <div className="compact-stat"><span>Fit RMS delta</span><strong>{formatNullableMetric(detectorComparison.fitRmsDeltaPx)} px</strong></div>
+              </div>
+            </div>
+          ) : (
+            <div className="empty-state" aria-label="L7.6 detector comparison smoke preview">Compare synthetic, imported, or manual-corrected detector sets to compute corner delta, coverage delta, and fit RMS delta.</div>
+          )}
+          <div className="maxwell-data-table" aria-label="L7.6 detector fit handoff smoke preview">
+            <div className="maxwell-study-list">
+              <div className="compact-stat"><span>L7.5 match</span><strong>{fiducialCoverage ? `${fiducialCoverage.matchedPointCount} pts` : "pending"}</strong></div>
+              <div className="compact-stat"><span>L7.2 fit</span><strong>{fiducialFit?.fit ? `${fiducialFit.status} / ${fiducialFit.model}` : "pending"}</strong></div>
+              <div className="compact-stat"><span>Point-set handoff</span><strong>{fiducialCoverage?.pointSet.sourceHash.slice(0, 10) ?? "pending"}</strong></div>
+            </div>
+          </div>
+          <div className="maxwell-data-table maxwell-l75-export-list" aria-label="L7.6 detector session handoff smoke preview">
+            <div className="compact-stat"><span>Session QA handoff</span><strong>{sessionQa?.frames.some((frame) => frame.type === "fiducial_board") ? "ready" : "pending"}</strong></div>
+            {detectorExportNames.map((name) => <div className="compact-stat" key={name}><span>{name}</span><strong>{detectorImport ? "ready" : "on import"}</strong></div>)}
+          </div>
+        </div>
+
         <div className="maxwell-workspace-panel maxwell-l75-panel" aria-label="L7.5 fiducial partial-view QA fit and session handoff">
           <div className="maxwell-section-heading">
             <h2>Fiducial Fit + Session Handoff</h2>
@@ -5239,7 +5640,7 @@ function GeometricCalibrationWorkbenchPanel({
                 <div className="compact-stat"><span>Quadrants</span><strong>{fiducialCoverage.coveredQuadrants.length}/4</strong></div>
                 <div className="compact-stat"><span>Missing IDs</span><strong>{fiducialCoverage.missingMarkerIds.length}</strong></div>
               </div>
-              {fiducialCoverage.warnings.slice(0, 4).map((warning) => <div className="error-banner" key={`${warning.code}-${warning.message}`}>{warning.message}</div>)}
+              {fiducialCoverage.warnings.slice(0, 4).map((warning, index) => <div className="error-banner" key={`${warning.code}-${warning.message}-${index}`}>{warning.message}</div>)}
             </div>
           ) : (
             <div className="empty-state" aria-label="L7.5 partial-view coverage smoke preview">Match fiducial IDs to compute coverage, missing IDs, partial-view warnings, and L7.2 point-set handoff.</div>
@@ -8449,7 +8850,9 @@ function exportStudyBundle(
   sessionQa: L74SessionQaResult | null,
   fiducialBoard: L75FiducialBoard | null,
   fiducialDetection: L75FiducialDetectionBundle | null,
-  fiducialFit: L75FiducialFitResult | null
+  fiducialFit: L75FiducialFitResult | null,
+  externalDetectorImport: L76ExternalDetectorImportResult | null,
+  externalDetectorComparison: L76DetectorComparisonResult | null
 ): void {
   const bundle = studyBundleJson(study, {
     sweep: sweep ?? undefined,
@@ -8471,22 +8874,24 @@ function exportStudyBundle(
     sessionQa: sessionQa ?? undefined,
     fiducialBoard: fiducialBoard ?? undefined,
     fiducialDetection: fiducialDetection ?? undefined,
-    fiducialFit: fiducialFit ?? undefined
+    fiducialFit: fiducialFit ?? undefined,
+    externalDetectorImport: externalDetectorImport ?? undefined,
+    externalDetectorComparison: externalDetectorComparison ?? undefined
   });
-  downloadText("l75-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
-  downloadText("l75-study.md", "text/markdown", studyBundleMarkdown(bundle));
-  downloadText("l75-metrics.csv", "text/csv", bundle.metricsCsv);
-  downloadText("l75-profiles.csv", "text/csv", bundle.profilesCsv);
-  downloadText("l75-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
-  downloadText("l75-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
-  if (comparison) downloadText("l75-comparison.csv", "text/csv", studyComparisonCsv(comparison));
-  if (sweep) downloadText("l75-sweep.csv", "text/csv", practicalSweepCsv(sweep));
-  if (measuredComparison) downloadText("l75-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
-  if (cameraRun) downloadText("l75-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
-  if (calibrationRun) downloadText("l75-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
-  if (mtfRun) downloadText("l75-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
-  if (mtfComparison) downloadText("l75-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
-  if (linePairRun) downloadText("l75-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
+  downloadText("l76-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
+  downloadText("l76-study.md", "text/markdown", studyBundleMarkdown(bundle));
+  downloadText("l76-metrics.csv", "text/csv", bundle.metricsCsv);
+  downloadText("l76-profiles.csv", "text/csv", bundle.profilesCsv);
+  downloadText("l76-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+  downloadText("l76-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
+  if (comparison) downloadText("l76-comparison.csv", "text/csv", studyComparisonCsv(comparison));
+  if (sweep) downloadText("l76-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+  if (measuredComparison) downloadText("l76-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
+  if (cameraRun) downloadText("l76-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
+  if (calibrationRun) downloadText("l76-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
+  if (mtfRun) downloadText("l76-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
+  if (mtfComparison) downloadText("l76-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
+  if (linePairRun) downloadText("l76-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
   if (focusSweepRun) downloadText("focus_sweep.csv", "text/csv", focusSweepCsv(focusSweepRun));
   if (fieldMtfMap) downloadText("field_mtf_map.csv", "text/csv", fieldMtfMapCsv(fieldMtfMap));
   if (qualificationRun) downloadText("qualification_report.json", "application/json", qualificationReportJson(qualificationRun));
@@ -8513,6 +8918,10 @@ function exportStudyBundle(
   if (fiducialFit) downloadText("fiducial_detection_report.json", "application/json", fiducialDetectionReportJson(fiducialFit));
   if (fiducialFit) downloadText("matched_points.csv", "text/csv", fiducialMatchedPointsCsv(fiducialFit));
   if (fiducialDetection) downloadText("rejected_points.csv", "text/csv", fiducialRejectedPointsCsv(fiducialDetection));
+  if (externalDetectorImport) downloadText("detector_bridge_report.md", "text/markdown", detectorBridgeReportMarkdown(externalDetectorImport, externalDetectorComparison ?? undefined, fiducialFit ?? undefined));
+  if (externalDetectorImport) downloadText("detector_bridge_report.json", "application/json", detectorBridgeReportJson(externalDetectorImport, externalDetectorComparison ?? undefined, fiducialFit ?? undefined));
+  if (externalDetectorImport) downloadText("imported_detections.csv", "text/csv", importedDetectionsCsv(externalDetectorImport));
+  if (externalDetectorComparison) downloadText("detector_comparison.csv", "text/csv", detectorComparisonCsv(externalDetectorComparison));
 }
 
 function exportPracticalSweepJson(result: PracticalSweepResult): void {
