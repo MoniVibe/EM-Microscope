@@ -549,20 +549,20 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented|certified metrology report executable|lab accreditation workflow executable|hardware control implemented|AprilTag detector executable|ArUco detector executable/i);
   });
 
-  it("keeps the visible app shell focused on L8.0 Simulation Builder with L7.8 diagnostics still reachable", () => {
+  it("keeps the visible app shell focused on L8.1 external FDTD field maps with L7.8 diagnostics still reachable", () => {
     const app = readFileSync(resolve(testDir, "App.tsx"), "utf8");
     const simulationBuilder = readFileSync(resolve(testDir, "maxwell/SimulationBuilderPanel.tsx"), "utf8");
     const maxwellReturn = app.indexOf("return <MaxwellOnlyApp />;");
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("L8.0 Sequential Simulation Builder / L7.8 Detector Round Trip");
-    expect(app).toContain("Simulation Builder + PlanarTmmBackend");
-    expect(app).toContain("ordered grid/source/elements/target/compute/validate workflow");
+    expect(app).toContain("L8.1 External FDTD Field Maps / L7.8 Detector Round Trip");
+    expect(app).toContain("Simulation Builder + External FDTD Field Maps");
+    expect(app).toContain("external FDTD manifest and Meep helper export");
     expect(app).toContain("Diagnostic Workbenches");
     expect(app).toContain("<SimulationBuilderPanel />");
     expect(app).toContain("<MaxwellPanel />");
-    expect(simulationBuilder).toContain("L8.0 Sequential Optical Bench + Surface Interaction Validation");
+    expect(simulationBuilder).toContain("L8.1 Sequential Optical Bench + External FDTD Field Maps");
     expect(simulationBuilder).toContain("Simulation Builder");
     expect(simulationBuilder).toContain("1 Grid");
     expect(simulationBuilder).toContain("2 Source");
@@ -570,6 +570,22 @@ describe("solver disclosure copy", () => {
     expect(simulationBuilder).toContain("4 Target / Material");
     expect(simulationBuilder).toContain("5 Compute");
     expect(simulationBuilder).toContain("6 Validate");
+    expect(simulationBuilder).toContain("L8.1 External FDTD / Field Maps");
+    expect(simulationBuilder).toContain("L8.1 FDTD export readiness smoke preview");
+    expect(simulationBuilder).toContain("L8.1 Meep script export smoke preview");
+    expect(simulationBuilder).toContain("L8.1 field slice import smoke preview");
+    expect(simulationBuilder).toContain("L8.1 FDTD flux validation smoke preview");
+    expect(simulationBuilder).toContain("L8.1 unsupported geometry warning smoke preview");
+    expect(simulationBuilder).toContain("Export FDTD Manifest");
+    expect(simulationBuilder).toContain("Export Meep Script");
+    expect(simulationBuilder).toContain("Import Field Run");
+    expect(simulationBuilder).toContain("Load Transparent FDTD Fixture");
+    expect(simulationBuilder).toContain("Load Absorbing FDTD Fixture");
+    expect(simulationBuilder).toContain("fdtd_scene_manifest.json");
+    expect(simulationBuilder).toContain("meep_scene.py");
+    expect(simulationBuilder).toContain("fdtd_validation_report.md");
+    expect(simulationBuilder).toContain("External FDTD export/import only");
+    expect(simulationBuilder).toContain("browser app does not execute FDTD");
     expect(simulationBuilder).toContain("L8.0 optical-axis diagram smoke preview");
     expect(simulationBuilder).toContain("L8.0 surface validation smoke preview");
     expect(simulationBuilder).toContain("simulation_builder_scenario.json");
@@ -580,7 +596,7 @@ describe("solver disclosure copy", () => {
     expect(simulationBuilder).toContain("arbitrary 3D Maxwell material geometry");
     expect(simulationBuilder).toContain("FDTD/FEM/BEM/RCWA execution");
     expect(simulationBuilder).toContain("manufacturing certification");
-    expect(simulationBuilder).not.toMatch(/full 3D Maxwell execution is implemented|FDTD execution is available|digital twin certified|manufacturing certification available/i);
+    expect(simulationBuilder).not.toMatch(/full 3D Maxwell execution is implemented|browser FDTD execution is available|FDTD execution is available in the browser|digital twin certified|manufacturing certification available/i);
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

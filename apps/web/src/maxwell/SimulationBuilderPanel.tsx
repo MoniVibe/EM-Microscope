@@ -1,14 +1,31 @@
 import { useMemo, useState } from "react";
 import {
   addSimulationBuilderElement,
+  createAbsorbingFdtdExampleBundle,
+  createAbsorbingFdtdExampleScenario,
   createSimulationBuilderElement,
+  createTransparentFdtdExampleBundle,
+  createTransparentFdtdExampleScenario,
   defaultSimulationBuilderScenario,
+  exportFdtdBundleFromSimulationBuilder,
+  fdtdFieldSliceToCsv,
+  fdtdImportedRunJson,
+  fdtdManifestJson,
+  fdtdMeepScriptText,
+  fdtdValidationMetricsCsv,
+  fdtdValidationReportJson,
+  fdtdValidationReportMarkdown,
+  importFdtdRunArtifacts,
   l80ReleaseTrail,
   runSimulationBuilderScenario,
   simulationBuilderScenarioJson,
   simulationBuilderValidationMetricsCsv,
   simulationBuilderValidationReportJson,
   simulationBuilderValidationReportMarkdown,
+  validateFdtdImportedRunAgainstScenario,
+  type FdtdFieldSlice,
+  type FdtdImportedRun,
+  type FdtdValidationReport,
   type SimulationBuilderElementKind,
   type SimulationBuilderGrid,
   type SimulationBuilderScenario,
@@ -52,7 +69,14 @@ function downloadText(filename: string, mime: string, text: string): void {
 export function SimulationBuilderPanel() {
   const [scenario, setScenario] = useState<SimulationBuilderScenario>(() => defaultSimulationBuilderScenario());
   const [hasComputed, setHasComputed] = useState(false);
+  const [importedFdtd, setImportedFdtd] = useState<FdtdImportedRun | null>(null);
+  const [fdtdImportError, setFdtdImportError] = useState<string | null>(null);
   const result = useMemo(() => runSimulationBuilderScenario(scenario), [scenario]);
+  const fdtdBundle = useMemo(() => exportFdtdBundleFromSimulationBuilder(scenario), [scenario]);
+  const fdtdValidation = useMemo<FdtdValidationReport | null>(
+    () => (importedFdtd ? validateFdtdImportedRunAgainstScenario(scenario, fdtdBundle, importedFdtd) : null),
+    [fdtdBundle, importedFdtd, scenario]
+  );
   const zMin = Math.min(scenario.grid.zStartMm, ...result.axis.map((node) => node.zMm));
   const zMax = Math.max(scenario.observationPlaneZMm, scenario.grid.zEndMm, ...result.axis.map((node) => node.zMm));
 
@@ -88,19 +112,84 @@ export function SimulationBuilderPanel() {
     downloadText("validation_metrics.csv", "text/csv", simulationBuilderValidationMetricsCsv(result));
   }
 
+  function exportFdtdManifest(): void {
+    downloadText("fdtd_scene_manifest.json", "application/json", fdtdManifestJson(fdtdBundle.manifest));
+  }
+
+  function exportFdtdMeepScript(): void {
+    downloadText("meep_scene.py", "text/x-python", fdtdMeepScriptText(fdtdBundle.script));
+  }
+
+  function exportFdtdImportEvidence(): void {
+    if (!importedFdtd) return;
+    downloadText("fdtd_imported_run.json", "application/json", fdtdImportedRunJson(importedFdtd));
+    downloadText("fdtd_field_slice_xz.csv", "text/csv", `${fdtdFieldSliceToCsv(importedFdtd.fieldSlice)}\n`);
+  }
+
+  function exportFdtdValidationReport(): void {
+    if (!fdtdValidation) return;
+    downloadText("fdtd_validation_report.md", "text/markdown", fdtdValidationReportMarkdown(fdtdValidation));
+    downloadText("fdtd_validation_report.json", "application/json", fdtdValidationReportJson(fdtdValidation));
+    downloadText("fdtd_validation_metrics.csv", "text/csv", fdtdValidationMetricsCsv(fdtdValidation));
+  }
+
+  function loadTransparentFdtdFixture(): void {
+    const example = createTransparentFdtdExampleBundle();
+    setScenario(createTransparentFdtdExampleScenario());
+    setImportedFdtd(example.imported);
+    setFdtdImportError(null);
+    setHasComputed(true);
+  }
+
+  function loadAbsorbingFdtdFixture(): void {
+    const example = createAbsorbingFdtdExampleBundle();
+    setScenario(createAbsorbingFdtdExampleScenario());
+    setImportedFdtd(example.imported);
+    setFdtdImportError(null);
+    setHasComputed(true);
+  }
+
+  async function importFdtdArtifacts(files: FileList | null): Promise<void> {
+    setFdtdImportError(null);
+    if (!files || files.length === 0) return;
+    const entries = await Promise.all(Array.from(files).map(async (file) => ({ name: file.name.toLowerCase(), text: await file.text() })));
+    const receipt = entries.find((entry) => entry.name.includes("receipt") && entry.name.endsWith(".json"));
+    const flux = entries.find((entry) => entry.name.includes("flux") && entry.name.endsWith(".json"));
+    const fieldSlice = entries.find((entry) => entry.name.includes("slice") && entry.name.endsWith(".csv")) ?? entries.find((entry) => entry.name.endsWith(".csv"));
+    if (!receipt || !flux || !fieldSlice) {
+      setFdtdImportError("Select a run receipt JSON, flux summary JSON, and field slice CSV together.");
+      return;
+    }
+    try {
+      const imported = importFdtdRunArtifacts({
+        receiptJson: receipt.text,
+        fluxJson: flux.text,
+        fieldSliceCsv: fieldSlice.text,
+        fieldSlice: {
+          id: "field-slice-xz",
+          sourceScenarioHash: fdtdBundle.manifest.sourceScenarioHash,
+          manifestHash: fdtdBundle.manifest.manifestHash
+        }
+      });
+      setImportedFdtd(imported);
+    } catch (error) {
+      setFdtdImportError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L8.0 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L8.1 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L8.0 Sequential Optical Bench + Surface Interaction Validation</h2>
+        <h2>L8.1 Sequential Optical Bench + External FDTD Field Maps</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, ordered z-axis elements, target/material surface, compute path, and validation report. L8.0 executes limited transparent, reflective,
-          and absorbing planar surface/slab checks only; arbitrary 3D Maxwell material geometry, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, sensor-stack EM,
-          digital twin behavior, and manufacturing certification are not implemented.
+          Define grid density, source, ordered z-axis elements, target/material surface, compute path, validation report, and L8.1 external FDTD export/import evidence. In-app execution remains
+          limited to transparent, reflective, and absorbing planar surface/slab checks only; arbitrary 3D Maxwell material geometry, browser FDTD/FEM/BEM/RCWA execution, real curved material lens
+          solving, sensor-stack EM, digital twin behavior, and manufacturing certification are not implemented.
         </span>
       </div>
 
@@ -292,6 +381,118 @@ export function SimulationBuilderPanel() {
           </div>
           <p className="simulation-builder-note">{result.validation.analyticReference}</p>
         </div>
+
+        <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide" aria-label="L8.1 External FDTD / Field Maps">
+          <div className="maxwell-section-heading">
+            <h2>L8.1 External FDTD / Field Maps</h2>
+            <strong>{fdtdReadinessLabel(fdtdBundle.manifest.readiness.status)}</strong>
+          </div>
+          <div className="l2-disclosure">
+            <strong>External FDTD export/import only.</strong>
+            <span>
+              Export a manifest and deterministic Meep helper script, then import external run receipt, flux summary, and field-slice CSV evidence. The browser app does not execute FDTD;
+              arbitrary 3D CAD geometry, curved material lens solving, finite-thickness metal aperture Maxwell solving, FEM/BEM/RCWA, sensor-stack EM, digital twin behavior, and manufacturing
+              certification are not implemented.
+            </span>
+          </div>
+          <div className="maxwell-layer-actions simulation-builder-actions fdtd-action-row">
+            <button type="button" onClick={exportFdtdManifest}>
+              <FileDown size={15} />
+              <span>Export FDTD Manifest</span>
+            </button>
+            <button type="button" onClick={exportFdtdMeepScript}>
+              <FileDown size={15} />
+              <span>Export Meep Script</span>
+            </button>
+            <button type="button" onClick={loadTransparentFdtdFixture}>
+              <Sparkles size={15} />
+              <span>Load Transparent FDTD Fixture</span>
+            </button>
+            <button type="button" onClick={loadAbsorbingFdtdFixture}>
+              <Sparkles size={15} />
+              <span>Load Absorbing FDTD Fixture</span>
+            </button>
+            <label className="fdtd-file-import">
+              <span>Import Field Run</span>
+              <input aria-label="Import FDTD receipt flux and field slice" type="file" accept=".json,.csv" multiple onChange={(event) => void importFdtdArtifacts(event.currentTarget.files)} />
+            </label>
+            <button type="button" disabled={!importedFdtd} onClick={exportFdtdImportEvidence}>
+              <FileDown size={15} />
+              <span>Export FDTD Import Evidence</span>
+            </button>
+            <button type="button" disabled={!fdtdValidation} onClick={exportFdtdValidationReport}>
+              <FileDown size={15} />
+              <span>Export FDTD Validation</span>
+            </button>
+          </div>
+          {fdtdImportError && <div className="error-banner">{fdtdImportError}</div>}
+          <div className="fdtd-grid">
+            <div className="maxwell-data-table" aria-label="L8.1 FDTD export readiness smoke preview">
+              <div className="maxwell-study-list">
+                <Stat label="Readiness" value={fdtdReadinessLabel(fdtdBundle.manifest.readiness.status)} />
+                <Stat label="Scene hash" value={fdtdBundle.manifest.sourceScenarioHash.slice(0, 10)} />
+                <Stat label="Manifest hash" value={fdtdBundle.manifest.manifestHash.slice(0, 10)} />
+                <Stat label="Grid spacing" value={`${formatCompact(fdtdBundle.manifest.grid.gridSpacingNm)} nm`} />
+                <Stat label="Estimated cells" value={formatCompact(fdtdBundle.manifest.grid.estimatedCells)} />
+                <Stat label="Geometry blocks" value={String(fdtdBundle.manifest.geometry.length)} />
+                <Stat label="Monitors" value={String(fdtdBundle.manifest.monitors.length)} />
+                <Stat label="Warnings" value={String(fdtdBundle.manifest.readiness.warnings.length)} />
+              </div>
+            </div>
+
+            <div className="maxwell-data-table" aria-label="L8.1 Meep script export smoke preview">
+              <div className="maxwell-study-list">
+                <Stat label="Script hash" value={fdtdBundle.script.scriptHash.slice(0, 10)} />
+                <Stat label="Python lines" value={String(fdtdBundle.script.python.split("\n").length)} />
+                <Stat label="PML thickness" value={`${formatCompact(fdtdBundle.manifest.boundaries.pmlThicknessUm)} um`} />
+                <Stat label="Source component" value={fdtdBundle.manifest.source.component} />
+              </div>
+              <pre className="fdtd-script-preview">{fdtdBundle.script.python.split("\n").slice(0, 8).join("\n")}</pre>
+            </div>
+
+            <div className="maxwell-data-table" aria-label="L8.1 field slice import smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Imported Field Slice</h2>
+                <strong>{importedFdtd ? `${importedFdtd.fieldSlice.xCount} x ${importedFdtd.fieldSlice.zCount}` : "no import"}</strong>
+              </div>
+              {importedFdtd ? <FdtdFieldSlicePreview slice={importedFdtd.fieldSlice} /> : <div className="empty-state">No external FDTD field slice imported yet.</div>}
+            </div>
+
+            <div className="maxwell-data-table" aria-label="L8.1 FDTD flux validation smoke preview">
+              <div className="maxwell-study-list">
+                <Stat label="Imported run" value={importedFdtd?.receipt.runId ?? "none"} />
+                <Stat label="Validation" value={fdtdValidation?.status ?? "pending"} />
+                <Stat label="Imported R/T/A" value={fdtdValidation ? `${pct(fdtdValidation.imported.reflectance)} / ${pct(fdtdValidation.imported.transmittance)} / ${pct(fdtdValidation.imported.absorbance)}` : "n/a"} />
+                <Stat label="L8.0 expected R/T/A" value={fdtdValidation ? `${pct(fdtdValidation.expected.reflectance)} / ${pct(fdtdValidation.expected.transmittance)} / ${pct(fdtdValidation.expected.absorbance)}` : "n/a"} />
+                <Stat label="Energy balance" value={fdtdValidation ? `${formatCompact(fdtdValidation.energyBalance)} (${formatCompact(fdtdValidation.residuals.energyBalance)} residual)` : "n/a"} />
+                <Stat label="Report hash" value={fdtdValidation?.reportHash.slice(0, 10) ?? "n/a"} />
+              </div>
+            </div>
+
+            <div className="maxwell-data-table fdtd-wide" aria-label="L8.1 unsupported geometry warning smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>FDTD Boundary / Unsupported Geometry</h2>
+                <strong>{fdtdBundle.manifest.readiness.unsupported.length} blocked</strong>
+              </div>
+              <div className="fdtd-warning-list">
+                {fdtdBundle.manifest.readiness.unsupported.length === 0 ? (
+                  <span>No blocked geometry in the current export. Placement-only scalar elements and large grids may still emit warnings.</span>
+                ) : (
+                  fdtdBundle.manifest.readiness.unsupported.map((item) => (
+                    <span key={item.id}>
+                      <strong>{item.label}</strong> {item.reason}
+                    </span>
+                  ))
+                )}
+                {fdtdBundle.manifest.readiness.warnings.map((warning) => (
+                  <span key={`${warning.code}:${warning.elementId ?? ""}`}>
+                    <strong>{warning.code}</strong> {warning.message}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="simulation-builder-footer">
@@ -371,6 +572,28 @@ function Bar(props: { label: string; value: number }) {
   );
 }
 
+function FdtdFieldSlicePreview(props: { slice: FdtdFieldSlice }) {
+  const range = Math.max(1e-12, props.slice.maxIntensity - props.slice.minIntensity);
+  return (
+    <div
+      className="fdtd-field-map"
+      style={{ gridTemplateColumns: `repeat(${props.slice.xCount}, minmax(0, 1fr))` }}
+      aria-label="Imported FDTD field intensity map"
+    >
+      {props.slice.samples.map((sample, index) => {
+        const normalized = (sample.intensity - props.slice.minIntensity) / range;
+        return (
+          <span
+            key={`${sample.xUm}:${sample.zUm}:${index}`}
+            title={`x ${formatCompact(sample.xUm)} um, z ${formatCompact(sample.zUm)} um, I ${formatCompact(sample.intensity)}`}
+            style={{ opacity: 0.28 + normalized * 0.72 }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 function targetForKind(kind: SimulationBuilderTargetKind, zMm: number): SimulationBuilderTarget {
   if (kind === "mirror") {
     return {
@@ -423,6 +646,12 @@ function targetDisplayName(kind: SimulationBuilderTargetKind): string {
   if (kind === "mirror") return "mirror";
   if (kind === "absorbing-slab") return "absorber";
   return "transparent";
+}
+
+function fdtdReadinessLabel(status: "ready" | "warning" | "blocked"): string {
+  if (status === "blocked") return "blocked";
+  if (status === "warning") return "exportable with warnings";
+  return "exportable";
 }
 
 function formatCompact(value: number): string {

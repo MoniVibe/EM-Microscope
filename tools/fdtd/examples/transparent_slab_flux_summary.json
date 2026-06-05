@@ -1,0 +1,30 @@
+{
+  "schema": "emmicro.fdtd.fluxSummary.v1",
+  "runId": "l81-example-transparent-slab",
+  "sourceScenarioHash": "dc8f68ca2eb20de5",
+  "manifestHash": "3e49f5e56ed836c9",
+  "incidentFlux": 1,
+  "reflectedFlux": 0.04000000000000001,
+  "transmittedFlux": 0.96,
+  "absorbedFlux": 0,
+  "reflectance": 0.04000000000000001,
+  "transmittance": 0.96,
+  "absorbance": 0,
+  "energyBalance": 1,
+  "monitors": [
+    {
+      "id": "incident-flux",
+      "flux": 1
+    },
+    {
+      "id": "reflected-flux",
+      "flux": 0.04000000000000001
+    },
+    {
+      "id": "transmitted-flux",
+      "flux": 0.96
+    }
+  ],
+  "warnings": [],
+  "fluxHash": "80e85e9c22a08752"
+}

@@ -323,10 +323,14 @@ export function l76CapabilitiesMatrix(): StudyCapability[] {
     executable("detector-roundtrip-wizard", "Detector round-trip wizard", "guided board export, optional external helper output import, receipt/hash validation, ID match, diagnostic geometry fit, L7.4 session QA, and evidence-export chain"),
     executable("detector-roundtrip-acceptance-reports", "Detector round-trip acceptance reports", "diagnostic roundtrip_report.md, roundtrip_report.json, roundtrip_metrics.csv, and roundtrip_warnings.json exports over imported detector evidence"),
     scaffold("checkerboard-target-detection", "Checkerboard automatic detection", "generated/checkerboard target metadata and manual/CSV workflow remain available; robust automatic checkerboard detection is scaffold-only"),
-    scaffold("external-fdtd-export", "ExternalFdtdBackend export", "scene/result schema and Meep-style export scaffold only"),
+    executable("external-fdtd-scene-manifest-export", "External FDTD scene manifest export", "L8.1 Simulation Builder exports supported slab target scenes with readiness, geometry, material, monitor, and boundary evidence"),
+    executable("external-meep-script-export", "External Meep helper script export", "L8.1 deterministic Python helper script is exportable for optional local Meep workflows outside the browser"),
+    executable("external-fdtd-result-import", "External FDTD result import", "L8.1 imports run receipt JSON, flux summary JSON, and field-slice CSV evidence for R/T/A and field-map comparison"),
+    scaffold("external-fdtd-backend-runner", "ExternalFdtdBackend runner", "External execution remains outside the browser; in-app FDTD solving is not implemented"),
     unavailable("arbitrary-3d-material-geometry", "Arbitrary 3D material geometry"),
     unavailable("3d-maxwell-solve", "3D Maxwell solve"),
-    unavailable("fdtd-fem-bem-rcwa-execution", "FDTD/FEM/BEM/RCWA execution"),
+    unavailable("browser-fdtd-execution", "Browser FDTD execution"),
+    unavailable("fdtd-fem-bem-rcwa-execution", "In-app FDTD/FEM/BEM/RCWA execution"),
     unavailable("arbitrary-cad-geometry", "Arbitrary CAD geometry"),
     unavailable("pixel-level-sensor-stack", "Pixel-level EM sensor stack"),
     unavailable("sensor-stack-simulation", "Sensor-stack simulation"),
@@ -448,7 +452,7 @@ export function studyBundleJson(
       materialReceiptCount: study.materialReceipts.length,
       uncertaintyReceiptCount: study.uncertaintyReceipts.length,
       warningCount: study.warnings.length,
-      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, Camera/Sensor-Lite detector acquisition post-processing, EMVA-inspired diagnostic camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/geometry-fit/session-QA handoff, L7.6 external detector JSON/CSV import, receipt validation, comparison, and report exports, L7.7 optional external OpenCV ChArUco helper tooling, and L7.8 detector round-trip acceptance reports over imported evidence only; pixel-level EM sensor stacks, certified camera calibration, ISO 12233 certification, Imatest-equivalent certification, lab-accredited metrology, EMVA 1288 certification, pure lens-only MTF certification, certified lab calibration, certified metrology reports, lab accreditation workflows, calibrated optical model fitting, full 3D pose/stereo calibration, browser-native OpenCV.js/ArUco detector execution, AprilTag decoding, hardware control, 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD, digital twins, and manufacturing certification are not implemented."
+      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, Camera/Sensor-Lite detector acquisition post-processing, EMVA-inspired diagnostic camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/geometry-fit/session-QA handoff, L7.6 external detector JSON/CSV import, receipt validation, comparison, and report exports, L7.7 optional external OpenCV ChArUco helper tooling, L7.8 detector round-trip acceptance reports over imported evidence only, and L8.1 external FDTD manifest/script export plus receipt/flux/field-slice import evidence; pixel-level EM sensor stacks, certified camera calibration, ISO 12233 certification, Imatest-equivalent certification, lab-accredited metrology, EMVA 1288 certification, pure lens-only MTF certification, certified lab calibration, certified metrology reports, lab accreditation workflows, calibrated optical model fitting, full 3D pose/stereo calibration, browser-native OpenCV.js/ArUco detector execution, AprilTag decoding, hardware control, browser FDTD execution, in-app FDTD/FEM/BEM/RCWA, arbitrary 3D Maxwell/CAD solving, digital twins, and manufacturing certification are not implemented."
     },
     study,
     metricsCsv: studyMetricsCsv(study),
@@ -926,7 +930,7 @@ function unavailable(id: string, label: string): StudyCapability {
     id,
     label,
     status: "not-implemented",
-    evidence: "No executable path in L7.4.",
+    evidence: "No executable path in the current app.",
     boundary: "Must not be described as solved, simulated, certified, or executed."
   };
 }

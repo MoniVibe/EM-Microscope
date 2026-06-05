@@ -1,0 +1,27 @@
+{
+  "schema": "emmicro.fdtd.validationReport.v1",
+  "sourceScenarioHash": "dc8f68ca2eb20de5",
+  "manifestHash": "3e49f5e56ed836c9",
+  "scriptHash": "a131de2b6ba8e109",
+  "targetKind": "transparent-dielectric",
+  "expected": {
+    "reflectance": 0.04000000000000001,
+    "transmittance": 0.96,
+    "absorbance": 0
+  },
+  "imported": {
+    "reflectance": 0.04000000000000001,
+    "transmittance": 0.96,
+    "absorbance": 0
+  },
+  "residuals": {
+    "reflectance": 0,
+    "transmittance": 0,
+    "absorbance": 0,
+    "energyBalance": 0
+  },
+  "energyBalance": 1,
+  "status": "pass",
+  "warnings": [],
+  "reportHash": "981a2ca3e32c37e4"
+}

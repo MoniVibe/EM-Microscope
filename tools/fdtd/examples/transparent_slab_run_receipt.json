@@ -1,0 +1,20 @@
+{
+  "schema": "emmicro.fdtd.runReceipt.v1",
+  "runId": "l81-example-transparent-slab",
+  "sourceScenarioHash": "dc8f68ca2eb20de5",
+  "manifestHash": "3e49f5e56ed836c9",
+  "scriptHash": "a131de2b6ba8e109",
+  "tool": {
+    "name": "example-fixture",
+    "version": "emmicro.l81.fixture",
+    "postprocessorVersion": "emmicro.fdtd.postprocess.fixture.v1"
+  },
+  "createdAtIso": "2026-06-06T00:00:00.000Z",
+  "settings": {
+    "resolution": 20,
+    "until": 200,
+    "pmlThicknessUm": 0.75
+  },
+  "warnings": [],
+  "receiptHash": "5bc860cc97c73451"
+}

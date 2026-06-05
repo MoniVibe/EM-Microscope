@@ -1,0 +1,27 @@
+{
+  "schema": "emmicro.fdtd.validationReport.v1",
+  "sourceScenarioHash": "b1a3c346ded7d3c4",
+  "manifestHash": "97456226b4de4a72",
+  "scriptHash": "2cc5b1c81b043467",
+  "targetKind": "absorbing-slab",
+  "expected": {
+    "reflectance": 0,
+    "transmittance": 0.6065306597126334,
+    "absorbance": 0.3934693402873666
+  },
+  "imported": {
+    "reflectance": 0,
+    "transmittance": 0.6065306597126334,
+    "absorbance": 0.3934693402873666
+  },
+  "residuals": {
+    "reflectance": 0,
+    "transmittance": 0,
+    "absorbance": 0,
+    "energyBalance": 0
+  },
+  "energyBalance": 1,
+  "status": "pass",
+  "warnings": [],
+  "reportHash": "4239b84e88550d9d"
+}

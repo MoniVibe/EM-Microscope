@@ -1,0 +1,30 @@
+{
+  "schema": "emmicro.fdtd.fluxSummary.v1",
+  "runId": "l81-example-absorbing-slab",
+  "sourceScenarioHash": "b1a3c346ded7d3c4",
+  "manifestHash": "97456226b4de4a72",
+  "incidentFlux": 1,
+  "reflectedFlux": 0,
+  "transmittedFlux": 0.6065306597126334,
+  "absorbedFlux": 0.3934693402873666,
+  "reflectance": 0,
+  "transmittance": 0.6065306597126334,
+  "absorbance": 0.3934693402873666,
+  "energyBalance": 1,
+  "monitors": [
+    {
+      "id": "incident-flux",
+      "flux": 1
+    },
+    {
+      "id": "reflected-flux",
+      "flux": 0
+    },
+    {
+      "id": "transmitted-flux",
+      "flux": 0.6065306597126334
+    }
+  ],
+  "warnings": [],
+  "fluxHash": "b8c5d7f6e4b7baa8"
+}
