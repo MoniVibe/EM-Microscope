@@ -1,9 +1,7 @@
 async function smoke(page) {
-  const { mkdir } = await import("node:fs/promises");
-  const { resolve } = await import("node:path");
-  const url = process.env.EMMICRO_SMOKE_URL || "http://127.0.0.1:5182/";
-  const artifactDir = resolve(process.env.EMMICRO_SMOKE_ARTIFACT_DIR || "artifacts");
-  await mkdir(artifactDir, { recursive: true });
+  const currentUrl = page.url();
+  const url = currentUrl && currentUrl !== "about:blank" ? currentUrl : "http://127.0.0.1:5182/";
+  const artifactDir = ".playwright-cli";
   const consoleIssues = [];
   page.on("console", (message) => {
     if (message.type() === "error") consoleIssues.push(message.text());
@@ -74,7 +72,15 @@ async function smoke(page) {
   if (unexpectedConsoleIssues.length > 0) throw new Error(`Console errors: ${unexpectedConsoleIssues.join("; ")}`);
 
   async function expectText(text) {
-    await page.waitForFunction((expected) => document.body.innerText.includes(expected), text, { timeout: 10000 });
+    const body = page.locator("body");
+    const expectedText = text.toLowerCase();
+    const deadline = Date.now() + 10000;
+    while (Date.now() < deadline) {
+      const bodyText = await body.innerText({ timeout: 1000 }).catch(() => "");
+      if (bodyText.toLowerCase().includes(expectedText)) return;
+      await page.waitForTimeout(100);
+    }
+    throw new Error(`Expected text not found: ${text}`);
   }
 
   function step(label) {
