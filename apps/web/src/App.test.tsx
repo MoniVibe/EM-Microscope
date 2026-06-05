@@ -57,20 +57,23 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L7.6 detector bridge workflow over planar/scalar execution without claiming certified calibration, sensor-stack EM, arbitrary 3D EM, browser-native detector decoding, calibrated optical fitting, or lab metrology", () => {
+  it("labels L7.7 detector runner workflow over planar/scalar execution without claiming certified calibration, sensor-stack EM, arbitrary 3D EM, browser-native detector decoding, calibrated optical fitting, or lab metrology", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
     const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
     const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("L7.6 Real Detector Bridge / External CV Integration");
+    expect(maxwellPanel).toContain("L7.7 External Detector Runner Pack / Real Detector Bridge");
     expect(maxwellPanel).toContain("diagnostic external detector JSON/CSV import, receipt validation, detector comparison, fiducial board generation, imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA");
     expect(maxwellPanel).toContain("External Detector Bridge");
-    expect(maxwellPanel).toContain("Detector JSON import");
+    expect(maxwellPanel).toContain("OpenCV ChArUco detector JSON import");
     expect(maxwellPanel).toContain("Detector marker CSV import");
     expect(maxwellPanel).toContain("Export Board for Detector");
     expect(maxwellPanel).toContain("Load Example Detector JSON");
     expect(maxwellPanel).toContain("Load Example Detector CSV");
-    expect(maxwellPanel).toContain("Import Detector JSON");
+    expect(maxwellPanel).toContain("Import OpenCV ChArUco Detector Output");
+    expect(maxwellPanel).toContain("Detector version");
+    expect(maxwellPanel).toContain("Dictionary");
+    expect(maxwellPanel).toContain("Parameters");
     expect(maxwellPanel).toContain("Import Detector CSV");
     expect(maxwellPanel).toContain("Validate Detection");
     expect(maxwellPanel).toContain("Compare Synthetic vs Imported");
@@ -78,16 +81,16 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("Add Detector Frame to Session QA");
     expect(maxwellPanel).toContain("Export Detector Bridge Report");
     expect(maxwellPanel).toContain("Save Detector Bridge Study");
-    expect(maxwellPanel).toContain("L7.6 detector bridge import smoke preview");
-    expect(maxwellPanel).toContain("L7.6 detector receipt smoke preview");
-    expect(maxwellPanel).toContain("L7.6 detector comparison smoke preview");
-    expect(maxwellPanel).toContain("L7.6 detector fit handoff smoke preview");
-    expect(maxwellPanel).toContain("L7.6 detector session handoff smoke preview");
+    expect(maxwellPanel).toContain("L7.7 detector bridge import smoke preview");
+    expect(maxwellPanel).toContain("L7.7 detector receipt smoke preview");
+    expect(maxwellPanel).toContain("L7.7 detector comparison smoke preview");
+    expect(maxwellPanel).toContain("L7.7 detector fit handoff smoke preview");
+    expect(maxwellPanel).toContain("L7.7 detector session handoff smoke preview");
     expect(maxwellPanel).toContain("detector_bridge_report.md");
     expect(maxwellPanel).toContain("detector_bridge_report.json");
     expect(maxwellPanel).toContain("imported_detections.csv");
     expect(maxwellPanel).toContain("detector_comparison.csv");
-    expect(maxwellPanel).toContain("browser-native OpenCV ArUco detector is not implemented");
+    expect(maxwellPanel).toContain("browser-native OpenCV.js/ArUco detector execution is not implemented");
     expect(maxwellPanel).toContain("Fiducial Board / ChArUco-style Target");
     expect(maxwellPanel).toContain("Diagnostic ChArUco-style synthetic fiducial board");
     expect(maxwellPanel).toContain("not OpenCV-compatible");
@@ -122,8 +125,8 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("applyFiducialManualEdits");
     expect(maxwellPanel).toContain("l74FrameFromFiducialFit");
     expect(maxwellPanel).toContain("l76CapabilitiesMatrix");
-    expect(maxwellPanel).toContain("L7.6 external detector JSON/CSV import, detector receipt validation, comparison, and report exports are the executable scope");
-    expect(maxwellPanel).toContain("browser-native OpenCV ArUco detector execution, AprilTag decoding");
+    expect(maxwellPanel).toContain("L7.7 external detector JSON/CSV import, detector receipt validation, comparison, and report exports are the executable scope");
+    expect(maxwellPanel).toContain("browser-native OpenCV.js/ArUco detector execution, AprilTag decoding");
     expect(maxwellPanel).toContain("L7.4 Batch Measurement Session + Repeatability QA");
     expect(maxwellPanel).toContain("Batch Session Manifest");
     expect(maxwellPanel).toContain("Repeatability Thresholds");
@@ -214,7 +217,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("not ISO 12233 certification, Imatest-equivalent testing, calibrated optical model fitting");
     expect(maxwellPanel).toContain("L7.0 Slanted-Edge / Resolution Target MTF Workbench");
     expect(maxwellPanel).toContain("Import a batch manifest, normalize existing diagnostic frame metrics, aggregate repeatability and drift");
-    expect(maxwellPanel).toContain("L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/session handoff, and L7.6 external detector JSON/CSV import, detector receipt validation, comparison, and report exports are the executable scope");
+    expect(maxwellPanel).toContain("L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/session handoff, and L7.7 external detector JSON/CSV import, detector receipt validation, comparison, and report exports are the executable scope");
     expect(maxwellPanel).toContain("Generate/import slanted-edge targets, compute ESF/LSF/SFR-MTF, compare measured vs simulated MTF, and sanity-check line-pair contrast.");
     expect(maxwellPanel).toContain("Generate Slanted Edge Target");
     expect(maxwellPanel).toContain("Run Slanted-Edge MTF");
@@ -542,8 +545,8 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend + Detector Bridge");
-    expect(app).toContain("L7.6 Real Detector Bridge / External CV Integration");
+    expect(app).toContain("PlanarTmmBackend + Detector Runner");
+    expect(app).toContain("L7.7 External Detector Runner Pack / Real Detector Bridge");
     expect(app).toContain("diagnostic external detector JSON/CSV import, detector receipt validation, synthetic-vs-imported comparison, L7.5 fiducial matching/manual review, L7.2 geometry handoff, L7.4 session QA handoff");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);

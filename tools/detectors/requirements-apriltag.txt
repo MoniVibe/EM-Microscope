@@ -1,0 +1,2 @@
+# Optional future scaffold only. L7.7 does not implement AprilTag decoding.
+# Add a concrete package here only when apriltag_detect.py becomes executable.

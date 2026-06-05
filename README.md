@@ -1,8 +1,8 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L7.6 Real Detector Bridge / External CV Integration
+An EM-first light simulator MVP. The visible web app is now the L7.7 External Detector Runner Pack / Real Detector Bridge
 over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with diagnostic external
-detector JSON/CSV import, detector receipt validation, detector comparison, synthetic fiducial board generation,
+detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
 handoff, batch session manifest import, per-frame metric aggregation, repeatability
 standard deviation and coefficient-of-variation summaries,
@@ -120,10 +120,11 @@ certification system.
 
 ## Current Visible Mode
 
-- `L7.6 Real Detector Bridge / External CV Integration`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L7.7 External Detector Runner Pack / Real Detector Bridge`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
-  external detector JSON/CSV import using the canonical `emmicro.detector.v1` receipt schema, detector/image/board
-  hashes, import warnings, deterministic detector receipts, detector comparison, and exports named
+  external detector JSON/CSV import using the canonical `emmicro.detector.v1` receipt schema, optional external
+  Python/OpenCV ChArUco runner tooling under `tools/detectors/`, detector/image/board hashes, import warnings,
+  deterministic detector receipts, detector comparison, and exports named
   `detector_bridge_report.md`, `detector_bridge_report.json`, `imported_detections.csv`, and
   `detector_comparison.csv`,
   diagnostic ChArUco-style synthetic fiducial board generation, deterministic marker IDs and board coordinates,
@@ -952,13 +953,36 @@ the same matching, manual review, geometry fit, and session QA path already used
   calibration, lab-accredited metrology, full 3D pose/stereo calibration, hardware control, digital twins,
   manufacturing certification, and full 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution are not implemented.
 
+## L7.7 External Detector Runner Pack / Real Detector Bridge
+
+L7.7 turns the L7.6 import bridge into a practical external-detector workflow. The web app still does not run
+OpenCV in-browser; instead, optional scripts under `tools/detectors/` can generate OpenCV-compatible ChArUco board
+assets, detect markers/corners from local images, and emit canonical `emmicro.detector.v1` JSON/CSV for import.
+
+- `Optional OpenCV tooling`: `opencv_charuco_generate.py` writes a board PNG and
+  `emmicro.board.opencv_charuco.v1` manifest; `opencv_charuco_detect.py` reads an image and manifest, runs
+  OpenCV ChArUco detection when `opencv-contrib-python` is installed, and emits detector JSON, marker CSV, and an
+  optional overlay image.
+- `Receipts`: detector outputs preserve OpenCV version, dictionary, corner-refinement setting, runner hash, board
+  hash, image hash, detector parameters, warning messages, and import/result hashes.
+- `Fixtures`: `tools/detectors/examples/charuco_detection.json`, `charuco_marker_corners.csv`,
+  `charuco_board_manifest.json`, and `charuco_board.png` validate through the app without requiring Python/OpenCV.
+- `Web import polish`: the External Detector Bridge now labels OpenCV ChArUco detector output explicitly and shows
+  detector version, dictionary, parameter summary, marker/corner counts, and board/image hash status.
+- `Exports`: detector bridge JSON/Markdown reports and `imported_detections.csv` preserve detector name/version,
+  dictionary, board hash, image hash, and receipt status fields.
+- `Capability boundaries`: OpenCV ChArUco helper execution is optional external CLI tooling only. Browser-native
+  OpenCV.js/ArUco detector execution, AprilTag decoding, certified camera calibration, lab-accredited metrology,
+  full 3D pose/stereo calibration, hardware control, digital twins, manufacturing certification, and full 3D
+  Maxwell/FDTD/FEM/BEM/RCWA/CAD execution are not implemented.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
 - Consider an L6.x bundle hygiene pass: lazy-load heavy workbench panels/exports and split large chunks instead of
   only raising Vite's chunk warning limit.
-- Consider L7.7 detector-review hardening next: add residual-vector overlays for imported detector corners, richer
+- Consider L7.8 detector-review hardening next: add residual-vector overlays for imported detector corners, richer
   manual-review diffs, saved detector comparison studies, and stronger public Pages smoke coverage for imports,
   manual edits, saved studies, and exports.
 
