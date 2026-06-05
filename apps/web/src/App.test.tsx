@@ -57,14 +57,28 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L6.8 camera/sensor-lite acquisition over planar/scalar execution without claiming certified calibration, sensor-stack EM, or arbitrary 3D EM", () => {
+  it("labels L6.9 camera calibration over planar/scalar execution without claiming certified calibration, sensor-stack EM, or arbitrary 3D EM", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
     const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
     const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
-    expect(maxwellPanel).toContain("L6.8 Camera/Sensor-Lite Acquisition Workbench");
-    expect(maxwellPanel).toContain("camera/sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines");
-    expect(maxwellPanel).toContain("PlanarTmmBackend, scalar validation, diagnostic measured comparison, and detector acquisition post-processing are the executable scope");
+    expect(maxwellPanel).toContain("L6.9 Camera Calibration / Photon-Transfer Workbench");
+    expect(maxwellPanel).toContain("camera calibration, sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines");
+    expect(maxwellPanel).toContain("PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, and EMVA-inspired camera calibration are the executable scope");
+    expect(maxwellPanel).toContain("Camera Calibration Workbench");
+    expect(maxwellPanel).toContain("This is an EMVA-inspired diagnostic calibration workflow.");
+    expect(maxwellPanel).toContain("It is not an EMVA 1288 certification, ISO-certified calibration, lab-accredited camera characterization, sensor-stack EM, digital twin, or full 3D Maxwell/FDTD/FEM/BEM/RCWA execution.");
+    expect(maxwellPanel).toContain("Calibration CSV summary");
+    expect(maxwellPanel).toContain("Load Example Calibration CSV");
+    expect(maxwellPanel).toContain("Load Example With photons_per_pixel");
+    expect(maxwellPanel).toContain("Import Calibration CSV");
+    expect(maxwellPanel).toContain("Run Photon-Transfer Fit");
+    expect(maxwellPanel).toContain("Apply Calibrated Camera Profile");
+    expect(maxwellPanel).toContain("Export Calibration Bundle");
+    expect(maxwellPanel).toContain("Save Calibration Study");
+    expect(maxwellPanel).toContain("Effective QE");
+    expect(maxwellPanel).toContain("Residual RMS / max");
+    expect(maxwellPanel).toContain("Linearity / SNR mismatch");
     expect(maxwellPanel).toContain("Camera / Sensor-Lite");
     expect(maxwellPanel).toContain("Convert selected simulated optical intensity into photons, electrons, DN, SNR, saturation, histogram, and line-profile evidence.");
     expect(maxwellPanel).toContain("Camera/Sensor-Lite converts an existing simulated intensity map into synthetic detector readout");
@@ -192,7 +206,10 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("3D Maxwell solve");
     expect(maxwellPanel).toContain("not-implemented");
     expect(maxwellPanel).toContain("scaffold-only");
-    expect(maxwellPanel).toContain("l68CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("l69CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("runCameraCalibration");
+    expect(maxwellPanel).toContain("parseCameraCalibrationCsv");
+    expect(maxwellPanel).toContain("cameraCalibrationReportBundleJson");
     expect(maxwellPanel).toContain("runCameraSensorLite");
     expect(maxwellPanel).toContain("cameraReportBundleJson");
     expect(maxwellPanel).toContain("cameraRunToMeasuredDataset");
@@ -356,9 +373,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend + Camera/Sensor-Lite");
-    expect(app).toContain("L6.8 Camera/Sensor-Lite Acquisition Workbench");
-    expect(app).toContain("deterministic camera acquisition, diagnostic measured comparison, executable planar backend, saved studies, sweeps, measurements, comparisons, capabilities matrix, study bundle exports");
+    expect(app).toContain("PlanarTmmBackend + Camera Calibration");
+    expect(app).toContain("L6.9 Camera Calibration / Photon-Transfer Workbench");
+    expect(app).toContain("diagnostic photon-transfer calibration, deterministic camera acquisition, diagnostic measured comparison, executable planar backend, saved studies, sweeps, measurements, comparisons, capabilities matrix, study bundle exports");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

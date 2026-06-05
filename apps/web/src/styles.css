@@ -825,7 +825,8 @@ h2 {
 }
 
 .maxwell-measured-panel,
-.maxwell-camera-panel {
+.maxwell-camera-panel,
+.maxwell-camera-calibration-panel {
   grid-column: 1 / -1;
 }
 
@@ -849,6 +850,91 @@ h2 {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 11px;
   line-height: 1.45;
+}
+
+.maxwell-calibration-textarea {
+  min-height: 132px;
+}
+
+.maxwell-calibration-table {
+  display: grid;
+  gap: 2px;
+  overflow: hidden;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+}
+
+.maxwell-calibration-table div {
+  display: grid;
+  grid-template-columns: 0.8fr 1fr 1fr 1fr 1fr;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  padding: 6px 8px;
+  background: #f8fafc;
+  color: #445168;
+  font-size: 11px;
+}
+
+.maxwell-calibration-table div:first-child {
+  background: #eef3f8;
+  color: #263244;
+}
+
+.maxwell-calibration-table span,
+.maxwell-calibration-table strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.maxwell-calibration-curves,
+.maxwell-calibration-residuals {
+  display: grid;
+  align-items: end;
+  gap: 2px;
+  height: 70px;
+  padding: 6px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.maxwell-calibration-curves {
+  grid-template-columns: repeat(32, minmax(3px, 1fr));
+}
+
+.maxwell-calibration-curves span {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 1px;
+  height: 100%;
+}
+
+.maxwell-calibration-curves i,
+.maxwell-calibration-curves b,
+.maxwell-calibration-residuals i {
+  display: block;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+
+.maxwell-calibration-curves i {
+  background: #3a6ea5;
+}
+
+.maxwell-calibration-curves b {
+  background: #607d3b;
+}
+
+.maxwell-calibration-residuals {
+  grid-template-columns: repeat(32, minmax(3px, 1fr));
+}
+
+.maxwell-calibration-residuals i {
+  background: #a65f3a;
 }
 
 .maxwell-residual-preview {
