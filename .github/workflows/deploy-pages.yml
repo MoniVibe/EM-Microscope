@@ -16,10 +16,6 @@ permissions:
   pages: write
   id-token: write
 
-env:
-  # Force JavaScript actions that have not published a Node 24 major yet to run on Node 24.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -65,4 +61,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
