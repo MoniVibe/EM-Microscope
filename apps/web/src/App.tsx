@@ -263,13 +263,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L6.8 Camera/Sensor-Lite Acquisition Workbench</p>
+            <p>L6.9 Camera Calibration / Photon-Transfer Workbench</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>PlanarTmmBackend + Camera/Sensor-Lite</span>
-          <strong>deterministic camera acquisition, diagnostic measured comparison, executable planar backend, saved studies, sweeps, measurements, comparisons, capabilities matrix, study bundle exports</strong>
+          <span>PlanarTmmBackend + Camera Calibration</span>
+          <strong>diagnostic photon-transfer calibration, deterministic camera acquisition, diagnostic measured comparison, executable planar backend, saved studies, sweeps, measurements, comparisons, capabilities matrix, study bundle exports</strong>
         </div>
       </header>
 

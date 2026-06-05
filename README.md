@@ -1,9 +1,11 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.8 Camera/Sensor-Lite Acquisition Workbench over
-the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with deterministic detector
-acquisition post-processing, photons/electrons/DN conversion, shot/read/dark noise modes, saturation/SNR/histogram
-metrics, measured CSV/image import, calibration/ROI controls, residual metrics, deterministic diagnostic fitting,
+An EM-first light simulator MVP. The visible web app is now the L6.9 Camera Calibration / Photon-Transfer Workbench over
+the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with diagnostic dark/flat/exposure
+CSV import, deterministic calibration data hashes, photon-transfer-style sensor-lite fitting, fitted camera profiles,
+measured-vs-simulated camera residuals, calibration report bundles, deterministic detector acquisition
+post-processing, photons/electrons/DN conversion, shot/read/dark noise modes, saturation/SNR/histogram metrics,
+measured CSV/image import, calibration/ROI controls, residual metrics, deterministic diagnostic fitting,
 report bundles, guided optical-bench terminology, saved studies, parameter sweeps, measurement markers, run comparison, a capabilities matrix,
 self-contained study bundle exports/imports, a scalar double-slit coherence demonstrator, ideal thin-lens focal-plane
 validation, an accessible explainability layer, circular-aperture, long-slit, and double-slit scalar diffraction
@@ -56,6 +58,12 @@ L6.8 adds a Camera/Sensor-Lite acquisition workbench that converts existing simu
 synthetic detector readout with pixel pitch, QE, exposure, photon flux scale, full well, shot/read/dark noise,
 gain, black level, ADC bit depth, deterministic seed, SNR/saturation/histogram/profile metrics, camera report
 exports, study integration, and synthetic-camera handoff into the measured-vs-simulated comparison workflow.
+L6.9 adds a Camera Calibration / Photon-Transfer workbench that imports dark/flat/exposure summary CSV data, hashes
+the source and parsed rows, estimates black level, dark current, conversion gain, read noise, full well/saturation,
+linearity, SNR, dynamic range, and effective QE only when known photons-per-pixel data is supplied, then compares
+measured camera curves against a fitted L6.8-compatible camera profile with residual exports and an apply-to-camera
+control. It is EMVA-inspired diagnostic characterization only, not EMVA 1288 certification or certified lab
+calibration.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, stochastic source engine, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, certified calibration system, or manufacturing
@@ -63,7 +71,7 @@ certification system.
 
 ## Current Visible Mode
 
-- `L6.8 Camera/Sensor-Lite Acquisition Workbench`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L6.9 Camera Calibration / Photon-Transfer Workbench`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -83,6 +91,11 @@ certification system.
   measured CSV profile import, PNG/JPEG image-centerline import, calibration/ROI/normalization controls,
   measured-vs-simulated residual metrics, deterministic bounded shift/scale/background diagnostic fitting,
   comparison-study save, and comparison report JSON/Markdown/CSV exports,
+  Camera Calibration Workbench controls for dark/flat/exposure summary CSV import, example datasets with or without
+  known `photons_per_pixel`, deterministic source/data hashes, photon-transfer fit, fitted black level, conversion
+  gain, read noise, dark current, full-well/saturation, linearly range diagnostics, SNR/dynamic-range metrics,
+  QE reporting only when calibrated photon input is present, measured-vs-simulated camera curves, residual curves,
+  apply-to-camera-profile, calibration-study save, and calibration JSON/Markdown/CSV bundle exports,
   Camera/Sensor-Lite acquisition controls for pixel pitch, sensor width/height, QE, exposure, photon flux scale,
   full well, read noise, dark current, ADC bit depth, conversion gain, black level, deterministic seed, and
   noiseless/shot/shot+read/shot+read+dark modes; it shows synthetic raw DN preview, histogram, before/after line
@@ -90,7 +103,7 @@ certification system.
   camera report exports, study save, and synthetic-camera send-to-measured comparison,
   Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
   formula/snippet panels, Explain mode highlighting, and a searchable explanation drawer,
-  and strict limitations against arbitrary 3D EM, certified calibration, EMVA compliance, digital-twin, pixel-level
+  and strict limitations against arbitrary 3D EM, EMVA 1288 certification, certified lab calibration, digital-twin, pixel-level
   sensor-stack EM, or stochastic source-engine claims.
 
 ## L2 Validation Fixture
@@ -664,14 +677,47 @@ determinism by seed, all noise modes, SNR/saturation/quantization warnings, came
 handoff into measured comparison, and capability-boundary rows for camera acquisition versus unavailable
 pixel-level sensor stacks and certified EMVA characterization.
 
+## L6.9 Camera Calibration / Photon-Transfer Workbench
+
+L6.9 is a measurement-driven diagnostic layer over L6.8 Camera/Sensor-Lite. It imports summary measurements from
+dark frames, flat frames, and exposure sweeps, then estimates an L6.8-compatible camera profile and compares
+measured camera behavior against the fitted simulation curve.
+
+- `Calibration import`: accepts summary CSV rows with `frame_type`, `exposure_ms`, `mean_dn`, `variance_dn2`,
+  optional `photons_per_pixel`, optional `temperature_c`, and notes. The importer validates required columns,
+  skips malformed rows with warnings, preserves source names, and hashes both source text and normalized data.
+- `Photon-transfer diagnostics`: estimates black level, dark offset vs exposure, dark current, read noise,
+  variance-vs-mean conversion gain, full well/saturation, linearity error, SNR curve, and dynamic range.
+- `QE identifiability`: effective QE is estimated only when calibrated `photons_per_pixel` input is present. Without
+  photon input, the report explicitly states that QE cannot be estimated.
+- `Fitted camera profile`: reports pixel pitch, QE if identifiable, full well, read noise, dark current,
+  DN/e- gain, e-/DN conversion gain, black level, ADC bit depth, and saturation DN, and can apply those values back
+  into the Camera/Sensor-Lite controls.
+- `Measured-vs-simulated camera comparison`: exports measured/simulated mean DN, variance, SNR, residual RMS,
+  max residual, linearity error, SNR mismatch, and saturation mismatch.
+- `Study and export integration`: calibration studies save fitted profiles, data hashes, assumptions, warnings,
+  residual profiles, and limitations. Calibration exports include `camera_calibration_report.json`,
+  `camera_calibration_report.md`, `camera_calibration_metrics.csv`, `camera_photon_transfer.csv`,
+  `camera_residuals.csv`, and warnings JSON.
+
+This is an EMVA-inspired diagnostic workflow only. It is not EMVA 1288 certification, ISO-certified calibration,
+lab-accredited camera characterization, hardware control, raw frame-stack metrology, pixel-level charge transport,
+sensor-stack electromagnetic absorption, digital twin calibration, manufacturing certification, or full 3D
+Maxwell/FDTD/FEM/BEM/RCWA execution.
+
+The L6.9 tests cover calibration CSV import, deterministic hashes, missing-column validation, sparse/saturated data
+warnings, black-level/dark-current/read-noise/gain/full-well estimates, QE identifiability, measured-vs-simulated
+residuals, Markdown/JSON/CSV exports, study capability boundaries, and L6.8 camera regression coverage.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
 - Consider an L6.x bundle hygiene pass: lazy-load heavy workbench panels/exports and split large chunks instead of
   only raising Vite's chunk warning limit.
-- Delay real 3D work until an external solver proof-of-life can ingest the L6.0 scene/export scaffold and return
-  auditable field data with clear capability receipts.
+- Consider L7.0 Slanted-edge / Resolution Target MTF Workbench next: ISO-12233-inspired diagnostic SFR/MTF,
+  line-pair contrast, sampling/Nyquist warnings, and sensor-resolution metrics over the calibrated L6.9 camera
+  profile, without claiming certified ISO 12233 testing.
 
 ## Local Development
 

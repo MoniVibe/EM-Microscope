@@ -56,6 +56,7 @@ export type StudyMode =
   | "validation.advisor-review"
   | "measured.comparison"
   | "camera.sensor-lite"
+  | "camera.calibration"
   | "coating.planar-stack"
   | "coating.optimizer"
   | "coating.robust-optimizer";
@@ -64,7 +65,7 @@ export type StudySnapshotInput = {
   id?: string;
   name: string;
   mode: StudyMode;
-  selectedWorkbench: "validation-bench" | "coating-stack-workbench" | "advisor-review" | "measured-vs-simulated" | "camera-sensor-lite";
+  selectedWorkbench: "validation-bench" | "coating-stack-workbench" | "advisor-review" | "measured-vs-simulated" | "camera-sensor-lite" | "camera-calibration";
   inputs: unknown;
   appState?: unknown;
   backendReceipt: unknown;
@@ -80,7 +81,7 @@ export type StudySnapshotInput = {
 
 export type StudySnapshot = Required<Omit<StudySnapshotInput, "id" | "materialReceipts" | "uncertaintyReceipts" | "profiles" | "createdAtIso">> & {
   schema: "emmicro.studySnapshot.v1";
-  type: "l66PracticalStudy" | "l67PracticalStudy" | "l68PracticalStudy";
+  type: "l66PracticalStudy" | "l67PracticalStudy" | "l68PracticalStudy" | "l69PracticalStudy";
   id: string;
   createdAtIso: string;
   materialReceipts: unknown[];
@@ -111,6 +112,7 @@ export type StudyBundle = {
   comparison?: StudyComparisonResult;
   measuredComparison?: unknown;
   cameraRun?: unknown;
+  calibrationRun?: unknown;
   sweep?: PracticalSweepResult;
 };
 
@@ -231,7 +233,7 @@ export type StudyComparisonResult = {
   resultHash: string;
 };
 
-export function l68CapabilitiesMatrix(): StudyCapability[] {
+export function l69CapabilitiesMatrix(): StudyCapability[] {
   return [
     executable("planar-tmm-backend", "PlanarTmmBackend", "registered Maxwell backend executing 1D planar transfer-matrix coating stacks"),
     executable("coating-stack-optimizer", "Coating Stack Optimizer", "deterministic local material/order/thickness search over planar TMM runs"),
@@ -243,25 +245,32 @@ export function l68CapabilitiesMatrix(): StudyCapability[] {
     executable("coherence-demo", "Coherence scalar demo", "scalar double-slit gamma12 interference-term demonstrator"),
     executable("measured-vs-simulated-workbench", "Measured-vs-Simulated Workbench", "diagnostic profile/image-centerline comparison against existing scalar validation or planar TMM outputs"),
     executable("camera-sensor-lite-acquisition", "Camera/Sensor-Lite acquisition", "deterministic detector/acquisition post-process converting existing optical intensity to photons, electrons, DN, SNR, saturation, histogram, and profile metrics"),
+    executable("camera-calibration-diagnostics", "Camera calibration diagnostics", "EMVA-inspired photon-transfer diagnostic import, fitting, residual, and report workflow over summary measurements"),
     scaffold("external-fdtd-export", "ExternalFdtdBackend export", "scene/result schema and Meep-style export scaffold only"),
     unavailable("3d-maxwell-solve", "3D Maxwell solve"),
     unavailable("fdtd-fem-bem-rcwa-execution", "FDTD/FEM/BEM/RCWA execution"),
     unavailable("arbitrary-cad-geometry", "Arbitrary CAD geometry"),
     unavailable("pixel-level-sensor-stack", "Pixel-level EM sensor stack"),
     unavailable("sensor-stack-simulation", "Sensor-stack simulation"),
+    unavailable("emva-1288-certification", "EMVA 1288 certification"),
     unavailable("certified-emva-characterization", "Certified EMVA 1288 characterization"),
+    unavailable("certified-lab-calibration", "Certified lab calibration"),
     unavailable("material-uncertainty", "Material uncertainty"),
     unavailable("digital-twin-calibration", "Digital twin calibration"),
     unavailable("manufacturing-certification", "Manufacturing certification")
   ];
 }
 
+export function l68CapabilitiesMatrix(): StudyCapability[] {
+  return l69CapabilitiesMatrix();
+}
+
 export function l67CapabilitiesMatrix(): StudyCapability[] {
-  return l68CapabilitiesMatrix();
+  return l69CapabilitiesMatrix();
 }
 
 export function l66CapabilitiesMatrix(): StudyCapability[] {
-  return l68CapabilitiesMatrix();
+  return l69CapabilitiesMatrix();
 }
 
 export function capabilitiesMarkdown(capabilities: StudyCapability[] = l66CapabilitiesMatrix()): string {
@@ -283,7 +292,7 @@ export function createStudySnapshot(input: StudySnapshotInput): StudySnapshot {
   const createdAtIso = input.createdAtIso ?? new Date().toISOString();
   const base = {
     schema: "emmicro.studySnapshot.v1" as const,
-    type: "l68PracticalStudy" as const,
+    type: "l69PracticalStudy" as const,
     id: input.id ?? slugId(input.name),
     name: input.name,
     mode: input.mode,
@@ -299,25 +308,25 @@ export function createStudySnapshot(input: StudySnapshotInput): StudySnapshot {
     profiles: input.profiles ?? {},
     warnings: [...input.warnings],
     limitations: [...input.limitations],
-    capabilities: l68CapabilitiesMatrix()
+    capabilities: l69CapabilitiesMatrix()
   };
   const resultHash = fnv1a64(stableStringify(studyForHash(base)));
   return { ...base, resultHash };
 }
 
-export function studyBundleJson(study: StudySnapshot, options: { sweep?: PracticalSweepResult; comparison?: StudyComparisonResult; measuredComparison?: unknown; cameraRun?: unknown } = {}): StudyBundle {
+export function studyBundleJson(study: StudySnapshot, options: { sweep?: PracticalSweepResult; comparison?: StudyComparisonResult; measuredComparison?: unknown; cameraRun?: unknown; calibrationRun?: unknown } = {}): StudyBundle {
   return {
     schema: "emmicro.studyBundle.v1",
-    appVersion: "L6.8 Camera/Sensor-Lite Acquisition Workbench",
+    appVersion: "L6.9 Camera Calibration / Photon-Transfer Workbench",
     manifest: {
-      appVersion: "L6.8",
+      appVersion: "L6.9",
       studyHash: study.resultHash,
       resultHashes: [...study.resultHashes],
       backendReceipt: study.backendReceipt,
       materialReceiptCount: study.materialReceipts.length,
       uncertaintyReceiptCount: study.uncertaintyReceipts.length,
       warningCount: study.warnings.length,
-      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, and Camera/Sensor-Lite detector acquisition post-processing only; pixel-level EM sensor stacks, certified EMVA characterization, certified calibration, 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD, digital twins, and manufacturing certification are not implemented."
+      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, Camera/Sensor-Lite detector acquisition post-processing, and EMVA-inspired diagnostic camera calibration only; pixel-level EM sensor stacks, EMVA 1288 certification, certified lab calibration, 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD, digital twins, and manufacturing certification are not implemented."
     },
     study,
     metricsCsv: studyMetricsCsv(study),
@@ -327,6 +336,7 @@ export function studyBundleJson(study: StudySnapshot, options: { sweep?: Practic
     comparison: options.comparison,
     measuredComparison: options.measuredComparison,
     cameraRun: options.cameraRun,
+    calibrationRun: options.calibrationRun,
     sweep: options.sweep
   };
 }
@@ -757,7 +767,7 @@ function executable(id: string, label: string, evidence: string): StudyCapabilit
     label,
     status: "executable",
     evidence,
-    boundary: "Executable in the current app, within scalar-validation or planar-TMM scope only."
+    boundary: "Executable in the current app, within scalar-validation, planar-TMM, measured-comparison, detector-acquisition, or diagnostic calibration scope only."
   };
 }
 
@@ -776,7 +786,7 @@ function unavailable(id: string, label: string): StudyCapability {
     id,
     label,
     status: "not-implemented",
-    evidence: "No executable path in L6.8.",
+    evidence: "No executable path in L6.9.",
     boundary: "Must not be described as solved, simulated, certified, or executed."
   };
 }
