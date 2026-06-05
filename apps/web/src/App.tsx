@@ -105,6 +105,7 @@ import { ImageImportPanel } from "./measurement/ImageImportPanel";
 import { residualMapToPngDataUrl } from "./measurement/ResidualView";
 import { RoiPanel } from "./measurement/RoiPanel";
 import { MaxwellPanel } from "./maxwell/MaxwellPanel";
+import { SimulationBuilderPanel } from "./maxwell/SimulationBuilderPanel";
 import { MtfPanel } from "./metrics/MtfPanel";
 import { ResolutionTargetPanel } from "./metrics/ResolutionTargetPanel";
 import { ReportPanel } from "./report/ReportPanel";
@@ -256,6 +257,8 @@ function downloadText(filename: string, mime: string, text: string): void {
 }
 
 function MaxwellOnlyApp() {
+  const [visibleMode, setVisibleMode] = useState<"builder" | "diagnostics">("builder");
+
   return (
     <div className="app-shell maxwell-only-shell">
       <header className="topbar maxwell-only-topbar">
@@ -263,19 +266,27 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge</p>
+            <p>L8.0 Sequential Simulation Builder / L7.8 Detector Round Trip</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>PlanarTmmBackend + Detector Round Trip</span>
-          <strong>diagnostic detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, detector receipt and hash validation, synthetic-vs-imported comparison, L7.5 fiducial matching/manual review, L7.2 geometry handoff, L7.4 session QA handoff, round-trip evidence exports, session reports, measured target image ROI handling, dot-grid blob detection, confidence reports, geometric target generation/import, pixel-scale and distortion fitting, focus sweep MTF, slanted-edge SFR/MTF diagnostics, diagnostic photon-transfer calibration, deterministic camera acquisition, executable planar backend, saved studies, sweeps, capabilities matrix, study bundle exports</strong>
+          <span>Simulation Builder + PlanarTmmBackend</span>
+          <strong>ordered grid/source/elements/target/compute/validate workflow, transparent dielectric Fresnel check, ideal mirror check, absorbing slab Beer-Lambert check, z-axis placement, capability tags, validation exports, and existing L7.8 detector round-trip diagnostics</strong>
+        </div>
+        <div className="top-actions simulation-mode-actions" aria-label="Top-level workflow mode">
+          <button type="button" className={visibleMode === "builder" ? "active" : ""} onClick={() => setVisibleMode("builder")}>
+            Simulation Builder
+          </button>
+          <button type="button" className={visibleMode === "diagnostics" ? "active" : ""} onClick={() => setVisibleMode("diagnostics")}>
+            Diagnostic Workbenches
+          </button>
         </div>
       </header>
 
       <main className="maxwell-only-workspace" aria-label="Maxwell simulator">
         <div className="maxwell-only-main">
-          <MaxwellPanel />
+          {visibleMode === "builder" ? <SimulationBuilderPanel /> : <MaxwellPanel />}
         </div>
       </main>
     </div>

@@ -1,7 +1,11 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge
-over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with diagnostic external
+An EM-first light simulator MVP. The visible web app is now the L8.0 Sequential Simulation Builder over the existing
+Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
+Real Detector Bridge. L8.0 adds an ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+workflow, optical-axis placement, transparent dielectric Fresnel validation, ideal mirror validation, absorbing slab
+Beer-Lambert validation, scenario/report exports, and a milestone trail that states iteration count is not validation.
+The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
 handoff, round-trip evidence exports, batch session manifest import, per-frame metric aggregation, repeatability
@@ -119,6 +123,24 @@ simulator, adjoint optimizer, topology optimizer, digital twin, certified calibr
 certification system.
 
 ## Current Visible Mode
+
+- `L8.0 Sequential Optical Bench + Surface Interaction Validation`: a top-level Simulation Builder workflow that
+  follows `Grid -> Source -> Elements -> Target / Material -> Compute -> Validate`. It lets users define domain
+  units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
+  of apertures, ideal lenses, planar material interfaces/slabs, mirrors, and absorbers. The optical-axis diagram shows
+  the source, every placed element, target, and observation plane with z positions and capability tags. The executable
+  material cases are deliberately limited and checkable:
+  - transparent dielectric interface/slab: PlanarTmmBackend/Fresnel normal-incidence R/T/A validation, including the
+    default air-to-glass R ~= 4 percent and R+T+A energy balance;
+  - reflective surface: ideal mirror/PEC-like analytic check with R ~= 1 and T ~= 0;
+  - absorbing slab: Beer-Lambert attenuation check where transmission decreases with thickness and residuals are
+    reported against `I = I0 exp(-alpha d)`.
+
+  L8.0 exports `simulation_builder_scenario.json`, `validation_report.md`, `validation_report.json`, and
+  `validation_metrics.csv`. It also adds a "What has been added since first review?" milestone panel and explicitly
+  states that iteration count is not validation. Boundary: this is limited ordered optical-bench validation only, not
+  arbitrary 3D material geometry, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, finite-thickness
+  metal aperture Maxwell solving, sensor-stack EM, digital twin behavior, or manufacturing certification.
 
 - `L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with

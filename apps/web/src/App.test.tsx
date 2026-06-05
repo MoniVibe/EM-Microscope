@@ -549,15 +549,38 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented|certified metrology report executable|lab accreditation workflow executable|hardware control implemented|AprilTag detector executable|ArUco detector executable/i);
   });
 
-  it("keeps the visible app shell Maxwell-only", () => {
+  it("keeps the visible app shell focused on L8.0 Simulation Builder with L7.8 diagnostics still reachable", () => {
     const app = readFileSync(resolve(testDir, "App.tsx"), "utf8");
+    const simulationBuilder = readFileSync(resolve(testDir, "maxwell/SimulationBuilderPanel.tsx"), "utf8");
     const maxwellReturn = app.indexOf("return <MaxwellOnlyApp />;");
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend + Detector Round Trip");
-    expect(app).toContain("L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge");
-    expect(app).toContain("diagnostic detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, detector receipt and hash validation, synthetic-vs-imported comparison, L7.5 fiducial matching/manual review, L7.2 geometry handoff, L7.4 session QA handoff");
+    expect(app).toContain("L8.0 Sequential Simulation Builder / L7.8 Detector Round Trip");
+    expect(app).toContain("Simulation Builder + PlanarTmmBackend");
+    expect(app).toContain("ordered grid/source/elements/target/compute/validate workflow");
+    expect(app).toContain("Diagnostic Workbenches");
+    expect(app).toContain("<SimulationBuilderPanel />");
+    expect(app).toContain("<MaxwellPanel />");
+    expect(simulationBuilder).toContain("L8.0 Sequential Optical Bench + Surface Interaction Validation");
+    expect(simulationBuilder).toContain("Simulation Builder");
+    expect(simulationBuilder).toContain("1 Grid");
+    expect(simulationBuilder).toContain("2 Source");
+    expect(simulationBuilder).toContain("3 Elements");
+    expect(simulationBuilder).toContain("4 Target / Material");
+    expect(simulationBuilder).toContain("5 Compute");
+    expect(simulationBuilder).toContain("6 Validate");
+    expect(simulationBuilder).toContain("L8.0 optical-axis diagram smoke preview");
+    expect(simulationBuilder).toContain("L8.0 surface validation smoke preview");
+    expect(simulationBuilder).toContain("simulation_builder_scenario.json");
+    expect(simulationBuilder).toContain("validation_report.md");
+    expect(simulationBuilder).toContain("validation_report.json");
+    expect(simulationBuilder).toContain("validation_metrics.csv");
+    expect(simulationBuilder).toContain("Iteration count is not validation.");
+    expect(simulationBuilder).toContain("arbitrary 3D Maxwell material geometry");
+    expect(simulationBuilder).toContain("FDTD/FEM/BEM/RCWA execution");
+    expect(simulationBuilder).toContain("manufacturing certification");
+    expect(simulationBuilder).not.toMatch(/full 3D Maxwell execution is implemented|FDTD execution is available|digital twin certified|manufacturing certification available/i);
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });
