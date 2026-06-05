@@ -33,3 +33,12 @@ Validates a manifest and script pair, checks whether Meep is importable, and wri
 Validates a receipt, a flux summary, and a field-slice CSV, then writes a compact import bundle summary for the web UI.
 
 Both scripts use only the Python standard library unless you choose to execute Meep yourself.
+
+`l81_browser_smoke_code.js`
+
+Playwright CLI smoke helper for the L8.1 panel. Open the target URL first; the helper runs against the current page and writes screenshots under `.playwright-cli/`:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
+npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l81_browser_smoke_code.js
+```
