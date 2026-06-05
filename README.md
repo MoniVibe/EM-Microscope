@@ -1,8 +1,10 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L7.4 Batch Measurement Session + Repeatability QA
-workbench over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with batch session
-manifest import, per-frame metric aggregation, repeatability standard deviation and coefficient-of-variation summaries,
+An EM-first light simulator MVP. The visible web app is now the L7.5 Fiducial Board / ChArUco-style Target Workflow
+over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with diagnostic synthetic
+fiducial board generation, imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry
+handoff, L7.4 session QA handoff, batch session manifest import, per-frame metric aggregation, repeatability
+standard deviation and coefficient-of-variation summaries,
 drift slopes, threshold-controlled outlier review, session report exports, measured target
 image import, generated-target image handoff, numeric ROI controls, auto/manual dot-grid thresholding, polarity
 selection, connected-component blob detection, grid matching, manual point move/reject/accept/add/delete correction,
@@ -100,8 +102,9 @@ L7.3 adds Measured Target Detection and ROI Hardening over L7.2: generated or im
 as measured grayscale frames, cropped by ROI, auto-thresholded or manually thresholded, polarity-classified, segmented
 with connected-component blob detection, matched to grid rows/columns and world coordinates, manually corrected, fit
 through the L7.2 geometry models, and exported as `detected_points.csv`, `rejected_points.csv`,
-`detection_report.md`, and `detection_report.json`. Checkerboard automatic detection is scaffold-only, and AprilTag/
-ArUco fiducial detection is not implemented.
+`detection_report.md`, and `detection_report.json`. Checkerboard automatic detection is scaffold-only in L7.3; L7.5
+adds diagnostic fiducial matching from synthetic/imported detections, but real OpenCV ArUco/ChArUco marker decoding
+and AprilTag decoding are not implemented.
 L7.4 adds Batch Measurement Session + Repeatability QA over L6.8-L7.3 diagnostic results: a session manifest imports
 frame/source metadata, existing camera/geometric/MTF/detection results can be normalized into per-frame metrics,
 deterministic aggregates compute mean/std/min/max/CV/repeatability and drift slopes, thresholds flag low MTF50,
@@ -116,8 +119,13 @@ certification system.
 
 ## Current Visible Mode
 
-- `L7.4 Batch Measurement Session + Repeatability QA`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L7.5 Fiducial Board / ChArUco-style Target Workflow`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
+  diagnostic ChArUco-style synthetic fiducial board generation, deterministic marker IDs and board coordinates,
+  synthetic clean-board detections, JSON detection import, ID-to-board matching, partial-view coverage warnings,
+  manual marker accept/reject/move/relabel correction, L7.2 similarity/affine/radial geometry-fit handoff, L7.4
+  `fiducial_board` session QA handoff, and exports named `board_manifest.json`,
+  `fiducial_detection_report.md`, `fiducial_detection_report.json`, `matched_points.csv`, and `rejected_points.csv`,
   batch session manifest import, deterministic synthetic/example frame rows, per-frame metric normalization from
   existing camera/geometric/MTF/detection results, aggregate repeatability metrics, drift slopes versus frame/focus/
   exposure/temperature, threshold controls, outlier tables, trend previews, session QA reports,
@@ -887,15 +895,40 @@ It remains diagnostic batch QA over existing L6.8-L7.3 metrics, not a certified 
   sensor-stack EM, full 3D pose/stereo, AprilTag/ArUco detection, and full 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution
   are not implemented.
 
+## L7.5 Fiducial Board / ChArUco-style Target Workflow
+
+L7.5 adds a diagnostic fiducial-board workflow on top of the L7.2 geometry and L7.4 session QA layers without
+claiming real detector decoding or certified calibration. The default board is a deterministic ChArUco-style
+synthetic target for internal diagnostics; it is not OpenCV-compatible ArUco/ChArUco marker encoding.
+
+- `Board generation`: creates deterministic marker IDs, marker/world coordinates, ChArUco-style corner IDs, a
+  synthetic preview image, manifest hashes, and `board_manifest.json` exports.
+- `Detection import and synthetic smoke data`: supports deterministic synthetic clean-board detections plus JSON
+  detection import. Core also validates marker-corner CSV and ChArUco-style corner CSV imports with duplicate-ID and
+  missing-column errors.
+- `Matching and QA`: matches marker and ChArUco-style corner IDs to board coordinates, reports marker coverage,
+  ChArUco corner coverage, board-area coverage, covered quadrants, missing IDs, duplicate IDs, and partial-view/radial
+  coverage warnings.
+- `Manual correction`: accepts/rejects markers, moves marker corners, and relabels markers before re-matching and
+  refitting.
+- `Geometry and session handoff`: matched points feed existing L7.2 similarity/affine/radial diagnostic fits, and
+  L7.5 fit results can be inserted into L7.4 session QA as `fiducial_board` frames.
+- `Exports and study integration`: exports `fiducial_detection_report.md`,
+  `fiducial_detection_report.json`, `matched_points.csv`, `rejected_points.csv`, and study bundles with L7.5
+  capability boundaries.
+- `Capability boundaries`: real OpenCV ArUco/ChArUco marker decoding, AprilTag decoding, certified camera
+  calibration, lab-accredited metrology, hardware control, full 3D pose/stereo calibration, digital twins,
+  manufacturing certification, and full 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution are not implemented.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
 - Consider an L6.x bundle hygiene pass: lazy-load heavy workbench panels/exports and split large chunks instead of
   only raising Vite's chunk warning limit.
-- Consider L7.5 target/session hardening next: drag handles for ROI, residual-vector overlays directly on measured
-  images, richer checkerboard detection, optional ChArUco/fiducial research spikes kept behind capability boundaries,
-  and stronger public Pages smoke coverage for imports, manual edits, saved studies, and exports.
+- Consider L7.6 detector-bridge hardening next: keep the current diagnostic parser/matcher, but add optional
+  externally supplied OpenCV/AprilTag result adapters, richer CSV import modes in the UI, residual-vector overlays on
+  measured images, and stronger public Pages smoke coverage for imports, manual edits, saved studies, and exports.
 
 ## Local Development
 

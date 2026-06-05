@@ -35,7 +35,7 @@ import {
   compareMeasuredToSimulatedProfile,
   createMeasuredProfileFromImagePixels,
   importMaterialPackage,
-  l74CapabilitiesMatrix,
+  l75CapabilitiesMatrix,
   l69ExampleCalibrationCsv,
   linePairContrastCsv,
   measuredComparisonBundleJson,
@@ -56,18 +56,27 @@ import {
   defaultL71QualificationSpec,
   distortionMapCsv,
   fieldMtfMapCsv,
+  fiducialBoardManifestJson,
+  fiducialDetectionReportJson,
+  fiducialDetectionReportMarkdown,
+  fiducialMatchedPointsCsv,
+  fiducialRejectedPointsCsv,
+  fitFiducialBoardDetection,
   fitGeometricCalibration,
   fitGridCsv,
   finalizeFocusSweep,
   focusFieldComparisonCsv,
   focusSweepCsv,
+  generateFiducialBoard,
   generateGeometricCalibrationTarget,
+  generateSyntheticFiducialDetection,
   geometricCalibrationReportJson,
   geometricCalibrationReportMarkdown,
   geometricComparisonCsv,
   geometricPointsCsv,
   geometricResidualsCsv,
   applyDetectionManualEdits,
+  applyFiducialManualEdits,
   attachGeometryFitMetricsToDetection,
   defaultL73Roi,
   detectMeasuredTargetPoints,
@@ -75,6 +84,7 @@ import {
   detectionReportJson,
   detectionReportMarkdown,
   normalizeTargetImage,
+  matchFiducialBoardDetection,
   pointSetFromDetection,
   rejectedPointsCsv,
   targetImageFromGeometricTarget,
@@ -85,11 +95,13 @@ import {
   l74FrameFromCameraRun,
   l74FrameFromDetection,
   l74FrameFromFieldMap,
+  l74FrameFromFiducialFit,
   l74FrameFromFocusSweep,
   l74FrameFromGeometricFit,
   l74FrameFromMtf,
   l74SyntheticFramesFromManifest,
   outliersCsv,
+  parseFiducialDetectionJson,
   parseL74SessionManifestCsv,
   runL74SessionQa,
   sessionMetricsCsv,
@@ -205,6 +217,10 @@ import {
   type L74SessionFrame,
   type L74SessionQaResult,
   type L74SessionThresholds,
+  type L75FiducialBoard,
+  type L75FiducialDetectionBundle,
+  type L75FiducialFitResult,
+  type L75FiducialMatchResult,
   type SlantedEdgeMtfResult,
   type PlanarFieldMonitorResult,
   type PracticalSweepFamily,
@@ -353,7 +369,7 @@ export function MaxwellPanel() {
   const [coherenceSlitWidthUm, setCoherenceSlitWidthUm] = useState(20);
   const [coherenceSlitSeparationUm, setCoherenceSlitSeparationUm] = useState(100);
   const [coherencePropagationDistanceM, setCoherencePropagationDistanceM] = useState(1);
-  const [studyName, setStudyName] = useState("L7.2 working study");
+  const [studyName, setStudyName] = useState("L7.5 fiducial working study");
   const [savedStudies, setSavedStudies] = useState<StudySnapshot[]>([]);
   const [selectedStudyId, setSelectedStudyId] = useState<string>("");
   const [studyStatus, setStudyStatus] = useState("No study saved yet.");
@@ -467,6 +483,18 @@ export function MaxwellPanel() {
   const [l74MinDetectionCoverage, setL74MinDetectionCoverage] = useState(0.95);
   const [l74MaxZScore, setL74MaxZScore] = useState(2.5);
   const [l74SessionQa, setL74SessionQa] = useState<L74SessionQaResult | null>(null);
+  const [l75SquaresX, setL75SquaresX] = useState(7);
+  const [l75SquaresY, setL75SquaresY] = useState(5);
+  const [l75SquareSizeMm, setL75SquareSizeMm] = useState(10);
+  const [l75MarkerSizeFraction, setL75MarkerSizeFraction] = useState(0.65);
+  const [l75DroppedMarkerModulo, setL75DroppedMarkerModulo] = useState(4);
+  const [l75NoisePx, setL75NoisePx] = useState(0.02);
+  const [l75DetectionJsonText, setL75DetectionJsonText] = useState(exampleL75DetectionJson());
+  const [l75Board, setL75Board] = useState<L75FiducialBoard | null>(null);
+  const [l75Detection, setL75Detection] = useState<L75FiducialDetectionBundle | null>(null);
+  const [l75Match, setL75Match] = useState<L75FiducialMatchResult | null>(null);
+  const [l75Fit, setL75Fit] = useState<L75FiducialFitResult | null>(null);
+  const [l75SelectedMarkerId, setL75SelectedMarkerId] = useState("");
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -634,7 +662,7 @@ export function MaxwellPanel() {
       ]),
     [foundry, materialAudit, materialCatalog, materialImport, robustResult, run, searchResult, yieldAnalysis]
   );
-  const capabilities = useMemo(() => l74CapabilitiesMatrix(), []);
+  const capabilities = useMemo(() => l75CapabilitiesMatrix(), []);
   const selectedStudy = savedStudies.find((study) => study.id === selectedStudyId) ?? null;
   const studyRunSummaries = useMemo<StudyRunSummary[]>(
     () =>
@@ -2067,6 +2095,258 @@ export function MaxwellPanel() {
     );
   }
 
+  function generateL75Board(): L75FiducialBoard {
+    const board = generateFiducialBoard({
+      id: `l75-board-${Date.now().toString(36)}`,
+      label: "L7.5 diagnostic ChArUco-style synthetic fiducial board",
+      squaresX: Math.round(clamp(l75SquaresX, 3, 20)),
+      squaresY: Math.round(clamp(l75SquaresY, 3, 20)),
+      squareSizeMm: clamp(l75SquareSizeMm, 0.1, 1000),
+      markerSizeFraction: clamp(l75MarkerSizeFraction, 0.2, 0.95),
+      imageWidthPx: 560,
+      imageHeightPx: 400,
+      marginPx: 28
+    });
+    setL75Board(board);
+    setL75Detection(null);
+    setL75Match(null);
+    setL75Fit(null);
+    setL75SelectedMarkerId(board.markers[0]?.id.toString() ?? "");
+    setStudyStatus(`Generated L7.5 fiducial board: ${board.markers.length} markers / ${board.charucoCorners.length} ChArUco-style corners / ${board.resultHash.slice(0, 10)}.`);
+    return board;
+  }
+
+  function createL75SyntheticDetectionForBoard(board: L75FiducialBoard): L75FiducialDetectionBundle {
+    const droppedMarkerModulo = Math.round(clamp(l75DroppedMarkerModulo, 0, 50));
+    return generateSyntheticFiducialDetection(board, {
+      id: `l75-detection-${Date.now().toString(36)}`,
+      label: "L7.5 synthetic clean-board fiducial detections",
+      droppedMarkerModulo: droppedMarkerModulo >= 2 ? droppedMarkerModulo : undefined,
+      includeCharucoCorners: true,
+      noisePx: clamp(l75NoisePx, 0, 20)
+    });
+  }
+
+  function generateL75SyntheticDetections(): L75FiducialDetectionBundle {
+    const board = l75Board ?? generateL75Board();
+    const detection = createL75SyntheticDetectionForBoard(board);
+    setL75Detection(detection);
+    setL75Match(null);
+    setL75Fit(null);
+    setL75SelectedMarkerId(detection.markers[0]?.id.toString() ?? "");
+    setStudyStatus(`Generated L7.5 synthetic detections: ${detection.markers.length} markers / ${detection.charucoCorners.length} ChArUco-style corners.`);
+    return detection;
+  }
+
+  function loadExampleL75DetectionJson(): void {
+    setL75DetectionJsonText(exampleL75DetectionJson());
+    setStudyStatus("Loaded L7.5 example fiducial detection JSON.");
+  }
+
+  function importL75DetectionJson(): L75FiducialDetectionBundle | null {
+    try {
+      const detection = parseFiducialDetectionJson(l75DetectionJsonText, {
+        id: `l75-imported-detection-${Date.now().toString(36)}`,
+        label: "L7.5 imported fiducial detection JSON"
+      });
+      setL75Detection(detection);
+      setL75Match(null);
+      setL75Fit(null);
+      setL75SelectedMarkerId(detection.markers[0]?.id.toString() ?? "");
+      setStudyStatus(`Imported L7.5 fiducial JSON: ${detection.markers.length} markers / ${detection.charucoCorners.length} ChArUco-style corners.`);
+      return detection;
+    } catch (error) {
+      setStudyStatus(`L7.5 fiducial JSON import failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function matchL75FiducialIds(): L75FiducialMatchResult | null {
+    try {
+      const board = l75Board ?? generateL75Board();
+      const detection = l75Detection ?? createL75SyntheticDetectionForBoard(board);
+      if (!l75Detection) {
+        setL75Detection(detection);
+        setL75SelectedMarkerId(detection.markers[0]?.id.toString() ?? "");
+      }
+      const match = matchFiducialBoardDetection({
+        id: `l75-fiducial-match-${Date.now().toString(36)}`,
+        label: "L7.5 diagnostic fiducial ID match",
+        board,
+        detection
+      });
+      setL75Match(match);
+      setL75Fit(null);
+      setL72ImportedPointSet(match.pointSet);
+      setL72Fit(null);
+      setL72Comparison(null);
+      setStudyStatus(`Matched L7.5 fiducial IDs: ${match.matchedPointCount} points / coverage ${match.coverageScore.toPrecision(4)} / missing ${match.missingMarkerIds.length}.`);
+      return match;
+    } catch (error) {
+      setStudyStatus(`L7.5 fiducial matching failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function runL75FiducialFit(model: L72FitModel = l72FitModel): L75FiducialFitResult | null {
+    try {
+      const board = l75Board ?? generateL75Board();
+      const detection = l75Detection ?? createL75SyntheticDetectionForBoard(board);
+      if (!l75Detection) {
+        setL75Detection(detection);
+        setL75SelectedMarkerId(detection.markers[0]?.id.toString() ?? "");
+      }
+      const result = fitFiducialBoardDetection({
+        id: `l75-fiducial-fit-${Date.now().toString(36)}`,
+        label: `L7.5 fiducial ${model} geometry handoff`,
+        board,
+        detection,
+        model
+      });
+      setL75Fit(result);
+      setL75Match(result.match);
+      setL72FitModel(model);
+      setL72ImportedPointSet(result.match.pointSet);
+      setL72Fit(result.fit);
+      setL72Comparison(null);
+      setStudyStatus(`L7.5 fiducial ${model} fit ${result.status.toUpperCase()}: ${result.match.matchedPointCount} matched points${result.fit ? ` / RMS ${result.fit.metrics.rmsResidualPx.toPrecision(4)} px` : ""}.`);
+      return result;
+    } catch (error) {
+      setStudyStatus(`L7.5 fiducial fit failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function applyL75ManualEdits(edits: Parameters<typeof applyFiducialManualEdits>[1]): L75FiducialDetectionBundle | null {
+    const detection = l75Detection ?? generateL75SyntheticDetections();
+    const updated = applyFiducialManualEdits(detection, edits);
+    setL75Detection(updated);
+    setL75Match(null);
+    setL75Fit(null);
+    setL72Fit(null);
+    setL72Comparison(null);
+    setL75SelectedMarkerId(selectedL75Marker(updated, l75SelectedMarkerId)?.id.toString() ?? updated.markers[0]?.id.toString() ?? "");
+    setStudyStatus(`Applied L7.5 manual fiducial edits: ${updated.markers.filter((marker) => marker.status === "accepted").length} accepted markers / ${updated.markers.filter((marker) => marker.status === "rejected").length} rejected.`);
+    return updated;
+  }
+
+  function rejectSelectedL75Marker(): void {
+    const detection = l75Detection ?? generateL75SyntheticDetections();
+    const marker = selectedL75Marker(detection, l75SelectedMarkerId);
+    if (!marker) {
+      setStudyStatus("Generate or import L7.5 detections before rejecting a marker.");
+      return;
+    }
+    applyL75ManualEdits([{ type: "reject-marker", id: marker.id, reason: "manual marker rejection" }]);
+  }
+
+  function acceptSelectedL75Marker(): void {
+    const detection = l75Detection;
+    const marker = selectedL75Marker(detection, l75SelectedMarkerId);
+    if (!detection || !marker) {
+      setStudyStatus("Select a rejected L7.5 marker before accepting it.");
+      return;
+    }
+    applyL75ManualEdits([{ type: "accept-marker", id: marker.id }]);
+  }
+
+  function moveSelectedL75Corner(): void {
+    const detection = l75Detection ?? generateL75SyntheticDetections();
+    const marker = selectedL75Marker(detection, l75SelectedMarkerId);
+    if (!marker) {
+      setStudyStatus("Generate or import L7.5 detections before moving a marker corner.");
+      return;
+    }
+    const corner = marker.cornersPx[0];
+    applyL75ManualEdits([{ type: "move-marker-corner", id: marker.id, cornerIndex: 0, xPx: corner.xPx + 1.2, yPx: corner.yPx + 0.6 }]);
+  }
+
+  function relabelSelectedL75Marker(): void {
+    const board = l75Board ?? generateL75Board();
+    const detection = l75Detection ?? generateL75SyntheticDetections();
+    const marker = selectedL75Marker(detection, l75SelectedMarkerId);
+    if (!marker) {
+      setStudyStatus("Generate or import L7.5 detections before relabeling a marker.");
+      return;
+    }
+    const usedIds = new Set(detection.markers.map((candidate) => candidate.id));
+    const missingBoardMarker = board.markers.find((candidate) => !usedIds.has(candidate.id));
+    applyL75ManualEdits([{ type: "relabel-marker", id: marker.id, nextId: missingBoardMarker?.id ?? marker.id + 1000 }]);
+  }
+
+  function exportL75FiducialBundle(): void {
+    const board = l75Board ?? generateL75Board();
+    const detection = l75Detection ?? generateL75SyntheticDetections();
+    const result = l75Fit ?? runL75FiducialFit("similarity");
+    if (!result) return;
+    downloadText("board_manifest.json", "application/json", fiducialBoardManifestJson(board));
+    downloadText("fiducial_detection_report.md", "text/markdown", fiducialDetectionReportMarkdown(result));
+    downloadText("fiducial_detection_report.json", "application/json", fiducialDetectionReportJson(result));
+    downloadText("matched_points.csv", "text/csv", fiducialMatchedPointsCsv(result));
+    downloadText("rejected_points.csv", "text/csv", fiducialRejectedPointsCsv(detection));
+    setStudyStatus("Exported L7.5 fiducial board bundle.");
+  }
+
+  function addL75FiducialToSessionQa(): L74SessionQaResult | null {
+    const result = l75Fit ?? runL75FiducialFit("similarity");
+    if (!result) return null;
+    try {
+      const manifestText = "frame_id,type,path_or_name,notes\nfid_001,fiducial_board,l75-fiducial-detection.json,L7.5 fiducial board handoff";
+      const manifest = parseL74SessionManifestCsv(manifestText);
+      const frame = l74FrameFromFiducialFit(manifest.rows[0]!, result);
+      const session = runL74SessionQa({
+        id: `l75-fiducial-session-qa-${Date.now().toString(36)}`,
+        label: "L7.5 fiducial session QA handoff",
+        manifestHash: manifest.manifestHash,
+        frames: [frame],
+        thresholds: l74Thresholds(),
+        warnings: manifest.warnings
+      });
+      setL74ManifestText(manifestText);
+      setL74SessionQa(session);
+      setStudyStatus(`Added L7.5 fiducial frame to L7.4 session QA: ${session.status.toUpperCase()} / ${session.aggregates.length} aggregate metrics.`);
+      return session;
+    } catch (error) {
+      setStudyStatus(`L7.5 fiducial session handoff failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function saveL75FiducialStudy(): void {
+    const board = l75Board ?? generateL75Board();
+    const detection = l75Detection ?? generateL75SyntheticDetections();
+    const result = l75Fit ?? runL75FiducialFit("similarity");
+    if (!result) return;
+    saveStudy(
+      createStudySnapshot({
+        id: `l75-fiducial-study-${Date.now().toString(36)}`,
+        name: "L7.5 fiducial board diagnostic study",
+        mode: "image-quality.fiducial-board",
+        selectedWorkbench: "fiducial-board",
+        inputs: {
+          board: board.settings,
+          detection,
+          match: result.match,
+          fit: result.fit
+        },
+        appState: currentAppState(),
+        backendReceipt: {
+          label: "L7.5 Fiducial Board / ChArUco-style Target Workflow",
+          availability: "executable",
+          scope: "diagnostic synthetic fiducial board generation, imported/synthetic detection matching, manual correction, L7.2 geometry handoff, and L7.4 session QA handoff only; not OpenCV-compatible ArUco/ChArUco marker decoding, AprilTag decoding, certified camera calibration, hardware control, full 3D pose/stereo calibration, digital twin, manufacturing certification, or 3D Maxwell"
+        },
+        resultHashes: [board.resultHash, detection.resultHash, result.match.resultHash, result.fit?.resultHash, result.resultHash].filter(Boolean) as string[],
+        metrics: l75StudyMetrics(result),
+        profiles: {
+          matchedPoints: result.match.matchedPoints.map((point, index) => ({ xM: index, intensity: point.xPx, label: point.id })),
+          residuals: result.fit?.residuals.map((residual, index) => ({ xM: index, intensity: residual.residualPx, label: residual.pointId })) ?? []
+        },
+        warnings: [...board.warnings, ...detection.warnings, ...result.match.warnings, ...result.warnings, ...(result.fit?.warnings ?? [])],
+        limitations: result.limitations
+      })
+    );
+  }
+
   function l74Thresholds(): L74SessionThresholds {
     return defaultL74Thresholds({
       maxGeometricRmsResidualPx: l74MaxGeometricRmsResidualPx,
@@ -2091,6 +2371,7 @@ export function MaxwellPanel() {
     return rows.map((row, index) => {
       if ((row.type === "dot_grid" || row.type === "target_detection") && l73Detection) return l74FrameFromDetection(row, l73Detection);
       if ((row.type === "dot_grid" || row.type === "point_csv" || row.type === "geometric_fit") && l72Fit) return l74FrameFromGeometricFit(row, l72Fit);
+      if (row.type === "fiducial_board" && l75Fit) return l74FrameFromFiducialFit(row, l75Fit);
       if (row.type === "slanted_edge" && mtfRun) return l74FrameFromMtf(row, mtfRun);
       if (row.type === "focus_sweep_mtf" && l71FocusSweepRun) return l74FrameFromFocusSweep(row, l71FocusSweepRun);
       if (row.type === "field_mtf_map" && l71FieldMapRun) return l74FrameFromFieldMap(row, l71FieldMapRun);
@@ -2597,6 +2878,19 @@ export function MaxwellPanel() {
         maxAllowedWarningCount: l74MaxAllowedWarningCount,
         minDetectionCoverage: l74MinDetectionCoverage,
         maxZScore: l74MaxZScore
+      },
+      fiducialBoard: {
+        squaresX: l75SquaresX,
+        squaresY: l75SquaresY,
+        squareSizeMm: l75SquareSizeMm,
+        markerSizeFraction: l75MarkerSizeFraction,
+        droppedMarkerModulo: l75DroppedMarkerModulo,
+        noisePx: l75NoisePx,
+        boardHash: l75Board?.resultHash ?? null,
+        detectionHash: l75Detection?.sourceHash ?? null,
+        matchHash: l75Match?.resultHash ?? null,
+        fitHash: l75Fit?.resultHash ?? null,
+        selectedMarkerId: l75SelectedMarkerId
       }
     };
   }
@@ -2845,11 +3139,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.4 Batch Measurement Session + Repeatability QA">
-      <h2>L7.4 Batch Measurement Session + Repeatability QA</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.5 Fiducial Board / ChArUco-style Target Workflow">
+      <h2>L7.5 Fiducial Board / ChArUco-style Target Workflow</h2>
       <div className="l2-disclosure">
-        <strong>batch session manifest import, per-frame metric aggregation, repeatability/drift/outlier QA, session reports, measured target ROI handling, geometric calibration, focus/field MTF, camera diagnostics, saved studies, capabilities, and exports over the existing planar/scalar engines</strong>
-        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, and L7.4 diagnostic batch measurement session QA/repeatability aggregation are the executable scope; this is not pixel-level sensor-stack EM, certified camera calibration, certified metrology reports, lab-accredited metrology, lab accreditation workflows, hardware control, full 3D pose/stereo calibration, AprilTag/ArUco fiducial detection, a digital twin, manufacturing certification, or 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution</span>
+        <strong>diagnostic fiducial board generation, imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA, measured target ROI handling, focus/field MTF, camera diagnostics, saved studies, capabilities, and exports over the existing planar/scalar engines</strong>
+        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, and L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/session handoff are the executable scope; this is not pixel-level sensor-stack EM, certified camera calibration, certified metrology reports, lab-accredited metrology, lab accreditation workflows, hardware control, full 3D pose/stereo calibration, real OpenCV ArUco/ChArUco marker decoding, AprilTag decoding, a digital twin, manufacturing certification, or 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -2899,7 +3193,10 @@ export function MaxwellPanel() {
             l73Detection,
             l72Fit,
             l72Comparison,
-            l74SessionQa
+            l74SessionQa,
+            l75Board,
+            l75Detection,
+            l75Fit
           )
         }
         onImportBundle={importStudyBundleFile}
@@ -3107,6 +3404,40 @@ export function MaxwellPanel() {
         onRunDetectionFit={runL73GeometryFit}
         onExportDetection={exportL73DetectionBundle}
         onSaveDetectionStudy={saveL73DetectionStudy}
+        fiducialBoard={l75Board}
+        fiducialDetection={l75Detection}
+        fiducialMatch={l75Match}
+        fiducialFit={l75Fit}
+        fiducialSquaresX={l75SquaresX}
+        setFiducialSquaresX={setL75SquaresX}
+        fiducialSquaresY={l75SquaresY}
+        setFiducialSquaresY={setL75SquaresY}
+        fiducialSquareSizeMm={l75SquareSizeMm}
+        setFiducialSquareSizeMm={setL75SquareSizeMm}
+        fiducialMarkerSizeFraction={l75MarkerSizeFraction}
+        setFiducialMarkerSizeFraction={setL75MarkerSizeFraction}
+        fiducialDroppedMarkerModulo={l75DroppedMarkerModulo}
+        setFiducialDroppedMarkerModulo={setL75DroppedMarkerModulo}
+        fiducialNoisePx={l75NoisePx}
+        setFiducialNoisePx={setL75NoisePx}
+        fiducialDetectionJsonText={l75DetectionJsonText}
+        setFiducialDetectionJsonText={setL75DetectionJsonText}
+        selectedFiducialMarkerId={l75SelectedMarkerId}
+        setSelectedFiducialMarkerId={setL75SelectedMarkerId}
+        onGenerateFiducialBoard={generateL75Board}
+        onGenerateFiducialDetection={generateL75SyntheticDetections}
+        onLoadFiducialDetectionExample={loadExampleL75DetectionJson}
+        onImportFiducialDetectionJson={importL75DetectionJson}
+        onMatchFiducialIds={matchL75FiducialIds}
+        onRunFiducialFit={runL75FiducialFit}
+        onRejectFiducialMarker={rejectSelectedL75Marker}
+        onAcceptFiducialMarker={acceptSelectedL75Marker}
+        onMoveFiducialCorner={moveSelectedL75Corner}
+        onRelabelFiducialMarker={relabelSelectedL75Marker}
+        onExportFiducialBundle={exportL75FiducialBundle}
+        onAddFiducialToSession={addL75FiducialToSessionQa}
+        onSaveFiducialStudy={saveL75FiducialStudy}
+        sessionQa={l74SessionQa}
       />
 
       <FocusFieldMtfQualificationPanel
@@ -4605,7 +4936,41 @@ function GeometricCalibrationWorkbenchPanel({
   onDeleteSelectedPoint,
   onRunDetectionFit,
   onExportDetection,
-  onSaveDetectionStudy
+  onSaveDetectionStudy,
+  fiducialBoard,
+  fiducialDetection,
+  fiducialMatch,
+  fiducialFit,
+  fiducialSquaresX,
+  setFiducialSquaresX,
+  fiducialSquaresY,
+  setFiducialSquaresY,
+  fiducialSquareSizeMm,
+  setFiducialSquareSizeMm,
+  fiducialMarkerSizeFraction,
+  setFiducialMarkerSizeFraction,
+  fiducialDroppedMarkerModulo,
+  setFiducialDroppedMarkerModulo,
+  fiducialNoisePx,
+  setFiducialNoisePx,
+  fiducialDetectionJsonText,
+  setFiducialDetectionJsonText,
+  selectedFiducialMarkerId,
+  setSelectedFiducialMarkerId,
+  onGenerateFiducialBoard,
+  onGenerateFiducialDetection,
+  onLoadFiducialDetectionExample,
+  onImportFiducialDetectionJson,
+  onMatchFiducialIds,
+  onRunFiducialFit,
+  onRejectFiducialMarker,
+  onAcceptFiducialMarker,
+  onMoveFiducialCorner,
+  onRelabelFiducialMarker,
+  onExportFiducialBundle,
+  onAddFiducialToSession,
+  onSaveFiducialStudy,
+  sessionQa
 }: {
   targetKind: L72TargetKind;
   setTargetKind: (value: L72TargetKind) => void;
@@ -4682,6 +5047,40 @@ function GeometricCalibrationWorkbenchPanel({
   onRunDetectionFit: (model?: L72FitModel) => void;
   onExportDetection: () => void;
   onSaveDetectionStudy: () => void;
+  fiducialBoard: L75FiducialBoard | null;
+  fiducialDetection: L75FiducialDetectionBundle | null;
+  fiducialMatch: L75FiducialMatchResult | null;
+  fiducialFit: L75FiducialFitResult | null;
+  fiducialSquaresX: number;
+  setFiducialSquaresX: (value: number) => void;
+  fiducialSquaresY: number;
+  setFiducialSquaresY: (value: number) => void;
+  fiducialSquareSizeMm: number;
+  setFiducialSquareSizeMm: (value: number) => void;
+  fiducialMarkerSizeFraction: number;
+  setFiducialMarkerSizeFraction: (value: number) => void;
+  fiducialDroppedMarkerModulo: number;
+  setFiducialDroppedMarkerModulo: (value: number) => void;
+  fiducialNoisePx: number;
+  setFiducialNoisePx: (value: number) => void;
+  fiducialDetectionJsonText: string;
+  setFiducialDetectionJsonText: (value: string) => void;
+  selectedFiducialMarkerId: string;
+  setSelectedFiducialMarkerId: (value: string) => void;
+  onGenerateFiducialBoard: () => void;
+  onGenerateFiducialDetection: () => void;
+  onLoadFiducialDetectionExample: () => void;
+  onImportFiducialDetectionJson: () => void;
+  onMatchFiducialIds: () => void;
+  onRunFiducialFit: (model?: L72FitModel) => void;
+  onRejectFiducialMarker: () => void;
+  onAcceptFiducialMarker: () => void;
+  onMoveFiducialCorner: () => void;
+  onRelabelFiducialMarker: () => void;
+  onExportFiducialBundle: () => void;
+  onAddFiducialToSession: () => void;
+  onSaveFiducialStudy: () => void;
+  sessionQa: L74SessionQaResult | null;
 }) {
   const activePoints = importedPointSet?.points ?? target?.points ?? [];
   const activeWidthPx = target?.image.widthPx ?? widthPx;
@@ -4699,6 +5098,18 @@ function GeometricCalibrationWorkbenchPanel({
   const detectionPoints = detection ? [...detection.points, ...detection.rejectedPoints] : [];
   const selectedPoint = detectionPoints.find((point) => point.id === selectedPointId) ?? detectionPoints[0] ?? null;
   const targetImagePreview = targetImage ? l73ImagePreviewCells(targetImage, 44, 30) : null;
+  const fiducialBoardWidthUm = fiducialBoard ? fiducialBoard.settings.squaresX * fiducialBoard.settings.squareSizeMm * 1000 : fiducialSquaresX * fiducialSquareSizeMm * 1000;
+  const fiducialBoardHeightUm = fiducialBoard ? fiducialBoard.settings.squaresY * fiducialBoard.settings.squareSizeMm * 1000 : fiducialSquaresY * fiducialSquareSizeMm * 1000;
+  const fiducialPreviewWidthPx = fiducialBoard?.image.widthPx ?? 560;
+  const fiducialPreviewHeightPx = fiducialBoard?.image.heightPx ?? 400;
+  const selectedFiducialMarker = selectedL75Marker(fiducialDetection, selectedFiducialMarkerId);
+  const fiducialVisibleMarkers = fiducialDetection?.markers ?? [];
+  const fiducialDetectionPreview = fiducialVisibleMarkers.slice(0, 140).map((marker) => {
+    const center = marker.cornersPx.reduce((acc, corner) => ({ xPx: acc.xPx + corner.xPx / 4, yPx: acc.yPx + corner.yPx / 4 }), { xPx: 0, yPx: 0 });
+    return { id: marker.id, status: marker.status, xPx: center.xPx, yPx: center.yPx };
+  });
+  const fiducialCoverage = fiducialFit?.match ?? fiducialMatch;
+  const fiducialExportNames = ["board_manifest.json", "fiducial_detection_report.md", "fiducial_detection_report.json", "matched_points.csv", "rejected_points.csv"];
 
   return (
     <div className="maxwell-study-card maxwell-l72-panel" aria-label="L7.3 Measured Target Detection and ROI Hardening">
@@ -4712,6 +5123,156 @@ function GeometricCalibrationWorkbenchPanel({
       </div>
 
       <div className="maxwell-workspace-grid">
+        <div className="maxwell-workspace-panel maxwell-l75-panel" aria-label="L7.5 Fiducial Board / ChArUco-style Target Workflow">
+          <div className="maxwell-section-heading">
+            <h2>L7.5 Fiducial Board / ChArUco-style Target Workflow</h2>
+            <strong>{fiducialBoard ? `${fiducialBoard.markers.length} markers` : "generate board"}</strong>
+          </div>
+          <div className="l2-disclosure">
+            <strong>Fiducial Board / ChArUco-style Target</strong>
+            <span>Diagnostic ChArUco-style synthetic fiducial board generation, imported/synthetic detection matching, manual correction, L7.2 geometry handoff, and L7.4 session QA handoff only; the default board is not OpenCV-compatible and AprilTag decoding is not implemented.</span>
+          </div>
+          <div className="maxwell-study-controls">
+            <NumberField label="Squares X" value={fiducialSquaresX} min={3} max={20} step={1} onChange={(value) => setFiducialSquaresX(Math.round(clamp(value, 3, 20)))} />
+            <NumberField label="Squares Y" value={fiducialSquaresY} min={3} max={20} step={1} onChange={(value) => setFiducialSquaresY(Math.round(clamp(value, 3, 20)))} />
+            <NumberField label="Square size" value={fiducialSquareSizeMm} unit="mm" min={0.1} max={1000} step={0.1} onChange={setFiducialSquareSizeMm} />
+            <NumberField label="Marker fraction" value={fiducialMarkerSizeFraction} min={0.2} max={0.95} step={0.01} onChange={setFiducialMarkerSizeFraction} />
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onGenerateFiducialBoard}><Sparkles size={15} /><span>Generate Fiducial Board</span></button>
+            <button type="button" onClick={onGenerateFiducialDetection}><ShieldCheck size={15} /><span>Generate Synthetic Detections</span></button>
+          </div>
+          <div
+            className="maxwell-l75-board-preview"
+            aria-label="L7.5 fiducial board generator smoke preview"
+            style={{ aspectRatio: `${Math.max(1, fiducialPreviewWidthPx)} / ${Math.max(1, fiducialPreviewHeightPx)}` }}
+          >
+            {fiducialBoard ? (
+              fiducialBoard.markers.slice(0, 160).map((marker) => (
+                <i
+                  key={marker.id}
+                  title={`marker ${marker.id}`}
+                  style={{
+                    left: `${clamp(((marker.centerWorldUm.xWorldUm + fiducialBoardWidthUm / 2) / Math.max(1, fiducialBoardWidthUm)) * 100, 0, 100)}%`,
+                    top: `${clamp(((marker.centerWorldUm.yWorldUm + fiducialBoardHeightUm / 2) / Math.max(1, fiducialBoardHeightUm)) * 100, 0, 100)}%`
+                  }}
+                >
+                  <span>{marker.id}</span>
+                </i>
+              ))
+            ) : (
+              <span>Generate a diagnostic board to preview marker IDs and board coordinates.</span>
+            )}
+          </div>
+        </div>
+
+        <div className="maxwell-workspace-panel maxwell-l75-panel" aria-label="L7.5 fiducial detection import and match">
+          <div className="maxwell-section-heading">
+            <h2>Fiducial Detection Import + Match</h2>
+            <strong>{fiducialDetection ? `${fiducialDetection.markers.length} markers` : "pending"}</strong>
+          </div>
+          <div className="maxwell-study-controls">
+            <NumberField label="Drop every Nth marker" value={fiducialDroppedMarkerModulo} min={0} max={50} step={1} onChange={(value) => setFiducialDroppedMarkerModulo(Math.round(clamp(value, 0, 50)))} />
+            <NumberField label="Synthetic noise" value={fiducialNoisePx} unit="px" min={0} max={20} step={0.01} onChange={setFiducialNoisePx} />
+            <label className="field-row">
+              <span>Selected marker</span>
+              <select value={selectedFiducialMarker?.id.toString() ?? ""} onChange={(event) => setSelectedFiducialMarkerId(event.currentTarget.value)}>
+                <option value="">none</option>
+                {fiducialVisibleMarkers.slice(0, 180).map((marker) => (
+                  <option key={`${marker.id}-${marker.status}`} value={marker.id.toString()}>{marker.id} {marker.status}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className="maxwell-measured-textarea-label">
+            <span>Detection JSON import</span>
+            <textarea
+              className="maxwell-measured-textarea maxwell-l75-textarea"
+              value={fiducialDetectionJsonText}
+              spellCheck={false}
+              onChange={(event) => setFiducialDetectionJsonText(event.currentTarget.value)}
+              aria-label="L7.5 fiducial detection JSON"
+            />
+          </label>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onLoadFiducialDetectionExample}><Sparkles size={15} /><span>Load Example Fiducial JSON</span></button>
+            <button type="button" onClick={onImportFiducialDetectionJson}><Upload size={15} /><span>Import Fiducial JSON</span></button>
+            <button type="button" onClick={onMatchFiducialIds}><ShieldCheck size={15} /><span>Match Fiducial IDs</span></button>
+          </div>
+          <div
+            className="maxwell-l75-detection-preview"
+            aria-label="L7.5 fiducial detection overlay smoke preview"
+            style={{ aspectRatio: `${Math.max(1, fiducialPreviewWidthPx)} / ${Math.max(1, fiducialPreviewHeightPx)}` }}
+          >
+            {fiducialDetectionPreview.length ? (
+              fiducialDetectionPreview.map((marker) => (
+                <i
+                  key={`${marker.id}-${marker.status}`}
+                  className={`${marker.status}${marker.id.toString() === selectedFiducialMarkerId ? " selected" : ""}`}
+                  title={`marker ${marker.id}: ${marker.status}`}
+                  style={{
+                    left: `${clamp((marker.xPx / Math.max(1, fiducialPreviewWidthPx)) * 100, 0, 100)}%`,
+                    top: `${clamp((marker.yPx / Math.max(1, fiducialPreviewHeightPx)) * 100, 0, 100)}%`
+                  }}
+                >
+                  {marker.id}
+                </i>
+              ))
+            ) : (
+              <span>Generate synthetic detections or import detector JSON to preview marker overlays.</span>
+            )}
+          </div>
+        </div>
+
+        <div className="maxwell-workspace-panel maxwell-l75-panel" aria-label="L7.5 fiducial partial-view QA fit and session handoff">
+          <div className="maxwell-section-heading">
+            <h2>Fiducial Fit + Session Handoff</h2>
+            <strong className={`maxwell-l72-status maxwell-l72-status-${fiducialFit?.status ?? "pending"}`}>{fiducialFit?.status.toUpperCase() ?? "PENDING"}</strong>
+          </div>
+          {fiducialCoverage ? (
+            <div className="maxwell-data-table" aria-label="L7.5 partial-view coverage smoke preview">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Matched points</span><strong>{fiducialCoverage.matchedPointCount}</strong></div>
+                <div className="compact-stat"><span>Marker coverage</span><strong>{fiducialCoverage.markerCoverageScore.toPrecision(4)}</strong></div>
+                <div className="compact-stat"><span>ChArUco coverage</span><strong>{fiducialCoverage.charucoCoverageScore.toPrecision(4)}</strong></div>
+                <div className="compact-stat"><span>Board-area coverage</span><strong>{fiducialCoverage.boardAreaCoverageScore.toPrecision(4)}</strong></div>
+                <div className="compact-stat"><span>Quadrants</span><strong>{fiducialCoverage.coveredQuadrants.length}/4</strong></div>
+                <div className="compact-stat"><span>Missing IDs</span><strong>{fiducialCoverage.missingMarkerIds.length}</strong></div>
+              </div>
+              {fiducialCoverage.warnings.slice(0, 4).map((warning) => <div className="error-banner" key={`${warning.code}-${warning.message}`}>{warning.message}</div>)}
+            </div>
+          ) : (
+            <div className="empty-state" aria-label="L7.5 partial-view coverage smoke preview">Match fiducial IDs to compute coverage, missing IDs, partial-view warnings, and L7.2 point-set handoff.</div>
+          )}
+          {fiducialFit?.fit ? (
+            <div className="maxwell-data-table" aria-label="L7.5 fiducial fit results smoke preview">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Fit model</span><strong>{fiducialFit.model}</strong></div>
+                <div className="compact-stat"><span>RMS residual</span><strong>{fiducialFit.fit.metrics.rmsResidualPx.toPrecision(4)} px</strong></div>
+                <div className="compact-stat"><span>Max residual</span><strong>{fiducialFit.fit.metrics.maxResidualPx.toPrecision(4)} px</strong></div>
+                <div className="compact-stat"><span>Pixel scale</span><strong>{formatNullableMetric(fiducialFit.fit.metrics.meanPixelScaleUmPerPx)} um/px</strong></div>
+              </div>
+            </div>
+          ) : (
+            <div className="empty-state" aria-label="L7.5 fiducial fit results smoke preview">Run a fiducial fit to feed L7.2 similarity or affine calibration evidence.</div>
+          )}
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onRejectFiducialMarker}><Trash2 size={15} /><span>Reject Selected Marker</span></button>
+            <button type="button" onClick={onAcceptFiducialMarker}><ShieldCheck size={15} /><span>Accept Selected Marker</span></button>
+            <button type="button" onClick={onMoveFiducialCorner}><Sparkles size={15} /><span>Move Selected Corner</span></button>
+            <button type="button" onClick={onRelabelFiducialMarker}><Plus size={15} /><span>Relabel Selected Marker</span></button>
+            <button type="button" onClick={() => onRunFiducialFit("similarity")}><ShieldCheck size={15} /><span>Run Fiducial Similarity Fit</span></button>
+            <button type="button" onClick={() => onRunFiducialFit("affine")}><ShieldCheck size={15} /><span>Run Fiducial Affine Fit</span></button>
+            <button type="button" onClick={onExportFiducialBundle}><FileDown size={15} /><span>Export Fiducial Bundle</span></button>
+            <button type="button" onClick={onAddFiducialToSession}><ShieldCheck size={15} /><span>Add Fiducial Frame to Session QA</span></button>
+            <button type="button" onClick={onSaveFiducialStudy}><Save size={15} /><span>Save Fiducial Study</span></button>
+          </div>
+          <div className="maxwell-data-table maxwell-l75-export-list" aria-label="L7.5 fiducial session handoff smoke preview">
+            <div className="compact-stat"><span>Session QA handoff</span><strong>{sessionQa?.frames.some((frame) => frame.type === "fiducial_board") ? "ready" : "pending"}</strong></div>
+            {fiducialExportNames.map((name) => <div className="compact-stat" key={name}><span>{name}</span><strong>{fiducialFit ? "ready" : "on fit"}</strong></div>)}
+          </div>
+        </div>
+
         <div className="maxwell-workspace-panel">
           <div className="maxwell-section-heading">
             <h2>Geometric Calibration / Distortion Workbench</h2>
@@ -7686,6 +8247,11 @@ function selectedL73Point(detection: L73DetectionResult | null, id: string): L73
   return points.find((point) => point.id === id) ?? points[0] ?? null;
 }
 
+function selectedL75Marker(detection: L75FiducialDetectionBundle | null, id: string): L75FiducialDetectionBundle["markers"][number] | null {
+  if (!detection) return null;
+  return detection.markers.find((marker) => marker.id.toString() === id) ?? detection.markers[0] ?? null;
+}
+
 function l73StudyMetrics(detection: L73DetectionResult, fit: L72GeometricFitResult | null): StudyMetric[] {
   return [
     { id: "expectedPointCount", label: "Expected points", value: detection.expectedPointCount },
@@ -7713,6 +8279,44 @@ function l74StudyMetrics(result: L74SessionQaResult): StudyMetric[] {
     { id: "meanGeometricRmsResidualPx", label: "Mean RMS residual", value: metricValue("rms_residual_px"), unit: "px" },
     { id: "pixelScaleRepeatabilityStd", label: "Pixel-scale repeatability std", value: repeatability("mean_pixel_scale_um_per_px"), unit: "um/px" }
   ];
+}
+
+function l75StudyMetrics(result: L75FiducialFitResult): StudyMetric[] {
+  return [
+    { id: "fiducialMarkerCount", label: "Fiducial markers", value: result.match.markerCount },
+    { id: "acceptedFiducialMarkers", label: "Accepted fiducial markers", value: result.match.acceptedMarkerCount },
+    { id: "acceptedCharucoCorners", label: "Accepted ChArUco-style corners", value: result.match.acceptedCharucoCornerCount },
+    { id: "matchedFiducialPoints", label: "Matched fiducial points", value: result.match.matchedPointCount },
+    { id: "fiducialCoverageScore", label: "Fiducial coverage score", value: result.match.coverageScore },
+    { id: "fiducialBoardAreaCoverage", label: "Fiducial board-area coverage", value: result.match.boardAreaCoverageScore },
+    { id: "fiducialMissingMarkerCount", label: "Missing marker IDs", value: result.match.missingMarkerIds.length },
+    { id: "fiducialRmsResidualPx", label: "Fiducial RMS residual", value: result.fit?.metrics.rmsResidualPx ?? Number.NaN, unit: "px" },
+    { id: "fiducialMaxResidualPx", label: "Fiducial max residual", value: result.fit?.metrics.maxResidualPx ?? Number.NaN, unit: "px" },
+    { id: "fiducialMeanPixelScaleUmPerPx", label: "Fiducial mean pixel scale", value: result.fit?.metrics.meanPixelScaleUmPerPx ?? Number.NaN, unit: "um/px" }
+  ];
+}
+
+function exampleL75DetectionJson(): string {
+  return JSON.stringify(
+    {
+      frameId: "fid_example_001",
+      boardId: "l75-board-7x5",
+      markers: [
+        { id: 0, cornersPx: [[108, 84], [144, 84], [144, 120], [108, 120]], confidence: 0.99 },
+        { id: 1, cornersPx: [[178, 84], [214, 84], [214, 120], [178, 120]], confidence: 0.98 },
+        { id: 7, cornersPx: [[108, 154], [144, 154], [144, 190], [108, 190]], confidence: 0.97 },
+        { id: 8, cornersPx: [[178, 154], [214, 154], [214, 190], [178, 190]], confidence: 0.96 }
+      ],
+      charucoCorners: [
+        { id: 0, xPx: 92, yPx: 68, confidence: 0.95 },
+        { id: 1, xPx: 162, yPx: 68, confidence: 0.95 },
+        { id: 8, xPx: 92, yPx: 138, confidence: 0.94 },
+        { id: 9, xPx: 162, yPx: 138, confidence: 0.94 }
+      ]
+    },
+    null,
+    2
+  );
 }
 
 function selectedL71MetricValue(result: SlantedEdgeMtfResult, metric: L71FocusMetric): number | null {
@@ -7842,7 +8446,10 @@ function exportStudyBundle(
   geometricDetection: L73DetectionResult | null,
   geometricFit: L72GeometricFitResult | null,
   geometricComparison: L72GeometryComparisonResult | null,
-  sessionQa: L74SessionQaResult | null
+  sessionQa: L74SessionQaResult | null,
+  fiducialBoard: L75FiducialBoard | null,
+  fiducialDetection: L75FiducialDetectionBundle | null,
+  fiducialFit: L75FiducialFitResult | null
 ): void {
   const bundle = studyBundleJson(study, {
     sweep: sweep ?? undefined,
@@ -7861,22 +8468,25 @@ function exportStudyBundle(
     geometricDetection: geometricDetection ?? undefined,
     geometricFit: geometricFit ?? undefined,
     geometricComparison: geometricComparison ?? undefined,
-    sessionQa: sessionQa ?? undefined
+    sessionQa: sessionQa ?? undefined,
+    fiducialBoard: fiducialBoard ?? undefined,
+    fiducialDetection: fiducialDetection ?? undefined,
+    fiducialFit: fiducialFit ?? undefined
   });
-  downloadText("l74-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
-  downloadText("l74-study.md", "text/markdown", studyBundleMarkdown(bundle));
-  downloadText("l74-metrics.csv", "text/csv", bundle.metricsCsv);
-  downloadText("l74-profiles.csv", "text/csv", bundle.profilesCsv);
-  downloadText("l74-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
-  downloadText("l74-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
-  if (comparison) downloadText("l74-comparison.csv", "text/csv", studyComparisonCsv(comparison));
-  if (sweep) downloadText("l74-sweep.csv", "text/csv", practicalSweepCsv(sweep));
-  if (measuredComparison) downloadText("l74-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
-  if (cameraRun) downloadText("l74-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
-  if (calibrationRun) downloadText("l74-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
-  if (mtfRun) downloadText("l74-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
-  if (mtfComparison) downloadText("l74-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
-  if (linePairRun) downloadText("l74-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
+  downloadText("l75-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
+  downloadText("l75-study.md", "text/markdown", studyBundleMarkdown(bundle));
+  downloadText("l75-metrics.csv", "text/csv", bundle.metricsCsv);
+  downloadText("l75-profiles.csv", "text/csv", bundle.profilesCsv);
+  downloadText("l75-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+  downloadText("l75-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
+  if (comparison) downloadText("l75-comparison.csv", "text/csv", studyComparisonCsv(comparison));
+  if (sweep) downloadText("l75-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+  if (measuredComparison) downloadText("l75-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
+  if (cameraRun) downloadText("l75-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
+  if (calibrationRun) downloadText("l75-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
+  if (mtfRun) downloadText("l75-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
+  if (mtfComparison) downloadText("l75-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
+  if (linePairRun) downloadText("l75-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
   if (focusSweepRun) downloadText("focus_sweep.csv", "text/csv", focusSweepCsv(focusSweepRun));
   if (fieldMtfMap) downloadText("field_mtf_map.csv", "text/csv", fieldMtfMapCsv(fieldMtfMap));
   if (qualificationRun) downloadText("qualification_report.json", "application/json", qualificationReportJson(qualificationRun));
@@ -7898,6 +8508,11 @@ function exportStudyBundle(
   if (sessionQa) downloadText("session_metrics.csv", "text/csv", sessionMetricsCsv(sessionQa));
   if (sessionQa) downloadText("outliers.csv", "text/csv", outliersCsv(sessionQa));
   if (sessionQa) downloadText("warnings.json", "application/json", sessionWarningsJson(sessionQa));
+  if (fiducialBoard) downloadText("board_manifest.json", "application/json", fiducialBoardManifestJson(fiducialBoard));
+  if (fiducialFit) downloadText("fiducial_detection_report.md", "text/markdown", fiducialDetectionReportMarkdown(fiducialFit));
+  if (fiducialFit) downloadText("fiducial_detection_report.json", "application/json", fiducialDetectionReportJson(fiducialFit));
+  if (fiducialFit) downloadText("matched_points.csv", "text/csv", fiducialMatchedPointsCsv(fiducialFit));
+  if (fiducialDetection) downloadText("rejected_points.csv", "text/csv", fiducialRejectedPointsCsv(fiducialDetection));
 }
 
 function exportPracticalSweepJson(result: PracticalSweepResult): void {
