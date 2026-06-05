@@ -4,6 +4,7 @@ export * from "./export/fieldProfileExport";
 export * from "./illumination/partialCoherence2d";
 export * from "./illumination/sourceModels2d";
 export * from "./illumination/sourceSampling2d";
+export * from "./imageQuality/slantedEdgeMtf";
 export * from "./report/engineeringReport";
 export * from "./cache/resultCacheKey";
 export * from "./math/fft";

@@ -25,6 +25,7 @@ import {
   createMaterialImportTemplate,
   createFieldMarker,
   createStudySnapshot,
+  compareMtfRuns,
   defaultCoherenceDemonstratorConfig,
   defaultThinLensFocalValidationConfig,
   defaultCircularApertureValidationConfig,
@@ -34,8 +35,9 @@ import {
   compareMeasuredToSimulatedProfile,
   createMeasuredProfileFromImagePixels,
   importMaterialPackage,
-  l69CapabilitiesMatrix,
+  l70CapabilitiesMatrix,
   l69ExampleCalibrationCsv,
+  linePairContrastCsv,
   measuredComparisonBundleJson,
   listCatalogMaterials,
   opticalInputFromProfile,
@@ -44,6 +46,7 @@ import {
   parseMaterialImportJson,
   parseStudyBundleJson,
   parseCameraCalibrationCsv,
+  parseMtfCsvFrame,
   parseMeasuredCsvProfile,
   exportExternalFdtdScaffold,
   externalFdtdSolverReceipt,
@@ -53,6 +56,9 @@ import {
   practicalSweepJson,
   practicalSweepMarkdown,
   profileCsv,
+  analyzeLinePairTarget,
+  generateLinePairTarget,
+  generateSlantedEdgeTarget,
   runCoatingSearch,
   runRobustCoatingSearch,
   runCoatingStack,
@@ -62,6 +68,7 @@ import {
   runL67DiagnosticFit,
   runCameraSensorLite,
   runCameraCalibration,
+  runSlantedEdgeMtf,
   runCircularApertureValidation,
   runCircularObservationZSweep,
   runCoherenceDemonstrator,
@@ -78,11 +85,17 @@ import {
   slitOrderValidationJson,
   slitOrderValidationMarkdown,
   simulatedMetricsCsv,
+  slantedEdgeEsfCsv,
+  slantedEdgeLsfCsv,
+  slantedEdgeMtfCurveCsv,
+  slantedEdgeMtfReportJson,
+  slantedEdgeMtfReportMarkdown,
   studyBundleJson,
   studyBundleMarkdown,
   studyComparisonCsv,
   studyComparisonMarkdown,
   measuredMetricsCsv,
+  mtfComparisonCsv,
   thinLensFocalValidationCsv,
   thinLensFocalValidationJson,
   thinLensFocalValidationMarkdown,
@@ -117,6 +130,11 @@ import {
   type L68CameraSettings,
   type L69CameraCalibrationDataset,
   type L69CameraCalibrationResult,
+  type L70LinePairAnalysisResult,
+  type L70MtfComparisonResult,
+  type L70ParsedCsvFrame,
+  type L70ResolutionTargetImage,
+  type SlantedEdgeMtfResult,
   type PlanarFieldMonitorResult,
   type PracticalSweepFamily,
   type PracticalSweepResult,
@@ -264,7 +282,7 @@ export function MaxwellPanel() {
   const [coherenceSlitWidthUm, setCoherenceSlitWidthUm] = useState(20);
   const [coherenceSlitSeparationUm, setCoherenceSlitSeparationUm] = useState(100);
   const [coherencePropagationDistanceM, setCoherencePropagationDistanceM] = useState(1);
-  const [studyName, setStudyName] = useState("L6.9 working study");
+  const [studyName, setStudyName] = useState("L7.0 working study");
   const [savedStudies, setSavedStudies] = useState<StudySnapshot[]>([]);
   const [selectedStudyId, setSelectedStudyId] = useState<string>("");
   const [studyStatus, setStudyStatus] = useState("No study saved yet.");
@@ -305,6 +323,21 @@ export function MaxwellPanel() {
   const [cameraCalibrationCsvText, setCameraCalibrationCsvText] = useState(l69ExampleCalibrationCsv(false));
   const [cameraCalibrationDataset, setCameraCalibrationDataset] = useState<L69CameraCalibrationDataset | null>(null);
   const [cameraCalibrationRun, setCameraCalibrationRun] = useState<L69CameraCalibrationResult | null>(null);
+  const [mtfWidthPx, setMtfWidthPx] = useState(160);
+  const [mtfHeightPx, setMtfHeightPx] = useState(120);
+  const [mtfEdgeAngleDeg, setMtfEdgeAngleDeg] = useState(5);
+  const [mtfBlurSigmaPx, setMtfBlurSigmaPx] = useState(1.1);
+  const [mtfContrast, setMtfContrast] = useState(0.9);
+  const [mtfOversampling, setMtfOversampling] = useState(4);
+  const [mtfPixelPitchUm, setMtfPixelPitchUm] = useState(3.45);
+  const [mtfCsvText, setMtfCsvText] = useState("");
+  const [mtfTarget, setMtfTarget] = useState<L70ResolutionTargetImage | null>(null);
+  const [mtfImportedFrame, setMtfImportedFrame] = useState<L70ParsedCsvFrame | null>(null);
+  const [mtfRun, setMtfRun] = useState<SlantedEdgeMtfResult | null>(null);
+  const [mtfReferenceRun, setMtfReferenceRun] = useState<SlantedEdgeMtfResult | null>(null);
+  const [mtfComparison, setMtfComparison] = useState<L70MtfComparisonResult | null>(null);
+  const [linePairTarget, setLinePairTarget] = useState<L70ResolutionTargetImage | null>(null);
+  const [linePairRun, setLinePairRun] = useState<L70LinePairAnalysisResult | null>(null);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -472,7 +505,7 @@ export function MaxwellPanel() {
       ]),
     [foundry, materialAudit, materialCatalog, materialImport, robustResult, run, searchResult, yieldAnalysis]
   );
-  const capabilities = useMemo(() => l69CapabilitiesMatrix(), []);
+  const capabilities = useMemo(() => l70CapabilitiesMatrix(), []);
   const selectedStudy = savedStudies.find((study) => study.id === selectedStudyId) ?? null;
   const studyRunSummaries = useMemo<StudyRunSummary[]>(
     () =>
@@ -652,6 +685,22 @@ export function MaxwellPanel() {
       if (typeof calibration.csvText === "string") setCameraCalibrationCsvText(calibration.csvText);
       setCameraCalibrationDataset(null);
       setCameraCalibrationRun(null);
+    }
+    const mtf = state.mtf as Record<string, unknown> | undefined;
+    if (mtf) {
+      if (typeof mtf.widthPx === "number") setMtfWidthPx(mtf.widthPx);
+      if (typeof mtf.heightPx === "number") setMtfHeightPx(mtf.heightPx);
+      if (typeof mtf.edgeAngleDeg === "number") setMtfEdgeAngleDeg(mtf.edgeAngleDeg);
+      if (typeof mtf.blurSigmaPx === "number") setMtfBlurSigmaPx(mtf.blurSigmaPx);
+      if (typeof mtf.contrast === "number") setMtfContrast(mtf.contrast);
+      if (typeof mtf.oversampling === "number") setMtfOversampling(mtf.oversampling);
+      if (typeof mtf.pixelPitchUm === "number") setMtfPixelPitchUm(mtf.pixelPitchUm);
+      if (typeof mtf.csvText === "string") setMtfCsvText(mtf.csvText);
+      setMtfTarget(null);
+      setMtfImportedFrame(null);
+      setMtfRun(null);
+      setMtfReferenceRun(null);
+      setMtfComparison(null);
     }
   }
 
@@ -1031,6 +1080,204 @@ export function MaxwellPanel() {
     }
   }
 
+  function createMtfTargetFromControls(overrides: { blurSigmaPx?: number; id?: string; label?: string } = {}): L70ResolutionTargetImage {
+    return generateSlantedEdgeTarget({
+      id: overrides.id ?? `l70-slanted-edge-target-${Date.now().toString(36)}`,
+      label: overrides.label ?? "L7.0 generated slanted-edge target",
+      widthPx: mtfWidthPx,
+      heightPx: mtfHeightPx,
+      edgeAngleDeg: mtfEdgeAngleDeg,
+      blurSigmaPx: overrides.blurSigmaPx ?? mtfBlurSigmaPx,
+      contrast: mtfContrast,
+      pixelPitchUm: mtfPixelPitchUm
+    });
+  }
+
+  function generateMtfSlantedEdgeTarget(): L70ResolutionTargetImage {
+    const target = createMtfTargetFromControls();
+    setMtfTarget(target);
+    setMtfImportedFrame(null);
+    setMtfRun(null);
+    setMtfReferenceRun(null);
+    setMtfComparison(null);
+    setStudyStatus(`Generated slanted-edge target: ${target.widthPx} x ${target.heightPx} px / ${target.resultHash.slice(0, 10)}.`);
+    return target;
+  }
+
+  function currentMtfImageInput(): L70ResolutionTargetImage | { widthPx: number; heightPx: number; pixels: number[]; pixelPitchUm: number } {
+    if (mtfImportedFrame) {
+      return {
+        widthPx: mtfImportedFrame.widthPx,
+        heightPx: mtfImportedFrame.heightPx,
+        pixels: mtfImportedFrame.pixels,
+        pixelPitchUm: mtfPixelPitchUm
+      };
+    }
+    return createMtfTargetFromControls();
+  }
+
+  function runMtfAnalysis(): SlantedEdgeMtfResult | null {
+    try {
+      const image = currentMtfImageInput();
+      if (!mtfImportedFrame && "schema" in image) setMtfTarget(image);
+      const result = runSlantedEdgeMtf({
+        id: `l70-mtf-${Date.now().toString(36)}`,
+        label: mtfImportedFrame ? "L7.0 imported slanted-edge MTF" : "L7.0 generated slanted-edge MTF",
+        sourceLabel: mtfImportedFrame ? "Imported CSV/image frame" : "Generated slanted-edge target",
+        image,
+        edgeAngleDeg: mtfImportedFrame ? mtfEdgeAngleDeg : undefined,
+        oversampling: mtfOversampling,
+        window: "hann",
+        smoothing: "moving-average",
+        polarity: "auto"
+      });
+      setMtfRun(result);
+      setStudyStatus(`MTF analysis complete: MTF50 ${formatNullableMetric(result.metrics.mtf50CyclesPerPx)} cyc/px / ${result.hashes.resultHash.slice(0, 10)}.`);
+      return result;
+    } catch (error) {
+      setStudyStatus(`MTF analysis failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function importMtfCsvFromText(sourceName = "mtf-frame.csv"): L70ParsedCsvFrame | null {
+    try {
+      const frame = parseMtfCsvFrame(mtfCsvText);
+      setMtfImportedFrame(frame);
+      setMtfTarget(null);
+      setMtfRun(null);
+      setMtfReferenceRun(null);
+      setMtfComparison(null);
+      setStudyStatus(`Imported MTF CSV frame: ${sourceName} / ${frame.widthPx} x ${frame.heightPx} px.`);
+      return frame;
+    } catch (error) {
+      setStudyStatus(`MTF CSV import failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  async function importMtfCsvFile(file: File | null): Promise<void> {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const frame = parseMtfCsvFrame(text);
+      setMtfCsvText(text);
+      setMtfImportedFrame(frame);
+      setMtfTarget(null);
+      setMtfRun(null);
+      setMtfReferenceRun(null);
+      setMtfComparison(null);
+      setStudyStatus(`Loaded MTF CSV file: ${file.name} / ${frame.widthPx} x ${frame.heightPx} px.`);
+    } catch (error) {
+      setStudyStatus(`MTF file import failed: ${(error as Error).message}`);
+    }
+  }
+
+  function sendCameraToMtfWorkbench(): void {
+    const nextRun = cameraRun ?? generateCameraRun();
+    if (!nextRun) return;
+    const maxDn = Math.max(1, 2 ** nextRun.settings.bitDepth - 1);
+    const pixels = Array.from(nextRun.maps.digitalNumbers, (value) => clamp(value / maxDn, 0, 1));
+    setMtfImportedFrame({
+      widthPx: nextRun.settings.widthPx,
+      heightPx: nextRun.settings.heightPx,
+      pixels
+    });
+    setMtfPixelPitchUm(nextRun.settings.pixelPitchM * 1e6);
+    setMtfWidthPx(nextRun.settings.widthPx);
+    setMtfHeightPx(nextRun.settings.heightPx);
+    setMtfTarget(null);
+    setMtfRun(null);
+    setMtfReferenceRun(null);
+    setMtfComparison(null);
+    setStudyStatus(`Sent camera DN frame to MTF workbench: ${nextRun.settings.widthPx} x ${nextRun.settings.heightPx} px.`);
+  }
+
+  function compareCurrentMtfToBlurredTarget(): void {
+    const measured = mtfRun ?? runMtfAnalysis();
+    if (!measured) return;
+    const blurredTarget = createMtfTargetFromControls({
+      blurSigmaPx: Math.max(mtfBlurSigmaPx + 1.4, mtfBlurSigmaPx * 1.8),
+      id: `l70-blur-reference-${Date.now().toString(36)}`,
+      label: "L7.0 blurrier simulated reference"
+    });
+    const simulated = runSlantedEdgeMtf({
+      id: `l70-blur-reference-mtf-${Date.now().toString(36)}`,
+      label: "L7.0 blurrier simulated reference MTF",
+      sourceLabel: "Generated blurrier simulated reference",
+      image: blurredTarget,
+      oversampling: mtfOversampling,
+      window: "hann",
+      smoothing: "moving-average"
+    });
+    const comparison = compareMtfRuns(measured, simulated);
+    setMtfReferenceRun(simulated);
+    setMtfComparison(comparison);
+    setStudyStatus(`Compared measured vs simulated MTF: RMS delta ${comparison.metrics.rmsDelta.toPrecision(4)}.`);
+  }
+
+  function generateAndAnalyzeLinePairTarget(): void {
+    const target = generateLinePairTarget({
+      id: `l70-line-pair-target-${Date.now().toString(36)}`,
+      label: "L7.0 line-pair target",
+      widthPx: mtfWidthPx,
+      heightPx: mtfHeightPx,
+      contrast: mtfContrast,
+      blurSigmaPx: mtfBlurSigmaPx,
+      pixelPitchUm: mtfPixelPitchUm
+    });
+    const analysis = analyzeLinePairTarget(target);
+    setLinePairTarget(target);
+    setLinePairRun(analysis);
+    setStudyStatus(`Generated line-pair target: ${analysis.rows.length} bands / ${analysis.resultHash.slice(0, 10)}.`);
+  }
+
+  function saveMtfStudy(): void {
+    const result = mtfRun ?? runMtfAnalysis();
+    if (!result) return;
+    saveStudy(
+      createStudySnapshot({
+        id: `l70-mtf-study-${Date.now().toString(36)}`,
+        name: "L7.0 slanted-edge MTF study",
+        mode: "image-quality.mtf",
+        selectedWorkbench: "resolution-mtf",
+        inputs: {
+          target: mtfTarget?.settings ?? { importedFrame: mtfImportedFrame ? `${mtfImportedFrame.widthPx}x${mtfImportedFrame.heightPx}` : "generated-on-run" },
+          settings: result.settings,
+          linePairTarget: linePairTarget?.settings ?? null
+        },
+        appState: currentAppState(),
+        backendReceipt: {
+          label: "L7.0 Slanted-Edge / Resolution Target MTF Workbench",
+          availability: "executable",
+          scope: "ISO 12233-inspired diagnostic image-quality analysis only; not certified ISO, Imatest, lab, or pure lens-only MTF"
+        },
+        resultHashes: [result.hashes.resultHash, mtfReferenceRun?.hashes.resultHash, mtfComparison?.resultHash, linePairRun?.resultHash].filter(Boolean) as string[],
+        metrics: mtfStudyMetrics(result),
+        profiles: {
+          mtf: result.mtf.map((point) => ({ xM: point.frequencyCyclesPerPx, intensity: point.mtf, label: "MTF cycles/pixel" })),
+          esf: result.esf.map((point) => ({ xM: point.distancePx, intensity: point.value, label: "ESF distance px" })),
+          lsf: result.lsf.map((point) => ({ xM: point.distancePx, intensity: point.value, label: "LSF distance px" }))
+        },
+        warnings: result.warnings,
+        limitations: result.limitations
+      })
+    );
+  }
+
+  function exportMtfReport(): void {
+    const result = mtfRun ?? runMtfAnalysis();
+    if (!result) return;
+    downloadText("l70-mtf_report.json", "application/json", slantedEdgeMtfReportJson(result, mtfComparison ?? undefined, linePairRun ?? undefined));
+    downloadText("l70-mtf_report.md", "text/markdown", slantedEdgeMtfReportMarkdown(result, mtfComparison ?? undefined, linePairRun ?? undefined));
+    downloadText("l70-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(result));
+    downloadText("l70-mtf_esf.csv", "text/csv", slantedEdgeEsfCsv(result));
+    downloadText("l70-mtf_lsf.csv", "text/csv", slantedEdgeLsfCsv(result));
+    if (mtfComparison) downloadText("l70-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
+    if (linePairRun) downloadText("l70-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
+    setStudyStatus("Exported L7.0 MTF report bundle.");
+  }
+
   function generateSyntheticMeasuredCsv(): void {
     try {
       const simulated = activeL67SimulatedProfile();
@@ -1379,6 +1626,21 @@ export function MaxwellPanel() {
         csvText: cameraCalibrationCsvText,
         datasetHash: cameraCalibrationDataset?.dataHash ?? null,
         calibrationRunHash: cameraCalibrationRun?.resultHash ?? null
+      },
+      mtf: {
+        widthPx: mtfWidthPx,
+        heightPx: mtfHeightPx,
+        edgeAngleDeg: mtfEdgeAngleDeg,
+        blurSigmaPx: mtfBlurSigmaPx,
+        contrast: mtfContrast,
+        oversampling: mtfOversampling,
+        pixelPitchUm: mtfPixelPitchUm,
+        csvText: mtfCsvText,
+        targetHash: mtfTarget?.resultHash ?? null,
+        importedSize: mtfImportedFrame ? `${mtfImportedFrame.widthPx}x${mtfImportedFrame.heightPx}` : null,
+        runHash: mtfRun?.hashes.resultHash ?? null,
+        comparisonHash: mtfComparison?.resultHash ?? null,
+        linePairHash: linePairRun?.resultHash ?? null
       }
     };
   }
@@ -1627,11 +1889,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L6.9 Camera Calibration / Photon-Transfer Workbench">
-      <h2>L6.9 Camera Calibration / Photon-Transfer Workbench</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.0 Slanted-Edge / Resolution Target MTF Workbench">
+      <h2>L7.0 Slanted-Edge / Resolution Target MTF Workbench</h2>
       <div className="l2-disclosure">
-        <strong>camera calibration, sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines</strong>
-        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, and EMVA-inspired camera calibration are the executable scope; this is not pixel-level sensor-stack EM, EMVA 1288 certification, certified lab calibration, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
+        <strong>resolution MTF diagnostics, camera calibration, sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines</strong>
+        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, and ISO 12233-inspired slanted-edge/line-pair MTF diagnostics are the executable scope; this is not pixel-level sensor-stack EM, ISO 12233 certification, Imatest-equivalent measurement, EMVA 1288 certification, certified lab calibration, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -1662,7 +1924,7 @@ export function MaxwellPanel() {
         onLoadStudy={loadSelectedStudy}
         onDuplicateStudy={duplicateSelectedStudy}
         onDeleteStudy={deleteSelectedStudy}
-        onExportBundle={() => exportStudyBundle(selectedStudy ?? captureValidationStudy(studyName.trim() || "Validation study"), workspaceSweepResult, studyComparison, measuredComparison, cameraRun, cameraCalibrationRun)}
+        onExportBundle={() => exportStudyBundle(selectedStudy ?? captureValidationStudy(studyName.trim() || "Validation study"), workspaceSweepResult, studyComparison, measuredComparison, cameraRun, cameraCalibrationRun, mtfRun, mtfComparison, linePairRun)}
         onImportBundle={importStudyBundleFile}
         onCopyShareableUrl={copyShareableStudyUrl}
         sweepFamily={workspaceSweepFamily}
@@ -1764,6 +2026,41 @@ export function MaxwellPanel() {
         onExportCameraReport={exportCameraReport}
         onSendCameraToMeasured={sendCameraToMeasuredComparison}
         onSaveCameraStudy={saveCameraStudy}
+      />
+
+      <ResolutionMtfWorkbenchPanel
+        mtfWidthPx={mtfWidthPx}
+        setMtfWidthPx={setMtfWidthPx}
+        mtfHeightPx={mtfHeightPx}
+        setMtfHeightPx={setMtfHeightPx}
+        mtfEdgeAngleDeg={mtfEdgeAngleDeg}
+        setMtfEdgeAngleDeg={setMtfEdgeAngleDeg}
+        mtfBlurSigmaPx={mtfBlurSigmaPx}
+        setMtfBlurSigmaPx={setMtfBlurSigmaPx}
+        mtfContrast={mtfContrast}
+        setMtfContrast={setMtfContrast}
+        mtfOversampling={mtfOversampling}
+        setMtfOversampling={setMtfOversampling}
+        mtfPixelPitchUm={mtfPixelPitchUm}
+        setMtfPixelPitchUm={setMtfPixelPitchUm}
+        mtfCsvText={mtfCsvText}
+        setMtfCsvText={setMtfCsvText}
+        mtfTarget={mtfTarget}
+        mtfImportedFrame={mtfImportedFrame}
+        mtfRun={mtfRun}
+        mtfReferenceRun={mtfReferenceRun}
+        mtfComparison={mtfComparison}
+        linePairTarget={linePairTarget}
+        linePairRun={linePairRun}
+        onGenerateTarget={generateMtfSlantedEdgeTarget}
+        onImportCsv={importMtfCsvFromText}
+        onImportFile={importMtfCsvFile}
+        onRunMtf={runMtfAnalysis}
+        onCompareBlur={compareCurrentMtfToBlurredTarget}
+        onGenerateLinePair={generateAndAnalyzeLinePairTarget}
+        onSendCameraFrame={sendCameraToMtfWorkbench}
+        onExportMtfReport={exportMtfReport}
+        onSaveMtfStudy={saveMtfStudy}
       />
 
       <div className="profile-meta">
@@ -2871,6 +3168,238 @@ function NumberField({
   );
 }
 
+function ResolutionMtfWorkbenchPanel({
+  mtfWidthPx,
+  setMtfWidthPx,
+  mtfHeightPx,
+  setMtfHeightPx,
+  mtfEdgeAngleDeg,
+  setMtfEdgeAngleDeg,
+  mtfBlurSigmaPx,
+  setMtfBlurSigmaPx,
+  mtfContrast,
+  setMtfContrast,
+  mtfOversampling,
+  setMtfOversampling,
+  mtfPixelPitchUm,
+  setMtfPixelPitchUm,
+  mtfCsvText,
+  setMtfCsvText,
+  mtfTarget,
+  mtfImportedFrame,
+  mtfRun,
+  mtfReferenceRun,
+  mtfComparison,
+  linePairTarget,
+  linePairRun,
+  onGenerateTarget,
+  onImportCsv,
+  onImportFile,
+  onRunMtf,
+  onCompareBlur,
+  onGenerateLinePair,
+  onSendCameraFrame,
+  onExportMtfReport,
+  onSaveMtfStudy
+}: {
+  mtfWidthPx: number;
+  setMtfWidthPx: (value: number) => void;
+  mtfHeightPx: number;
+  setMtfHeightPx: (value: number) => void;
+  mtfEdgeAngleDeg: number;
+  setMtfEdgeAngleDeg: (value: number) => void;
+  mtfBlurSigmaPx: number;
+  setMtfBlurSigmaPx: (value: number) => void;
+  mtfContrast: number;
+  setMtfContrast: (value: number) => void;
+  mtfOversampling: number;
+  setMtfOversampling: (value: number) => void;
+  mtfPixelPitchUm: number;
+  setMtfPixelPitchUm: (value: number) => void;
+  mtfCsvText: string;
+  setMtfCsvText: (value: string) => void;
+  mtfTarget: L70ResolutionTargetImage | null;
+  mtfImportedFrame: L70ParsedCsvFrame | null;
+  mtfRun: SlantedEdgeMtfResult | null;
+  mtfReferenceRun: SlantedEdgeMtfResult | null;
+  mtfComparison: L70MtfComparisonResult | null;
+  linePairTarget: L70ResolutionTargetImage | null;
+  linePairRun: L70LinePairAnalysisResult | null;
+  onGenerateTarget: () => void;
+  onImportCsv: () => void;
+  onImportFile: (file: File | null) => void | Promise<void>;
+  onRunMtf: () => void;
+  onCompareBlur: () => void;
+  onGenerateLinePair: () => void;
+  onSendCameraFrame: () => void;
+  onExportMtfReport: () => void;
+  onSaveMtfStudy: () => void;
+}) {
+  const activeImage = mtfImportedFrame
+    ? { widthPx: mtfImportedFrame.widthPx, heightPx: mtfImportedFrame.heightPx, pixels: mtfImportedFrame.pixels, label: "Imported MTF frame" }
+    : mtfTarget
+      ? { widthPx: mtfTarget.widthPx, heightPx: mtfTarget.heightPx, pixels: mtfTarget.pixels, label: mtfTarget.label }
+      : null;
+  const preview = activeImage ? sampleImagePreview(activeImage.widthPx, activeImage.heightPx, activeImage.pixels, 32, 12) : [];
+  const linePreview = linePairTarget ? sampleImagePreview(linePairTarget.widthPx, linePairTarget.heightPx, linePairTarget.pixels, 32, 10) : [];
+  const lsfPeak = mtfRun ? Math.max(1e-9, ...mtfRun.lsf.map((point) => Math.abs(point.value))) : 1;
+  const comparisonMtf50Delta = mtfComparison?.metrics.mtf50DeltaCyclesPerPx ?? null;
+
+  return (
+    <div className="maxwell-study-card maxwell-mtf-panel" aria-label="L7.0 Slanted-Edge / Resolution Target MTF Workbench">
+      <div className="maxwell-section-heading">
+        <h2>L7.0 Slanted-Edge / Resolution Target MTF Workbench</h2>
+        <strong>{mtfRun ? mtfRun.hashes.resultHash.slice(0, 10) : activeImage ? `${activeImage.widthPx} x ${activeImage.heightPx}` : "not run"}</strong>
+      </div>
+      <div className="l2-disclosure">
+        <strong>Generate/import slanted-edge targets, compute ESF/LSF/SFR-MTF, compare measured vs simulated MTF, and sanity-check line-pair contrast.</strong>
+        <span>ISO 12233-inspired diagnostics only; this is not ISO 12233 certification, Imatest-equivalent measurement, lab accreditation, pure lens-only MTF, sensor-stack EM, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution.</span>
+      </div>
+
+      <div className="maxwell-workspace-grid">
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Target Controls</h2>
+            <strong>{activeImage?.label ?? "generated/imported"}</strong>
+          </div>
+          <div className="maxwell-study-controls">
+            <NumberField label="Target width px" value={mtfWidthPx} min={32} max={512} step={1} onChange={setMtfWidthPx} />
+            <NumberField label="Target height px" value={mtfHeightPx} min={32} max={512} step={1} onChange={setMtfHeightPx} />
+            <NumberField label="Edge angle deg" value={mtfEdgeAngleDeg} min={-20} max={20} step={0.1} onChange={setMtfEdgeAngleDeg} />
+            <NumberField label="Blur sigma px" value={mtfBlurSigmaPx} min={0} max={12} step={0.1} onChange={setMtfBlurSigmaPx} />
+            <NumberField label="Contrast" value={mtfContrast} min={0} max={1} step={0.01} onChange={setMtfContrast} />
+            <NumberField label="Oversampling" value={mtfOversampling} min={2} max={16} step={1} onChange={setMtfOversampling} />
+            <NumberField label="Pixel pitch um" value={mtfPixelPitchUm} min={0.01} max={10000} step={0.01} onChange={setMtfPixelPitchUm} />
+          </div>
+          <label className="maxwell-measured-textarea-label">
+            <span>MTF import CSV</span>
+            <textarea
+              className="maxwell-measured-textarea maxwell-mtf-textarea"
+              value={mtfCsvText}
+              onChange={(event) => setMtfCsvText(event.currentTarget.value)}
+              placeholder="x_px,y_px,dn&#10;0,0,0&#10;1,0,1&#10;0,1,0"
+            />
+          </label>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onGenerateTarget}><Sparkles size={15} /><span>Generate Slanted Edge Target</span></button>
+            <button type="button" onClick={onImportCsv}><Upload size={15} /><span>Import MTF CSV</span></button>
+            <label className="maxwell-file-action">
+              <Upload size={15} />
+              <span>Import MTF File</span>
+              <input type="file" accept=".csv,text/csv" onChange={(event) => void onImportFile(event.currentTarget.files?.[0] ?? null)} />
+            </label>
+            <button type="button" onClick={onSendCameraFrame}><Sparkles size={15} /><span>Send Camera DN Frame to MTF</span></button>
+          </div>
+          {activeImage && (
+            <div className="maxwell-mtf-image-preview" aria-label="Slanted-edge target smoke preview">
+              {preview.map((value, index) => <i key={`${index}-${value}`} style={{ opacity: 0.18 + 0.82 * clamp(value, 0, 1) }} />)}
+            </div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>MTF Analysis</h2>
+            <strong>{mtfRun ? `${formatNullableMetric(mtfRun.metrics.mtf50CyclesPerPx)} cyc/px MTF50` : "pending"}</strong>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onRunMtf}><Sparkles size={15} /><span>Run Slanted-Edge MTF</span></button>
+            <button type="button" onClick={onCompareBlur}><ShieldCheck size={15} /><span>Compare Blur Response</span></button>
+            <button type="button" onClick={onGenerateLinePair}><Sparkles size={15} /><span>Generate Line-Pair Target</span></button>
+            <button type="button" onClick={onExportMtfReport}><FileDown size={15} /><span>Export MTF Bundle</span></button>
+            <button type="button" onClick={onSaveMtfStudy}><Save size={15} /><span>Save MTF Study</span></button>
+          </div>
+          {mtfRun && (
+            <div className="maxwell-data-table">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>MTF50 / MTF10</span><strong>{formatNullableMetric(mtfRun.metrics.mtf50CyclesPerPx)} / {formatNullableMetric(mtfRun.metrics.mtf10CyclesPerPx)} cyc/px</strong></div>
+                <div className="compact-stat"><span>MTF50 / MTF10 lp/mm</span><strong>{formatNullableMetric(mtfRun.metrics.mtf50LpPerMm)} / {formatNullableMetric(mtfRun.metrics.mtf10LpPerMm)}</strong></div>
+                <div className="compact-stat"><span>Nyquist</span><strong>{formatNullableMetric(mtfRun.metrics.mtfAtNyquist)} @ 0.5 cyc/px</strong></div>
+                <div className="compact-stat"><span>Edge angle / contrast</span><strong>{mtfRun.metrics.edgeAngleDeg.toPrecision(4)} deg / {mtfRun.metrics.edgeContrast.toPrecision(4)}</strong></div>
+              </div>
+              <div className="maxwell-mtf-preview-grid">
+                <div className="maxwell-mtf-bars" aria-label="ESF smoke preview">
+                  {mtfRun.esf.slice(0, 80).map((point, index) => <i key={`${point.distancePx}-${index}`} style={{ height: `${Math.max(2, clamp(point.value, 0, 1) * 100)}%` }} title={`ESF ${point.value.toPrecision(4)}`} />)}
+                </div>
+                <div className="maxwell-mtf-bars" aria-label="LSF smoke preview">
+                  {mtfRun.lsf.slice(0, 80).map((point, index) => <i key={`${point.distancePx}-${index}`} style={{ height: `${Math.max(2, (Math.abs(point.value) / lsfPeak) * 100)}%` }} title={`LSF ${point.value.toPrecision(4)}`} />)}
+                </div>
+                <div className="maxwell-mtf-bars" aria-label="MTF curve smoke preview">
+                  {mtfRun.mtf.slice(0, 80).map((point, index) => <i key={`${point.frequencyCyclesPerPx}-${index}`} style={{ height: `${Math.max(2, clamp(point.mtf, 0, 1) * 100)}%` }} title={`${point.frequencyCyclesPerPx.toPrecision(4)} cyc/px MTF ${point.mtf.toPrecision(4)}`} />)}
+                </div>
+              </div>
+              {mtfRun.warnings.map((warning) => <div className="error-banner" key={`${warning.code}-${warning.message}`}>{warning.message}</div>)}
+            </div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Measured vs Simulated MTF</h2>
+            <strong>{mtfComparison ? `RMS ${mtfComparison.metrics.rmsDelta.toPrecision(4)}` : mtfReferenceRun ? mtfReferenceRun.hashes.resultHash.slice(0, 10) : "not compared"}</strong>
+          </div>
+          {mtfComparison ? (
+            <div className="maxwell-data-table">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>MTF50 delta</span><strong>{formatNullableMetric(comparisonMtf50Delta)} cyc/px</strong></div>
+                <div className="compact-stat"><span>Nyquist delta</span><strong>{formatNullableMetric(mtfComparison.metrics.nyquistDelta)}</strong></div>
+                <div className="compact-stat"><span>RMS / max delta</span><strong>{mtfComparison.metrics.rmsDelta.toPrecision(4)} / {mtfComparison.metrics.maxAbsDelta.toPrecision(4)}</strong></div>
+              </div>
+              <div className="maxwell-mtf-comparison-bars" aria-label="MTF blur comparison smoke preview">
+                {mtfComparison.points.slice(0, 72).map((point, index) => (
+                  <span key={`${point.frequencyCyclesPerPx}-${index}`} title={`measured=${point.measuredMtf.toPrecision(4)} simulated=${point.simulatedMtf.toPrecision(4)}`}>
+                    <i style={{ height: `${Math.max(2, clamp(point.measuredMtf, 0, 1) * 100)}%` }} />
+                    <b style={{ height: `${Math.max(2, clamp(point.simulatedMtf, 0, 1) * 100)}%` }} />
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="empty-state">Run MTF, then compare against a blurrier generated reference.</div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Line-Pair Target</h2>
+            <strong>{linePairRun ? `${linePairRun.rows.length} bands` : "not generated"}</strong>
+          </div>
+          {linePairTarget && (
+            <div className="maxwell-mtf-image-preview maxwell-line-pair-preview" aria-label="Line-pair target smoke preview">
+              {linePreview.map((value, index) => <i key={`${index}-${value}`} style={{ opacity: 0.18 + 0.82 * clamp(value, 0, 1) }} />)}
+            </div>
+          )}
+          {linePairRun ? (
+            <div className="maxwell-data-table">
+              {linePairRun.rows.map((row) => (
+                <div className="compact-stat" key={row.frequencyCyclesPerPx}>
+                  <span>{row.frequencyCyclesPerPx.toPrecision(3)} cyc/px{row.frequencyLpPerMm === null ? "" : ` / ${row.frequencyLpPerMm.toPrecision(4)} lp/mm`}</span>
+                  <strong>contrast {row.contrastMichelson.toPrecision(4)}</strong>
+                </div>
+              ))}
+              {linePairRun.warnings.map((warning) => <div className="error-banner" key={`${warning.code}-${warning.message}`}>{warning.message}</div>)}
+            </div>
+          ) : (
+            <div className="empty-state">Generate a line-pair target to compare band contrast across spatial frequencies.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function sampleImagePreview(widthPx: number, heightPx: number, pixels: ArrayLike<number>, columns: number, rows: number): number[] {
+  const output: number[] = [];
+  for (let row = 0; row < rows; row += 1) {
+    const y = Math.min(heightPx - 1, Math.floor(((row + 0.5) * heightPx) / rows));
+    for (let column = 0; column < columns; column += 1) {
+      const x = Math.min(widthPx - 1, Math.floor(((column + 0.5) * widthPx) / columns));
+      output.push(Number(pixels[y * widthPx + x] ?? 0));
+    }
+  }
+  return output;
+}
+
 function PracticalStudyWorkspacePanel({
   capabilities,
   studyName,
@@ -3113,14 +3642,14 @@ function PracticalStudyWorkspacePanel({
   const calibrationMaxMean = cameraCalibrationRun ? Math.max(...cameraCalibrationRun.residuals.map((point) => Math.max(point.measuredMeanDn, point.simulatedMeanDn)), 1) : 1;
 
   return (
-    <div className="maxwell-study-card" aria-label="L6.9 Camera Calibration / Photon-Transfer Workbench">
+    <div className="maxwell-study-card" aria-label="L7.0 Practical Study Workspace">
       <div className="maxwell-section-heading">
-        <h2>L6.9 Camera Calibration / Photon-Transfer Workbench</h2>
+        <h2>L7.0 Practical Study Workspace</h2>
         <strong>{savedStudies.length} saved</strong>
       </div>
       <div className="l2-disclosure">
-        <strong>Import dark/flat/exposure summaries, fit sensor-lite parameters, compare measured vs simulated camera behavior, apply a calibrated camera profile, save studies, and export evidence.</strong>
-        <span>Workflow layer only: photon-transfer diagnostics over summary measurements and the existing L6.8 detector model; this is not EMVA 1288 certification, certified lab calibration, new diffraction physics, or sensor-stack EM.</span>
+        <strong>Save studies, export evidence, run sweeps, compare measured vs simulated profiles, calibrate camera-lite data, and hand off resolution MTF diagnostics.</strong>
+        <span>Workflow layer only: diagnostic photon-transfer calibration, slanted-edge/line-pair MTF, and the existing scalar/planar engines; this is not EMVA 1288 certification, ISO 12233 certification, certified lab calibration, new diffraction physics, or sensor-stack EM.</span>
       </div>
 
       <div className="maxwell-workspace-grid">
@@ -5009,6 +5538,22 @@ function calibrationMetricValue(run: L69CameraCalibrationResult, metricId: strin
   return run.metrics.find((metric) => metric.id === metricId)?.value ?? Number.NaN;
 }
 
+function mtfStudyMetrics(result: SlantedEdgeMtfResult): StudyMetric[] {
+  return [
+    { id: "edgeAngleDeg", label: "Edge angle", value: result.metrics.edgeAngleDeg, unit: "deg" },
+    { id: "edgeContrast", label: "Edge contrast", value: result.metrics.edgeContrast },
+    { id: "mtf50CyclesPerPx", label: "MTF50", value: result.metrics.mtf50CyclesPerPx ?? Number.NaN, unit: "cycles/pixel" },
+    { id: "mtf10CyclesPerPx", label: "MTF10", value: result.metrics.mtf10CyclesPerPx ?? Number.NaN, unit: "cycles/pixel" },
+    { id: "mtfAtNyquist", label: "MTF at Nyquist", value: result.metrics.mtfAtNyquist ?? Number.NaN },
+    { id: "mtf50LpPerMm", label: "MTF50", value: result.metrics.mtf50LpPerMm ?? Number.NaN, unit: "lp/mm" },
+    { id: "mtf10LpPerMm", label: "MTF10", value: result.metrics.mtf10LpPerMm ?? Number.NaN, unit: "lp/mm" }
+  ];
+}
+
+function formatNullableMetric(value: number | null): string {
+  return value === null || !Number.isFinite(value) ? "n/a" : value.toPrecision(4);
+}
+
 function normalizeLocalProfile(profile: { xM: number; intensity: number }[]): { xM: number; intensity: number }[] {
   const sorted = [...profile].filter((point) => Number.isFinite(point.xM) && Number.isFinite(point.intensity)).sort((a, b) => a.xM - b.xM);
   const peak = Math.max(0, ...sorted.map((point) => Math.abs(point.intensity)));
@@ -5057,26 +5602,35 @@ function exportStudyBundle(
   comparison: StudyComparisonResult | null,
   measuredComparison: L67MeasuredComparisonResult | null,
   cameraRun: L68CameraRunResult | null,
-  calibrationRun: L69CameraCalibrationResult | null
+  calibrationRun: L69CameraCalibrationResult | null,
+  mtfRun: SlantedEdgeMtfResult | null,
+  mtfComparison: L70MtfComparisonResult | null,
+  linePairRun: L70LinePairAnalysisResult | null
 ): void {
   const bundle = studyBundleJson(study, {
     sweep: sweep ?? undefined,
     comparison: comparison ?? undefined,
     measuredComparison: measuredComparison ?? undefined,
     cameraRun: cameraRun ?? undefined,
-    calibrationRun: calibrationRun ?? undefined
+    calibrationRun: calibrationRun ?? undefined,
+    mtfRun: mtfRun ?? undefined,
+    mtfComparison: mtfComparison ?? undefined,
+    linePairRun: linePairRun ?? undefined
   });
-  downloadText("l69-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
-  downloadText("l69-study.md", "text/markdown", studyBundleMarkdown(bundle));
-  downloadText("l69-metrics.csv", "text/csv", bundle.metricsCsv);
-  downloadText("l69-profiles.csv", "text/csv", bundle.profilesCsv);
-  downloadText("l69-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
-  downloadText("l69-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
-  if (comparison) downloadText("l69-comparison.csv", "text/csv", studyComparisonCsv(comparison));
-  if (sweep) downloadText("l69-sweep.csv", "text/csv", practicalSweepCsv(sweep));
-  if (measuredComparison) downloadText("l69-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
-  if (cameraRun) downloadText("l69-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
-  if (calibrationRun) downloadText("l69-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
+  downloadText("l70-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
+  downloadText("l70-study.md", "text/markdown", studyBundleMarkdown(bundle));
+  downloadText("l70-metrics.csv", "text/csv", bundle.metricsCsv);
+  downloadText("l70-profiles.csv", "text/csv", bundle.profilesCsv);
+  downloadText("l70-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+  downloadText("l70-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
+  if (comparison) downloadText("l70-comparison.csv", "text/csv", studyComparisonCsv(comparison));
+  if (sweep) downloadText("l70-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+  if (measuredComparison) downloadText("l70-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
+  if (cameraRun) downloadText("l70-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
+  if (calibrationRun) downloadText("l70-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
+  if (mtfRun) downloadText("l70-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
+  if (mtfComparison) downloadText("l70-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
+  if (linePairRun) downloadText("l70-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
 }
 
 function exportPracticalSweepJson(result: PracticalSweepResult): void {

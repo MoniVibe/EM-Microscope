@@ -1,7 +1,9 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L6.9 Camera Calibration / Photon-Transfer Workbench over
-the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with diagnostic dark/flat/exposure
+An EM-first light simulator MVP. The visible web app is now the L7.0 Slanted-Edge / Resolution Target MTF Workbench over
+the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with generated/imported slanted-edge
+targets, ROI-based ESF/LSF/SFR-MTF, MTF50/MTF10/Nyquist metrics, cycles/pixel plus optional lp/mm units, measured-vs-simulated
+MTF comparison, line-pair target sanity checks, JSON/Markdown/CSV MTF exports, diagnostic dark/flat/exposure
 CSV import, deterministic calibration data hashes, photon-transfer-style sensor-lite fitting, fitted camera profiles,
 measured-vs-simulated camera residuals, calibration report bundles, deterministic detector acquisition
 post-processing, photons/electrons/DN conversion, shot/read/dark noise modes, saturation/SNR/histogram metrics,
@@ -64,6 +66,12 @@ linearity, SNR, dynamic range, and effective QE only when known photons-per-pixe
 measured camera curves against a fitted L6.8-compatible camera profile with residual exports and an apply-to-camera
 control. It is EMVA-inspired diagnostic characterization only, not EMVA 1288 certification or certified lab
 calibration.
+L7.0 adds a Slanted-Edge / Resolution Target MTF Workbench that generates or imports slanted-edge targets, computes
+ROI-based ESF, LSF, SFR/MTF curves, reports MTF50, MTF10, Nyquist MTF, cycles/pixel, and lp/mm when pixel pitch is known,
+compares measured and simulated MTF curves, generates line-pair targets for contrast sanity checks, exports MTF
+JSON/Markdown/CSV bundles, and saves MTF studies alongside the existing study workspace. It is ISO 12233-inspired
+diagnostic analysis only, not ISO 12233 certification, Imatest-equivalent testing, lab-accredited metrology, pure
+lens-only MTF certification, or sensor-stack EM.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, stochastic source engine, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, certified calibration system, or manufacturing
@@ -71,7 +79,7 @@ certification system.
 
 ## Current Visible Mode
 
-- `L6.9 Camera Calibration / Photon-Transfer Workbench`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L7.0 Slanted-Edge / Resolution Target MTF Workbench`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
   diagnostic spectral material records, editable film stacks, wavelength sweeps, planar E/H field-monitor samples,
   per-layer flux-drop absorption estimates, film-stack R/T/A, a visible-AR coating objective optimizer, certified
@@ -91,6 +99,10 @@ certification system.
   measured CSV profile import, PNG/JPEG image-centerline import, calibration/ROI/normalization controls,
   measured-vs-simulated residual metrics, deterministic bounded shift/scale/background diagnostic fitting,
   comparison-study save, and comparison report JSON/Markdown/CSV exports,
+  Slanted-Edge / Resolution Target MTF controls for generated or imported slanted-edge frames, edge angle, blur,
+  contrast, oversampling, pixel pitch, MTF CSV import, Camera/Sensor-Lite DN-frame handoff, ESF/LSF/MTF preview curves,
+  MTF50/MTF10/Nyquist readouts, cycles/pixel plus optional lp/mm units, measured-vs-simulated blur-response comparison,
+  line-pair target generation, line-pair contrast rows, MTF study save, and MTF JSON/Markdown/CSV bundle exports,
   Camera Calibration Workbench controls for dark/flat/exposure summary CSV import, example datasets with or without
   known `photons_per_pixel`, deterministic source/data hashes, photon-transfer fit, fitted black level, conversion
   gain, read noise, dark current, full-well/saturation, linearly range diagnostics, SNR/dynamic-range metrics,
@@ -103,8 +115,9 @@ certification system.
   camera report exports, study save, and synthetic-camera send-to-measured comparison,
   Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
   formula/snippet panels, Explain mode highlighting, and a searchable explanation drawer,
-  and strict limitations against arbitrary 3D EM, EMVA 1288 certification, certified lab calibration, digital-twin, pixel-level
-  sensor-stack EM, or stochastic source-engine claims.
+  and strict limitations against arbitrary 3D EM, ISO 12233 certification, Imatest-equivalent testing, EMVA 1288
+  certification, certified lab calibration, pure lens-only MTF certification, digital-twin, pixel-level sensor-stack EM,
+  or stochastic source-engine claims.
 
 ## L2 Validation Fixture
 
@@ -709,15 +722,44 @@ The L6.9 tests cover calibration CSV import, deterministic hashes, missing-colum
 warnings, black-level/dark-current/read-noise/gain/full-well estimates, QE identifiability, measured-vs-simulated
 residuals, Markdown/JSON/CSV exports, study capability boundaries, and L6.8 camera regression coverage.
 
+## L7.0 Slanted-Edge / Resolution Target MTF Workbench
+
+L7.0 is an image-quality diagnostic layer over the existing study and camera-lite workspace. It does not add new
+Maxwell physics; it analyzes 2D target images produced by the browser or imported as CSV frames.
+
+- `Slanted-edge target generation`: creates deterministic high-contrast slanted-edge targets with configurable
+  width, height, edge angle, contrast, blur sigma, and pixel pitch.
+- `Imported MTF frames`: accepts numeric matrix CSV or `x_px,y_px,dn` CSV rows, then runs the same ROI-based
+  slanted-edge analysis path.
+- `ESF/LSF/SFR-MTF`: estimates the edge angle, bins an oversampled ESF, derives an LSF, applies a selected window,
+  computes MTF, and reports MTF50, MTF10, MTF at Nyquist, cycles/pixel, and lp/mm when pixel pitch is known.
+- `Measured-vs-simulated MTF`: compares the current run to a generated blurrier reference and exports the residual
+  curve, RMS delta, max delta, MTF50 delta, MTF10 delta, and Nyquist delta.
+- `Line-pair sanity check`: generates deterministic line-pair bands and reports Michelson contrast per frequency.
+- `Camera-lite handoff`: sends the current Camera/Sensor-Lite DN frame into the MTF workbench as normalized image
+  samples with the current calibrated pixel pitch.
+- `Study and export integration`: MTF studies save metrics, ESF/LSF/MTF profiles, hashes, warnings, limitations,
+  and report bundles. Exports include `l70-mtf_report.json`, `l70-mtf_report.md`, `l70-mtf_curve.csv`,
+  `l70-mtf_esf.csv`, `l70-mtf_lsf.csv`, optional `l70-mtf_comparison.csv`, and optional
+  `l70-line_pair_contrast.csv`.
+
+This is ISO 12233-inspired diagnostic analysis only. It is not ISO 12233 certification, Imatest-equivalent
+measurement, lab-accredited metrology, pure lens-only MTF certification, optical manufacturing certification,
+pixel-level sensor-stack EM, or full 3D Maxwell/FDTD/FEM/BEM/RCWA execution.
+
+The L7.0 tests cover deterministic slanted-edge target generation, edge-angle estimation, ESF/LSF/MTF construction,
+MTF50/MTF10/Nyquist metrics, lp/mm conversion, blur reducing MTF50, measured-vs-simulated MTF comparison, warning
+boundaries, line-pair contrast, CSV import, and report exports.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
 - Consider an L6.x bundle hygiene pass: lazy-load heavy workbench panels/exports and split large chunks instead of
   only raising Vite's chunk warning limit.
-- Consider L7.0 Slanted-edge / Resolution Target MTF Workbench next: ISO-12233-inspired diagnostic SFR/MTF,
-  line-pair contrast, sampling/Nyquist warnings, and sensor-resolution metrics over the calibrated L6.9 camera
-  profile, without claiming certified ISO 12233 testing.
+- Consider L7.1 ROI workflow hardening next: draggable ROI overlay, imported image crop selection, MTF warning
+  explanations, and a public Pages smoke script that captures the MTF target, ESF/LSF, MTF curve, blur comparison,
+  line-pair target, and export controls.
 
 ## Local Development
 

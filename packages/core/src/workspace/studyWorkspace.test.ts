@@ -17,6 +17,7 @@ import {
   l66CapabilitiesMatrix,
   l68CapabilitiesMatrix,
   l69CapabilitiesMatrix,
+  l70CapabilitiesMatrix,
   measureFieldRoi,
   parseStudyBundleJson,
   practicalSweepCsv,
@@ -40,23 +41,30 @@ describe("L6.6 Practical Study Workspace core", () => {
     const capabilities = l66CapabilitiesMatrix();
     const l68Capabilities = l68CapabilitiesMatrix();
     const l69Capabilities = l69CapabilitiesMatrix();
+    const l70Capabilities = l70CapabilitiesMatrix();
     const markdown = capabilitiesMarkdown(capabilities);
     const csv = capabilitiesCsv(capabilities);
 
     expect(capabilities.find((capability) => capability.id === "planar-tmm-backend")?.status).toBe("executable");
     expect(l68Capabilities.find((capability) => capability.id === "camera-sensor-lite-acquisition")?.status).toBe("executable");
     expect(l69Capabilities.find((capability) => capability.id === "camera-calibration-diagnostics")?.status).toBe("executable");
+    expect(l70Capabilities.find((capability) => capability.id === "resolution-mtf-diagnostics")?.status).toBe("executable");
+    expect(l70Capabilities.find((capability) => capability.id === "slanted-edge-sfr-diagnostics")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "external-fdtd-export")?.status).toBe("scaffold-only");
     expect(capabilities.find((capability) => capability.id === "3d-maxwell-solve")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "fdtd-fem-bem-rcwa-execution")?.status).toBe("not-implemented");
     expect(l68Capabilities.find((capability) => capability.id === "pixel-level-sensor-stack")?.status).toBe("not-implemented");
     expect(l68Capabilities.find((capability) => capability.id === "certified-emva-characterization")?.status).toBe("not-implemented");
     expect(l69Capabilities.find((capability) => capability.id === "emva-1288-certification")?.status).toBe("not-implemented");
+    expect(l70Capabilities.find((capability) => capability.id === "iso-12233-certification")?.status).toBe("not-implemented");
+    expect(l70Capabilities.find((capability) => capability.id === "imatest-equivalent-certification")?.status).toBe("not-implemented");
+    expect(l70Capabilities.find((capability) => capability.id === "pure-lens-mtf-certification")?.status).toBe("not-implemented");
     expect(markdown).toContain("PlanarTmmBackend");
     expect(markdown).toContain("Camera/Sensor-Lite acquisition");
     expect(markdown).toContain("Camera calibration diagnostics");
+    expect(markdown).toContain("Resolution MTF diagnostics");
     expect(csv).toContain("ExternalFdtdBackend export");
-    expect(`${markdown}\n${csv}`).not.toMatch(/3D Maxwell solve executed|FDTD solver executable|FEM\/BEM\/RCWA available|digital twin certified|certified EMVA characterization executable|EMVA 1288 certification executable|pixel-level sensor stack executable/i);
+    expect(`${markdown}\n${csv}`).not.toMatch(/3D Maxwell solve executed|FDTD solver executable|FEM\/BEM\/RCWA available|digital twin certified|certified EMVA characterization executable|EMVA 1288 certification executable|pixel-level sensor stack executable|ISO 12233 certification executable|Imatest-equivalent certification executable|pure lens-only MTF certification executable/i);
   });
 
   it("saves and reimports a validation study bundle deterministically", () => {
@@ -85,8 +93,8 @@ describe("L6.6 Practical Study Workspace core", () => {
     const bundle = studyBundleJson(study);
     const imported = parseStudyBundleJson(JSON.stringify(bundle));
 
-    expect(study.type).toBe("l69PracticalStudy");
-    expect(bundle.appVersion).toContain("L6.9");
+    expect(study.type).toBe("l70PracticalStudy");
+    expect(bundle.appVersion).toContain("L7.0");
     expect(imported.study.resultHash).toBe(study.resultHash);
     expect(imported.manifest.resultHashes).toEqual([result.resultHash]);
     expect(imported.manifest.materialReceiptCount).toBe(1);
