@@ -13,5 +13,25 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     port: 5175
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalized = id.replace(/\\/g, "/");
+          if (normalized.includes("/node_modules/react/") || normalized.includes("/node_modules/react-dom/")) return "vendor-react";
+          if (normalized.includes("/node_modules/lucide-react/")) return "vendor-icons";
+          if (normalized.includes("/apps/web/src/maxwell/MaxwellPanel.tsx")) return "maxwell-panel";
+          if (normalized.includes("/apps/web/src/explainability/") || normalized.includes("/apps/web/src/explainabilityContent.ts")) return "explainability";
+          if (normalized.includes("/packages/core/src/measurement/")) return "core-measurement";
+          if (normalized.includes("/packages/core/src/workspace/")) return "core-workspace";
+          if (normalized.includes("/packages/core/src/imageQuality/")) return "core-image-quality";
+          if (normalized.includes("/packages/core/src/wave/")) return "core-wave";
+          if (normalized.includes("/packages/core/src/maxwell/")) return "core-maxwell";
+          if (normalized.includes("/packages/core/src/scene/")) return "core-scene";
+          if (normalized.includes("/packages/core/src/")) return "core-shared";
+        }
+      }
+    }
   }
 });

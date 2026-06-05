@@ -561,4 +561,21 @@ describe("solver disclosure copy", () => {
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });
+
+  it("keeps L7.8.1 CI and bundle hygiene guardrails explicit", () => {
+    const workflow = readFileSync(resolve(testDir, "../../../.github/workflows/deploy-pages.yml"), "utf8");
+    const viteConfig = readFileSync(resolve(testDir, "../vite.config.ts"), "utf8");
+
+    expect(workflow).toContain("actions/checkout@v6");
+    expect(workflow).toContain("actions/setup-node@v6");
+    expect(workflow).toContain("node-version: 24");
+    expect(workflow).toContain("actions/upload-pages-artifact@v4");
+    expect(workflow).not.toContain("actions/checkout@v4");
+    expect(workflow).not.toContain("actions/setup-node@v4");
+    expect(viteConfig).toContain("manualChunks");
+    expect(viteConfig).toContain("maxwell-panel");
+    expect(viteConfig).toContain("core-measurement");
+    expect(viteConfig).toContain("core-workspace");
+    expect(viteConfig).not.toContain("chunkSizeWarningLimit");
+  });
 });
