@@ -569,7 +569,7 @@ describe("solver disclosure copy", () => {
     expect(workflow).toContain("actions/checkout@v6");
     expect(workflow).toContain("actions/setup-node@v6");
     expect(workflow).toContain("node-version: 24");
-    expect(workflow).toContain("actions/upload-pages-artifact@v4");
+    expect(workflow).toContain("actions/upload-pages-artifact@v5");
     expect(workflow).not.toContain("actions/checkout@v4");
     expect(workflow).not.toContain("actions/setup-node@v4");
     expect(viteConfig).toContain("manualChunks");
