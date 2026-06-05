@@ -35,7 +35,7 @@ import {
   compareMeasuredToSimulatedProfile,
   createMeasuredProfileFromImagePixels,
   importMaterialPackage,
-  l71CapabilitiesMatrix,
+  l72CapabilitiesMatrix,
   l69ExampleCalibrationCsv,
   linePairContrastCsv,
   measuredComparisonBundleJson,
@@ -46,17 +46,27 @@ import {
   parseMaterialImportJson,
   parseStudyBundleJson,
   parseCameraCalibrationCsv,
+  parseGeometricPointCsv,
   parseMtfCsvFrame,
   parseMeasuredCsvProfile,
   exportExternalFdtdScaffold,
   externalFdtdSolverReceipt,
+  compareGeometricCalibrations,
   compareFocusFieldMtf,
   defaultL71QualificationSpec,
+  distortionMapCsv,
   fieldMtfMapCsv,
+  fitGeometricCalibration,
   fitGridCsv,
   finalizeFocusSweep,
   focusFieldComparisonCsv,
   focusSweepCsv,
+  generateGeometricCalibrationTarget,
+  geometricCalibrationReportJson,
+  geometricCalibrationReportMarkdown,
+  geometricComparisonCsv,
+  geometricPointsCsv,
+  geometricResidualsCsv,
   residualProfileCsv,
   practicalSweepCsv,
   practicalSweepJson,
@@ -107,6 +117,7 @@ import {
   studyComparisonMarkdown,
   measuredMetricsCsv,
   mtfComparisonCsv,
+  pointSetFromTarget,
   thinLensFocalValidationCsv,
   thinLensFocalValidationJson,
   thinLensFocalValidationMarkdown,
@@ -152,6 +163,12 @@ import {
   type L71FocusSweepRow,
   type L71FocusSweepResult,
   type L71QualificationResult,
+  type L72FitModel,
+  type L72GeometricFitResult,
+  type L72GeometricTarget,
+  type L72GeometryComparisonResult,
+  type L72PointSet,
+  type L72TargetKind,
   type SlantedEdgeMtfResult,
   type PlanarFieldMonitorResult,
   type PracticalSweepFamily,
@@ -300,7 +317,7 @@ export function MaxwellPanel() {
   const [coherenceSlitWidthUm, setCoherenceSlitWidthUm] = useState(20);
   const [coherenceSlitSeparationUm, setCoherenceSlitSeparationUm] = useState(100);
   const [coherencePropagationDistanceM, setCoherencePropagationDistanceM] = useState(1);
-  const [studyName, setStudyName] = useState("L7.1 working study");
+  const [studyName, setStudyName] = useState("L7.2 working study");
   const [savedStudies, setSavedStudies] = useState<StudySnapshot[]>([]);
   const [selectedStudyId, setSelectedStudyId] = useState<string>("");
   const [studyStatus, setStudyStatus] = useState("No study saved yet.");
@@ -373,6 +390,22 @@ export function MaxwellPanel() {
   const [l71FieldMapRun, setL71FieldMapRun] = useState<L71FieldMtfMapResult | null>(null);
   const [l71QualificationRun, setL71QualificationRun] = useState<L71QualificationResult | null>(null);
   const [l71FocusFieldComparison, setL71FocusFieldComparison] = useState<L71FocusFieldComparisonResult | null>(null);
+  const [l72TargetKind, setL72TargetKind] = useState<L72TargetKind>("dot-grid");
+  const [l72WidthPx, setL72WidthPx] = useState(360);
+  const [l72HeightPx, setL72HeightPx] = useState(260);
+  const [l72Rows, setL72Rows] = useState(7);
+  const [l72Columns, setL72Columns] = useState(9);
+  const [l72SpacingUm, setL72SpacingUm] = useState(50);
+  const [l72PixelPitchUm, setL72PixelPitchUm] = useState(5);
+  const [l72RotationDeg, setL72RotationDeg] = useState(2);
+  const [l72RadialK1, setL72RadialK1] = useState(0.04);
+  const [l72RadialK2, setL72RadialK2] = useState(0);
+  const [l72FitModel, setL72FitModel] = useState<L72FitModel>("similarity");
+  const [l72PointCsvText, setL72PointCsvText] = useState("");
+  const [l72Target, setL72Target] = useState<L72GeometricTarget | null>(null);
+  const [l72ImportedPointSet, setL72ImportedPointSet] = useState<L72PointSet | null>(null);
+  const [l72Fit, setL72Fit] = useState<L72GeometricFitResult | null>(null);
+  const [l72Comparison, setL72Comparison] = useState<L72GeometryComparisonResult | null>(null);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -540,7 +573,7 @@ export function MaxwellPanel() {
       ]),
     [foundry, materialAudit, materialCatalog, materialImport, robustResult, run, searchResult, yieldAnalysis]
   );
-  const capabilities = useMemo(() => l71CapabilitiesMatrix(), []);
+  const capabilities = useMemo(() => l72CapabilitiesMatrix(), []);
   const selectedStudy = savedStudies.find((study) => study.id === selectedStudyId) ?? null;
   const studyRunSummaries = useMemo<StudyRunSummary[]>(
     () =>
@@ -756,6 +789,25 @@ export function MaxwellPanel() {
       setL71FieldMapRun(null);
       setL71QualificationRun(null);
       setL71FocusFieldComparison(null);
+    }
+    const geometric = state.geometric as Record<string, unknown> | undefined;
+    if (geometric) {
+      if (geometric.targetKind === "dot-grid" || geometric.targetKind === "checkerboard" || geometric.targetKind === "line-grid") setL72TargetKind(geometric.targetKind);
+      if (typeof geometric.widthPx === "number") setL72WidthPx(geometric.widthPx);
+      if (typeof geometric.heightPx === "number") setL72HeightPx(geometric.heightPx);
+      if (typeof geometric.rows === "number") setL72Rows(geometric.rows);
+      if (typeof geometric.columns === "number") setL72Columns(geometric.columns);
+      if (typeof geometric.spacingUm === "number") setL72SpacingUm(geometric.spacingUm);
+      if (typeof geometric.pixelPitchUm === "number") setL72PixelPitchUm(geometric.pixelPitchUm);
+      if (typeof geometric.rotationDeg === "number") setL72RotationDeg(geometric.rotationDeg);
+      if (typeof geometric.radialK1 === "number") setL72RadialK1(geometric.radialK1);
+      if (typeof geometric.radialK2 === "number") setL72RadialK2(geometric.radialK2);
+      if (geometric.fitModel === "similarity" || geometric.fitModel === "affine" || geometric.fitModel === "radial-k1" || geometric.fitModel === "radial-k1-k2") setL72FitModel(geometric.fitModel);
+      if (typeof geometric.pointCsvText === "string") setL72PointCsvText(geometric.pointCsvText);
+      setL72Target(null);
+      setL72ImportedPointSet(null);
+      setL72Fit(null);
+      setL72Comparison(null);
     }
   }
 
@@ -1535,6 +1587,175 @@ export function MaxwellPanel() {
     );
   }
 
+  function l72GenerateTarget(): L72GeometricTarget {
+    const target = generateGeometricCalibrationTarget({
+      id: `l72-geometric-target-${Date.now().toString(36)}`,
+      label: "L7.2 generated geometric calibration target",
+      kind: l72TargetKind,
+      widthPx: l72WidthPx,
+      heightPx: l72HeightPx,
+      rows: l72Rows,
+      columns: l72Columns,
+      spacingUm: l72SpacingUm,
+      pixelPitchUm: l72PixelPitchUm,
+      rotationDeg: l72RotationDeg,
+      radialK1: l72RadialK1,
+      radialK2: l72RadialK2,
+      dotRadiusPx: 3,
+      contrast: 0.9
+    });
+    setL72Target(target);
+    setL72ImportedPointSet(null);
+    setL72PointCsvText(geometricPointsCsv(target));
+    setL72Fit(null);
+    setL72Comparison(null);
+    setStudyStatus(`Generated L7.2 ${target.kind} target: ${target.points.length} points / ${target.resultHash.slice(0, 10)}.`);
+    return target;
+  }
+
+  function importL72PointCsv(): L72PointSet | null {
+    try {
+      const pointSet = parseGeometricPointCsv(l72PointCsvText, { spacingUm: l72SpacingUm, rows: l72Rows, columns: l72Columns });
+      setL72ImportedPointSet(pointSet);
+      setL72Fit(null);
+      setL72Comparison(null);
+      setStudyStatus(`Imported L7.2 point CSV: ${pointSet.points.length} points / ${pointSet.sourceHash.slice(0, 10)}.`);
+      return pointSet;
+    } catch (error) {
+      setStudyStatus(`L7.2 point CSV import failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  async function importL72PointCsvFile(file: File | null): Promise<void> {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const pointSet = parseGeometricPointCsv(text, { spacingUm: l72SpacingUm, rows: l72Rows, columns: l72Columns });
+      setL72PointCsvText(text);
+      setL72ImportedPointSet(pointSet);
+      setL72Fit(null);
+      setL72Comparison(null);
+      setStudyStatus(`Loaded L7.2 point file: ${file.name} / ${pointSet.points.length} points.`);
+    } catch (error) {
+      setStudyStatus(`L7.2 point file import failed: ${(error as Error).message}`);
+    }
+  }
+
+  function activeL72PointSource(): L72GeometricTarget | L72PointSet {
+    if (l72ImportedPointSet) return l72ImportedPointSet;
+    return l72Target ?? l72GenerateTarget();
+  }
+
+  function runL72Fit(model: L72FitModel = l72FitModel, sourceOverride?: L72GeometricTarget | L72PointSet): L72GeometricFitResult | null {
+    try {
+      const source = sourceOverride ?? activeL72PointSource();
+      const fit = fitGeometricCalibration({
+        id: `l72-geometric-fit-${Date.now().toString(36)}`,
+        label: `L7.2 ${model} geometric calibration fit`,
+        points: source,
+        model
+      });
+      setL72FitModel(model);
+      setL72Fit(fit);
+      setL72Comparison(null);
+      setStudyStatus(`L7.2 ${model} fit ${fit.status.toUpperCase()}: RMS ${fit.metrics.rmsResidualPx.toPrecision(4)} px / scale ${formatNullableMetric(fit.metrics.meanPixelScaleUmPerPx)} um/px.`);
+      return fit;
+    } catch (error) {
+      setStudyStatus(`L7.2 geometric fit failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function runL72Comparison(measuredOverride?: L72GeometricFitResult): L72GeometryComparisonResult | null {
+    const measured = measuredOverride ?? l72Fit ?? runL72Fit(l72FitModel);
+    if (!measured) return null;
+    const simulatedTarget = generateGeometricCalibrationTarget({
+      id: `l72-simulated-geometry-${Date.now().toString(36)}`,
+      label: "L7.2 simulated geometry reference",
+      kind: l72TargetKind,
+      widthPx: l72WidthPx,
+      heightPx: l72HeightPx,
+      rows: l72Rows,
+      columns: l72Columns,
+      spacingUm: l72SpacingUm,
+      pixelPitchUm: l72PixelPitchUm,
+      rotationDeg: l72RotationDeg * 0.8,
+      radialK1: l72RadialK1 * 0.5,
+      radialK2: l72RadialK2 * 0.5
+    });
+    const simulated = fitGeometricCalibration({
+      id: `l72-simulated-fit-${Date.now().toString(36)}`,
+      label: "L7.2 simulated reference geometric fit",
+      points: pointSetFromTarget(simulatedTarget),
+      model: measured.model
+    });
+    const comparison = compareGeometricCalibrations({ measured, simulated });
+    setL72Comparison(comparison);
+    setStudyStatus(`Compared L7.2 measured vs simulated geometry: ${comparison.matchedPointCount} matched points.`);
+    return comparison;
+  }
+
+  function exportL72GeometricBundle(): void {
+    const source = l72ImportedPointSet ?? l72Target ?? l72GenerateTarget();
+    const fit = l72Fit ?? runL72Fit(l72FitModel, source);
+    if (!fit) return;
+    const comparison = l72Comparison ?? runL72Comparison(fit) ?? undefined;
+    downloadText("geometric_calibration_report.md", "text/markdown", geometricCalibrationReportMarkdown(fit, comparison));
+    downloadText("geometric_calibration_report.json", "application/json", geometricCalibrationReportJson(fit, comparison));
+    downloadText("points.csv", "text/csv", geometricPointsCsv(source));
+    downloadText("residuals.csv", "text/csv", geometricResidualsCsv(fit));
+    downloadText("distortion_map.csv", "text/csv", distortionMapCsv(fit));
+    if (comparison) downloadText("geometric_comparison.csv", "text/csv", geometricComparisonCsv(comparison));
+    setStudyStatus("Exported L7.2 geometric calibration bundle.");
+  }
+
+  function saveL72GeometricStudy(): void {
+    const source = l72ImportedPointSet ?? l72Target ?? l72GenerateTarget();
+    const target = source.schema === "emmicro.l72.geometricTarget.v1" ? source : l72Target;
+    const sourceHash = source.schema === "emmicro.l72.geometricTarget.v1" ? source.resultHash : source.sourceHash;
+    const fit = l72Fit ?? runL72Fit(l72FitModel, source);
+    if (!fit) return;
+    saveStudy(
+      createStudySnapshot({
+        id: `l72-geometric-study-${Date.now().toString(36)}`,
+        name: "L7.2 geometric calibration study",
+        mode: "image-quality.geometric-calibration",
+        selectedWorkbench: "geometric-calibration",
+        inputs: {
+          target: target?.settings ?? {
+            kind: l72TargetKind,
+            widthPx: l72WidthPx,
+            heightPx: l72HeightPx,
+            rows: l72Rows,
+            columns: l72Columns,
+            spacingUm: l72SpacingUm,
+            pixelPitchUm: l72PixelPitchUm,
+            rotationDeg: l72RotationDeg,
+            radialK1: l72RadialK1,
+            radialK2: l72RadialK2
+          },
+          pointSource: sourceHash,
+          model: fit.model
+        },
+        appState: currentAppState(),
+        backendReceipt: {
+          label: "L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench",
+          availability: "executable",
+          scope: "diagnostic 2D image geometry only; not certified camera calibration, lab metrology, full 3D pose/stereo calibration, digital twin, or 3D Maxwell"
+        },
+        resultHashes: [target?.resultHash, sourceHash, fit.resultHash, l72Comparison?.resultHash].filter(Boolean) as string[],
+        metrics: l72StudyMetrics(fit),
+        profiles: {
+          residuals: fit.residuals.map((residual, index) => ({ xM: index, intensity: residual.residualPx, label: residual.pointId })),
+          distortion: fit.residuals.map((residual) => ({ xM: residual.radiusNorm, intensity: residual.residualPx, label: residual.pointId }))
+        },
+        warnings: fit.warnings,
+        limitations: fit.limitations
+      })
+    );
+  }
+
   function generateSyntheticMeasuredCsv(): void {
     try {
       const simulated = activeL67SimulatedProfile();
@@ -1917,6 +2138,24 @@ export function MaxwellPanel() {
         fieldMapHash: l71FieldMapRun?.resultHash ?? null,
         qualificationHash: l71QualificationRun?.resultHash ?? null,
         comparisonHash: l71FocusFieldComparison?.resultHash ?? null
+      },
+      geometric: {
+        targetKind: l72TargetKind,
+        widthPx: l72WidthPx,
+        heightPx: l72HeightPx,
+        rows: l72Rows,
+        columns: l72Columns,
+        spacingUm: l72SpacingUm,
+        pixelPitchUm: l72PixelPitchUm,
+        rotationDeg: l72RotationDeg,
+        radialK1: l72RadialK1,
+        radialK2: l72RadialK2,
+        fitModel: l72FitModel,
+        pointCsvText: l72PointCsvText,
+        targetHash: l72Target?.resultHash ?? null,
+        importedPointHash: l72ImportedPointSet?.sourceHash ?? null,
+        fitHash: l72Fit?.resultHash ?? null,
+        comparisonHash: l72Comparison?.resultHash ?? null
       }
     };
   }
@@ -2165,11 +2404,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.1 Focus + Field MTF Qualification Workbench">
-      <h2>L7.1 Focus + Field MTF Qualification Workbench</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench">
+      <h2>L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench</h2>
       <div className="l2-disclosure">
-        <strong>focus sweep MTF, field MTF maps, diagnostic qualification reports, camera calibration, sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines</strong>
-        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, and L7.1 focus/field MTF qualification diagnostics are the executable scope; this is not pixel-level sensor-stack EM, ISO 12233 certification, Imatest-equivalent measurement, calibrated optical model fitting, EMVA 1288 certification, certified lab calibration, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
+        <strong>geometric calibration target generation/import, pixel-scale fitting, affine/skew diagnostics, radial distortion vectors, corrected previews, focus sweep MTF, camera calibration, saved studies, capabilities, and exports over the existing planar/scalar engines</strong>
+        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, and L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows are the executable scope; this is not pixel-level sensor-stack EM, certified camera calibration, lab-accredited metrology, full 3D pose/stereo calibration, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -2214,7 +2453,10 @@ export function MaxwellPanel() {
             l71FocusSweepRun,
             l71FieldMapRun,
             l71QualificationRun,
-            l71FocusFieldComparison
+            l71FocusFieldComparison,
+            l72Target,
+            l72Fit,
+            l72Comparison
           )
         }
         onImportBundle={importStudyBundleFile}
@@ -2318,6 +2560,44 @@ export function MaxwellPanel() {
         onExportCameraReport={exportCameraReport}
         onSendCameraToMeasured={sendCameraToMeasuredComparison}
         onSaveCameraStudy={saveCameraStudy}
+      />
+
+      <GeometricCalibrationWorkbenchPanel
+        targetKind={l72TargetKind}
+        setTargetKind={setL72TargetKind}
+        widthPx={l72WidthPx}
+        setWidthPx={setL72WidthPx}
+        heightPx={l72HeightPx}
+        setHeightPx={setL72HeightPx}
+        rows={l72Rows}
+        setRows={setL72Rows}
+        columns={l72Columns}
+        setColumns={setL72Columns}
+        spacingUm={l72SpacingUm}
+        setSpacingUm={setL72SpacingUm}
+        pixelPitchUm={l72PixelPitchUm}
+        setPixelPitchUm={setL72PixelPitchUm}
+        rotationDeg={l72RotationDeg}
+        setRotationDeg={setL72RotationDeg}
+        radialK1={l72RadialK1}
+        setRadialK1={setL72RadialK1}
+        radialK2={l72RadialK2}
+        setRadialK2={setL72RadialK2}
+        fitModel={l72FitModel}
+        setFitModel={setL72FitModel}
+        pointCsvText={l72PointCsvText}
+        setPointCsvText={setL72PointCsvText}
+        target={l72Target}
+        importedPointSet={l72ImportedPointSet}
+        fit={l72Fit}
+        comparison={l72Comparison}
+        onGenerateTarget={l72GenerateTarget}
+        onImportCsv={importL72PointCsv}
+        onImportFile={importL72PointCsvFile}
+        onRunFit={runL72Fit}
+        onCompare={runL72Comparison}
+        onExport={exportL72GeometricBundle}
+        onSave={saveL72GeometricStudy}
       />
 
       <FocusFieldMtfQualificationPanel
@@ -3497,6 +3777,285 @@ function NumberField({
         {unit && <em>{unit}</em>}
       </div>
     </label>
+  );
+}
+
+function GeometricCalibrationWorkbenchPanel({
+  targetKind,
+  setTargetKind,
+  widthPx,
+  setWidthPx,
+  heightPx,
+  setHeightPx,
+  rows,
+  setRows,
+  columns,
+  setColumns,
+  spacingUm,
+  setSpacingUm,
+  pixelPitchUm,
+  setPixelPitchUm,
+  rotationDeg,
+  setRotationDeg,
+  radialK1,
+  setRadialK1,
+  radialK2,
+  setRadialK2,
+  fitModel,
+  setFitModel,
+  pointCsvText,
+  setPointCsvText,
+  target,
+  importedPointSet,
+  fit,
+  comparison,
+  onGenerateTarget,
+  onImportCsv,
+  onImportFile,
+  onRunFit,
+  onCompare,
+  onExport,
+  onSave
+}: {
+  targetKind: L72TargetKind;
+  setTargetKind: (value: L72TargetKind) => void;
+  widthPx: number;
+  setWidthPx: (value: number) => void;
+  heightPx: number;
+  setHeightPx: (value: number) => void;
+  rows: number;
+  setRows: (value: number) => void;
+  columns: number;
+  setColumns: (value: number) => void;
+  spacingUm: number;
+  setSpacingUm: (value: number) => void;
+  pixelPitchUm: number;
+  setPixelPitchUm: (value: number) => void;
+  rotationDeg: number;
+  setRotationDeg: (value: number) => void;
+  radialK1: number;
+  setRadialK1: (value: number) => void;
+  radialK2: number;
+  setRadialK2: (value: number) => void;
+  fitModel: L72FitModel;
+  setFitModel: (value: L72FitModel) => void;
+  pointCsvText: string;
+  setPointCsvText: (value: string) => void;
+  target: L72GeometricTarget | null;
+  importedPointSet: L72PointSet | null;
+  fit: L72GeometricFitResult | null;
+  comparison: L72GeometryComparisonResult | null;
+  onGenerateTarget: () => void;
+  onImportCsv: () => void;
+  onImportFile: (file: File | null) => void | Promise<void>;
+  onRunFit: (model?: L72FitModel) => void;
+  onCompare: () => void;
+  onExport: () => void;
+  onSave: () => void;
+}) {
+  const activePoints = importedPointSet?.points ?? target?.points ?? [];
+  const activeWidthPx = target?.image.widthPx ?? widthPx;
+  const activeHeightPx = target?.image.heightPx ?? heightPx;
+  const previewPoints = activePoints.slice(0, 120);
+  const residualPeak = Math.max(1e-9, ...(fit?.residuals.map((row) => row.residualPx) ?? [1]));
+  const correctedPreview = fit?.correctedPoints.slice(0, 10) ?? [];
+  const statusLabel = fit?.status.toUpperCase() ?? "PENDING";
+
+  return (
+    <div className="maxwell-study-card maxwell-l72-panel" aria-label="L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench">
+      <div className="maxwell-section-heading">
+        <h2>L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench</h2>
+        <strong>{fit ? `${statusLabel} / ${fit.model}` : target ? `${target.points.length} target points` : "not run"}</strong>
+      </div>
+      <div className="l2-disclosure">
+        <strong>Generate dot/checker/line targets, import point CSVs, fit similarity/affine/radial geometry, and inspect pixel scale, residual vectors, distortion, and corrected point diagnostics.</strong>
+        <span>Diagnostic 2D image geometry only; this is not certified camera calibration, lab-accredited metrology, full 3D pose or stereo calibration, a manufacturing digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution.</span>
+      </div>
+
+      <div className="maxwell-workspace-grid">
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Geometric Calibration / Distortion Workbench</h2>
+            <strong>{importedPointSet ? "CSV points active" : target ? target.kind : "generate or import"}</strong>
+          </div>
+          <div className="maxwell-study-controls">
+            <label className="field-row">
+              <span>Target kind</span>
+              <select value={targetKind} onChange={(event) => setTargetKind(event.currentTarget.value as L72TargetKind)}>
+                <option value="dot-grid">Dot grid</option>
+                <option value="checkerboard">Checkerboard</option>
+                <option value="line-grid">Line grid</option>
+              </select>
+            </label>
+            <label className="field-row">
+              <span>Fit model</span>
+              <select value={fitModel} onChange={(event) => setFitModel(event.currentTarget.value as L72FitModel)}>
+                <option value="similarity">Similarity</option>
+                <option value="affine">Affine</option>
+                <option value="radial-k1">Radial k1</option>
+                <option value="radial-k1-k2">Radial k1+k2</option>
+              </select>
+            </label>
+            <NumberField label="Width px" value={widthPx} min={80} max={2048} step={1} onChange={(value) => setWidthPx(Math.round(clamp(value, 80, 2048)))} />
+            <NumberField label="Height px" value={heightPx} min={80} max={2048} step={1} onChange={(value) => setHeightPx(Math.round(clamp(value, 80, 2048)))} />
+            <NumberField label="Rows" value={rows} min={3} max={32} step={1} onChange={(value) => setRows(Math.round(clamp(value, 3, 32)))} />
+            <NumberField label="Columns" value={columns} min={3} max={32} step={1} onChange={(value) => setColumns(Math.round(clamp(value, 3, 32)))} />
+            <NumberField label="Spacing um" value={spacingUm} min={1} max={5000} step={1} onChange={setSpacingUm} />
+            <NumberField label="Pixel pitch um" value={pixelPitchUm} min={0.01} max={1000} step={0.01} onChange={setPixelPitchUm} />
+            <NumberField label="Rotation deg" value={rotationDeg} min={-45} max={45} step={0.1} onChange={setRotationDeg} />
+            <NumberField label="Radial k1" value={radialK1} min={-0.5} max={0.5} step={0.005} onChange={setRadialK1} />
+            <NumberField label="Radial k2" value={radialK2} min={-0.5} max={0.5} step={0.005} onChange={setRadialK2} />
+          </div>
+          <label className="maxwell-measured-textarea-label">
+            <span>Point CSV import</span>
+            <textarea
+              className="maxwell-measured-textarea maxwell-l72-textarea"
+              value={pointCsvText}
+              onChange={(event) => setPointCsvText(event.currentTarget.value)}
+              placeholder="id,x_px,y_px,x_world_um,y_world_um,row,col&#10;p-0-0,120,90,-200,-150,0,0"
+            />
+          </label>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onGenerateTarget}><Sparkles size={15} /><span>Generate Dot/Grid Target</span></button>
+            <button type="button" onClick={onImportCsv}><Upload size={15} /><span>Import Point CSV</span></button>
+            <label className="maxwell-file-action">
+              <Upload size={15} />
+              <span>Import Point File</span>
+              <input type="file" accept=".csv,text/csv,text/plain" onChange={(event) => void onImportFile(event.currentTarget.files?.[0] ?? null)} />
+            </label>
+          </div>
+          <div
+            className={`maxwell-l72-target-preview maxwell-l72-target-preview-${targetKind}`}
+            aria-label="L7.2 generated geometric target smoke preview"
+            style={{ aspectRatio: `${Math.max(1, activeWidthPx)} / ${Math.max(1, activeHeightPx)}` }}
+          >
+            {previewPoints.length ? (
+              previewPoints.map((point) => (
+                <i
+                  key={point.id}
+                  title={`${point.id}: ${formatNullableMetric(point.xPx)} px, ${formatNullableMetric(point.yPx)} px`}
+                  style={{
+                    left: `${clamp((point.xPx / Math.max(1, activeWidthPx)) * 100, 0, 100)}%`,
+                    top: `${clamp((point.yPx / Math.max(1, activeHeightPx)) * 100, 0, 100)}%`
+                  }}
+                />
+              ))
+            ) : (
+              <span>Generate or import points to preview the calibration target.</span>
+            )}
+          </div>
+        </div>
+
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Fit Results</h2>
+            <strong className={`maxwell-l72-status maxwell-l72-status-${fit?.status ?? "pending"}`}>{statusLabel}</strong>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={() => onRunFit("similarity")}><ShieldCheck size={15} /><span>Run Similarity Fit</span></button>
+            <button type="button" onClick={() => onRunFit("affine")}><ShieldCheck size={15} /><span>Run Affine Fit</span></button>
+            <button type="button" onClick={() => onRunFit("radial-k1")}><ShieldCheck size={15} /><span>Run Radial Fit</span></button>
+            <button type="button" onClick={() => onRunFit(fitModel)}><Sparkles size={15} /><span>Run Selected Fit</span></button>
+          </div>
+          {fit ? (
+            <div className="maxwell-data-table" aria-label="L7.2 geometric fit results smoke preview">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Pixel scale</span><strong>{formatNullableMetric(fit.metrics.meanPixelScaleUmPerPx)} um/px</strong></div>
+                <div className="compact-stat"><span>Rotation</span><strong>{formatNullableMetric(fit.metrics.rotationDeg)} deg</strong></div>
+                <div className="compact-stat"><span>Shear</span><strong>{formatNullableMetric(fit.metrics.shear)}</strong></div>
+                <div className="compact-stat"><span>RMS residual</span><strong>{fit.metrics.rmsResidualPx.toPrecision(4)} px</strong></div>
+                <div className="compact-stat"><span>Max residual</span><strong>{fit.metrics.maxResidualPx.toPrecision(4)} px</strong></div>
+                <div className="compact-stat"><span>Radial k1</span><strong>{formatNullableMetric(fit.radial.k1)}</strong></div>
+                <div className="compact-stat"><span>Radial k2</span><strong>{formatNullableMetric(fit.radial.k2)}</strong></div>
+                <div className="compact-stat"><span>Field distortion</span><strong>{formatNullableMetric(fit.metrics.fieldDistortionPercent)}%</strong></div>
+              </div>
+              {fit.issues.length ? fit.issues.slice(0, 5).map((issue) => <div className="error-banner" key={issue.code}>{issue.severity.toUpperCase()}: {issue.message}</div>) : <div className="empty-state">Fit is within the configured diagnostic residual thresholds.</div>}
+            </div>
+          ) : (
+            <div className="empty-state">Run a similarity, affine, or radial fit after generating/importing points.</div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Residual vector map</h2>
+            <strong>{fit ? `${fit.residuals.length} vectors` : "pending"}</strong>
+          </div>
+          {fit ? (
+            <div className="maxwell-l72-vector-map" aria-label="L7.2 distortion vector map smoke preview">
+              {fit.residuals.slice(0, 160).map((row) => (
+                <span
+                  key={row.pointId}
+                  title={`${row.pointId}: ${row.residualPx.toPrecision(4)} px residual`}
+                  style={{
+                    left: `${clamp((row.measuredXPx / Math.max(1, activeWidthPx)) * 100, 0, 100)}%`,
+                    top: `${clamp((row.measuredYPx / Math.max(1, activeHeightPx)) * 100, 0, 100)}%`,
+                    width: `${Math.max(9, 9 + (row.residualPx / residualPeak) * 24)}px`,
+                    transform: `translate(-50%, -50%) rotate(${Math.atan2(row.dyPx, row.dxPx) * 180 / Math.PI}deg)`,
+                    opacity: 0.35 + 0.65 * (row.residualPx / residualPeak)
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">Residual vectors appear here after a fit.</div>
+          )}
+          {fit && (
+            <div className="maxwell-l72-heatmap" aria-label="L7.2 residual heatmap smoke preview">
+              {fit.residuals.slice(0, 80).map((row) => (
+                <i
+                  key={`${row.pointId}-heat`}
+                  title={`${row.region}: ${row.residualPx.toPrecision(4)} px`}
+                  style={{ opacity: 0.2 + 0.8 * (row.residualPx / residualPeak) }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Corrected / undistorted points</h2>
+            <strong>{fit ? `${fit.correctedPoints.length} corrected` : "pending"}</strong>
+          </div>
+          {fit ? (
+            <div className="maxwell-l72-corrected-table" aria-label="L7.2 undistort preview smoke table">
+              <div><strong>id</strong><strong>x px</strong><strong>y px</strong><strong>ideal x</strong><strong>ideal y</strong></div>
+              {correctedPreview.map((point) => (
+                <div key={point.id}>
+                  <span>{point.id}</span>
+                  <span>{point.xPx.toPrecision(4)}</span>
+                  <span>{point.yPx.toPrecision(4)}</span>
+                  <span>{formatNullableMetric(point.idealXPx ?? null)}</span>
+                  <span>{formatNullableMetric(point.idealYPx ?? null)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">The diagnostic correction preview will list fitted undistorted point coordinates after a radial or affine fit.</div>
+          )}
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={() => onCompare()}><ShieldCheck size={15} /><span>Compare Geometry</span></button>
+            <button type="button" onClick={onExport}><FileDown size={15} /><span>Export Geometric Bundle</span></button>
+            <button type="button" onClick={onSave}><Save size={15} /><span>Save Geometric Study</span></button>
+          </div>
+          {comparison ? (
+            <div className="maxwell-data-table" aria-label="L7.2 measured vs simulated geometry comparison smoke preview">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Matched points</span><strong>{comparison.matchedPointCount}</strong></div>
+                <div className="compact-stat"><span>RMS residual delta</span><strong>{formatNullableMetric(comparison.rmsResidualDeltaPx)} px</strong></div>
+                <div className="compact-stat"><span>Max residual delta</span><strong>{formatNullableMetric(comparison.maxResidualDeltaPx)} px</strong></div>
+              </div>
+              {comparison.metricDeltas.slice(0, 4).map((row) => (
+                <div className="compact-stat" key={row.id}><span>{row.label}</span><strong>{formatNullableMetric(row.delta)}</strong></div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">Compare measured-vs-simulated geometry after at least one fit.</div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -6138,6 +6697,22 @@ function l71StudyMetrics(focusSweep: L71FocusSweepResult, fieldMap: L71FieldMtfM
   ];
 }
 
+function l72StudyMetrics(fit: L72GeometricFitResult): StudyMetric[] {
+  return [
+    { id: "pixelScaleXUmPerPx", label: "Pixel scale X", value: fit.metrics.pixelScaleXUmPerPx ?? Number.NaN, unit: "um/px" },
+    { id: "pixelScaleYUmPerPx", label: "Pixel scale Y", value: fit.metrics.pixelScaleYUmPerPx ?? Number.NaN, unit: "um/px" },
+    { id: "meanPixelScaleUmPerPx", label: "Mean pixel scale", value: fit.metrics.meanPixelScaleUmPerPx ?? Number.NaN, unit: "um/px" },
+    { id: "rotationDeg", label: "Rotation", value: fit.metrics.rotationDeg ?? Number.NaN, unit: "deg" },
+    { id: "shear", label: "Shear", value: fit.metrics.shear ?? Number.NaN },
+    { id: "scaleAnisotropy", label: "Scale anisotropy", value: fit.metrics.scaleAnisotropy ?? Number.NaN },
+    { id: "rmsResidualPx", label: "RMS residual", value: fit.metrics.rmsResidualPx, unit: "px" },
+    { id: "maxResidualPx", label: "Max residual", value: fit.metrics.maxResidualPx, unit: "px" },
+    { id: "fieldDistortionPercent", label: "Field distortion", value: fit.metrics.fieldDistortionPercent ?? Number.NaN, unit: "%" },
+    { id: "radialK1", label: "Radial k1", value: fit.radial.k1 ?? Number.NaN },
+    { id: "radialK2", label: "Radial k2", value: fit.radial.k2 ?? Number.NaN }
+  ];
+}
+
 function selectedL71MetricValue(result: SlantedEdgeMtfResult, metric: L71FocusMetric): number | null {
   if (metric === "mtf10") return result.metrics.mtf10CyclesPerPx;
   if (metric === "nyquist") return result.metrics.mtfAtNyquist;
@@ -6219,7 +6794,10 @@ function exportStudyBundle(
   focusSweepRun: L71FocusSweepResult | null,
   fieldMtfMap: L71FieldMtfMapResult | null,
   qualificationRun: L71QualificationResult | null,
-  focusFieldComparison: L71FocusFieldComparisonResult | null
+  focusFieldComparison: L71FocusFieldComparisonResult | null,
+  geometricTarget: L72GeometricTarget | null,
+  geometricFit: L72GeometricFitResult | null,
+  geometricComparison: L72GeometryComparisonResult | null
 ): void {
   const bundle = studyBundleJson(study, {
     sweep: sweep ?? undefined,
@@ -6233,27 +6811,36 @@ function exportStudyBundle(
     focusSweepRun: focusSweepRun ?? undefined,
     fieldMtfMap: fieldMtfMap ?? undefined,
     qualificationRun: qualificationRun ?? undefined,
-    focusFieldComparison: focusFieldComparison ?? undefined
+    focusFieldComparison: focusFieldComparison ?? undefined,
+    geometricTarget: geometricTarget ?? undefined,
+    geometricFit: geometricFit ?? undefined,
+    geometricComparison: geometricComparison ?? undefined
   });
-  downloadText("l71-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
-  downloadText("l71-study.md", "text/markdown", studyBundleMarkdown(bundle));
-  downloadText("l71-metrics.csv", "text/csv", bundle.metricsCsv);
-  downloadText("l71-profiles.csv", "text/csv", bundle.profilesCsv);
-  downloadText("l71-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
-  downloadText("l71-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
-  if (comparison) downloadText("l71-comparison.csv", "text/csv", studyComparisonCsv(comparison));
-  if (sweep) downloadText("l71-sweep.csv", "text/csv", practicalSweepCsv(sweep));
-  if (measuredComparison) downloadText("l71-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
-  if (cameraRun) downloadText("l71-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
-  if (calibrationRun) downloadText("l71-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
-  if (mtfRun) downloadText("l71-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
-  if (mtfComparison) downloadText("l71-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
-  if (linePairRun) downloadText("l71-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
+  downloadText("l72-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
+  downloadText("l72-study.md", "text/markdown", studyBundleMarkdown(bundle));
+  downloadText("l72-metrics.csv", "text/csv", bundle.metricsCsv);
+  downloadText("l72-profiles.csv", "text/csv", bundle.profilesCsv);
+  downloadText("l72-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+  downloadText("l72-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
+  if (comparison) downloadText("l72-comparison.csv", "text/csv", studyComparisonCsv(comparison));
+  if (sweep) downloadText("l72-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+  if (measuredComparison) downloadText("l72-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
+  if (cameraRun) downloadText("l72-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
+  if (calibrationRun) downloadText("l72-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
+  if (mtfRun) downloadText("l72-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
+  if (mtfComparison) downloadText("l72-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
+  if (linePairRun) downloadText("l72-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
   if (focusSweepRun) downloadText("focus_sweep.csv", "text/csv", focusSweepCsv(focusSweepRun));
   if (fieldMtfMap) downloadText("field_mtf_map.csv", "text/csv", fieldMtfMapCsv(fieldMtfMap));
   if (qualificationRun) downloadText("qualification_report.json", "application/json", qualificationReportJson(qualificationRun));
   if (qualificationRun) downloadText("qualification_report.md", "text/markdown", qualificationReportMarkdown(qualificationRun, focusSweepRun ?? undefined, fieldMtfMap ?? undefined, focusFieldComparison ?? undefined));
   if (focusFieldComparison) downloadText("mtf_comparison.csv", "text/csv", focusFieldComparisonCsv(focusFieldComparison));
+  if (geometricTarget) downloadText("points.csv", "text/csv", geometricPointsCsv(geometricTarget));
+  if (geometricFit) downloadText("residuals.csv", "text/csv", geometricResidualsCsv(geometricFit));
+  if (geometricFit) downloadText("distortion_map.csv", "text/csv", distortionMapCsv(geometricFit));
+  if (geometricFit) downloadText("geometric_calibration_report.json", "application/json", geometricCalibrationReportJson(geometricFit, geometricComparison ?? undefined));
+  if (geometricFit) downloadText("geometric_calibration_report.md", "text/markdown", geometricCalibrationReportMarkdown(geometricFit, geometricComparison ?? undefined));
+  if (geometricComparison) downloadText("geometric_comparison.csv", "text/csv", geometricComparisonCsv(geometricComparison));
 }
 
 function exportPracticalSweepJson(result: PracticalSweepResult): void {

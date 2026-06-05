@@ -1,11 +1,14 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L7.1 Focus + Field MTF Qualification Workbench over
-the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with synthetic/current-frame focus
-sweeps, best-focus and depth-of-focus readouts, center/corner/3x3 field MTF maps, diagnostic PASS/FAIL/WARNING
-qualification reports, measured-vs-simulated focus/field residual comparison, generated/imported slanted-edge
-targets, ROI-based ESF/LSF/SFR-MTF, MTF50/MTF10/Nyquist metrics, cycles/pixel plus optional lp/mm units,
-line-pair target sanity checks, JSON/Markdown/CSV MTF exports, diagnostic dark/flat/exposure
+An EM-first light simulator MVP. The visible web app is now the L7.2 Geometric Calibration / Distortion &
+Pixel-Scale Workbench over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with
+deterministic dot/checker/line target generation, point CSV import, similarity/affine/radial image-geometry fitting,
+pixel-scale/rotation/skew diagnostics, residual vector and heatmap previews, corrected/undistorted point tables,
+measured-vs-simulated geometry comparison, synthetic/current-frame focus sweeps, best-focus and depth-of-focus
+readouts, center/corner/3x3 field MTF maps, diagnostic PASS/FAIL/WARNING qualification reports,
+measured-vs-simulated focus/field residual comparison, generated/imported slanted-edge targets, ROI-based
+ESF/LSF/SFR-MTF, MTF50/MTF10/Nyquist metrics, cycles/pixel plus optional lp/mm units, line-pair target sanity
+checks, JSON/Markdown/CSV MTF exports, diagnostic dark/flat/exposure
 CSV import, deterministic calibration data hashes, photon-transfer-style sensor-lite fitting, fitted camera profiles,
 measured-vs-simulated camera residuals, calibration report bundles, deterministic detector acquisition
 post-processing, photons/electrons/DN conversion, shot/read/dark noise modes, saturation/SNR/histogram metrics,
@@ -81,6 +84,13 @@ measured-vs-simulated focus/field residual comparison, and exports named `focus_
 `qualification_report.md`, `qualification_report.json`, and `mtf_comparison.csv`. It remains diagnostic thresholding,
 not ISO 12233 certification, Imatest-equivalent testing, calibrated optical model fitting, pure lens-only MTF
 certification, or sensor-stack EM.
+L7.2 adds a Geometric Calibration / Distortion & Pixel-Scale Workbench: deterministic dot/checker/line target
+generation, point CSV import, similarity/affine/radial k1/k2 fitting, pixel-scale/rotation/shear/anisotropy metrics,
+residual vector maps, residual heatmaps, corrected/undistorted point previews, measured-vs-simulated geometry
+comparison, study integration, and exports named `geometric_calibration_report.md`,
+`geometric_calibration_report.json`, `points.csv`, `residuals.csv`, `distortion_map.csv`, and
+`geometric_comparison.csv`. It remains diagnostic 2D image-geometry analysis only, not certified camera calibration,
+lab-accredited metrology, full 3D pose/stereo calibration, digital-twin manufacturing calibration, or sensor-stack EM.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, stochastic source engine, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, certified calibration system, or manufacturing
@@ -88,8 +98,11 @@ certification system.
 
 ## Current Visible Mode
 
-- `L7.1 Focus + Field MTF Qualification Workbench`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
+  deterministic dot/checker/line geometric target generation, imported point CSV fitting, similarity/affine/radial
+  k1/k2 diagnostic models, pixel-scale, rotation, shear, scale-anisotropy, residual vector map, residual heatmap,
+  corrected/undistorted point preview, measured-vs-simulated geometry comparison, geometric calibration reports,
   synthetic/current-frame focus MTF sweeps, best-focus and depth-of-focus diagnostics, center/corner/3x3 field MTF
   mapping, worst-field ROI and center-corner falloff readouts, configurable diagnostic qualification thresholds,
   PASS/FAIL/WARNING reports, measured-vs-simulated focus/field residual comparison, focus/field/qualification exports,
@@ -127,7 +140,8 @@ certification system.
   camera report exports, study save, and synthetic-camera send-to-measured comparison,
   Advisor Review Mode Markdown/JSON/CSV exports, accessible custom tooltips, under-the-hood
   formula/snippet panels, Explain mode highlighting, and a searchable explanation drawer,
-  and strict limitations against arbitrary 3D EM, ISO 12233 certification, Imatest-equivalent testing, EMVA 1288
+  and strict limitations against arbitrary 3D EM, certified camera calibration, lab-accredited metrology,
+  full 3D pose/stereo calibration, ISO 12233 certification, Imatest-equivalent testing, EMVA 1288
   certification, certified lab calibration, pure lens-only MTF certification, digital-twin, pixel-level sensor-stack EM,
   or stochastic source-engine claims.
 
@@ -784,15 +798,40 @@ This is diagnostic focus/field MTF thresholding only. It is not ISO 12233 certif
 lab-accredited metrology, calibrated optical model fitting, pure lens-only MTF certification, optical manufacturing
 certification, pixel-level sensor-stack EM, or full 3D Maxwell/FDTD/FEM/BEM/RCWA execution.
 
+## L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench
+
+L7.2 adds a diagnostic 2D image-geometry layer over the study workspace. It does not add hardware control, certified
+camera calibration, multi-view bundle adjustment, 3D pose calibration, stereo calibration, digital-twin metrology, or
+new Maxwell physics.
+
+- `Target generation`: creates deterministic dot-grid, checkerboard, or line-grid calibration targets with image
+  hashes, point tables, configurable rows/columns/spacing/pixel pitch/rotation, and optional radial k1/k2 distortion.
+- `Point import`: accepts `id,x_px,y_px` CSV points with optional `x_world_um,y_world_um,row,col`, fills grid world
+  coordinates from spacing where possible, and records source hashes plus warnings.
+- `Fitting`: runs similarity, affine, radial-k1, or radial-k1+k2 diagnostic fits and reports pixel scale, rotation,
+  shear, scale anisotropy, radial terms, RMS/max residuals, field distortion, corner/center residuals, and straight
+  line bow.
+- `Visualization`: shows target point overlays, fit metrics, residual vectors, residual heatmap, corrected or
+  undistorted point previews, and measured-vs-simulated geometry deltas.
+- `Study and export integration`: L7.2 studies save target/point/fit/comparison hashes, metrics, residual profiles,
+  warnings, limitations, and capabilities. Exports include `geometric_calibration_report.md`,
+  `geometric_calibration_report.json`, `points.csv`, `residuals.csv`, `distortion_map.csv`, and
+  `geometric_comparison.csv`.
+
+This is diagnostic 2D image-geometry analysis only. It is not certified camera calibration, ISO/Imatest-equivalent
+measurement, lab-accredited metrology, full 3D pose or stereo calibration, raw sensor-stack EM, digital-twin
+manufacturing calibration, or full 3D Maxwell/FDTD/FEM/BEM/RCWA execution.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
 - Consider an L6.x bundle hygiene pass: lazy-load heavy workbench panels/exports and split large chunks instead of
   only raising Vite's chunk warning limit.
-- Consider L7.2 geometric calibration and imported-image ROI hardening next: draggable ROI overlay, crop selection,
-  distortion/grid target diagnostics, focus sweep import rows, MTF warning explanations, and public Pages smoke coverage
-  for focus curve, best-focus/DOF, field map, qualification report, measured-vs-simulated focus/field comparison, and exports.
+- Consider L7.3 measured target detection and imported-image ROI hardening next: draggable ROI overlay, crop selection,
+  synthetic dot/checker detection, point matching, fit confidence warnings, focus sweep import rows, MTF warning
+  explanations, and public Pages smoke coverage for target generation, geometric fitting, residual vectors,
+  corrected points, measured-vs-simulated geometry comparison, and exports.
 
 ## Local Development
 

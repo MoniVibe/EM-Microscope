@@ -827,6 +827,7 @@ h2 {
 .maxwell-measured-panel,
 .maxwell-camera-panel,
 .maxwell-camera-calibration-panel,
+.maxwell-l72-panel,
 .maxwell-l71-panel,
 .maxwell-mtf-panel {
   grid-column: 1 / -1;
@@ -860,6 +861,155 @@ h2 {
 
 .maxwell-mtf-textarea {
   min-height: 86px;
+}
+
+.maxwell-l72-textarea {
+  min-height: 118px;
+}
+
+.maxwell-l72-panel .maxwell-study-controls {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.maxwell-l72-panel .field-row {
+  grid-template-columns: minmax(112px, 0.8fr) minmax(98px, 1fr);
+}
+
+.maxwell-l72-target-preview,
+.maxwell-l72-vector-map {
+  position: relative;
+  min-height: 210px;
+  overflow: hidden;
+  border: 1px solid #c7d3df;
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(38, 50, 68, 0.08) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(38, 50, 68, 0.08) 1px, transparent 1px),
+    #f8fafc;
+  background-size: 24px 24px;
+}
+
+.maxwell-l72-target-preview i {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  border: 1px solid #ffffff;
+  border-radius: 50%;
+  background: #2f7d73;
+  box-shadow: 0 0 0 1px rgba(47, 125, 115, 0.45);
+}
+
+.maxwell-l72-target-preview-checkerboard {
+  background:
+    linear-gradient(45deg, rgba(38, 50, 68, 0.09) 25%, transparent 25%, transparent 75%, rgba(38, 50, 68, 0.09) 75%),
+    linear-gradient(45deg, rgba(38, 50, 68, 0.09) 25%, transparent 25%, transparent 75%, rgba(38, 50, 68, 0.09) 75%),
+    #f8fafc;
+  background-position: 0 0, 12px 12px;
+  background-size: 24px 24px;
+}
+
+.maxwell-l72-target-preview span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  color: #66758a;
+  font-size: 12px;
+  text-align: center;
+}
+
+.maxwell-l72-status {
+  padding: 3px 7px;
+  border: 1px solid #bdc9d8;
+  border-radius: 999px;
+  color: #334155;
+  background: #f1f5f9;
+}
+
+.maxwell-l72-status-pass {
+  border-color: #86b596;
+  color: #235c35;
+  background: #edf8f0;
+}
+
+.maxwell-l72-status-warning {
+  border-color: #c9a45a;
+  color: #7b571c;
+  background: #fff7e5;
+}
+
+.maxwell-l72-status-fail {
+  border-color: #cf8d8d;
+  color: #8f2e2e;
+  background: #fff1f1;
+}
+
+.maxwell-l72-vector-map span {
+  position: absolute;
+  height: 3px;
+  border-radius: 999px;
+  background: #a65f3a;
+  transform-origin: 0 50%;
+}
+
+.maxwell-l72-vector-map span::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid #a65f3a;
+  border-right: 2px solid #a65f3a;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.maxwell-l72-heatmap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12px, 1fr));
+  gap: 3px;
+  min-height: 52px;
+  margin-top: 8px;
+  padding: 6px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.maxwell-l72-heatmap i {
+  display: block;
+  min-height: 12px;
+  border-radius: 3px;
+  background: #a65f3a;
+}
+
+.maxwell-l72-corrected-table {
+  display: grid;
+  gap: 2px;
+  overflow: hidden;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+}
+
+.maxwell-l72-corrected-table div {
+  display: grid;
+  grid-template-columns: minmax(90px, 1.3fr) repeat(4, minmax(62px, 1fr));
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 8px;
+  background: #f8fafc;
+  color: #445168;
+  font-size: 11px;
+}
+
+.maxwell-l72-corrected-table span,
+.maxwell-l72-corrected-table strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .maxwell-mtf-image-preview {

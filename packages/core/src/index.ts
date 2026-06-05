@@ -17,6 +17,7 @@ export * from "./measurement/imageCalibration2d";
 export * from "./measurement/comparisonReport";
 export * from "./measurement/fitParameters";
 export * from "./measurement/fitRunner";
+export * from "./measurement/geometricCalibration";
 export * from "./measurement/measuredImage2d";
 export * from "./measurement/measuredMetrics2d";
 export * from "./measurement/modelComparison2d";
