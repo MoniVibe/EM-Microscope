@@ -35,7 +35,7 @@ import {
   compareMeasuredToSimulatedProfile,
   createMeasuredProfileFromImagePixels,
   importMaterialPackage,
-  l73CapabilitiesMatrix,
+  l74CapabilitiesMatrix,
   l69ExampleCalibrationCsv,
   linePairContrastCsv,
   measuredComparisonBundleJson,
@@ -78,6 +78,24 @@ import {
   pointSetFromDetection,
   rejectedPointsCsv,
   targetImageFromGeometricTarget,
+  defaultL74Thresholds,
+  exampleL74SessionManifestCsv,
+  frameMetricsCsv,
+  l74FrameFromCameraCalibration,
+  l74FrameFromCameraRun,
+  l74FrameFromDetection,
+  l74FrameFromFieldMap,
+  l74FrameFromFocusSweep,
+  l74FrameFromGeometricFit,
+  l74FrameFromMtf,
+  l74SyntheticFramesFromManifest,
+  outliersCsv,
+  parseL74SessionManifestCsv,
+  runL74SessionQa,
+  sessionMetricsCsv,
+  sessionReportJson,
+  sessionReportMarkdown,
+  sessionWarningsJson,
   residualProfileCsv,
   practicalSweepCsv,
   practicalSweepJson,
@@ -184,6 +202,9 @@ import {
   type L73DotPolarity,
   type L73TargetImage,
   type L73ThresholdMode,
+  type L74SessionFrame,
+  type L74SessionQaResult,
+  type L74SessionThresholds,
   type SlantedEdgeMtfResult,
   type PlanarFieldMonitorResult,
   type PracticalSweepFamily,
@@ -436,6 +457,16 @@ export function MaxwellPanel() {
   const [l73Detection, setL73Detection] = useState<L73DetectionResult | null>(null);
   const [l73SelectedPointId, setL73SelectedPointId] = useState("");
   const [l73ShowLabels, setL73ShowLabels] = useState(true);
+  const [l74ManifestText, setL74ManifestText] = useState(exampleL74SessionManifestCsv());
+  const [l74MaxGeometricRmsResidualPx, setL74MaxGeometricRmsResidualPx] = useState(1);
+  const [l74MaxPixelScaleRepeatabilityStd, setL74MaxPixelScaleRepeatabilityStd] = useState(0.05);
+  const [l74MinMtf50CyclesPerPx, setL74MinMtf50CyclesPerPx] = useState(0.1);
+  const [l74MaxMtf50Cv, setL74MaxMtf50Cv] = useState(0.15);
+  const [l74MaxCameraBlackLevelDriftDn, setL74MaxCameraBlackLevelDriftDn] = useState(4);
+  const [l74MaxAllowedWarningCount, setL74MaxAllowedWarningCount] = useState(2);
+  const [l74MinDetectionCoverage, setL74MinDetectionCoverage] = useState(0.95);
+  const [l74MaxZScore, setL74MaxZScore] = useState(2.5);
+  const [l74SessionQa, setL74SessionQa] = useState<L74SessionQaResult | null>(null);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -603,7 +634,7 @@ export function MaxwellPanel() {
       ]),
     [foundry, materialAudit, materialCatalog, materialImport, robustResult, run, searchResult, yieldAnalysis]
   );
-  const capabilities = useMemo(() => l73CapabilitiesMatrix(), []);
+  const capabilities = useMemo(() => l74CapabilitiesMatrix(), []);
   const selectedStudy = savedStudies.find((study) => study.id === selectedStudyId) ?? null;
   const studyRunSummaries = useMemo<StudyRunSummary[]>(
     () =>
@@ -856,6 +887,19 @@ export function MaxwellPanel() {
       setL73TargetImage(null);
       setL73Detection(null);
       setL73SelectedPointId("");
+    }
+    const batchSession = state.batchSession as Record<string, unknown> | undefined;
+    if (batchSession) {
+      if (typeof batchSession.manifestText === "string") setL74ManifestText(batchSession.manifestText);
+      if (typeof batchSession.maxGeometricRmsResidualPx === "number") setL74MaxGeometricRmsResidualPx(batchSession.maxGeometricRmsResidualPx);
+      if (typeof batchSession.maxPixelScaleRepeatabilityStd === "number") setL74MaxPixelScaleRepeatabilityStd(batchSession.maxPixelScaleRepeatabilityStd);
+      if (typeof batchSession.minMtf50CyclesPerPx === "number") setL74MinMtf50CyclesPerPx(batchSession.minMtf50CyclesPerPx);
+      if (typeof batchSession.maxMtf50Cv === "number") setL74MaxMtf50Cv(batchSession.maxMtf50Cv);
+      if (typeof batchSession.maxCameraBlackLevelDriftDn === "number") setL74MaxCameraBlackLevelDriftDn(batchSession.maxCameraBlackLevelDriftDn);
+      if (typeof batchSession.maxAllowedWarningCount === "number") setL74MaxAllowedWarningCount(batchSession.maxAllowedWarningCount);
+      if (typeof batchSession.minDetectionCoverage === "number") setL74MinDetectionCoverage(batchSession.minDetectionCoverage);
+      if (typeof batchSession.maxZScore === "number") setL74MaxZScore(batchSession.maxZScore);
+      setL74SessionQa(null);
     }
   }
 
@@ -2023,6 +2067,107 @@ export function MaxwellPanel() {
     );
   }
 
+  function l74Thresholds(): L74SessionThresholds {
+    return defaultL74Thresholds({
+      maxGeometricRmsResidualPx: l74MaxGeometricRmsResidualPx,
+      maxPixelScaleRepeatabilityStdUmPerPx: l74MaxPixelScaleRepeatabilityStd,
+      minMtf50CyclesPerPx: l74MinMtf50CyclesPerPx,
+      maxMtf50CoefficientOfVariation: l74MaxMtf50Cv,
+      maxCameraBlackLevelDriftDn: l74MaxCameraBlackLevelDriftDn,
+      maxAllowedWarningCount: l74MaxAllowedWarningCount,
+      minDetectionCoverage: l74MinDetectionCoverage,
+      maxZScore: l74MaxZScore
+    });
+  }
+
+  function loadL74ExampleManifest(): void {
+    setL74ManifestText(exampleL74SessionManifestCsv());
+    setL74SessionQa(null);
+    setStudyStatus("Loaded L7.4 example batch session manifest.");
+  }
+
+  function buildL74FramesFromManifest(rows: ReturnType<typeof parseL74SessionManifestCsv>["rows"]): L74SessionFrame[] {
+    const synthetic = l74SyntheticFramesFromManifest(rows);
+    return rows.map((row, index) => {
+      if ((row.type === "dot_grid" || row.type === "target_detection") && l73Detection) return l74FrameFromDetection(row, l73Detection);
+      if ((row.type === "dot_grid" || row.type === "point_csv" || row.type === "geometric_fit") && l72Fit) return l74FrameFromGeometricFit(row, l72Fit);
+      if (row.type === "slanted_edge" && mtfRun) return l74FrameFromMtf(row, mtfRun);
+      if (row.type === "focus_sweep_mtf" && l71FocusSweepRun) return l74FrameFromFocusSweep(row, l71FocusSweepRun);
+      if (row.type === "field_mtf_map" && l71FieldMapRun) return l74FrameFromFieldMap(row, l71FieldMapRun);
+      if (row.type === "camera_calibration" && cameraCalibrationRun) return l74FrameFromCameraCalibration(row, cameraCalibrationRun);
+      if (row.type === "camera_frame" && cameraRun) return l74FrameFromCameraRun(row, cameraRun);
+      return synthetic[index]!;
+    });
+  }
+
+  function runL74SessionAnalysis(): L74SessionQaResult | null {
+    try {
+      const manifest = parseL74SessionManifestCsv(l74ManifestText);
+      const frames = buildL74FramesFromManifest(manifest.rows);
+      const result = runL74SessionQa({
+        id: `l74-session-qa-${Date.now().toString(36)}`,
+        label: "L7.4 batch measurement session QA",
+        manifestHash: manifest.manifestHash,
+        frames,
+        thresholds: l74Thresholds(),
+        warnings: manifest.warnings
+      });
+      setL74SessionQa(result);
+      setStudyStatus(`L7.4 session QA ${result.status.toUpperCase()}: ${result.frameCount} frames / ${result.outliers.length} outliers / ${result.rejectedFrameCount} rejected.`);
+      return result;
+    } catch (error) {
+      setStudyStatus(`L7.4 session analysis failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function exportL74SessionBundle(): void {
+    const result = l74SessionQa ?? runL74SessionAnalysis();
+    if (!result) return;
+    downloadText("session_report.md", "text/markdown", sessionReportMarkdown(result));
+    downloadText("session_report.json", "application/json", sessionReportJson(result));
+    downloadText("frame_metrics.csv", "text/csv", frameMetricsCsv(result));
+    downloadText("session_metrics.csv", "text/csv", sessionMetricsCsv(result));
+    downloadText("outliers.csv", "text/csv", outliersCsv(result));
+    downloadText("warnings.json", "application/json", sessionWarningsJson(result));
+    setStudyStatus("Exported L7.4 session QA bundle.");
+  }
+
+  function saveL74SessionStudy(): void {
+    const result = l74SessionQa ?? runL74SessionAnalysis();
+    if (!result) return;
+    saveStudy(
+      createStudySnapshot({
+        id: `l74-session-study-${Date.now().toString(36)}`,
+        name: "L7.4 batch measurement session QA study",
+        mode: "image-quality.batch-session-qa",
+        selectedWorkbench: "batch-session-qa",
+        inputs: {
+          manifestText: l74ManifestText,
+          manifestHash: result.manifestHash,
+          thresholds: result.thresholds,
+          frames: result.frames,
+          aggregates: result.aggregates,
+          outliers: result.outliers
+        },
+        appState: currentAppState(),
+        backendReceipt: {
+          label: "L7.4 Batch Measurement Session + Repeatability QA",
+          availability: "executable",
+          scope: "diagnostic batch repeatability/session QA over existing L6.8-L7.3 metrics only; not certified calibration, ISO/Imatest/EMVA certification, lab metrology, hardware control, full 3D pose/stereo, digital twin, manufacturing certification, or 3D Maxwell"
+        },
+        resultHashes: [result.resultHash, ...result.frames.map((frame) => frame.resultHash)].filter(Boolean),
+        metrics: l74StudyMetrics(result),
+        profiles: {
+          frameStatus: result.frames.map((frame, index) => ({ xM: index, intensity: frame.status === "fail" ? 2 : frame.status === "warning" ? 1 : 0, label: frame.frameId })),
+          outliers: result.outliers.map((outlier, index) => ({ xM: index, intensity: outlier.value, label: `${outlier.frameId}:${outlier.metricId}` }))
+        },
+        warnings: result.warnings,
+        limitations: result.limitations
+      })
+    );
+  }
+
   function generateSyntheticMeasuredCsv(): void {
     try {
       const simulated = activeL67SimulatedProfile();
@@ -2440,6 +2585,18 @@ export function MaxwellPanel() {
         maxBlobAreaPx: l73MaxBlobAreaPx,
         maxMissingPoints: l73MaxMissingPoints,
         outlierResidualWarnPx: l73OutlierResidualWarnPx
+      },
+      batchSession: {
+        manifestText: l74ManifestText,
+        sessionHash: l74SessionQa?.resultHash ?? null,
+        maxGeometricRmsResidualPx: l74MaxGeometricRmsResidualPx,
+        maxPixelScaleRepeatabilityStd: l74MaxPixelScaleRepeatabilityStd,
+        minMtf50CyclesPerPx: l74MinMtf50CyclesPerPx,
+        maxMtf50Cv: l74MaxMtf50Cv,
+        maxCameraBlackLevelDriftDn: l74MaxCameraBlackLevelDriftDn,
+        maxAllowedWarningCount: l74MaxAllowedWarningCount,
+        minDetectionCoverage: l74MinDetectionCoverage,
+        maxZScore: l74MaxZScore
       }
     };
   }
@@ -2688,11 +2845,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.3 Measured Target Detection and ROI Hardening">
-      <h2>L7.3 Measured Target Detection and ROI Hardening</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.4 Batch Measurement Session + Repeatability QA">
+      <h2>L7.4 Batch Measurement Session + Repeatability QA</h2>
       <div className="l2-disclosure">
-        <strong>measured target image ROI handling, dot-grid blob detection, manual point correction, confidence reports, geometric calibration target generation/import, pixel-scale fitting, focus sweep MTF, camera calibration, saved studies, capabilities, and exports over the existing planar/scalar engines</strong>
-        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, and L7.3 diagnostic ROI-limited dot-grid measured target detection are the executable scope; this is not pixel-level sensor-stack EM, certified camera calibration, lab-accredited metrology, full 3D pose/stereo calibration, AprilTag/ArUco fiducial detection, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
+        <strong>batch session manifest import, per-frame metric aggregation, repeatability/drift/outlier QA, session reports, measured target ROI handling, geometric calibration, focus/field MTF, camera diagnostics, saved studies, capabilities, and exports over the existing planar/scalar engines</strong>
+        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, and L7.4 diagnostic batch measurement session QA/repeatability aggregation are the executable scope; this is not pixel-level sensor-stack EM, certified camera calibration, certified metrology reports, lab-accredited metrology, lab accreditation workflows, hardware control, full 3D pose/stereo calibration, AprilTag/ArUco fiducial detection, a digital twin, manufacturing certification, or 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -2741,7 +2898,8 @@ export function MaxwellPanel() {
             l72Target,
             l73Detection,
             l72Fit,
-            l72Comparison
+            l72Comparison,
+            l74SessionQa
           )
         }
         onImportBundle={importStudyBundleFile}
@@ -2845,6 +3003,32 @@ export function MaxwellPanel() {
         onExportCameraReport={exportCameraReport}
         onSendCameraToMeasured={sendCameraToMeasuredComparison}
         onSaveCameraStudy={saveCameraStudy}
+      />
+
+      <BatchMeasurementSessionQaPanel
+        manifestText={l74ManifestText}
+        setManifestText={setL74ManifestText}
+        maxGeometricRmsResidualPx={l74MaxGeometricRmsResidualPx}
+        setMaxGeometricRmsResidualPx={setL74MaxGeometricRmsResidualPx}
+        maxPixelScaleRepeatabilityStd={l74MaxPixelScaleRepeatabilityStd}
+        setMaxPixelScaleRepeatabilityStd={setL74MaxPixelScaleRepeatabilityStd}
+        minMtf50CyclesPerPx={l74MinMtf50CyclesPerPx}
+        setMinMtf50CyclesPerPx={setL74MinMtf50CyclesPerPx}
+        maxMtf50Cv={l74MaxMtf50Cv}
+        setMaxMtf50Cv={setL74MaxMtf50Cv}
+        maxCameraBlackLevelDriftDn={l74MaxCameraBlackLevelDriftDn}
+        setMaxCameraBlackLevelDriftDn={setL74MaxCameraBlackLevelDriftDn}
+        maxAllowedWarningCount={l74MaxAllowedWarningCount}
+        setMaxAllowedWarningCount={setL74MaxAllowedWarningCount}
+        minDetectionCoverage={l74MinDetectionCoverage}
+        setMinDetectionCoverage={setL74MinDetectionCoverage}
+        maxZScore={l74MaxZScore}
+        setMaxZScore={setL74MaxZScore}
+        result={l74SessionQa}
+        onLoadExample={loadL74ExampleManifest}
+        onRun={runL74SessionAnalysis}
+        onExport={exportL74SessionBundle}
+        onSave={saveL74SessionStudy}
       />
 
       <GeometricCalibrationWorkbenchPanel
@@ -4102,6 +4286,247 @@ function NumberField({
         {unit && <em>{unit}</em>}
       </div>
     </label>
+  );
+}
+
+function BatchMeasurementSessionQaPanel({
+  manifestText,
+  setManifestText,
+  maxGeometricRmsResidualPx,
+  setMaxGeometricRmsResidualPx,
+  maxPixelScaleRepeatabilityStd,
+  setMaxPixelScaleRepeatabilityStd,
+  minMtf50CyclesPerPx,
+  setMinMtf50CyclesPerPx,
+  maxMtf50Cv,
+  setMaxMtf50Cv,
+  maxCameraBlackLevelDriftDn,
+  setMaxCameraBlackLevelDriftDn,
+  maxAllowedWarningCount,
+  setMaxAllowedWarningCount,
+  minDetectionCoverage,
+  setMinDetectionCoverage,
+  maxZScore,
+  setMaxZScore,
+  result,
+  onLoadExample,
+  onRun,
+  onExport,
+  onSave
+}: {
+  manifestText: string;
+  setManifestText: (value: string) => void;
+  maxGeometricRmsResidualPx: number;
+  setMaxGeometricRmsResidualPx: (value: number) => void;
+  maxPixelScaleRepeatabilityStd: number;
+  setMaxPixelScaleRepeatabilityStd: (value: number) => void;
+  minMtf50CyclesPerPx: number;
+  setMinMtf50CyclesPerPx: (value: number) => void;
+  maxMtf50Cv: number;
+  setMaxMtf50Cv: (value: number) => void;
+  maxCameraBlackLevelDriftDn: number;
+  setMaxCameraBlackLevelDriftDn: (value: number) => void;
+  maxAllowedWarningCount: number;
+  setMaxAllowedWarningCount: (value: number) => void;
+  minDetectionCoverage: number;
+  setMinDetectionCoverage: (value: number) => void;
+  maxZScore: number;
+  setMaxZScore: (value: number) => void;
+  result: L74SessionQaResult | null;
+  onLoadExample: () => void;
+  onRun: () => L74SessionQaResult | null;
+  onExport: () => void;
+  onSave: () => void;
+}) {
+  const aggregateRows = result?.aggregates.slice(0, 8) ?? [];
+  const frameRows = result?.frames.slice(0, 10) ?? [];
+  const outlierRows = result?.outliers.slice(0, 8) ?? [];
+  const trendAggregate = result?.aggregates.find((aggregate) => aggregate.metricId === "mtf50_cycles_per_px")
+    ?? result?.aggregates.find((aggregate) => aggregate.metricId === "rms_residual_px")
+    ?? result?.aggregates.find((aggregate) => aggregate.count >= 2)
+    ?? null;
+  const trendRows = trendAggregate && result
+    ? result.frames
+      .map((frame) => {
+        const metricRow = frame.metrics.find((metric) => metric.id === trendAggregate.metricId);
+        return metricRow && Number.isFinite(metricRow.value) ? { frameId: frame.frameId, value: metricRow.value } : null;
+      })
+      .filter((row): row is { frameId: string; value: number } => row !== null)
+    : [];
+  const trendMin = trendRows.length > 0 ? Math.min(...trendRows.map((row) => row.value)) : 0;
+  const trendMax = trendRows.length > 0 ? Math.max(...trendRows.map((row) => row.value)) : 1;
+  const trendRange = Math.max(1e-9, trendMax - trendMin);
+  const exportNames = ["session_report.md", "session_report.json", "frame_metrics.csv", "session_metrics.csv", "outliers.csv", "warnings.json"];
+
+  return (
+    <div className="maxwell-study-card maxwell-l74-panel" aria-label="L7.4 Batch Measurement Session + Repeatability QA">
+      <div className="maxwell-section-heading">
+        <h2>L7.4 Batch Measurement Session + Repeatability QA</h2>
+        <strong className={`maxwell-l74-status ${result ? `maxwell-l74-status-${result.status}` : ""}`}>{result ? result.status.toUpperCase() : "not run"}</strong>
+      </div>
+      <div className="l2-disclosure">
+        <strong>Import a batch manifest, normalize existing diagnostic frame metrics, aggregate repeatability and drift, flag outliers, and export a session report.</strong>
+        <span>Diagnostic session QA only: this does not certify camera calibration, ISO/Imatest/EMVA performance, lab metrology, hardware control, full 3D pose/stereo calibration, manufacturing calibration, or new 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD physics.</span>
+      </div>
+
+      <div className="maxwell-workspace-grid maxwell-l74-grid">
+        <div className="maxwell-workspace-panel" aria-label="L7.4 session manifest editor">
+          <div className="maxwell-section-heading">
+            <h2>Batch Session Manifest</h2>
+            <strong>{manifestText.split(/\r?\n/).filter((line) => line.trim()).length} lines</strong>
+          </div>
+          <label className="maxwell-measured-textarea-label">
+            <span>CSV columns: frame_id,type,path_or_name,focus_z_um,exposure_ms,gain,temperature_c,notes</span>
+            <textarea
+              className="maxwell-measured-textarea maxwell-l74-textarea"
+              value={manifestText}
+              spellCheck={false}
+              onChange={(event) => setManifestText(event.currentTarget.value)}
+              aria-label="L7.4 batch session manifest CSV"
+            />
+          </label>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onLoadExample}><Sparkles size={15} /><span>Load Example Session Manifest</span></button>
+            <button type="button" onClick={() => onRun()}><ShieldCheck size={15} /><span>Run Session QA</span></button>
+            <button type="button" onClick={onExport}><FileDown size={15} /><span>Export Session QA</span></button>
+            <button type="button" onClick={onSave}><Save size={15} /><span>Save Session Study</span></button>
+          </div>
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="L7.4 repeatability threshold controls">
+          <div className="maxwell-section-heading">
+            <h2>Repeatability Thresholds</h2>
+            <strong>diagnostic</strong>
+          </div>
+          <div className="maxwell-study-controls">
+            <NumberField label="Max geometric RMS px" value={maxGeometricRmsResidualPx} min={0.01} max={10} step={0.01} onChange={setMaxGeometricRmsResidualPx} />
+            <NumberField label="Max pixel-scale std" value={maxPixelScaleRepeatabilityStd} unit="um/px" min={0.001} max={1} step={0.001} onChange={setMaxPixelScaleRepeatabilityStd} />
+            <NumberField label="Min MTF50" value={minMtf50CyclesPerPx} unit="cycles/px" min={0} max={0.5} step={0.005} onChange={setMinMtf50CyclesPerPx} />
+            <NumberField label="Max MTF50 CV" value={maxMtf50Cv} min={0.001} max={2} step={0.005} onChange={setMaxMtf50Cv} />
+            <NumberField label="Max black-level drift" value={maxCameraBlackLevelDriftDn} unit="DN" min={0} max={100} step={0.1} onChange={setMaxCameraBlackLevelDriftDn} />
+            <NumberField label="Max warnings" value={maxAllowedWarningCount} min={0} max={20} step={1} onChange={setMaxAllowedWarningCount} />
+            <NumberField label="Min detection coverage" value={minDetectionCoverage} min={0} max={1} step={0.01} onChange={setMinDetectionCoverage} />
+            <NumberField label="Max z-score" value={maxZScore} min={0.1} max={10} step={0.1} onChange={setMaxZScore} />
+          </div>
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="L7.4 session summary smoke preview">
+          <div className="maxwell-section-heading">
+            <h2>Session Summary</h2>
+            <strong>{result ? result.resultHash.slice(0, 10) : "pending"}</strong>
+          </div>
+          {result ? (
+            <div className="profile-meta">
+              <div className="compact-stat"><span>Status</span><strong>{result.status.toUpperCase()}</strong></div>
+              <div className="compact-stat"><span>Frames</span><strong>{result.frameCount}</strong></div>
+              <div className="compact-stat"><span>Accepted / rejected</span><strong>{result.acceptedFrameCount} / {result.rejectedFrameCount}</strong></div>
+              <div className="compact-stat"><span>Aggregates</span><strong>{result.aggregates.length}</strong></div>
+              <div className="compact-stat"><span>Outliers</span><strong>{result.outliers.length}</strong></div>
+              <div className="compact-stat"><span>Manifest hash</span><strong>{result.manifestHash.slice(0, 10)}</strong></div>
+            </div>
+          ) : (
+            <div className="empty-state">Run Session QA to compute repeatability aggregates, trend slopes, outlier tables, and exportable reports.</div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="L7.4 session manifest smoke preview">
+          <div className="maxwell-section-heading">
+            <h2>Frame Review</h2>
+            <strong>{frameRows.length} shown</strong>
+          </div>
+          {result ? (
+            <div className="maxwell-data-table maxwell-l74-table" aria-label="L7.4 session manifest smoke preview">
+              <div className="maxwell-l74-row header"><span>Frame</span><span>Type</span><span>Status</span><span>Source</span><span>Warnings</span></div>
+              {frameRows.map((frame) => (
+                <div className="maxwell-l74-row" key={frame.frameId}>
+                  <span>{frame.frameId}</span>
+                  <span>{frame.type}</span>
+                  <strong className={`maxwell-l74-status maxwell-l74-status-${frame.status}`}>{frame.status}</strong>
+                  <span>{frame.sourceLabel}</span>
+                  <span>{frame.warnings.length}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">Manifest frame review appears after analysis.</div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="L7.4 session aggregate metrics smoke preview">
+          <div className="maxwell-section-heading">
+            <h2>Aggregate Metrics</h2>
+            <strong>{aggregateRows.length} shown</strong>
+          </div>
+          {result ? (
+            <div className="maxwell-data-table maxwell-l74-table" aria-label="L7.4 session aggregate metrics smoke preview">
+              <div className="maxwell-l74-row aggregate header"><span>Metric</span><span>Count</span><span>Mean</span><span>Std</span><span>Drift/frame</span></div>
+              {aggregateRows.map((aggregate) => (
+                <div className="maxwell-l74-row aggregate" key={aggregate.metricId}>
+                  <span>{aggregate.label}</span>
+                  <span>{aggregate.count}</span>
+                  <strong>{formatNullableMetric(aggregate.mean)}{aggregate.unit ? ` ${aggregate.unit}` : ""}</strong>
+                  <span>{formatNullableMetric(aggregate.std)}</span>
+                  <span>{formatNullableMetric(aggregate.driftSlopePerFrame)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">Aggregate mean/std/CV/repeatability and drift slopes appear after analysis.</div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="L7.4 session outlier table smoke preview">
+          <div className="maxwell-section-heading">
+            <h2>Outlier Table</h2>
+            <strong>{outlierRows.length} shown</strong>
+          </div>
+          {result ? (
+            <div className="maxwell-data-table maxwell-l74-table" aria-label="L7.4 session outlier table smoke preview">
+              <div className="maxwell-l74-row outlier header"><span>Frame</span><span>Metric</span><span>Severity</span><span>Rule</span><span>Value</span></div>
+              {outlierRows.length > 0 ? outlierRows.map((outlier) => (
+                <div className="maxwell-l74-row outlier" key={`${outlier.frameId}-${outlier.metricId}-${outlier.rule}`}>
+                  <span>{outlier.frameId}</span>
+                  <span>{outlier.metricId}</span>
+                  <strong className={`maxwell-l74-status maxwell-l74-status-${outlier.severity}`}>{outlier.severity}</strong>
+                  <span>{outlier.rule}</span>
+                  <span>{formatNullableMetric(outlier.value)}</span>
+                </div>
+              )) : <div className="empty-state">No outliers at the current thresholds.</div>}
+            </div>
+          ) : (
+            <div className="empty-state">Outlier rows appear after analysis.</div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="L7.4 session trend plot smoke preview">
+          <div className="maxwell-section-heading">
+            <h2>Trend Plot</h2>
+            <strong>{trendAggregate ? trendAggregate.label : "pending"}</strong>
+          </div>
+          {trendRows.length > 0 ? (
+            <div className="maxwell-l74-trend" aria-label="L7.4 session trend plot smoke preview">
+              {trendRows.map((row) => (
+                <i key={row.frameId} style={{ height: `${18 + ((row.value - trendMin) / trendRange) * 86}%` }}>
+                  <span>{row.frameId}</span>
+                </i>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">Run Session QA to draw an MTF50 or residual trend over frame order.</div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel" aria-label="L7.4 session export smoke preview">
+          <div className="maxwell-section-heading">
+            <h2>Export Bundle</h2>
+            <strong>{exportNames.length} files</strong>
+          </div>
+          <div className="maxwell-data-table maxwell-l74-export-list" aria-label="L7.4 session export smoke preview">
+            {exportNames.map((name) => <div className="compact-stat" key={name}><span>{name}</span><strong>{result ? "ready" : "on run"}</strong></div>)}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -7274,6 +7699,22 @@ function l73StudyMetrics(detection: L73DetectionResult, fit: L72GeometricFitResu
   ];
 }
 
+function l74StudyMetrics(result: L74SessionQaResult): StudyMetric[] {
+  const metricValue = (id: string): number => result.aggregates.find((aggregate) => aggregate.metricId === id)?.mean ?? Number.NaN;
+  const repeatability = (id: string): number => result.aggregates.find((aggregate) => aggregate.metricId === id)?.repeatabilityStd ?? Number.NaN;
+  return [
+    { id: "frameCount", label: "Session frames", value: result.frameCount },
+    { id: "acceptedFrameCount", label: "Accepted frames", value: result.acceptedFrameCount },
+    { id: "rejectedFrameCount", label: "Rejected frames", value: result.rejectedFrameCount },
+    { id: "outlierCount", label: "Outliers", value: result.outliers.length },
+    { id: "warningCount", label: "Warnings", value: result.warnings.length },
+    { id: "meanMtf50CyclesPerPx", label: "Mean MTF50", value: metricValue("mtf50_cycles_per_px"), unit: "cycles/px" },
+    { id: "mtf50RepeatabilityStd", label: "MTF50 repeatability std", value: repeatability("mtf50_cycles_per_px"), unit: "cycles/px" },
+    { id: "meanGeometricRmsResidualPx", label: "Mean RMS residual", value: metricValue("rms_residual_px"), unit: "px" },
+    { id: "pixelScaleRepeatabilityStd", label: "Pixel-scale repeatability std", value: repeatability("mean_pixel_scale_um_per_px"), unit: "um/px" }
+  ];
+}
+
 function selectedL71MetricValue(result: SlantedEdgeMtfResult, metric: L71FocusMetric): number | null {
   if (metric === "mtf10") return result.metrics.mtf10CyclesPerPx;
   if (metric === "nyquist") return result.metrics.mtfAtNyquist;
@@ -7400,7 +7841,8 @@ function exportStudyBundle(
   geometricTarget: L72GeometricTarget | null,
   geometricDetection: L73DetectionResult | null,
   geometricFit: L72GeometricFitResult | null,
-  geometricComparison: L72GeometryComparisonResult | null
+  geometricComparison: L72GeometryComparisonResult | null,
+  sessionQa: L74SessionQaResult | null
 ): void {
   const bundle = studyBundleJson(study, {
     sweep: sweep ?? undefined,
@@ -7418,22 +7860,23 @@ function exportStudyBundle(
     geometricTarget: geometricTarget ?? undefined,
     geometricDetection: geometricDetection ?? undefined,
     geometricFit: geometricFit ?? undefined,
-    geometricComparison: geometricComparison ?? undefined
+    geometricComparison: geometricComparison ?? undefined,
+    sessionQa: sessionQa ?? undefined
   });
-  downloadText("l73-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
-  downloadText("l73-study.md", "text/markdown", studyBundleMarkdown(bundle));
-  downloadText("l73-metrics.csv", "text/csv", bundle.metricsCsv);
-  downloadText("l73-profiles.csv", "text/csv", bundle.profilesCsv);
-  downloadText("l73-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
-  downloadText("l73-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
-  if (comparison) downloadText("l73-comparison.csv", "text/csv", studyComparisonCsv(comparison));
-  if (sweep) downloadText("l73-sweep.csv", "text/csv", practicalSweepCsv(sweep));
-  if (measuredComparison) downloadText("l73-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
-  if (cameraRun) downloadText("l73-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
-  if (calibrationRun) downloadText("l73-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
-  if (mtfRun) downloadText("l73-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
-  if (mtfComparison) downloadText("l73-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
-  if (linePairRun) downloadText("l73-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
+  downloadText("l74-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
+  downloadText("l74-study.md", "text/markdown", studyBundleMarkdown(bundle));
+  downloadText("l74-metrics.csv", "text/csv", bundle.metricsCsv);
+  downloadText("l74-profiles.csv", "text/csv", bundle.profilesCsv);
+  downloadText("l74-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+  downloadText("l74-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
+  if (comparison) downloadText("l74-comparison.csv", "text/csv", studyComparisonCsv(comparison));
+  if (sweep) downloadText("l74-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+  if (measuredComparison) downloadText("l74-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
+  if (cameraRun) downloadText("l74-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
+  if (calibrationRun) downloadText("l74-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
+  if (mtfRun) downloadText("l74-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
+  if (mtfComparison) downloadText("l74-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
+  if (linePairRun) downloadText("l74-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
   if (focusSweepRun) downloadText("focus_sweep.csv", "text/csv", focusSweepCsv(focusSweepRun));
   if (fieldMtfMap) downloadText("field_mtf_map.csv", "text/csv", fieldMtfMapCsv(fieldMtfMap));
   if (qualificationRun) downloadText("qualification_report.json", "application/json", qualificationReportJson(qualificationRun));
@@ -7449,6 +7892,12 @@ function exportStudyBundle(
   if (geometricDetection) downloadText("rejected_points.csv", "text/csv", rejectedPointsCsv(geometricDetection));
   if (geometricDetection) downloadText("detection_report.md", "text/markdown", detectionReportMarkdown(geometricDetection));
   if (geometricDetection) downloadText("detection_report.json", "application/json", detectionReportJson(geometricDetection));
+  if (sessionQa) downloadText("session_report.md", "text/markdown", sessionReportMarkdown(sessionQa));
+  if (sessionQa) downloadText("session_report.json", "application/json", sessionReportJson(sessionQa));
+  if (sessionQa) downloadText("frame_metrics.csv", "text/csv", frameMetricsCsv(sessionQa));
+  if (sessionQa) downloadText("session_metrics.csv", "text/csv", sessionMetricsCsv(sessionQa));
+  if (sessionQa) downloadText("outliers.csv", "text/csv", outliersCsv(sessionQa));
+  if (sessionQa) downloadText("warnings.json", "application/json", sessionWarningsJson(sessionQa));
 }
 
 function exportPracticalSweepJson(result: PracticalSweepResult): void {

@@ -21,6 +21,7 @@ import {
   l71CapabilitiesMatrix,
   l72CapabilitiesMatrix,
   l73CapabilitiesMatrix,
+  l74CapabilitiesMatrix,
   measureFieldRoi,
   parseStudyBundleJson,
   practicalSweepCsv,
@@ -48,6 +49,7 @@ describe("L6.6 Practical Study Workspace core", () => {
     const l71Capabilities = l71CapabilitiesMatrix();
     const l72Capabilities = l72CapabilitiesMatrix();
     const l73Capabilities = l73CapabilitiesMatrix();
+    const l74Capabilities = l74CapabilitiesMatrix();
     const markdown = capabilitiesMarkdown(capabilities);
     const csv = capabilitiesCsv(capabilities);
 
@@ -63,6 +65,8 @@ describe("L6.6 Practical Study Workspace core", () => {
     expect(l72Capabilities.find((capability) => capability.id === "pixel-scale-diagnostic-calibration")?.status).toBe("executable");
     expect(l73Capabilities.find((capability) => capability.id === "dot-grid-target-detection")?.status).toBe("executable");
     expect(l73Capabilities.find((capability) => capability.id === "checkerboard-target-detection")?.status).toBe("scaffold-only");
+    expect(l74Capabilities.find((capability) => capability.id === "batch-measurement-session-qa")?.status).toBe("executable");
+    expect(l74Capabilities.find((capability) => capability.id === "repeatability-diagnostics")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "external-fdtd-export")?.status).toBe("scaffold-only");
     expect(capabilities.find((capability) => capability.id === "3d-maxwell-solve")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "fdtd-fem-bem-rcwa-execution")?.status).toBe("not-implemented");
@@ -78,13 +82,16 @@ describe("L6.6 Practical Study Workspace core", () => {
     expect(l72Capabilities.find((capability) => capability.id === "full-3d-pose-calibration")?.status).toBe("not-implemented");
     expect(l72Capabilities.find((capability) => capability.id === "stereo-calibration")?.status).toBe("not-implemented");
     expect(l73Capabilities.find((capability) => capability.id === "apriltag-aruco-detection")?.status).toBe("not-implemented");
+    expect(l74Capabilities.find((capability) => capability.id === "certified-metrology-report")?.status).toBe("not-implemented");
+    expect(l74Capabilities.find((capability) => capability.id === "lab-accreditation-workflow")?.status).toBe("not-implemented");
     expect(markdown).toContain("PlanarTmmBackend");
     expect(markdown).toContain("Camera/Sensor-Lite acquisition");
     expect(markdown).toContain("Camera calibration diagnostics");
     expect(markdown).toContain("Resolution MTF diagnostics");
     expect(markdown).toContain("Dot-grid measured target detection");
+    expect(markdown).toContain("Batch measurement session QA");
     expect(csv).toContain("ExternalFdtdBackend export");
-    expect(`${markdown}\n${csv}`).not.toMatch(/3D Maxwell solve executed|FDTD solver executable|FEM\/BEM\/RCWA available|digital twin certified|certified EMVA characterization executable|EMVA 1288 certification executable|pixel-level sensor stack executable|ISO 12233 certification executable|Imatest-equivalent certification executable|pure lens-only MTF certification executable|calibrated optical model fitting executable|certified camera calibration executable|lab-accredited metrology executable|full 3D pose calibration executable|stereo calibration executable|AprilTag detector executable|ArUco detector executable/i);
+    expect(`${markdown}\n${csv}`).not.toMatch(/3D Maxwell solve executed|FDTD solver executable|FEM\/BEM\/RCWA available|digital twin certified|certified EMVA characterization executable|EMVA 1288 certification executable|pixel-level sensor stack executable|ISO 12233 certification executable|Imatest-equivalent certification executable|pure lens-only MTF certification executable|calibrated optical model fitting executable|certified camera calibration executable|lab-accredited metrology executable|certified metrology report executable|lab accreditation executable|full 3D pose calibration executable|stereo calibration executable|AprilTag detector executable|ArUco detector executable/i);
   });
 
   it("saves and reimports a validation study bundle deterministically", () => {
@@ -113,8 +120,8 @@ describe("L6.6 Practical Study Workspace core", () => {
     const bundle = studyBundleJson(study);
     const imported = parseStudyBundleJson(JSON.stringify(bundle));
 
-    expect(study.type).toBe("l73PracticalStudy");
-    expect(bundle.appVersion).toContain("L7.3");
+    expect(study.type).toBe("l74PracticalStudy");
+    expect(bundle.appVersion).toContain("L7.4");
     expect(imported.study.resultHash).toBe(study.resultHash);
     expect(imported.manifest.resultHashes).toEqual([result.resultHash]);
     expect(imported.manifest.materialReceiptCount).toBe(1);

@@ -1,7 +1,9 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L7.3 Measured Target Detection and ROI Hardening
-workbench over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with measured target
+An EM-first light simulator MVP. The visible web app is now the L7.4 Batch Measurement Session + Repeatability QA
+workbench over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with batch session
+manifest import, per-frame metric aggregation, repeatability standard deviation and coefficient-of-variation summaries,
+drift slopes, threshold-controlled outlier review, session report exports, measured target
 image import, generated-target image handoff, numeric ROI controls, auto/manual dot-grid thresholding, polarity
 selection, connected-component blob detection, grid matching, manual point move/reject/accept/add/delete correction,
 detection confidence reports, detector report exports, deterministic dot/checker/line target generation, point CSV
@@ -100,6 +102,13 @@ with connected-component blob detection, matched to grid rows/columns and world 
 through the L7.2 geometry models, and exported as `detected_points.csv`, `rejected_points.csv`,
 `detection_report.md`, and `detection_report.json`. Checkerboard automatic detection is scaffold-only, and AprilTag/
 ArUco fiducial detection is not implemented.
+L7.4 adds Batch Measurement Session + Repeatability QA over L6.8-L7.3 diagnostic results: a session manifest imports
+frame/source metadata, existing camera/geometric/MTF/detection results can be normalized into per-frame metrics,
+deterministic aggregates compute mean/std/min/max/CV/repeatability and drift slopes, thresholds flag low MTF50,
+geometric residuals, detection coverage, warning-count, z-score, pixel-scale repeatability, and camera black-level
+drift issues, and exports include `session_report.md`, `session_report.json`, `frame_metrics.csv`,
+`session_metrics.csv`, `outliers.csv`, and `warnings.json`. It is diagnostic batch QA only, not certified metrology,
+lab accreditation, hardware control, manufacturing certification, or new 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, stochastic source engine, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, certified calibration system, or manufacturing
@@ -107,8 +116,11 @@ certification system.
 
 ## Current Visible Mode
 
-- `L7.3 Measured Target Detection and ROI Hardening`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L7.4 Batch Measurement Session + Repeatability QA`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
+  batch session manifest import, deterministic synthetic/example frame rows, per-frame metric normalization from
+  existing camera/geometric/MTF/detection results, aggregate repeatability metrics, drift slopes versus frame/focus/
+  exposure/temperature, threshold controls, outlier tables, trend previews, session QA reports,
   generated/imported measured target image handling, numeric ROI controls, dot-grid threshold/polarity controls,
   connected-component blob detection, centroiding, grid row/column matching, manual point correction, detection
   confidence reports, L7.2 fit handoff, and target detection report exports,
@@ -853,14 +865,36 @@ diagnostic single-image 2D grid-point extraction and geometry-fit tool, not a ce
   AprilTag/ArUco detection, certified camera calibration, lab metrology, full 3D pose/stereo, digital twins, hardware
   control, sensor-stack EM, and full 3D Maxwell/FDTD/FEM/BEM/RCWA execution are not implemented.
 
+## L7.4 Batch Measurement Session + Repeatability QA
+
+L7.4 turns individual diagnostic outputs into a repeatable session review layer without changing the physics backend.
+It remains diagnostic batch QA over existing L6.8-L7.3 metrics, not a certified metrology or accreditation workflow.
+
+- `Session manifest`: imports CSV rows with `frame_id`, `type`, `path_or_name` or `source_label`, optional focus,
+  exposure, gain, temperature, notes, deterministic row hashes, duplicate-ID warnings, and an example manifest.
+- `Frame normalization`: maps geometric fits, measured target detection, slanted-edge MTF, focus/field MTF,
+  camera calibration, and camera frame runs into a shared per-frame metric schema; example rows fall back to
+  deterministic synthetic frame metrics for smoke and demos.
+- `Repeatability QA`: aggregates mean/std/min/max/coefficient-of-variation, repeatability standard deviation, best/worst
+  frame, and drift slopes versus frame order, focus, exposure, and temperature.
+- `Outlier review`: threshold controls cover geometric RMS residual, pixel-scale repeatability, minimum MTF50, MTF50 CV,
+  camera black-level drift, warning count, detection coverage, and z-score outliers.
+- `Reports and study integration`: exports `session_report.md`, `session_report.json`, `frame_metrics.csv`,
+  `session_metrics.csv`, `outliers.csv`, and `warnings.json`, saves L7.4 session studies, and includes session QA
+  in study bundles and capability exports.
+- `Capability boundaries`: session QA and repeatability diagnostics are executable; certified metrology reports,
+  lab accreditation workflows, hardware control, manufacturing certification, calibrated optical model fitting,
+  sensor-stack EM, full 3D pose/stereo, AprilTag/ArUco detection, and full 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution
+  are not implemented.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
 - Consider an L6.x bundle hygiene pass: lazy-load heavy workbench panels/exports and split large chunks instead of
   only raising Vite's chunk warning limit.
-- Consider L7.4 measured-session hardening next: drag handles for ROI, residual-vector overlays directly on the
-  measured image, batch target sessions, richer checkerboard detection, optional fiducial-detector research spikes,
+- Consider L7.5 target/session hardening next: drag handles for ROI, residual-vector overlays directly on measured
+  images, richer checkerboard detection, optional ChArUco/fiducial research spikes kept behind capability boundaries,
   and stronger public Pages smoke coverage for imports, manual edits, saved studies, and exports.
 
 ## Local Development
