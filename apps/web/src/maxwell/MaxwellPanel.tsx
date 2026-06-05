@@ -35,7 +35,7 @@ import {
   compareMeasuredToSimulatedProfile,
   createMeasuredProfileFromImagePixels,
   importMaterialPackage,
-  l72CapabilitiesMatrix,
+  l73CapabilitiesMatrix,
   l69ExampleCalibrationCsv,
   linePairContrastCsv,
   measuredComparisonBundleJson,
@@ -67,6 +67,17 @@ import {
   geometricComparisonCsv,
   geometricPointsCsv,
   geometricResidualsCsv,
+  applyDetectionManualEdits,
+  attachGeometryFitMetricsToDetection,
+  defaultL73Roi,
+  detectMeasuredTargetPoints,
+  detectedPointsCsv,
+  detectionReportJson,
+  detectionReportMarkdown,
+  normalizeTargetImage,
+  pointSetFromDetection,
+  rejectedPointsCsv,
+  targetImageFromGeometricTarget,
   residualProfileCsv,
   practicalSweepCsv,
   practicalSweepJson,
@@ -169,6 +180,10 @@ import {
   type L72GeometryComparisonResult,
   type L72PointSet,
   type L72TargetKind,
+  type L73DetectionResult,
+  type L73DotPolarity,
+  type L73TargetImage,
+  type L73ThresholdMode,
   type SlantedEdgeMtfResult,
   type PlanarFieldMonitorResult,
   type PracticalSweepFamily,
@@ -406,6 +421,21 @@ export function MaxwellPanel() {
   const [l72ImportedPointSet, setL72ImportedPointSet] = useState<L72PointSet | null>(null);
   const [l72Fit, setL72Fit] = useState<L72GeometricFitResult | null>(null);
   const [l72Comparison, setL72Comparison] = useState<L72GeometryComparisonResult | null>(null);
+  const [l73TargetImage, setL73TargetImage] = useState<L73TargetImage | null>(null);
+  const [l73RoiXPx, setL73RoiXPx] = useState(11);
+  const [l73RoiYPx, setL73RoiYPx] = useState(8);
+  const [l73RoiWidthPx, setL73RoiWidthPx] = useState(338);
+  const [l73RoiHeightPx, setL73RoiHeightPx] = useState(244);
+  const [l73ThresholdMode, setL73ThresholdMode] = useState<L73ThresholdMode>("auto");
+  const [l73Threshold, setL73Threshold] = useState(0.5);
+  const [l73Polarity, setL73Polarity] = useState<L73DotPolarity>("auto");
+  const [l73MinBlobAreaPx, setL73MinBlobAreaPx] = useState(6);
+  const [l73MaxBlobAreaPx, setL73MaxBlobAreaPx] = useState(240);
+  const [l73MaxMissingPoints, setL73MaxMissingPoints] = useState(2);
+  const [l73OutlierResidualWarnPx, setL73OutlierResidualWarnPx] = useState(8);
+  const [l73Detection, setL73Detection] = useState<L73DetectionResult | null>(null);
+  const [l73SelectedPointId, setL73SelectedPointId] = useState("");
+  const [l73ShowLabels, setL73ShowLabels] = useState(true);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -573,7 +603,7 @@ export function MaxwellPanel() {
       ]),
     [foundry, materialAudit, materialCatalog, materialImport, robustResult, run, searchResult, yieldAnalysis]
   );
-  const capabilities = useMemo(() => l72CapabilitiesMatrix(), []);
+  const capabilities = useMemo(() => l73CapabilitiesMatrix(), []);
   const selectedStudy = savedStudies.find((study) => study.id === selectedStudyId) ?? null;
   const studyRunSummaries = useMemo<StudyRunSummary[]>(
     () =>
@@ -808,6 +838,24 @@ export function MaxwellPanel() {
       setL72ImportedPointSet(null);
       setL72Fit(null);
       setL72Comparison(null);
+    }
+    const targetDetection = state.targetDetection as Record<string, unknown> | undefined;
+    if (targetDetection) {
+      if (typeof targetDetection.roiXPx === "number") setL73RoiXPx(targetDetection.roiXPx);
+      if (typeof targetDetection.roiYPx === "number") setL73RoiYPx(targetDetection.roiYPx);
+      if (typeof targetDetection.roiWidthPx === "number") setL73RoiWidthPx(targetDetection.roiWidthPx);
+      if (typeof targetDetection.roiHeightPx === "number") setL73RoiHeightPx(targetDetection.roiHeightPx);
+      if (targetDetection.thresholdMode === "auto" || targetDetection.thresholdMode === "manual") setL73ThresholdMode(targetDetection.thresholdMode);
+      if (typeof targetDetection.threshold === "number") setL73Threshold(targetDetection.threshold);
+      if (targetDetection.polarity === "auto" || targetDetection.polarity === "dark-on-light" || targetDetection.polarity === "light-on-dark") setL73Polarity(targetDetection.polarity);
+      if (typeof targetDetection.minBlobAreaPx === "number") setL73MinBlobAreaPx(targetDetection.minBlobAreaPx);
+      if (typeof targetDetection.maxBlobAreaPx === "number") setL73MaxBlobAreaPx(targetDetection.maxBlobAreaPx);
+      if (typeof targetDetection.maxMissingPoints === "number") setL73MaxMissingPoints(targetDetection.maxMissingPoints);
+      if (typeof targetDetection.outlierResidualWarnPx === "number") setL73OutlierResidualWarnPx(targetDetection.outlierResidualWarnPx);
+      if (typeof targetDetection.showLabels === "boolean") setL73ShowLabels(targetDetection.showLabels);
+      setL73TargetImage(null);
+      setL73Detection(null);
+      setL73SelectedPointId("");
     }
   }
 
@@ -1609,6 +1657,8 @@ export function MaxwellPanel() {
     setL72PointCsvText(geometricPointsCsv(target));
     setL72Fit(null);
     setL72Comparison(null);
+    setL73Detection(null);
+    setL73SelectedPointId("");
     setStudyStatus(`Generated L7.2 ${target.kind} target: ${target.points.length} points / ${target.resultHash.slice(0, 10)}.`);
     return target;
   }
@@ -1619,6 +1669,8 @@ export function MaxwellPanel() {
       setL72ImportedPointSet(pointSet);
       setL72Fit(null);
       setL72Comparison(null);
+      setL73Detection(null);
+      setL73SelectedPointId("");
       setStudyStatus(`Imported L7.2 point CSV: ${pointSet.points.length} points / ${pointSet.sourceHash.slice(0, 10)}.`);
       return pointSet;
     } catch (error) {
@@ -1636,6 +1688,8 @@ export function MaxwellPanel() {
       setL72ImportedPointSet(pointSet);
       setL72Fit(null);
       setL72Comparison(null);
+      setL73Detection(null);
+      setL73SelectedPointId("");
       setStudyStatus(`Loaded L7.2 point file: ${file.name} / ${pointSet.points.length} points.`);
     } catch (error) {
       setStudyStatus(`L7.2 point file import failed: ${(error as Error).message}`);
@@ -1752,6 +1806,219 @@ export function MaxwellPanel() {
         },
         warnings: fit.warnings,
         limitations: fit.limitations
+      })
+    );
+  }
+
+  function l73DetectionSettings() {
+    return {
+      detector: "dot-grid" as const,
+      expectedRows: Math.round(clamp(l72Rows, 2, 80)),
+      expectedColumns: Math.round(clamp(l72Columns, 2, 80)),
+      spacingUm: l72SpacingUm,
+      thresholdMode: l73ThresholdMode,
+      threshold: l73Threshold,
+      polarity: l73Polarity,
+      minBlobAreaPx: l73MinBlobAreaPx,
+      maxBlobAreaPx: l73MaxBlobAreaPx,
+      maxMissingPoints: Math.round(clamp(l73MaxMissingPoints, 0, 500)),
+      outlierResidualWarnPx: l73OutlierResidualWarnPx,
+      subpixelWindowPx: 3
+    };
+  }
+
+  function l73RoiInput() {
+    return {
+      xPx: Math.round(l73RoiXPx),
+      yPx: Math.round(l73RoiYPx),
+      widthPx: Math.round(l73RoiWidthPx),
+      heightPx: Math.round(l73RoiHeightPx)
+    };
+  }
+
+  function setL73RoiFromImage(image: L73TargetImage, marginFraction = 0.03): void {
+    const roi = defaultL73Roi(image, marginFraction);
+    setL73RoiXPx(roi.xPx);
+    setL73RoiYPx(roi.yPx);
+    setL73RoiWidthPx(roi.widthPx);
+    setL73RoiHeightPx(roi.heightPx);
+  }
+
+  function useL73GeneratedTargetAsImage(): L73TargetImage {
+    const target = l72Target ?? l72GenerateTarget();
+    const image = targetImageFromGeometricTarget(target);
+    setL73TargetImage(image);
+    setL73RoiFromImage(image);
+    setL73Detection(null);
+    setL73SelectedPointId("");
+    setStudyStatus(`Loaded L7.3 measured target image from generated ${target.kind}: ${image.imageHash.slice(0, 10)}.`);
+    return image;
+  }
+
+  async function importL73TargetImageFile(file: File | null): Promise<void> {
+    if (!file) return;
+    try {
+      const image = await decodeL73TargetImageFile(file);
+      setL73TargetImage(image);
+      setL73RoiFromImage(image);
+      setL73Detection(null);
+      setL73SelectedPointId("");
+      setStudyStatus(`Imported L7.3 target image: ${file.name} / ${image.widthPx} x ${image.heightPx}.`);
+    } catch (error) {
+      setStudyStatus(`L7.3 target image import failed: ${(error as Error).message}`);
+    }
+  }
+
+  function runL73AutoDetect(): L73DetectionResult | null {
+    try {
+      const image = l73TargetImage ?? useL73GeneratedTargetAsImage();
+      const detection = detectMeasuredTargetPoints({
+        id: `l73-target-detection-${Date.now().toString(36)}`,
+        label: "L7.3 measured target dot-grid detection",
+        image,
+        roi: l73RoiInput(),
+        settings: l73DetectionSettings()
+      });
+      setL73Detection(detection);
+      setL72ImportedPointSet(pointSetFromDetection(detection));
+      setL72Fit(null);
+      setL72Comparison(null);
+      setL73SelectedPointId(detection.points[0]?.id ?? detection.rejectedPoints[0]?.id ?? "");
+      setStudyStatus(`L7.3 Auto Detect: ${detection.acceptedPointCount}/${detection.expectedPointCount} accepted points / coverage ${detection.coverageScore.toPrecision(4)}.`);
+      return detection;
+    } catch (error) {
+      setStudyStatus(`L7.3 Auto Detect failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function applyL73ManualEdits(edits: Parameters<typeof applyDetectionManualEdits>[1]): L73DetectionResult | null {
+    const detection = l73Detection ?? runL73AutoDetect();
+    if (!detection) return null;
+    const updated = applyDetectionManualEdits(detection, edits);
+    setL73Detection(updated);
+    setL72ImportedPointSet(pointSetFromDetection(updated));
+    setL72Fit(null);
+    setL72Comparison(null);
+    setL73SelectedPointId(selectedL73Point(updated, l73SelectedPointId)?.id ?? updated.points[0]?.id ?? updated.rejectedPoints[0]?.id ?? "");
+    setStudyStatus(`Applied L7.3 manual edits: ${updated.acceptedPointCount} accepted / ${updated.rejectedPointCount} rejected.`);
+    return updated;
+  }
+
+  function moveSelectedL73Point(): void {
+    const detection = l73Detection ?? runL73AutoDetect();
+    const point = selectedL73Point(detection, l73SelectedPointId);
+    if (!detection || !point) {
+      setStudyStatus("Run L7.3 detection before moving a point.");
+      return;
+    }
+    applyL73ManualEdits([{ type: "move", id: point.id, xPx: point.xPx + 1.5, yPx: point.yPx + 0.75 }]);
+  }
+
+  function rejectSelectedL73Point(): void {
+    const detection = l73Detection ?? runL73AutoDetect();
+    const point = selectedL73Point(detection, l73SelectedPointId);
+    if (!detection || !point) {
+      setStudyStatus("Run L7.3 detection before rejecting a point.");
+      return;
+    }
+    applyL73ManualEdits([{ type: "reject", id: point.id, reason: "manual rejection" }]);
+  }
+
+  function acceptSelectedL73Point(): void {
+    const detection = l73Detection;
+    const point = selectedL73Point(detection, l73SelectedPointId);
+    if (!detection || !point) {
+      setStudyStatus("Select a rejected L7.3 point before accepting it.");
+      return;
+    }
+    applyL73ManualEdits([{ type: "accept", id: point.id }]);
+  }
+
+  function addL73Point(): void {
+    const detection = l73Detection ?? runL73AutoDetect();
+    if (!detection) return;
+    const nextIndex = detection.points.length + detection.rejectedPoints.length;
+    const row = Math.min(l72Rows - 1, Math.floor(nextIndex / Math.max(1, l72Columns)));
+    const col = Math.min(l72Columns - 1, nextIndex % Math.max(1, l72Columns));
+    applyL73ManualEdits([{ type: "add", row, col, xPx: l73RoiXPx + l73RoiWidthPx * 0.5, yPx: l73RoiYPx + l73RoiHeightPx * 0.5 }]);
+  }
+
+  function deleteSelectedL73Point(): void {
+    const detection = l73Detection;
+    const point = selectedL73Point(detection, l73SelectedPointId);
+    if (!detection || !point) {
+      setStudyStatus("Select an L7.3 point before deleting it.");
+      return;
+    }
+    applyL73ManualEdits([{ type: "delete", id: point.id }]);
+  }
+
+  function clearL73Detection(): void {
+    setL73Detection(null);
+    setL73SelectedPointId("");
+    setL72ImportedPointSet(null);
+    setL72Fit(null);
+    setL72Comparison(null);
+    setStudyStatus("Cleared L7.3 measured target detection.");
+  }
+
+  function runL73GeometryFit(model: L72FitModel = l72FitModel): L72GeometricFitResult | null {
+    const detection = l73Detection ?? runL73AutoDetect();
+    if (!detection) return null;
+    const pointSet = pointSetFromDetection(detection);
+    const fit = runL72Fit(model, pointSet);
+    if (!fit) return null;
+    const updated = attachGeometryFitMetricsToDetection(detection, fit);
+    setL73Detection(updated);
+    setL72ImportedPointSet(pointSetFromDetection(updated));
+    setStudyStatus(`L7.3 Run Geometry Fit: ${model} RMS ${fit.metrics.rmsResidualPx.toPrecision(4)} px / coverage ${updated.coverageScore.toPrecision(4)}.`);
+    return fit;
+  }
+
+  function exportL73DetectionBundle(): void {
+    const detection = l73Detection ?? runL73AutoDetect();
+    if (!detection) return;
+    downloadText("detected_points.csv", "text/csv", detectedPointsCsv(detection));
+    downloadText("rejected_points.csv", "text/csv", rejectedPointsCsv(detection));
+    downloadText("detection_report.md", "text/markdown", detectionReportMarkdown(detection));
+    downloadText("detection_report.json", "application/json", detectionReportJson(detection));
+    if (l72Fit) downloadText("residuals.csv", "text/csv", geometricResidualsCsv(l72Fit));
+    setStudyStatus("Exported L7.3 detection bundle.");
+  }
+
+  function saveL73DetectionStudy(): void {
+    const detection = l73Detection ?? runL73AutoDetect();
+    if (!detection) return;
+    const fit = l72Fit ?? runL73GeometryFit("similarity");
+    saveStudy(
+      createStudySnapshot({
+        id: `l73-detection-study-${Date.now().toString(36)}`,
+        name: "L7.3 measured target detection study",
+        mode: "image-quality.target-detection",
+        selectedWorkbench: "geometric-calibration",
+        inputs: {
+          imageHash: detection.imageHash,
+          roi: detection.roi,
+          settings: detection.settings,
+          detection,
+          fit
+        },
+        appState: currentAppState(),
+        backendReceipt: {
+          label: "L7.3 Measured Target Detection and ROI Hardening",
+          availability: "executable",
+          scope: "diagnostic ROI-limited dot-grid target detection and L7.2 fit handoff only; not certified camera calibration, lab metrology, AprilTag/ArUco, full 3D pose/stereo, digital twin, or 3D Maxwell"
+        },
+        resultHashes: [detection.imageHash, detection.resultHash, fit?.resultHash].filter(Boolean) as string[],
+        metrics: l73StudyMetrics(detection, fit),
+        profiles: {
+          detectedPoints: detection.points.map((point) => ({ xM: point.xPx, intensity: point.yPx, label: point.id })),
+          rejectedPoints: detection.rejectedPoints.map((point) => ({ xM: point.xPx, intensity: point.yPx, label: point.id })),
+          residuals: fit?.residuals.map((residual, index) => ({ xM: index, intensity: residual.residualPx, label: residual.pointId })) ?? []
+        },
+        warnings: [...detection.warnings, ...(fit?.warnings ?? [])],
+        limitations: [...detection.limitations, ...(fit?.limitations ?? [])]
       })
     );
   }
@@ -2156,6 +2423,23 @@ export function MaxwellPanel() {
         importedPointHash: l72ImportedPointSet?.sourceHash ?? null,
         fitHash: l72Fit?.resultHash ?? null,
         comparisonHash: l72Comparison?.resultHash ?? null
+      },
+      targetDetection: {
+        imageHash: l73TargetImage?.imageHash ?? null,
+        detectionHash: l73Detection?.resultHash ?? null,
+        selectedPointId: l73SelectedPointId,
+        showLabels: l73ShowLabels,
+        roiXPx: l73RoiXPx,
+        roiYPx: l73RoiYPx,
+        roiWidthPx: l73RoiWidthPx,
+        roiHeightPx: l73RoiHeightPx,
+        thresholdMode: l73ThresholdMode,
+        threshold: l73Threshold,
+        polarity: l73Polarity,
+        minBlobAreaPx: l73MinBlobAreaPx,
+        maxBlobAreaPx: l73MaxBlobAreaPx,
+        maxMissingPoints: l73MaxMissingPoints,
+        outlierResidualWarnPx: l73OutlierResidualWarnPx
       }
     };
   }
@@ -2404,11 +2688,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench">
-      <h2>L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.3 Measured Target Detection and ROI Hardening">
+      <h2>L7.3 Measured Target Detection and ROI Hardening</h2>
       <div className="l2-disclosure">
-        <strong>geometric calibration target generation/import, pixel-scale fitting, affine/skew diagnostics, radial distortion vectors, corrected previews, focus sweep MTF, camera calibration, saved studies, capabilities, and exports over the existing planar/scalar engines</strong>
-        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, and L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows are the executable scope; this is not pixel-level sensor-stack EM, certified camera calibration, lab-accredited metrology, full 3D pose/stereo calibration, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
+        <strong>measured target image ROI handling, dot-grid blob detection, manual point correction, confidence reports, geometric calibration target generation/import, pixel-scale fitting, focus sweep MTF, camera calibration, saved studies, capabilities, and exports over the existing planar/scalar engines</strong>
+        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, and L7.3 diagnostic ROI-limited dot-grid measured target detection are the executable scope; this is not pixel-level sensor-stack EM, certified camera calibration, lab-accredited metrology, full 3D pose/stereo calibration, AprilTag/ArUco fiducial detection, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -2455,6 +2739,7 @@ export function MaxwellPanel() {
             l71QualificationRun,
             l71FocusFieldComparison,
             l72Target,
+            l73Detection,
             l72Fit,
             l72Comparison
           )
@@ -2591,6 +2876,34 @@ export function MaxwellPanel() {
         importedPointSet={l72ImportedPointSet}
         fit={l72Fit}
         comparison={l72Comparison}
+        targetImage={l73TargetImage}
+        roiXPx={l73RoiXPx}
+        setRoiXPx={setL73RoiXPx}
+        roiYPx={l73RoiYPx}
+        setRoiYPx={setL73RoiYPx}
+        roiWidthPx={l73RoiWidthPx}
+        setRoiWidthPx={setL73RoiWidthPx}
+        roiHeightPx={l73RoiHeightPx}
+        setRoiHeightPx={setL73RoiHeightPx}
+        thresholdMode={l73ThresholdMode}
+        setThresholdMode={setL73ThresholdMode}
+        threshold={l73Threshold}
+        setThreshold={setL73Threshold}
+        polarity={l73Polarity}
+        setPolarity={setL73Polarity}
+        minBlobAreaPx={l73MinBlobAreaPx}
+        setMinBlobAreaPx={setL73MinBlobAreaPx}
+        maxBlobAreaPx={l73MaxBlobAreaPx}
+        setMaxBlobAreaPx={setL73MaxBlobAreaPx}
+        maxMissingPoints={l73MaxMissingPoints}
+        setMaxMissingPoints={setL73MaxMissingPoints}
+        outlierResidualWarnPx={l73OutlierResidualWarnPx}
+        setOutlierResidualWarnPx={setL73OutlierResidualWarnPx}
+        detection={l73Detection}
+        selectedPointId={l73SelectedPointId}
+        setSelectedPointId={setL73SelectedPointId}
+        showDetectionLabels={l73ShowLabels}
+        setShowDetectionLabels={setL73ShowLabels}
         onGenerateTarget={l72GenerateTarget}
         onImportCsv={importL72PointCsv}
         onImportFile={importL72PointCsvFile}
@@ -2598,6 +2911,18 @@ export function MaxwellPanel() {
         onCompare={runL72Comparison}
         onExport={exportL72GeometricBundle}
         onSave={saveL72GeometricStudy}
+        onUseGeneratedTargetAsImage={useL73GeneratedTargetAsImage}
+        onImportTargetImage={importL73TargetImageFile}
+        onAutoDetect={runL73AutoDetect}
+        onClearDetection={clearL73Detection}
+        onMoveSelectedPoint={moveSelectedL73Point}
+        onRejectSelectedPoint={rejectSelectedL73Point}
+        onAcceptSelectedPoint={acceptSelectedL73Point}
+        onAddPoint={addL73Point}
+        onDeleteSelectedPoint={deleteSelectedL73Point}
+        onRunDetectionFit={runL73GeometryFit}
+        onExportDetection={exportL73DetectionBundle}
+        onSaveDetectionStudy={saveL73DetectionStudy}
       />
 
       <FocusFieldMtfQualificationPanel
@@ -3809,13 +4134,53 @@ function GeometricCalibrationWorkbenchPanel({
   importedPointSet,
   fit,
   comparison,
+  targetImage,
+  roiXPx,
+  setRoiXPx,
+  roiYPx,
+  setRoiYPx,
+  roiWidthPx,
+  setRoiWidthPx,
+  roiHeightPx,
+  setRoiHeightPx,
+  thresholdMode,
+  setThresholdMode,
+  threshold,
+  setThreshold,
+  polarity,
+  setPolarity,
+  minBlobAreaPx,
+  setMinBlobAreaPx,
+  maxBlobAreaPx,
+  setMaxBlobAreaPx,
+  maxMissingPoints,
+  setMaxMissingPoints,
+  outlierResidualWarnPx,
+  setOutlierResidualWarnPx,
+  detection,
+  selectedPointId,
+  setSelectedPointId,
+  showDetectionLabels,
+  setShowDetectionLabels,
   onGenerateTarget,
   onImportCsv,
   onImportFile,
   onRunFit,
   onCompare,
   onExport,
-  onSave
+  onSave,
+  onUseGeneratedTargetAsImage,
+  onImportTargetImage,
+  onAutoDetect,
+  onClearDetection,
+  onMoveSelectedPoint,
+  onRejectSelectedPoint,
+  onAcceptSelectedPoint,
+  onAddPoint,
+  onDeleteSelectedPoint,
+  onRunDetectionFit,
+  onExportDetection,
+  onSaveDetectionStudy
 }: {
   targetKind: L72TargetKind;
   setTargetKind: (value: L72TargetKind) => void;
@@ -3845,6 +4210,34 @@ function GeometricCalibrationWorkbenchPanel({
   importedPointSet: L72PointSet | null;
   fit: L72GeometricFitResult | null;
   comparison: L72GeometryComparisonResult | null;
+  targetImage: L73TargetImage | null;
+  roiXPx: number;
+  setRoiXPx: (value: number) => void;
+  roiYPx: number;
+  setRoiYPx: (value: number) => void;
+  roiWidthPx: number;
+  setRoiWidthPx: (value: number) => void;
+  roiHeightPx: number;
+  setRoiHeightPx: (value: number) => void;
+  thresholdMode: L73ThresholdMode;
+  setThresholdMode: (value: L73ThresholdMode) => void;
+  threshold: number;
+  setThreshold: (value: number) => void;
+  polarity: L73DotPolarity;
+  setPolarity: (value: L73DotPolarity) => void;
+  minBlobAreaPx: number;
+  setMinBlobAreaPx: (value: number) => void;
+  maxBlobAreaPx: number;
+  setMaxBlobAreaPx: (value: number) => void;
+  maxMissingPoints: number;
+  setMaxMissingPoints: (value: number) => void;
+  outlierResidualWarnPx: number;
+  setOutlierResidualWarnPx: (value: number) => void;
+  detection: L73DetectionResult | null;
+  selectedPointId: string;
+  setSelectedPointId: (value: string) => void;
+  showDetectionLabels: boolean;
+  setShowDetectionLabels: (value: boolean) => void;
   onGenerateTarget: () => void;
   onImportCsv: () => void;
   onImportFile: (file: File | null) => void | Promise<void>;
@@ -3852,6 +4245,18 @@ function GeometricCalibrationWorkbenchPanel({
   onCompare: () => void;
   onExport: () => void;
   onSave: () => void;
+  onUseGeneratedTargetAsImage: () => void;
+  onImportTargetImage: (file: File | null) => void | Promise<void>;
+  onAutoDetect: () => void;
+  onClearDetection: () => void;
+  onMoveSelectedPoint: () => void;
+  onRejectSelectedPoint: () => void;
+  onAcceptSelectedPoint: () => void;
+  onAddPoint: () => void;
+  onDeleteSelectedPoint: () => void;
+  onRunDetectionFit: (model?: L72FitModel) => void;
+  onExportDetection: () => void;
+  onSaveDetectionStudy: () => void;
 }) {
   const activePoints = importedPointSet?.points ?? target?.points ?? [];
   const activeWidthPx = target?.image.widthPx ?? widthPx;
@@ -3860,16 +4265,25 @@ function GeometricCalibrationWorkbenchPanel({
   const residualPeak = Math.max(1e-9, ...(fit?.residuals.map((row) => row.residualPx) ?? [1]));
   const correctedPreview = fit?.correctedPoints.slice(0, 10) ?? [];
   const statusLabel = fit?.status.toUpperCase() ?? "PENDING";
+  const imageWidthPx = targetImage?.widthPx ?? activeWidthPx;
+  const imageHeightPx = targetImage?.heightPx ?? activeHeightPx;
+  const roiLeft = clamp((roiXPx / Math.max(1, imageWidthPx)) * 100, 0, 100);
+  const roiTop = clamp((roiYPx / Math.max(1, imageHeightPx)) * 100, 0, 100);
+  const roiWidth = clamp((roiWidthPx / Math.max(1, imageWidthPx)) * 100, 0, 100 - roiLeft);
+  const roiHeight = clamp((roiHeightPx / Math.max(1, imageHeightPx)) * 100, 0, 100 - roiTop);
+  const detectionPoints = detection ? [...detection.points, ...detection.rejectedPoints] : [];
+  const selectedPoint = detectionPoints.find((point) => point.id === selectedPointId) ?? detectionPoints[0] ?? null;
+  const targetImagePreview = targetImage ? l73ImagePreviewCells(targetImage, 44, 30) : null;
 
   return (
-    <div className="maxwell-study-card maxwell-l72-panel" aria-label="L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench">
+    <div className="maxwell-study-card maxwell-l72-panel" aria-label="L7.3 Measured Target Detection and ROI Hardening">
       <div className="maxwell-section-heading">
-        <h2>L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench</h2>
+        <h2>L7.3 Measured Target Detection and ROI Hardening</h2>
         <strong>{fit ? `${statusLabel} / ${fit.model}` : target ? `${target.points.length} target points` : "not run"}</strong>
       </div>
       <div className="l2-disclosure">
-        <strong>Generate dot/checker/line targets, import point CSVs, fit similarity/affine/radial geometry, and inspect pixel scale, residual vectors, distortion, and corrected point diagnostics.</strong>
-        <span>Diagnostic 2D image geometry only; this is not certified camera calibration, lab-accredited metrology, full 3D pose or stereo calibration, a manufacturing digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution.</span>
+        <strong>Import or generate measured target images, adjust ROI, auto-detect dot grids, correct points manually, fit L7.2 geometry, and export detection confidence reports.</strong>
+        <span>Diagnostic measured-target detection only; this is not certified camera calibration, lab-accredited metrology, full 3D pose or stereo calibration, AprilTag/ArUco support, a manufacturing digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution.</span>
       </div>
 
       <div className="maxwell-workspace-grid">
@@ -3943,6 +4357,134 @@ function GeometricCalibrationWorkbenchPanel({
             ) : (
               <span>Generate or import points to preview the calibration target.</span>
             )}
+          </div>
+        </div>
+
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Measured Image Detection</h2>
+            <strong>{targetImage ? `${targetImage.widthPx} x ${targetImage.heightPx}` : "no image"}</strong>
+          </div>
+          <div className="l2-disclosure">
+            <strong>ROI-limited dot-grid detection with human-correctable points.</strong>
+            <span>Checkerboard automatic detection is scaffold-only; AprilTag/ArUco fiducials are not implemented in L7.3.</span>
+          </div>
+          <div className="maxwell-study-controls">
+            <NumberField label="ROI x" value={roiXPx} min={0} max={imageWidthPx} step={1} onChange={(value) => setRoiXPx(Math.round(clamp(value, 0, imageWidthPx)))} />
+            <NumberField label="ROI y" value={roiYPx} min={0} max={imageHeightPx} step={1} onChange={(value) => setRoiYPx(Math.round(clamp(value, 0, imageHeightPx)))} />
+            <NumberField label="ROI width" value={roiWidthPx} min={1} max={imageWidthPx} step={1} onChange={(value) => setRoiWidthPx(Math.round(clamp(value, 1, imageWidthPx)))} />
+            <NumberField label="ROI height" value={roiHeightPx} min={1} max={imageHeightPx} step={1} onChange={(value) => setRoiHeightPx(Math.round(clamp(value, 1, imageHeightPx)))} />
+            <label className="field-row">
+              <span>Threshold mode</span>
+              <select value={thresholdMode} onChange={(event) => setThresholdMode(event.currentTarget.value as L73ThresholdMode)}>
+                <option value="auto">Auto</option>
+                <option value="manual">Manual</option>
+              </select>
+            </label>
+            <label className="field-row">
+              <span>Polarity</span>
+              <select value={polarity} onChange={(event) => setPolarity(event.currentTarget.value as L73DotPolarity)}>
+                <option value="auto">Auto</option>
+                <option value="dark-on-light">Dark dots on light</option>
+                <option value="light-on-dark">Light dots on dark</option>
+              </select>
+            </label>
+            <NumberField label="Threshold" value={threshold} min={0} max={1} step={0.01} onChange={setThreshold} />
+            <NumberField label="Min blob area" value={minBlobAreaPx} min={1} max={5000} step={1} onChange={setMinBlobAreaPx} />
+            <NumberField label="Max blob area" value={maxBlobAreaPx} min={1} max={20000} step={1} onChange={setMaxBlobAreaPx} />
+            <NumberField label="Max missing" value={maxMissingPoints} min={0} max={200} step={1} onChange={(value) => setMaxMissingPoints(Math.round(clamp(value, 0, 200)))} />
+            <NumberField label="Outlier px" value={outlierResidualWarnPx} min={0.1} max={100} step={0.1} onChange={setOutlierResidualWarnPx} />
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onUseGeneratedTargetAsImage}><Sparkles size={15} /><span>Use Target As Measured Image</span></button>
+            <label className="maxwell-file-action">
+              <Upload size={15} />
+              <span>Import Target Image</span>
+              <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => void onImportTargetImage(event.currentTarget.files?.[0] ?? null)} />
+            </label>
+            <button type="button" onClick={onAutoDetect}><ShieldCheck size={15} /><span>Auto Detect</span></button>
+            <button type="button" onClick={onClearDetection}><Trash2 size={15} /><span>Clear Detection</span></button>
+          </div>
+          <div
+            className="maxwell-l73-image-preview"
+            aria-label="L7.3 target image ROI smoke preview"
+            style={{ aspectRatio: `${Math.max(1, imageWidthPx)} / ${Math.max(1, imageHeightPx)}` }}
+          >
+            {targetImagePreview && (
+              <span
+                className="maxwell-l73-image-raster"
+                aria-hidden="true"
+                style={{ gridTemplateColumns: `repeat(${targetImagePreview.columns}, minmax(0, 1fr))` }}
+              >
+                {targetImagePreview.cells.map((cell) => (
+                  <b key={cell.id} style={{ backgroundColor: `rgb(${cell.shade}, ${cell.shade}, ${cell.shade})` }} />
+                ))}
+              </span>
+            )}
+            <span className="maxwell-l73-roi" style={{ left: `${roiLeft}%`, top: `${roiTop}%`, width: `${roiWidth}%`, height: `${roiHeight}%` }} />
+            {detectionPoints.map((point) => (
+              <i
+                key={`${point.id}-${point.status}`}
+                className={point.status === "rejected" ? "rejected" : point.id === selectedPointId ? "selected" : undefined}
+                title={`${point.id}: ${point.status}`}
+                style={{
+                  left: `${clamp((point.xPx / Math.max(1, imageWidthPx)) * 100, 0, 100)}%`,
+                  top: `${clamp((point.yPx / Math.max(1, imageHeightPx)) * 100, 0, 100)}%`
+                }}
+              >
+                {showDetectionLabels ? `${point.row ?? "?"},${point.col ?? "?"}` : ""}
+              </i>
+            ))}
+            {!targetImage && <em>Use the generated target or import an image to enable ROI detection.</em>}
+          </div>
+        </div>
+
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Detection Confidence Report</h2>
+            <strong>{detection ? `${detection.acceptedPointCount}/${detection.expectedPointCount}` : "pending"}</strong>
+          </div>
+          <label className="maxwell-material-check">
+            <input type="checkbox" checked={showDetectionLabels} onChange={(event) => setShowDetectionLabels(event.currentTarget.checked)} />
+            <span>Point labels</span>
+            <strong>row,col</strong>
+          </label>
+          {detection ? (
+            <div className="maxwell-data-table" aria-label="L7.3 detection confidence report smoke preview">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Expected points</span><strong>{detection.expectedPointCount}</strong></div>
+                <div className="compact-stat"><span>Detected points</span><strong>{detection.detectedPointCount}</strong></div>
+                <div className="compact-stat"><span>Accepted / rejected</span><strong>{detection.acceptedPointCount} / {detection.rejectedPointCount}</strong></div>
+                <div className="compact-stat"><span>Coverage score</span><strong>{detection.coverageScore.toPrecision(4)}</strong></div>
+                <div className="compact-stat"><span>Grid match RMS</span><strong>{formatNullableMetric(detection.gridMatchRmsPx)} px</strong></div>
+                <div className="compact-stat"><span>Fit RMS / max</span><strong>{formatNullableMetric(detection.fitRmsPx)} / {formatNullableMetric(detection.fitMaxPx)} px</strong></div>
+                <div className="compact-stat"><span>Image hash</span><strong>{detection.imageHash.slice(0, 10)}</strong></div>
+              </div>
+              {detection.warnings.slice(0, 5).map((warning) => <div className="error-banner" key={`${warning.code}-${warning.message}`}>{warning.message}</div>)}
+            </div>
+          ) : (
+            <div className="empty-state">Run dot-grid Auto Detect to produce point counts, coverage, residual confidence, and warnings.</div>
+          )}
+          <div className="maxwell-study-controls">
+            <label className="field-row">
+              <span>Selected point</span>
+              <select value={selectedPoint?.id ?? ""} onChange={(event) => setSelectedPointId(event.currentTarget.value)}>
+                <option value="">none</option>
+                {detectionPoints.slice(0, 160).map((point) => (
+                  <option key={point.id} value={point.id}>{point.id} {point.status}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onMoveSelectedPoint}><Sparkles size={15} /><span>Move Selected Point</span></button>
+            <button type="button" onClick={onRejectSelectedPoint}><Trash2 size={15} /><span>Reject Selected Point</span></button>
+            <button type="button" onClick={onAcceptSelectedPoint}><ShieldCheck size={15} /><span>Accept Selected Point</span></button>
+            <button type="button" onClick={onAddPoint}><Plus size={15} /><span>Add Point</span></button>
+            <button type="button" onClick={onDeleteSelectedPoint}><Trash2 size={15} /><span>Delete Selected Point</span></button>
+            <button type="button" onClick={() => onRunDetectionFit("similarity")}><ShieldCheck size={15} /><span>Run Geometry Fit</span></button>
+            <button type="button" onClick={onExportDetection}><FileDown size={15} /><span>Export Detection Report</span></button>
+            <button type="button" onClick={onSaveDetectionStudy}><Save size={15} /><span>Save Detection Study</span></button>
           </div>
         </div>
 
@@ -6713,6 +7255,25 @@ function l72StudyMetrics(fit: L72GeometricFitResult): StudyMetric[] {
   ];
 }
 
+function selectedL73Point(detection: L73DetectionResult | null, id: string): L73DetectionResult["points"][number] | null {
+  if (!detection) return null;
+  const points = [...detection.points, ...detection.rejectedPoints];
+  return points.find((point) => point.id === id) ?? points[0] ?? null;
+}
+
+function l73StudyMetrics(detection: L73DetectionResult, fit: L72GeometricFitResult | null): StudyMetric[] {
+  return [
+    { id: "expectedPointCount", label: "Expected points", value: detection.expectedPointCount },
+    { id: "detectedPointCount", label: "Detected points", value: detection.detectedPointCount },
+    { id: "acceptedPointCount", label: "Accepted points", value: detection.acceptedPointCount },
+    { id: "rejectedPointCount", label: "Rejected points", value: detection.rejectedPointCount },
+    { id: "coverageScore", label: "Coverage score", value: detection.coverageScore },
+    { id: "gridMatchRmsPx", label: "Grid match RMS", value: detection.gridMatchRmsPx ?? Number.NaN, unit: "px" },
+    { id: "fitRmsPx", label: "Fit RMS", value: fit?.metrics.rmsResidualPx ?? detection.fitRmsPx ?? Number.NaN, unit: "px" },
+    { id: "fitMaxPx", label: "Fit max", value: fit?.metrics.maxResidualPx ?? detection.fitMaxPx ?? Number.NaN, unit: "px" }
+  ];
+}
+
 function selectedL71MetricValue(result: SlantedEdgeMtfResult, metric: L71FocusMetric): number | null {
   if (metric === "mtf10") return result.metrics.mtf10CyclesPerPx;
   if (metric === "nyquist") return result.metrics.mtfAtNyquist;
@@ -6781,6 +7342,47 @@ async function decodeMeasuredImageFile(file: File): Promise<{ widthPx: number; h
   }
 }
 
+async function decodeL73TargetImageFile(file: File): Promise<L73TargetImage> {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("browser canvas is unavailable for L7.3 target image decoding");
+    context.drawImage(bitmap, 0, 0);
+    const rgba = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
+    const pixels: number[] = [];
+    for (let index = 0; index < rgba.length; index += 4) {
+      const red = rgba[index] ?? 0;
+      const green = rgba[index + 1] ?? 0;
+      const blue = rgba[index + 2] ?? 0;
+      const alpha = (rgba[index + 3] ?? 255) / 255;
+      const luminance = (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255;
+      pixels.push(clamp(luminance * alpha + (1 - alpha), 0, 1));
+    }
+    return normalizeTargetImage({ widthPx: bitmap.width, heightPx: bitmap.height, pixels, sourceName: file.name });
+  } finally {
+    bitmap.close();
+  }
+}
+
+function l73ImagePreviewCells(image: L73TargetImage, columns: number, rows: number): { columns: number; cells: { id: string; shade: number }[] } {
+  const safeColumns = Math.max(1, Math.round(columns));
+  const safeRows = Math.max(1, Math.round(rows));
+  const cells: { id: string; shade: number }[] = [];
+  for (let row = 0; row < safeRows; row += 1) {
+    const y = Math.min(image.heightPx - 1, Math.round(((row + 0.5) / safeRows) * image.heightPx));
+    for (let col = 0; col < safeColumns; col += 1) {
+      const x = Math.min(image.widthPx - 1, Math.round(((col + 0.5) / safeColumns) * image.widthPx));
+      const value = clamp(image.pixels[y * image.widthPx + x] ?? 0, 0, 1);
+      const shade = Math.round(value * 255);
+      cells.push({ id: `${row}-${col}`, shade });
+    }
+  }
+  return { columns: safeColumns, cells };
+}
+
 function exportStudyBundle(
   study: StudySnapshot,
   sweep: PracticalSweepResult | null,
@@ -6796,6 +7398,7 @@ function exportStudyBundle(
   qualificationRun: L71QualificationResult | null,
   focusFieldComparison: L71FocusFieldComparisonResult | null,
   geometricTarget: L72GeometricTarget | null,
+  geometricDetection: L73DetectionResult | null,
   geometricFit: L72GeometricFitResult | null,
   geometricComparison: L72GeometryComparisonResult | null
 ): void {
@@ -6813,23 +7416,24 @@ function exportStudyBundle(
     qualificationRun: qualificationRun ?? undefined,
     focusFieldComparison: focusFieldComparison ?? undefined,
     geometricTarget: geometricTarget ?? undefined,
+    geometricDetection: geometricDetection ?? undefined,
     geometricFit: geometricFit ?? undefined,
     geometricComparison: geometricComparison ?? undefined
   });
-  downloadText("l72-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
-  downloadText("l72-study.md", "text/markdown", studyBundleMarkdown(bundle));
-  downloadText("l72-metrics.csv", "text/csv", bundle.metricsCsv);
-  downloadText("l72-profiles.csv", "text/csv", bundle.profilesCsv);
-  downloadText("l72-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
-  downloadText("l72-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
-  if (comparison) downloadText("l72-comparison.csv", "text/csv", studyComparisonCsv(comparison));
-  if (sweep) downloadText("l72-sweep.csv", "text/csv", practicalSweepCsv(sweep));
-  if (measuredComparison) downloadText("l72-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
-  if (cameraRun) downloadText("l72-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
-  if (calibrationRun) downloadText("l72-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
-  if (mtfRun) downloadText("l72-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
-  if (mtfComparison) downloadText("l72-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
-  if (linePairRun) downloadText("l72-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
+  downloadText("l73-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
+  downloadText("l73-study.md", "text/markdown", studyBundleMarkdown(bundle));
+  downloadText("l73-metrics.csv", "text/csv", bundle.metricsCsv);
+  downloadText("l73-profiles.csv", "text/csv", bundle.profilesCsv);
+  downloadText("l73-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+  downloadText("l73-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
+  if (comparison) downloadText("l73-comparison.csv", "text/csv", studyComparisonCsv(comparison));
+  if (sweep) downloadText("l73-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+  if (measuredComparison) downloadText("l73-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
+  if (cameraRun) downloadText("l73-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
+  if (calibrationRun) downloadText("l73-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
+  if (mtfRun) downloadText("l73-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
+  if (mtfComparison) downloadText("l73-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
+  if (linePairRun) downloadText("l73-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
   if (focusSweepRun) downloadText("focus_sweep.csv", "text/csv", focusSweepCsv(focusSweepRun));
   if (fieldMtfMap) downloadText("field_mtf_map.csv", "text/csv", fieldMtfMapCsv(fieldMtfMap));
   if (qualificationRun) downloadText("qualification_report.json", "application/json", qualificationReportJson(qualificationRun));
@@ -6841,6 +7445,10 @@ function exportStudyBundle(
   if (geometricFit) downloadText("geometric_calibration_report.json", "application/json", geometricCalibrationReportJson(geometricFit, geometricComparison ?? undefined));
   if (geometricFit) downloadText("geometric_calibration_report.md", "text/markdown", geometricCalibrationReportMarkdown(geometricFit, geometricComparison ?? undefined));
   if (geometricComparison) downloadText("geometric_comparison.csv", "text/csv", geometricComparisonCsv(geometricComparison));
+  if (geometricDetection) downloadText("detected_points.csv", "text/csv", detectedPointsCsv(geometricDetection));
+  if (geometricDetection) downloadText("rejected_points.csv", "text/csv", rejectedPointsCsv(geometricDetection));
+  if (geometricDetection) downloadText("detection_report.md", "text/markdown", detectionReportMarkdown(geometricDetection));
+  if (geometricDetection) downloadText("detection_report.json", "application/json", detectionReportJson(geometricDetection));
 }
 
 function exportPracticalSweepJson(result: PracticalSweepResult): void {

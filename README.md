@@ -1,9 +1,12 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L7.2 Geometric Calibration / Distortion &
-Pixel-Scale Workbench over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with
-deterministic dot/checker/line target generation, point CSV import, similarity/affine/radial image-geometry fitting,
-pixel-scale/rotation/skew diagnostics, residual vector and heatmap previews, corrected/undistorted point tables,
+An EM-first light simulator MVP. The visible web app is now the L7.3 Measured Target Detection and ROI Hardening
+workbench over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with measured target
+image import, generated-target image handoff, numeric ROI controls, auto/manual dot-grid thresholding, polarity
+selection, connected-component blob detection, grid matching, manual point move/reject/accept/add/delete correction,
+detection confidence reports, detector report exports, deterministic dot/checker/line target generation, point CSV
+import, similarity/affine/radial image-geometry fitting, pixel-scale/rotation/skew diagnostics, residual vector and
+heatmap previews, corrected/undistorted point tables,
 measured-vs-simulated geometry comparison, synthetic/current-frame focus sweeps, best-focus and depth-of-focus
 readouts, center/corner/3x3 field MTF maps, diagnostic PASS/FAIL/WARNING qualification reports,
 measured-vs-simulated focus/field residual comparison, generated/imported slanted-edge targets, ROI-based
@@ -91,6 +94,12 @@ comparison, study integration, and exports named `geometric_calibration_report.m
 `geometric_calibration_report.json`, `points.csv`, `residuals.csv`, `distortion_map.csv`, and
 `geometric_comparison.csv`. It remains diagnostic 2D image-geometry analysis only, not certified camera calibration,
 lab-accredited metrology, full 3D pose/stereo calibration, digital-twin manufacturing calibration, or sensor-stack EM.
+L7.3 adds Measured Target Detection and ROI Hardening over L7.2: generated or imported target images can be decoded
+as measured grayscale frames, cropped by ROI, auto-thresholded or manually thresholded, polarity-classified, segmented
+with connected-component blob detection, matched to grid rows/columns and world coordinates, manually corrected, fit
+through the L7.2 geometry models, and exported as `detected_points.csv`, `rejected_points.csv`,
+`detection_report.md`, and `detection_report.json`. Checkerboard automatic detection is scaffold-only, and AprilTag/
+ArUco fiducial detection is not implemented.
 It is not a general 3D Maxwell solver,
 FEM/BEM/RCWA/FDTD engine, arbitrary CAD geometry solver, curved lens solver, stochastic source engine, aperture solver, sensor-stack
 simulator, adjoint optimizer, topology optimizer, digital twin, certified calibration system, or manufacturing
@@ -98,8 +107,11 @@ certification system.
 
 ## Current Visible Mode
 
-- `L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L7.3 Measured Target Detection and ROI Hardening`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
+  generated/imported measured target image handling, numeric ROI controls, dot-grid threshold/polarity controls,
+  connected-component blob detection, centroiding, grid row/column matching, manual point correction, detection
+  confidence reports, L7.2 fit handoff, and target detection report exports,
   deterministic dot/checker/line geometric target generation, imported point CSV fitting, similarity/affine/radial
   k1/k2 diagnostic models, pixel-scale, rotation, shear, scale-anisotropy, residual vector map, residual heatmap,
   corrected/undistorted point preview, measured-vs-simulated geometry comparison, geometric calibration reports,
@@ -822,16 +834,34 @@ This is diagnostic 2D image-geometry analysis only. It is not certified camera c
 measurement, lab-accredited metrology, full 3D pose or stereo calibration, raw sensor-stack EM, digital-twin
 manufacturing calibration, or full 3D Maxwell/FDTD/FEM/BEM/RCWA execution.
 
+## L7.3 Measured Target Detection and ROI Hardening
+
+L7.3 turns the L7.2 target workflow into a measured-image workflow without changing the physics backend. It remains a
+diagnostic single-image 2D grid-point extraction and geometry-fit tool, not a certified calibration system.
+
+- `Measured target image`: uses generated targets as measured frames or imports PNG/JPEG/WebP images, normalizes them
+  to deterministic grayscale target images, records image hashes, and exposes ROI x/y/width/height controls.
+- `Dot-grid detection`: supports auto/manual threshold, dark-on-light or light-on-dark polarity, connected-component
+  blob filtering, centroid refinement, grid row/column assignment, world-coordinate mapping, duplicate/outlier
+  rejection, and confidence warnings for low contrast, saturation, missing points, duplicate grid cells, and residuals.
+- `Manual correction`: lets the operator move, reject, accept, add, or delete points, then feeds accepted points into
+  the existing L7.2 similarity/affine/radial fit models.
+- `Visualization and reports`: overlays the measured image raster, ROI rectangle, accepted/rejected points, optional
+  labels, and post-fit confidence values. Exports include `detected_points.csv`, `rejected_points.csv`,
+  `detection_report.md`, and `detection_report.json`.
+- `Capability boundaries`: dot-grid detection is executable; checkerboard automatic detection is scaffold-only;
+  AprilTag/ArUco detection, certified camera calibration, lab metrology, full 3D pose/stereo, digital twins, hardware
+  control, sensor-stack EM, and full 3D Maxwell/FDTD/FEM/BEM/RCWA execution are not implemented.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
 - Consider an L6.x bundle hygiene pass: lazy-load heavy workbench panels/exports and split large chunks instead of
   only raising Vite's chunk warning limit.
-- Consider L7.3 measured target detection and imported-image ROI hardening next: draggable ROI overlay, crop selection,
-  synthetic dot/checker detection, point matching, fit confidence warnings, focus sweep import rows, MTF warning
-  explanations, and public Pages smoke coverage for target generation, geometric fitting, residual vectors,
-  corrected points, measured-vs-simulated geometry comparison, and exports.
+- Consider L7.4 measured-session hardening next: drag handles for ROI, residual-vector overlays directly on the
+  measured image, batch target sessions, richer checkerboard detection, optional fiducial-detector research spikes,
+  and stronger public Pages smoke coverage for imports, manual edits, saved studies, and exports.
 
 ## Local Development
 

@@ -23,6 +23,7 @@ export * from "./measurement/measuredMetrics2d";
 export * from "./measurement/modelComparison2d";
 export * from "./measurement/residualMaps2d";
 export * from "./measurement/roi2d";
+export * from "./measurement/targetDetection";
 export * from "./maxwell/complex";
 export * from "./maxwell/coatingRobustSearch";
 export * from "./maxwell/coatingSearch";
