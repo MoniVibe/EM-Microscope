@@ -91,6 +91,7 @@ export * from "./workspace/studyWorkspace";
 export * from "./workspace/measuredWorkbench";
 export * from "./workspace/cameraSensorLite";
 export * from "./workspace/cameraCalibration";
+export * from "./workspace/batchSessionQa";
 export * from "./wave/apertures1d";
 export * from "./wave/angularSpectrum2d";
 export * from "./wave/circularApertureValidation";

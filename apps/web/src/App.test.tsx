@@ -57,13 +57,41 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L7.3 target detection over planar/scalar execution without claiming certified calibration, sensor-stack EM, arbitrary 3D EM, fiducial detection, or calibrated optical fitting", () => {
+  it("labels L7.4 batch session QA over planar/scalar execution without claiming certified calibration, sensor-stack EM, arbitrary 3D EM, fiducial detection, calibrated optical fitting, or lab metrology", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
     const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
     const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
+    expect(maxwellPanel).toContain("L7.4 Batch Measurement Session + Repeatability QA");
+    expect(maxwellPanel).toContain("batch session manifest import, per-frame metric aggregation, repeatability/drift/outlier QA, session reports");
+    expect(maxwellPanel).toContain("Batch Session Manifest");
+    expect(maxwellPanel).toContain("Repeatability Thresholds");
+    expect(maxwellPanel).toContain("Load Example Session Manifest");
+    expect(maxwellPanel).toContain("Run Session QA");
+    expect(maxwellPanel).toContain("Export Session QA");
+    expect(maxwellPanel).toContain("Save Session Study");
+    expect(maxwellPanel).toContain("Frame Review");
+    expect(maxwellPanel).toContain("Aggregate Metrics");
+    expect(maxwellPanel).toContain("Outlier Table");
+    expect(maxwellPanel).toContain("Trend Plot");
+    expect(maxwellPanel).toContain("session_report.md");
+    expect(maxwellPanel).toContain("session_report.json");
+    expect(maxwellPanel).toContain("frame_metrics.csv");
+    expect(maxwellPanel).toContain("session_metrics.csv");
+    expect(maxwellPanel).toContain("outliers.csv");
+    expect(maxwellPanel).toContain("warnings.json");
+    expect(maxwellPanel).toContain("parseL74SessionManifestCsv");
+    expect(maxwellPanel).toContain("l74SyntheticFramesFromManifest");
+    expect(maxwellPanel).toContain("runL74SessionQa");
+    expect(maxwellPanel).toContain("sessionReportMarkdown");
+    expect(maxwellPanel).toContain("frameMetricsCsv");
+    expect(maxwellPanel).toContain("sessionMetricsCsv");
+    expect(maxwellPanel).toContain("outliersCsv");
+    expect(maxwellPanel).toContain("l74CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("L7.4 diagnostic batch measurement session QA/repeatability aggregation are the executable scope");
+    expect(maxwellPanel).toContain("certified metrology reports, lab-accredited metrology, lab accreditation workflows, hardware control");
     expect(maxwellPanel).toContain("L7.3 Measured Target Detection and ROI Hardening");
-    expect(maxwellPanel).toContain("measured target image ROI handling, dot-grid blob detection, manual point correction, confidence reports");
+    expect(maxwellPanel).toContain("Import or generate measured target images, adjust ROI, auto-detect dot grids, correct points manually, fit L7.2 geometry, and export detection confidence reports.");
     expect(maxwellPanel).toContain("Measured Image Detection");
     expect(maxwellPanel).toContain("Detection Confidence Report");
     expect(maxwellPanel).toContain("Use Target As Measured Image");
@@ -77,7 +105,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("Save Detection Study");
     expect(maxwellPanel).toContain("ROI-limited dot-grid detection");
     expect(maxwellPanel).toContain("Checkerboard automatic detection is scaffold-only; AprilTag/ArUco fiducials are not implemented in L7.3.");
-    expect(maxwellPanel).toContain("geometric calibration target generation/import");
+    expect(maxwellPanel).toContain("L7.2 generated geometric calibration target");
     expect(maxwellPanel).toContain("Geometric Calibration / Distortion Workbench");
     expect(maxwellPanel).toContain("Generate Dot/Grid Target");
     expect(maxwellPanel).toContain("Import Point CSV");
@@ -97,7 +125,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("Residual vector map");
     expect(maxwellPanel).toContain("Corrected / undistorted points");
     expect(maxwellPanel).toContain("diagnostic 2D image geometry only; not certified camera calibration, lab metrology, full 3D pose/stereo calibration");
-    expect(maxwellPanel).toContain("l73CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("l74CapabilitiesMatrix");
     expect(maxwellPanel).toContain("generateGeometricCalibrationTarget");
     expect(maxwellPanel).toContain("fitGeometricCalibration");
     expect(maxwellPanel).toContain("parseGeometricPointCsv");
@@ -125,8 +153,8 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("L7.1 measured vs simulated focus/field MTF");
     expect(maxwellPanel).toContain("not ISO 12233 certification, Imatest-equivalent testing, calibrated optical model fitting");
     expect(maxwellPanel).toContain("L7.0 Slanted-Edge / Resolution Target MTF Workbench");
-    expect(maxwellPanel).toContain("measured target image ROI handling, dot-grid blob detection, manual point correction, confidence reports, geometric calibration target generation/import");
-    expect(maxwellPanel).toContain("L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, and L7.3 diagnostic ROI-limited dot-grid measured target detection are the executable scope");
+    expect(maxwellPanel).toContain("batch session manifest import, per-frame metric aggregation, repeatability/drift/outlier QA, session reports");
+    expect(maxwellPanel).toContain("L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, and L7.4 diagnostic batch measurement session QA/repeatability aggregation are the executable scope");
     expect(maxwellPanel).toContain("Generate/import slanted-edge targets, compute ESF/LSF/SFR-MTF, compare measured vs simulated MTF, and sanity-check line-pair contrast.");
     expect(maxwellPanel).toContain("Generate Slanted Edge Target");
     expect(maxwellPanel).toContain("Run Slanted-Edge MTF");
@@ -279,7 +307,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("3D Maxwell solve");
     expect(maxwellPanel).toContain("not-implemented");
     expect(maxwellPanel).toContain("scaffold-only");
-    expect(maxwellPanel).toContain("l73CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("l74CapabilitiesMatrix");
     expect(maxwellPanel).toContain("runSyntheticFocusSweepMtf");
     expect(maxwellPanel).toContain("runFieldMtfMap");
     expect(maxwellPanel).toContain("qualifyFocusFieldMtf");
@@ -445,7 +473,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toContain(">Apply Search<");
     expect(maxwellPanel).toContain("Tolerance Yield");
     expect(maxwellPanel).toContain("Yield JSON");
-    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented|AprilTag detector executable|ArUco detector executable/i);
+    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented|certified metrology report executable|lab accreditation workflow executable|hardware control implemented|AprilTag detector executable|ArUco detector executable/i);
   });
 
   it("keeps the visible app shell Maxwell-only", () => {
@@ -454,9 +482,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend + Target Detection");
-    expect(app).toContain("L7.3 Measured Target Detection and ROI Hardening");
-    expect(app).toContain("measured target image ROI handling, dot-grid blob detection, manual point correction, confidence reports");
+    expect(app).toContain("PlanarTmmBackend + Batch QA");
+    expect(app).toContain("L7.4 Batch Measurement Session + Repeatability QA");
+    expect(app).toContain("batch session manifest import, repeatability aggregation, outlier and drift QA, session reports");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });
