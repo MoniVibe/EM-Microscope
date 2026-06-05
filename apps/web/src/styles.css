@@ -826,7 +826,8 @@ h2 {
 
 .maxwell-measured-panel,
 .maxwell-camera-panel,
-.maxwell-camera-calibration-panel {
+.maxwell-camera-calibration-panel,
+.maxwell-mtf-panel {
   grid-column: 1 / -1;
 }
 
@@ -854,6 +855,96 @@ h2 {
 
 .maxwell-calibration-textarea {
   min-height: 132px;
+}
+
+.maxwell-mtf-textarea {
+  min-height: 86px;
+}
+
+.maxwell-mtf-image-preview {
+  display: grid;
+  grid-template-columns: repeat(32, minmax(4px, 1fr));
+  gap: 2px;
+  min-height: 118px;
+  padding: 6px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.maxwell-mtf-image-preview i {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: #263244;
+}
+
+.maxwell-line-pair-preview {
+  min-height: 96px;
+}
+
+.maxwell-mtf-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.maxwell-mtf-bars,
+.maxwell-mtf-comparison-bars {
+  display: grid;
+  align-items: end;
+  gap: 2px;
+  height: 72px;
+  padding: 6px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.maxwell-mtf-bars {
+  grid-template-columns: repeat(80, minmax(2px, 1fr));
+}
+
+.maxwell-mtf-bars i {
+  display: block;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: #3a6ea5;
+}
+
+.maxwell-mtf-preview-grid .maxwell-mtf-bars:nth-child(2) i {
+  background: #607d3b;
+}
+
+.maxwell-mtf-preview-grid .maxwell-mtf-bars:nth-child(3) i {
+  background: #a65f3a;
+}
+
+.maxwell-mtf-comparison-bars {
+  grid-template-columns: repeat(72, minmax(2px, 1fr));
+}
+
+.maxwell-mtf-comparison-bars span {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 1px;
+  height: 100%;
+}
+
+.maxwell-mtf-comparison-bars i,
+.maxwell-mtf-comparison-bars b {
+  display: block;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+
+.maxwell-mtf-comparison-bars i {
+  background: #3a6ea5;
+}
+
+.maxwell-mtf-comparison-bars b {
+  background: #a65f3a;
 }
 
 .maxwell-calibration-table {
@@ -1996,6 +2087,7 @@ h2 {
   .maxwell-validation-output-grid.three,
   .maxwell-order-table,
   .maxwell-advisor-grid,
+  .maxwell-mtf-preview-grid,
   .maxwell-workspace-grid {
     grid-template-columns: 1fr;
   }
