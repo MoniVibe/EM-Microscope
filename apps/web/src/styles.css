@@ -827,6 +827,7 @@ h2 {
 .maxwell-measured-panel,
 .maxwell-camera-panel,
 .maxwell-camera-calibration-panel,
+.maxwell-l71-panel,
 .maxwell-mtf-panel {
   grid-column: 1 / -1;
 }
@@ -945,6 +946,118 @@ h2 {
 
 .maxwell-mtf-comparison-bars b {
   background: #a65f3a;
+}
+
+.maxwell-l71-focus-bars,
+.maxwell-l71-comparison-bars {
+  display: grid;
+  align-items: end;
+  gap: 2px;
+  min-height: 88px;
+  padding: 6px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.maxwell-l71-panel .maxwell-study-controls {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.maxwell-l71-panel .field-row {
+  grid-template-columns: minmax(112px, 0.8fr) minmax(96px, 1fr);
+}
+
+.maxwell-l71-panel .maxwell-material-check {
+  grid-template-columns: 18px minmax(130px, 1fr) auto;
+}
+
+.maxwell-l71-focus-bars {
+  grid-template-columns: repeat(auto-fit, minmax(8px, 1fr));
+}
+
+.maxwell-l71-focus-bars i {
+  display: block;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: #2f7d73;
+}
+
+.maxwell-l71-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+  gap: 6px;
+}
+
+.maxwell-l71-field-grid span {
+  min-height: 58px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #b9c8d4;
+  border-radius: 6px;
+  background: #2f7d73;
+  color: #ffffff;
+  font-size: 11px;
+}
+
+.maxwell-l71-field-grid strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.maxwell-l71-status {
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid #bdc9d8;
+  color: #334155;
+  background: #f1f5f9;
+}
+
+.maxwell-l71-status-pass {
+  border-color: #86b596;
+  color: #235c35;
+  background: #edf8f0;
+}
+
+.maxwell-l71-status-warning {
+  border-color: #c9a45a;
+  color: #7b571c;
+  background: #fff7e5;
+}
+
+.maxwell-l71-status-fail {
+  border-color: #cf8d8d;
+  color: #8f2e2e;
+  background: #fff1f1;
+}
+
+.maxwell-l71-comparison-bars {
+  grid-template-columns: repeat(auto-fit, minmax(8px, 1fr));
+}
+
+.maxwell-l71-comparison-bars span {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: end;
+  gap: 1px;
+  height: 100%;
+}
+
+.maxwell-l71-comparison-bars i,
+.maxwell-l71-comparison-bars b {
+  display: block;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+
+.maxwell-l71-comparison-bars i {
+  background: #2f7d73;
+}
+
+.maxwell-l71-comparison-bars b {
+  background: #8b6f2f;
 }
 
 .maxwell-calibration-table {

@@ -58,6 +58,7 @@ export type StudyMode =
   | "camera.sensor-lite"
   | "camera.calibration"
   | "image-quality.mtf"
+  | "image-quality.focus-field-mtf"
   | "coating.planar-stack"
   | "coating.optimizer"
   | "coating.robust-optimizer";
@@ -66,7 +67,7 @@ export type StudySnapshotInput = {
   id?: string;
   name: string;
   mode: StudyMode;
-  selectedWorkbench: "validation-bench" | "coating-stack-workbench" | "advisor-review" | "measured-vs-simulated" | "camera-sensor-lite" | "camera-calibration" | "resolution-mtf";
+  selectedWorkbench: "validation-bench" | "coating-stack-workbench" | "advisor-review" | "measured-vs-simulated" | "camera-sensor-lite" | "camera-calibration" | "resolution-mtf" | "focus-field-mtf";
   inputs: unknown;
   appState?: unknown;
   backendReceipt: unknown;
@@ -82,7 +83,7 @@ export type StudySnapshotInput = {
 
 export type StudySnapshot = Required<Omit<StudySnapshotInput, "id" | "materialReceipts" | "uncertaintyReceipts" | "profiles" | "createdAtIso">> & {
   schema: "emmicro.studySnapshot.v1";
-  type: "l66PracticalStudy" | "l67PracticalStudy" | "l68PracticalStudy" | "l69PracticalStudy" | "l70PracticalStudy";
+  type: "l66PracticalStudy" | "l67PracticalStudy" | "l68PracticalStudy" | "l69PracticalStudy" | "l70PracticalStudy" | "l71PracticalStudy";
   id: string;
   createdAtIso: string;
   materialReceipts: unknown[];
@@ -117,6 +118,10 @@ export type StudyBundle = {
   mtfRun?: unknown;
   mtfComparison?: unknown;
   linePairRun?: unknown;
+  focusSweepRun?: unknown;
+  fieldMtfMap?: unknown;
+  qualificationRun?: unknown;
+  focusFieldComparison?: unknown;
   sweep?: PracticalSweepResult;
 };
 
@@ -238,6 +243,10 @@ export type StudyComparisonResult = {
 };
 
 export function l70CapabilitiesMatrix(): StudyCapability[] {
+  return l71CapabilitiesMatrix();
+}
+
+export function l71CapabilitiesMatrix(): StudyCapability[] {
   return [
     executable("planar-tmm-backend", "PlanarTmmBackend", "registered Maxwell backend executing 1D planar transfer-matrix coating stacks"),
     executable("coating-stack-optimizer", "Coating Stack Optimizer", "deterministic local material/order/thickness search over planar TMM runs"),
@@ -252,6 +261,9 @@ export function l70CapabilitiesMatrix(): StudyCapability[] {
     executable("camera-calibration-diagnostics", "Camera calibration diagnostics", "EMVA-inspired photon-transfer diagnostic import, fitting, residual, and report workflow over summary measurements"),
     executable("resolution-mtf-diagnostics", "Resolution MTF diagnostics", "deterministic slanted-edge ESF/LSF/SFR-MTF analysis with MTF50, MTF10, Nyquist, cycles/pixel, optional lp/mm, and exportable diagnostic reports"),
     executable("slanted-edge-sfr-diagnostics", "Slanted-edge SFR diagnostics", "ISO 12233-inspired ROI workbench for generated/imported slanted-edge targets, measured-vs-simulated MTF comparison, and line-pair sanity checks"),
+    executable("focus-sweep-mtf-diagnostics", "Focus sweep MTF diagnostics", "deterministic synthetic/imported focus-position MTF50/MTF10/MTF-area sweep with best-focus and depth-of-focus readouts"),
+    executable("field-mtf-map-diagnostics", "Field MTF map diagnostics", "center/corner/3x3 ROI slanted-edge MTF mapping with best/worst ROI, center-corner falloff, and uniformity summaries"),
+    executable("mtf-qualification-threshold-report", "MTF qualification threshold report", "configurable diagnostic PASS/FAIL/WARNING report over focus sweep, field map, Nyquist availability, and warning policies"),
     scaffold("external-fdtd-export", "ExternalFdtdBackend export", "scene/result schema and Meep-style export scaffold only"),
     unavailable("3d-maxwell-solve", "3D Maxwell solve"),
     unavailable("fdtd-fem-bem-rcwa-execution", "FDTD/FEM/BEM/RCWA execution"),
@@ -264,6 +276,7 @@ export function l70CapabilitiesMatrix(): StudyCapability[] {
     unavailable("iso-12233-certification", "ISO 12233 certification"),
     unavailable("imatest-equivalent-certification", "Imatest-equivalent certification"),
     unavailable("pure-lens-mtf-certification", "Pure lens-only MTF certification"),
+    unavailable("calibrated-optical-model-fitting", "Calibrated optical model fitting"),
     unavailable("material-uncertainty", "Material uncertainty"),
     unavailable("digital-twin-calibration", "Digital twin calibration"),
     unavailable("manufacturing-certification", "Manufacturing certification")
@@ -271,22 +284,22 @@ export function l70CapabilitiesMatrix(): StudyCapability[] {
 }
 
 export function l69CapabilitiesMatrix(): StudyCapability[] {
-  return l70CapabilitiesMatrix();
+  return l71CapabilitiesMatrix();
 }
 
 export function l68CapabilitiesMatrix(): StudyCapability[] {
-  return l70CapabilitiesMatrix();
+  return l71CapabilitiesMatrix();
 }
 
 export function l67CapabilitiesMatrix(): StudyCapability[] {
-  return l70CapabilitiesMatrix();
+  return l71CapabilitiesMatrix();
 }
 
 export function l66CapabilitiesMatrix(): StudyCapability[] {
-  return l70CapabilitiesMatrix();
+  return l71CapabilitiesMatrix();
 }
 
-export function capabilitiesMarkdown(capabilities: StudyCapability[] = l70CapabilitiesMatrix()): string {
+export function capabilitiesMarkdown(capabilities: StudyCapability[] = l71CapabilitiesMatrix()): string {
   return [
     "| Capability | Status | Evidence |",
     "| --- | --- | --- |",
@@ -294,7 +307,7 @@ export function capabilitiesMarkdown(capabilities: StudyCapability[] = l70Capabi
   ].join("\n");
 }
 
-export function capabilitiesCsv(capabilities: StudyCapability[] = l70CapabilitiesMatrix()): string {
+export function capabilitiesCsv(capabilities: StudyCapability[] = l71CapabilitiesMatrix()): string {
   return [
     "id,label,status,evidence,boundary",
     ...capabilities.map((capability) => [capability.id, capability.label, capability.status, capability.evidence, capability.boundary].map(csvEscape).join(","))
@@ -305,7 +318,7 @@ export function createStudySnapshot(input: StudySnapshotInput): StudySnapshot {
   const createdAtIso = input.createdAtIso ?? new Date().toISOString();
   const base = {
     schema: "emmicro.studySnapshot.v1" as const,
-    type: "l70PracticalStudy" as const,
+    type: "l71PracticalStudy" as const,
     id: input.id ?? slugId(input.name),
     name: input.name,
     mode: input.mode,
@@ -321,7 +334,7 @@ export function createStudySnapshot(input: StudySnapshotInput): StudySnapshot {
     profiles: input.profiles ?? {},
     warnings: [...input.warnings],
     limitations: [...input.limitations],
-    capabilities: l70CapabilitiesMatrix()
+    capabilities: l71CapabilitiesMatrix()
   };
   const resultHash = fnv1a64(stableStringify(studyForHash(base)));
   return { ...base, resultHash };
@@ -338,20 +351,24 @@ export function studyBundleJson(
     mtfRun?: unknown;
     mtfComparison?: unknown;
     linePairRun?: unknown;
+    focusSweepRun?: unknown;
+    fieldMtfMap?: unknown;
+    qualificationRun?: unknown;
+    focusFieldComparison?: unknown;
   } = {}
 ): StudyBundle {
   return {
     schema: "emmicro.studyBundle.v1",
-    appVersion: "L7.0 Slanted-Edge / Resolution Target MTF Workbench",
+    appVersion: "L7.1 Focus + Field MTF Qualification Workbench",
     manifest: {
-      appVersion: "L7.0",
+      appVersion: "L7.1",
       studyHash: study.resultHash,
       resultHashes: [...study.resultHashes],
       backendReceipt: study.backendReceipt,
       materialReceiptCount: study.materialReceipts.length,
       uncertaintyReceiptCount: study.uncertaintyReceipts.length,
       warningCount: study.warnings.length,
-      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, Camera/Sensor-Lite detector acquisition post-processing, EMVA-inspired diagnostic camera calibration, and ISO 12233-inspired slanted-edge/line-pair MTF diagnostics only; pixel-level EM sensor stacks, ISO 12233 certification, Imatest-equivalent certification, EMVA 1288 certification, pure lens-only MTF certification, certified lab calibration, 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD, digital twins, and manufacturing certification are not implemented."
+      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, Camera/Sensor-Lite detector acquisition post-processing, EMVA-inspired diagnostic camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus sweep MTF diagnostics, field MTF map diagnostics, and configurable diagnostic qualification reports only; pixel-level EM sensor stacks, ISO 12233 certification, Imatest-equivalent certification, EMVA 1288 certification, pure lens-only MTF certification, certified lab calibration, calibrated optical model fitting, 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD, digital twins, and manufacturing certification are not implemented."
     },
     study,
     metricsCsv: studyMetricsCsv(study),
@@ -365,6 +382,10 @@ export function studyBundleJson(
     mtfRun: options.mtfRun,
     mtfComparison: options.mtfComparison,
     linePairRun: options.linePairRun,
+    focusSweepRun: options.focusSweepRun,
+    fieldMtfMap: options.fieldMtfMap,
+    qualificationRun: options.qualificationRun,
+    focusFieldComparison: options.focusFieldComparison,
     sweep: options.sweep
   };
 }
@@ -814,7 +835,7 @@ function unavailable(id: string, label: string): StudyCapability {
     id,
     label,
     status: "not-implemented",
-    evidence: "No executable path in L7.0.",
+    evidence: "No executable path in L7.1.",
     boundary: "Must not be described as solved, simulated, certified, or executed."
   };
 }

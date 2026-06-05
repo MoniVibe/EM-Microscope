@@ -35,7 +35,7 @@ import {
   compareMeasuredToSimulatedProfile,
   createMeasuredProfileFromImagePixels,
   importMaterialPackage,
-  l70CapabilitiesMatrix,
+  l71CapabilitiesMatrix,
   l69ExampleCalibrationCsv,
   linePairContrastCsv,
   measuredComparisonBundleJson,
@@ -50,7 +50,13 @@ import {
   parseMeasuredCsvProfile,
   exportExternalFdtdScaffold,
   externalFdtdSolverReceipt,
+  compareFocusFieldMtf,
+  defaultL71QualificationSpec,
+  fieldMtfMapCsv,
   fitGridCsv,
+  finalizeFocusSweep,
+  focusFieldComparisonCsv,
+  focusSweepCsv,
   residualProfileCsv,
   practicalSweepCsv,
   practicalSweepJson,
@@ -65,6 +71,8 @@ import {
   runCoatingDesignFoundry,
   runCoatingYieldAnalysis,
   runCoatingSweep,
+  runFieldMtfMap,
+  runSyntheticFocusSweepMtf,
   runL67DiagnosticFit,
   runCameraSensorLite,
   runCameraCalibration,
@@ -85,6 +93,9 @@ import {
   slitOrderValidationJson,
   slitOrderValidationMarkdown,
   simulatedMetricsCsv,
+  qualifyFocusFieldMtf,
+  qualificationReportJson,
+  qualificationReportMarkdown,
   slantedEdgeEsfCsv,
   slantedEdgeLsfCsv,
   slantedEdgeMtfCurveCsv,
@@ -134,6 +145,13 @@ import {
   type L70MtfComparisonResult,
   type L70ParsedCsvFrame,
   type L70ResolutionTargetImage,
+  type L71FieldLayout,
+  type L71FieldMtfMapResult,
+  type L71FocusFieldComparisonResult,
+  type L71FocusMetric,
+  type L71FocusSweepRow,
+  type L71FocusSweepResult,
+  type L71QualificationResult,
   type SlantedEdgeMtfResult,
   type PlanarFieldMonitorResult,
   type PracticalSweepFamily,
@@ -282,7 +300,7 @@ export function MaxwellPanel() {
   const [coherenceSlitWidthUm, setCoherenceSlitWidthUm] = useState(20);
   const [coherenceSlitSeparationUm, setCoherenceSlitSeparationUm] = useState(100);
   const [coherencePropagationDistanceM, setCoherencePropagationDistanceM] = useState(1);
-  const [studyName, setStudyName] = useState("L7.0 working study");
+  const [studyName, setStudyName] = useState("L7.1 working study");
   const [savedStudies, setSavedStudies] = useState<StudySnapshot[]>([]);
   const [selectedStudyId, setSelectedStudyId] = useState<string>("");
   const [studyStatus, setStudyStatus] = useState("No study saved yet.");
@@ -338,6 +356,23 @@ export function MaxwellPanel() {
   const [mtfComparison, setMtfComparison] = useState<L70MtfComparisonResult | null>(null);
   const [linePairTarget, setLinePairTarget] = useState<L70ResolutionTargetImage | null>(null);
   const [linePairRun, setLinePairRun] = useState<L70LinePairAnalysisResult | null>(null);
+  const [l71FocusStartMm, setL71FocusStartMm] = useState(-0.2);
+  const [l71FocusStopMm, setL71FocusStopMm] = useState(0.2);
+  const [l71FocusSamples, setL71FocusSamples] = useState(9);
+  const [l71BestFocusMm, setL71BestFocusMm] = useState(0.04);
+  const [l71DefocusBlurPerMm, setL71DefocusBlurPerMm] = useState(18);
+  const [l71FocusMetric, setL71FocusMetric] = useState<L71FocusMetric>("mtf50");
+  const [l71FocusThreshold, setL71FocusThreshold] = useState(0.05);
+  const [l71FieldLayout, setL71FieldLayout] = useState<L71FieldLayout>("center-corners");
+  const [l71CenterMtf50Min, setL71CenterMtf50Min] = useState(0.14);
+  const [l71CornerMtf50Min, setL71CornerMtf50Min] = useState(0.08);
+  const [l71NyquistMtfMin, setL71NyquistMtfMin] = useState(0.02);
+  const [l71DepthOfFocusMinMm, setL71DepthOfFocusMinMm] = useState(0.1);
+  const [l71DisallowWarnings, setL71DisallowWarnings] = useState(true);
+  const [l71FocusSweepRun, setL71FocusSweepRun] = useState<L71FocusSweepResult | null>(null);
+  const [l71FieldMapRun, setL71FieldMapRun] = useState<L71FieldMtfMapResult | null>(null);
+  const [l71QualificationRun, setL71QualificationRun] = useState<L71QualificationResult | null>(null);
+  const [l71FocusFieldComparison, setL71FocusFieldComparison] = useState<L71FocusFieldComparisonResult | null>(null);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -505,7 +540,7 @@ export function MaxwellPanel() {
       ]),
     [foundry, materialAudit, materialCatalog, materialImport, robustResult, run, searchResult, yieldAnalysis]
   );
-  const capabilities = useMemo(() => l70CapabilitiesMatrix(), []);
+  const capabilities = useMemo(() => l71CapabilitiesMatrix(), []);
   const selectedStudy = savedStudies.find((study) => study.id === selectedStudyId) ?? null;
   const studyRunSummaries = useMemo<StudyRunSummary[]>(
     () =>
@@ -701,6 +736,26 @@ export function MaxwellPanel() {
       setMtfRun(null);
       setMtfReferenceRun(null);
       setMtfComparison(null);
+    }
+    const focusField = state.focusField as Record<string, unknown> | undefined;
+    if (focusField) {
+      if (typeof focusField.focusStartMm === "number") setL71FocusStartMm(focusField.focusStartMm);
+      if (typeof focusField.focusStopMm === "number") setL71FocusStopMm(focusField.focusStopMm);
+      if (typeof focusField.focusSamples === "number") setL71FocusSamples(focusField.focusSamples);
+      if (typeof focusField.bestFocusMm === "number") setL71BestFocusMm(focusField.bestFocusMm);
+      if (typeof focusField.defocusBlurPerMm === "number") setL71DefocusBlurPerMm(focusField.defocusBlurPerMm);
+      if (focusField.focusMetric === "mtf50" || focusField.focusMetric === "mtf10" || focusField.focusMetric === "nyquist" || focusField.focusMetric === "mtf-area") setL71FocusMetric(focusField.focusMetric);
+      if (typeof focusField.focusThreshold === "number") setL71FocusThreshold(focusField.focusThreshold);
+      if (focusField.fieldLayout === "center" || focusField.fieldLayout === "center-corners" || focusField.fieldLayout === "grid-3x3") setL71FieldLayout(focusField.fieldLayout);
+      if (typeof focusField.centerMtf50Min === "number") setL71CenterMtf50Min(focusField.centerMtf50Min);
+      if (typeof focusField.cornerMtf50Min === "number") setL71CornerMtf50Min(focusField.cornerMtf50Min);
+      if (typeof focusField.nyquistMtfMin === "number") setL71NyquistMtfMin(focusField.nyquistMtfMin);
+      if (typeof focusField.depthOfFocusMinMm === "number") setL71DepthOfFocusMinMm(focusField.depthOfFocusMinMm);
+      if (typeof focusField.disallowWarnings === "boolean") setL71DisallowWarnings(focusField.disallowWarnings);
+      setL71FocusSweepRun(null);
+      setL71FieldMapRun(null);
+      setL71QualificationRun(null);
+      setL71FocusFieldComparison(null);
     }
   }
 
@@ -1278,6 +1333,208 @@ export function MaxwellPanel() {
     setStudyStatus("Exported L7.0 MTF report bundle.");
   }
 
+  function l71FocusPositions(): number[] {
+    const count = Math.max(1, Math.min(41, Math.round(l71FocusSamples)));
+    const start = Math.min(l71FocusStartMm, l71FocusStopMm);
+    const stop = Math.max(l71FocusStartMm, l71FocusStopMm);
+    if (count === 1) return [roundForUi(start)];
+    return Array.from({ length: count }, (_unused, index) => roundForUi(start + ((stop - start) * index) / (count - 1)));
+  }
+
+  function l71QualificationSpec() {
+    return {
+      ...defaultL71QualificationSpec(),
+      centerMtf50Min: l71CenterMtf50Min,
+      cornerMtf50Min: l71CornerMtf50Min,
+      nyquistMtfMin: l71NyquistMtfMin,
+      depthOfFocusMinMm: l71DepthOfFocusMinMm,
+      disallowSaturatedRois: l71DisallowWarnings,
+      disallowLowContrastRois: l71DisallowWarnings,
+      disallowBadAngleRois: l71DisallowWarnings
+    };
+  }
+
+  function runL71FocusSweep(): L71FocusSweepResult {
+    const result = runSyntheticFocusSweepMtf({
+      id: `l71-focus-sweep-${Date.now().toString(36)}`,
+      label: "L7.1 synthetic focus sweep MTF",
+      focusPositionsMm: l71FocusPositions(),
+      widthPx: mtfWidthPx,
+      heightPx: mtfHeightPx,
+      edgeAngleDeg: mtfEdgeAngleDeg,
+      contrast: mtfContrast,
+      pixelPitchUm: mtfPixelPitchUm,
+      bestFocusMm: l71BestFocusMm,
+      baseBlurSigmaPx: mtfBlurSigmaPx,
+      defocusBlurSigmaPerMm: l71DefocusBlurPerMm,
+      metric: l71FocusMetric,
+      threshold: l71FocusThreshold,
+      oversampling: mtfOversampling
+    });
+    setL71FocusSweepRun(result);
+    setL71QualificationRun(null);
+    setL71FocusFieldComparison(null);
+    setStudyStatus(`L7.1 focus sweep complete: best focus ${formatNullableMetric(result.bestFocus.focusZMm)} mm / DOF ${result.depthOfFocus.rangeMm.toPrecision(4)} mm.`);
+    return result;
+  }
+
+  function importCurrentMtfIntoL71FocusSweep(): L71FocusSweepResult | null {
+    const mtf = mtfRun ?? runMtfAnalysis();
+    if (!mtf) return null;
+    const row: L71FocusSweepRow = {
+      index: 0,
+      focusZMm: roundForUi(l71BestFocusMm),
+      blurSigmaPx: roundForUi(mtfBlurSigmaPx),
+      mtf50CyclesPerPx: mtf.metrics.mtf50CyclesPerPx,
+      mtf10CyclesPerPx: mtf.metrics.mtf10CyclesPerPx,
+      mtfAtNyquist: mtf.metrics.mtfAtNyquist,
+      mtfArea: mtfCurveArea(mtf),
+      selectedMetricValue: selectedL71MetricValue(mtf, l71FocusMetric),
+      resultHash: mtf.hashes.resultHash,
+      warningCodes: mtf.warnings.map((warning) => warning.code)
+    };
+    const result = finalizeFocusSweep({
+      id: `l71-imported-focus-sweep-${Date.now().toString(36)}`,
+      label: mtfImportedFrame ? "L7.1 imported current-frame focus MTF" : "L7.1 current generated-frame focus MTF",
+      metric: l71FocusMetric,
+      threshold: l71FocusThreshold,
+      rows: [row]
+    });
+    setL71FocusSweepRun(result);
+    setL71QualificationRun(null);
+    setL71FocusFieldComparison(null);
+    setStudyStatus(`Imported current MTF into L7.1 focus sweep: ${formatNullableMetric(row.selectedMetricValue)} ${l71FocusMetric}.`);
+    return result;
+  }
+
+  function runL71FieldMap(): L71FieldMtfMapResult {
+    const result = runFieldMtfMap({
+      id: `l71-field-map-${Date.now().toString(36)}`,
+      label: "L7.1 synthetic field MTF map",
+      layout: l71FieldLayout,
+      widthPx: mtfWidthPx,
+      heightPx: mtfHeightPx,
+      edgeAngleDeg: mtfEdgeAngleDeg,
+      contrast: mtfContrast,
+      pixelPitchUm: mtfPixelPitchUm,
+      centerBlurSigmaPx: Math.max(0.05, mtfBlurSigmaPx * 0.65),
+      fieldBlurSigmaPx: Math.max(mtfBlurSigmaPx + 0.9, mtfBlurSigmaPx * 1.8),
+      oversampling: mtfOversampling
+    });
+    setL71FieldMapRun(result);
+    setL71QualificationRun(null);
+    setL71FocusFieldComparison(null);
+    setStudyStatus(`L7.1 field MTF map complete: ${result.rows.length} ROIs / worst ${result.worstRoi?.roi.label ?? "n/a"}.`);
+    return result;
+  }
+
+  function runL71Qualification(): L71QualificationResult {
+    const focusSweep = l71FocusSweepRun ?? runL71FocusSweep();
+    const fieldMap = l71FieldMapRun ?? runL71FieldMap();
+    const result = qualifyFocusFieldMtf({
+      id: `l71-qualification-${Date.now().toString(36)}`,
+      label: "L7.1 focus + field MTF qualification",
+      focusSweep,
+      fieldMap,
+      spec: l71QualificationSpec()
+    });
+    setL71QualificationRun(result);
+    setStudyStatus(`L7.1 qualification ${result.status.toUpperCase()}: ${result.recommendation}`);
+    return result;
+  }
+
+  function runL71FocusFieldComparison(): L71FocusFieldComparisonResult {
+    const measuredFocus = l71FocusSweepRun ?? runL71FocusSweep();
+    const measuredField = l71FieldMapRun ?? runL71FieldMap();
+    const simulatedFocus = runSyntheticFocusSweepMtf({
+      id: `l71-simulated-focus-sweep-${Date.now().toString(36)}`,
+      label: "L7.1 simulated reference focus sweep",
+      focusPositionsMm: l71FocusPositions(),
+      widthPx: mtfWidthPx,
+      heightPx: mtfHeightPx,
+      edgeAngleDeg: mtfEdgeAngleDeg,
+      contrast: mtfContrast,
+      pixelPitchUm: mtfPixelPitchUm,
+      bestFocusMm: l71BestFocusMm + 0.05,
+      baseBlurSigmaPx: Math.max(0.05, mtfBlurSigmaPx * 0.9),
+      defocusBlurSigmaPerMm: l71DefocusBlurPerMm,
+      metric: l71FocusMetric,
+      threshold: l71FocusThreshold,
+      oversampling: mtfOversampling
+    });
+    const simulatedField = runFieldMtfMap({
+      id: `l71-simulated-field-map-${Date.now().toString(36)}`,
+      label: "L7.1 simulated reference field MTF map",
+      layout: l71FieldLayout,
+      widthPx: mtfWidthPx,
+      heightPx: mtfHeightPx,
+      edgeAngleDeg: mtfEdgeAngleDeg,
+      contrast: mtfContrast,
+      pixelPitchUm: mtfPixelPitchUm,
+      centerBlurSigmaPx: Math.max(0.05, mtfBlurSigmaPx * 0.55),
+      fieldBlurSigmaPx: Math.max(mtfBlurSigmaPx + 0.5, mtfBlurSigmaPx * 1.4),
+      oversampling: mtfOversampling
+    });
+    const comparison = compareFocusFieldMtf({
+      id: `l71-focus-field-comparison-${Date.now().toString(36)}`,
+      label: "L7.1 measured vs simulated focus/field MTF",
+      measuredFocus,
+      simulatedFocus,
+      measuredField,
+      simulatedField
+    });
+    setL71FocusFieldComparison(comparison);
+    setStudyStatus(`L7.1 focus/field comparison complete: best-focus delta ${formatNullableMetric(comparison.bestFocusDeltaMm)} mm.`);
+    return comparison;
+  }
+
+  function exportL71QualificationBundle(): void {
+    const focusSweep = l71FocusSweepRun ?? runL71FocusSweep();
+    const fieldMap = l71FieldMapRun ?? runL71FieldMap();
+    const qualification = l71QualificationRun ?? qualifyFocusFieldMtf({ focusSweep, fieldMap, spec: l71QualificationSpec() });
+    const comparison = l71FocusFieldComparison ?? runL71FocusFieldComparison();
+    setL71QualificationRun(qualification);
+    downloadText("focus_sweep.csv", "text/csv", focusSweepCsv(focusSweep));
+    downloadText("field_mtf_map.csv", "text/csv", fieldMtfMapCsv(fieldMap));
+    downloadText("qualification_report.md", "text/markdown", qualificationReportMarkdown(qualification, focusSweep, fieldMap, comparison));
+    downloadText("qualification_report.json", "application/json", qualificationReportJson(qualification));
+    downloadText("mtf_comparison.csv", "text/csv", focusFieldComparisonCsv(comparison));
+    setStudyStatus("Exported L7.1 focus/field qualification bundle.");
+  }
+
+  function saveL71QualificationStudy(): void {
+    const focusSweep = l71FocusSweepRun ?? runL71FocusSweep();
+    const fieldMap = l71FieldMapRun ?? runL71FieldMap();
+    const qualification = l71QualificationRun ?? runL71Qualification();
+    saveStudy(
+      createStudySnapshot({
+        id: `l71-focus-field-study-${Date.now().toString(36)}`,
+        name: "L7.1 focus + field MTF qualification study",
+        mode: "image-quality.focus-field-mtf",
+        selectedWorkbench: "focus-field-mtf",
+        inputs: {
+          focus: { startMm: l71FocusStartMm, stopMm: l71FocusStopMm, samples: l71FocusSamples, bestFocusMm: l71BestFocusMm, metric: l71FocusMetric },
+          field: { layout: l71FieldLayout, widthPx: mtfWidthPx, heightPx: mtfHeightPx },
+          spec: l71QualificationSpec()
+        },
+        appState: currentAppState(),
+        backendReceipt: {
+          label: "L7.1 Focus + Field MTF Qualification Workbench",
+          availability: "executable",
+          scope: "diagnostic focus/field slanted-edge MTF thresholding only; not ISO 12233 certification, Imatest-equivalent testing, calibrated optical model fitting, or 3D Maxwell"
+        },
+        resultHashes: [focusSweep.resultHash, fieldMap.resultHash, qualification.resultHash, l71FocusFieldComparison?.resultHash].filter(Boolean) as string[],
+        metrics: l71StudyMetrics(focusSweep, fieldMap, qualification),
+        profiles: {
+          focus: focusSweep.rows.map((row) => ({ xM: row.focusZMm, intensity: row.selectedMetricValue ?? 0, label: l71FocusMetric })),
+          field: fieldMap.rows.map((row, index) => ({ xM: index, intensity: row.mtf50CyclesPerPx ?? 0, label: row.roi.id }))
+        },
+        warnings: [...focusSweep.warnings, ...fieldMap.warnings, ...qualification.warnings],
+        limitations: qualification.limitations
+      })
+    );
+  }
+
   function generateSyntheticMeasuredCsv(): void {
     try {
       const simulated = activeL67SimulatedProfile();
@@ -1641,6 +1898,25 @@ export function MaxwellPanel() {
         runHash: mtfRun?.hashes.resultHash ?? null,
         comparisonHash: mtfComparison?.resultHash ?? null,
         linePairHash: linePairRun?.resultHash ?? null
+      },
+      focusField: {
+        focusStartMm: l71FocusStartMm,
+        focusStopMm: l71FocusStopMm,
+        focusSamples: l71FocusSamples,
+        bestFocusMm: l71BestFocusMm,
+        defocusBlurPerMm: l71DefocusBlurPerMm,
+        focusMetric: l71FocusMetric,
+        focusThreshold: l71FocusThreshold,
+        fieldLayout: l71FieldLayout,
+        centerMtf50Min: l71CenterMtf50Min,
+        cornerMtf50Min: l71CornerMtf50Min,
+        nyquistMtfMin: l71NyquistMtfMin,
+        depthOfFocusMinMm: l71DepthOfFocusMinMm,
+        disallowWarnings: l71DisallowWarnings,
+        focusSweepHash: l71FocusSweepRun?.resultHash ?? null,
+        fieldMapHash: l71FieldMapRun?.resultHash ?? null,
+        qualificationHash: l71QualificationRun?.resultHash ?? null,
+        comparisonHash: l71FocusFieldComparison?.resultHash ?? null
       }
     };
   }
@@ -1889,11 +2165,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.0 Slanted-Edge / Resolution Target MTF Workbench">
-      <h2>L7.0 Slanted-Edge / Resolution Target MTF Workbench</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.1 Focus + Field MTF Qualification Workbench">
+      <h2>L7.1 Focus + Field MTF Qualification Workbench</h2>
       <div className="l2-disclosure">
-        <strong>resolution MTF diagnostics, camera calibration, sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines</strong>
-        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, and ISO 12233-inspired slanted-edge/line-pair MTF diagnostics are the executable scope; this is not pixel-level sensor-stack EM, ISO 12233 certification, Imatest-equivalent measurement, EMVA 1288 certification, certified lab calibration, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
+        <strong>focus sweep MTF, field MTF maps, diagnostic qualification reports, camera calibration, sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines</strong>
+        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, and L7.1 focus/field MTF qualification diagnostics are the executable scope; this is not pixel-level sensor-stack EM, ISO 12233 certification, Imatest-equivalent measurement, calibrated optical model fitting, EMVA 1288 certification, certified lab calibration, a digital twin, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -1924,7 +2200,23 @@ export function MaxwellPanel() {
         onLoadStudy={loadSelectedStudy}
         onDuplicateStudy={duplicateSelectedStudy}
         onDeleteStudy={deleteSelectedStudy}
-        onExportBundle={() => exportStudyBundle(selectedStudy ?? captureValidationStudy(studyName.trim() || "Validation study"), workspaceSweepResult, studyComparison, measuredComparison, cameraRun, cameraCalibrationRun, mtfRun, mtfComparison, linePairRun)}
+        onExportBundle={() =>
+          exportStudyBundle(
+            selectedStudy ?? captureValidationStudy(studyName.trim() || "Validation study"),
+            workspaceSweepResult,
+            studyComparison,
+            measuredComparison,
+            cameraRun,
+            cameraCalibrationRun,
+            mtfRun,
+            mtfComparison,
+            linePairRun,
+            l71FocusSweepRun,
+            l71FieldMapRun,
+            l71QualificationRun,
+            l71FocusFieldComparison
+          )
+        }
         onImportBundle={importStudyBundleFile}
         onCopyShareableUrl={copyShareableStudyUrl}
         sweepFamily={workspaceSweepFamily}
@@ -2026,6 +2318,46 @@ export function MaxwellPanel() {
         onExportCameraReport={exportCameraReport}
         onSendCameraToMeasured={sendCameraToMeasuredComparison}
         onSaveCameraStudy={saveCameraStudy}
+      />
+
+      <FocusFieldMtfQualificationPanel
+        focusStartMm={l71FocusStartMm}
+        setFocusStartMm={setL71FocusStartMm}
+        focusStopMm={l71FocusStopMm}
+        setFocusStopMm={setL71FocusStopMm}
+        focusSamples={l71FocusSamples}
+        setFocusSamples={setL71FocusSamples}
+        bestFocusMm={l71BestFocusMm}
+        setBestFocusMm={setL71BestFocusMm}
+        defocusBlurPerMm={l71DefocusBlurPerMm}
+        setDefocusBlurPerMm={setL71DefocusBlurPerMm}
+        focusMetric={l71FocusMetric}
+        setFocusMetric={setL71FocusMetric}
+        focusThreshold={l71FocusThreshold}
+        setFocusThreshold={setL71FocusThreshold}
+        fieldLayout={l71FieldLayout}
+        setFieldLayout={setL71FieldLayout}
+        centerMtf50Min={l71CenterMtf50Min}
+        setCenterMtf50Min={setL71CenterMtf50Min}
+        cornerMtf50Min={l71CornerMtf50Min}
+        setCornerMtf50Min={setL71CornerMtf50Min}
+        nyquistMtfMin={l71NyquistMtfMin}
+        setNyquistMtfMin={setL71NyquistMtfMin}
+        depthOfFocusMinMm={l71DepthOfFocusMinMm}
+        setDepthOfFocusMinMm={setL71DepthOfFocusMinMm}
+        disallowWarnings={l71DisallowWarnings}
+        setDisallowWarnings={setL71DisallowWarnings}
+        focusSweep={l71FocusSweepRun}
+        fieldMap={l71FieldMapRun}
+        qualification={l71QualificationRun}
+        comparison={l71FocusFieldComparison}
+        onRunFocusSweep={runL71FocusSweep}
+        onImportCurrentMtf={importCurrentMtfIntoL71FocusSweep}
+        onRunFieldMap={runL71FieldMap}
+        onRunQualification={runL71Qualification}
+        onCompare={runL71FocusFieldComparison}
+        onExport={exportL71QualificationBundle}
+        onSave={saveL71QualificationStudy}
       />
 
       <ResolutionMtfWorkbenchPanel
@@ -3168,6 +3500,249 @@ function NumberField({
   );
 }
 
+function FocusFieldMtfQualificationPanel({
+  focusStartMm,
+  setFocusStartMm,
+  focusStopMm,
+  setFocusStopMm,
+  focusSamples,
+  setFocusSamples,
+  bestFocusMm,
+  setBestFocusMm,
+  defocusBlurPerMm,
+  setDefocusBlurPerMm,
+  focusMetric,
+  setFocusMetric,
+  focusThreshold,
+  setFocusThreshold,
+  fieldLayout,
+  setFieldLayout,
+  centerMtf50Min,
+  setCenterMtf50Min,
+  cornerMtf50Min,
+  setCornerMtf50Min,
+  nyquistMtfMin,
+  setNyquistMtfMin,
+  depthOfFocusMinMm,
+  setDepthOfFocusMinMm,
+  disallowWarnings,
+  setDisallowWarnings,
+  focusSweep,
+  fieldMap,
+  qualification,
+  comparison,
+  onRunFocusSweep,
+  onImportCurrentMtf,
+  onRunFieldMap,
+  onRunQualification,
+  onCompare,
+  onExport,
+  onSave
+}: {
+  focusStartMm: number;
+  setFocusStartMm: (value: number) => void;
+  focusStopMm: number;
+  setFocusStopMm: (value: number) => void;
+  focusSamples: number;
+  setFocusSamples: (value: number) => void;
+  bestFocusMm: number;
+  setBestFocusMm: (value: number) => void;
+  defocusBlurPerMm: number;
+  setDefocusBlurPerMm: (value: number) => void;
+  focusMetric: L71FocusMetric;
+  setFocusMetric: (value: L71FocusMetric) => void;
+  focusThreshold: number;
+  setFocusThreshold: (value: number) => void;
+  fieldLayout: L71FieldLayout;
+  setFieldLayout: (value: L71FieldLayout) => void;
+  centerMtf50Min: number;
+  setCenterMtf50Min: (value: number) => void;
+  cornerMtf50Min: number;
+  setCornerMtf50Min: (value: number) => void;
+  nyquistMtfMin: number;
+  setNyquistMtfMin: (value: number) => void;
+  depthOfFocusMinMm: number;
+  setDepthOfFocusMinMm: (value: number) => void;
+  disallowWarnings: boolean;
+  setDisallowWarnings: (value: boolean) => void;
+  focusSweep: L71FocusSweepResult | null;
+  fieldMap: L71FieldMtfMapResult | null;
+  qualification: L71QualificationResult | null;
+  comparison: L71FocusFieldComparisonResult | null;
+  onRunFocusSweep: () => void;
+  onImportCurrentMtf: () => void;
+  onRunFieldMap: () => void;
+  onRunQualification: () => void;
+  onCompare: () => void;
+  onExport: () => void;
+  onSave: () => void;
+}) {
+  const focusPeak = Math.max(1e-9, ...(focusSweep?.rows.map((row) => row.selectedMetricValue ?? 0) ?? [1]));
+  const fieldPeak = Math.max(1e-9, ...(fieldMap?.rows.map((row) => row.mtf50CyclesPerPx ?? 0) ?? [1]));
+  const statusLabel = qualification?.status.toUpperCase() ?? "PENDING";
+
+  return (
+    <div className="maxwell-study-card maxwell-l71-panel" aria-label="L7.1 Focus + Field MTF Qualification Workbench">
+      <div className="maxwell-section-heading">
+        <h2>L7.1 Focus + Field MTF Qualification Workbench</h2>
+        <strong>{qualification ? statusLabel : focusSweep || fieldMap ? "ready to qualify" : "not run"}</strong>
+      </div>
+      <div className="l2-disclosure">
+        <strong>Run synthetic or current-frame focus MTF sweeps, map field ROIs, apply diagnostic thresholds, and compare measured vs simulated focus/field residuals.</strong>
+        <span>Diagnostic thresholding only; this is not ISO 12233 certification, Imatest-equivalent testing, calibrated optical model fitting, pure lens-only MTF certification, sensor-stack EM, or 3D Maxwell/FDTD/FEM/BEM/RCWA execution.</span>
+      </div>
+
+      <div className="maxwell-workspace-grid">
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Focus Sweep</h2>
+            <strong>{focusSweep ? `Best focus ${formatNullableMetric(focusSweep.bestFocus.focusZMm)} mm` : `${focusSamples} samples`}</strong>
+          </div>
+          <div className="maxwell-study-controls">
+            <NumberField label="Start focus" value={focusStartMm} unit="mm" min={-10} max={10} step={0.01} onChange={setFocusStartMm} />
+            <NumberField label="Stop focus" value={focusStopMm} unit="mm" min={-10} max={10} step={0.01} onChange={setFocusStopMm} />
+            <NumberField label="Samples" value={focusSamples} min={1} max={41} step={1} onChange={(value) => setFocusSamples(Math.round(clamp(value, 1, 41)))} />
+            <NumberField label="Nominal best" value={bestFocusMm} unit="mm" min={-10} max={10} step={0.01} onChange={setBestFocusMm} />
+            <NumberField label="Defocus blur" value={defocusBlurPerMm} unit="sigma/mm" min={0} max={200} step={0.5} onChange={setDefocusBlurPerMm} />
+            <NumberField label="Focus threshold" value={focusThreshold} min={0} max={1} step={0.005} onChange={setFocusThreshold} />
+            <label className="field-row">
+              <span>Focus metric</span>
+              <select value={focusMetric} onChange={(event) => setFocusMetric(event.currentTarget.value as L71FocusMetric)}>
+                <option value="mtf50">MTF50</option>
+                <option value="mtf10">MTF10</option>
+                <option value="nyquist">Nyquist MTF</option>
+                <option value="mtf-area">MTF area</option>
+              </select>
+            </label>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onRunFocusSweep}><Sparkles size={15} /><span>Run Focus Sweep</span></button>
+            <button type="button" onClick={onImportCurrentMtf}><Upload size={15} /><span>Import Current MTF Into Sweep</span></button>
+          </div>
+          {focusSweep ? (
+            <div className="maxwell-data-table">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>MTF50 vs focus</span><strong>{focusSweep.rows.length} rows</strong></div>
+                <div className="compact-stat"><span>Best focus</span><strong>{formatNullableMetric(focusSweep.bestFocus.focusZMm)} mm</strong></div>
+                <div className="compact-stat"><span>Depth of focus</span><strong>{focusSweep.depthOfFocus.rangeMm.toPrecision(4)} mm</strong></div>
+              </div>
+              <div className="maxwell-l71-focus-bars" aria-label="L7.1 MTF50 vs focus smoke preview">
+                {focusSweep.rows.map((row) => (
+                  <i key={`${row.index}-${row.focusZMm}`} style={{ height: `${Math.max(2, ((row.selectedMetricValue ?? 0) / focusPeak) * 100)}%` }} title={`${row.focusZMm} mm ${formatNullableMetric(row.selectedMetricValue)}`} />
+                ))}
+              </div>
+              {focusSweep.warnings.map((warning) => <div className="error-banner" key={`${warning.code}-${warning.message}`}>{warning.message}</div>)}
+            </div>
+          ) : (
+            <div className="empty-state">Run a focus sweep to plot MTF50/MTF10/Nyquist/area against focus position.</div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Field MTF Map</h2>
+            <strong>{fieldMap ? `${fieldMap.rows.length} ROIs` : fieldLayout}</strong>
+          </div>
+          <div className="maxwell-study-controls">
+            <label className="field-row">
+              <span>ROI layout</span>
+              <select value={fieldLayout} onChange={(event) => setFieldLayout(event.currentTarget.value as L71FieldLayout)}>
+                <option value="center">Center</option>
+                <option value="center-corners">Center + corners</option>
+                <option value="grid-3x3">3x3 field</option>
+              </select>
+            </label>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onRunFieldMap}><Sparkles size={15} /><span>Run Field Map</span></button>
+          </div>
+          {fieldMap ? (
+            <div className="maxwell-data-table">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Worst-field ROI</span><strong>{fieldMap.worstRoi?.roi.label ?? "n/a"}</strong></div>
+                <div className="compact-stat"><span>Center-corner falloff</span><strong>{formatNullableMetric(fieldMap.centerToCornerFalloff)}</strong></div>
+                <div className="compact-stat"><span>Uniformity</span><strong>{formatNullableMetric(fieldMap.fieldUniformityScore)}</strong></div>
+              </div>
+              <div className="maxwell-l71-field-grid" aria-label="L7.1 field MTF map smoke preview">
+                {fieldMap.rows.map((row) => (
+                  <span key={row.roi.id} style={{ opacity: 0.2 + 0.8 * ((row.mtf50CyclesPerPx ?? 0) / fieldPeak) }} title={`${row.roi.label}: ${formatNullableMetric(row.mtf50CyclesPerPx)} cyc/px`}>
+                    {row.roi.label}
+                    <strong>{formatNullableMetric(row.mtf50CyclesPerPx)}</strong>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="empty-state">Run a center/corner or 3x3 field map to inspect best/worst ROI MTF and falloff.</div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Qualification Report</h2>
+            <strong className={`maxwell-l71-status maxwell-l71-status-${qualification?.status ?? "pending"}`}>{statusLabel}</strong>
+          </div>
+          <div className="maxwell-study-controls">
+            <NumberField label="Center MTF50 min" value={centerMtf50Min} min={0} max={1} step={0.005} onChange={setCenterMtf50Min} />
+            <NumberField label="Worst-field MTF50 min" value={cornerMtf50Min} min={0} max={1} step={0.005} onChange={setCornerMtf50Min} />
+            <NumberField label="Nyquist MTF min" value={nyquistMtfMin} min={0} max={1} step={0.005} onChange={setNyquistMtfMin} />
+            <NumberField label="DOF min" value={depthOfFocusMinMm} unit="mm" min={0} max={10} step={0.01} onChange={setDepthOfFocusMinMm} />
+            <label className="maxwell-material-check">
+              <input type="checkbox" checked={disallowWarnings} onChange={(event) => setDisallowWarnings(event.currentTarget.checked)} />
+              <span>Disallow ROI warnings</span>
+              <strong>saturation / contrast / angle</strong>
+            </label>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onRunQualification}><ShieldCheck size={15} /><span>Run Qualification</span></button>
+            <button type="button" onClick={onExport}><FileDown size={15} /><span>Export Qualification Bundle</span></button>
+            <button type="button" onClick={onSave}><Save size={15} /><span>Save Qualification Study</span></button>
+          </div>
+          {qualification ? (
+            <div className="maxwell-data-table" aria-label="L7.1 qualification report smoke preview">
+              <div className="compact-stat"><span>Recommendation</span><strong>{qualification.recommendation}</strong></div>
+              {qualification.issues.length ? qualification.issues.slice(0, 6).map((issue) => <div className="error-banner" key={`${issue.code}-${issue.roiId ?? "global"}`}>{issue.severity.toUpperCase()}: {issue.message}</div>) : <div className="empty-state">No qualification issues at the configured thresholds.</div>}
+            </div>
+          ) : (
+            <div className="empty-state">Run qualification after focus and field diagnostics to produce PASS, FAIL, or WARNING.</div>
+          )}
+        </div>
+
+        <div className="maxwell-workspace-panel">
+          <div className="maxwell-section-heading">
+            <h2>Measured vs Simulated Focus/Field</h2>
+            <strong>{comparison ? `Delta ${formatNullableMetric(comparison.bestFocusDeltaMm)} mm` : "not compared"}</strong>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onCompare}><ShieldCheck size={15} /><span>Compare Focus Field MTF</span></button>
+          </div>
+          {comparison ? (
+            <div className="maxwell-data-table" aria-label="L7.1 measured vs simulated MTF smoke preview">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Best focus delta</span><strong>{formatNullableMetric(comparison.bestFocusDeltaMm)} mm</strong></div>
+                <div className="compact-stat"><span>Focus RMS delta</span><strong>{formatNullableMetric(comparison.focusMetricRmsDelta)}</strong></div>
+                <div className="compact-stat"><span>Field RMS delta</span><strong>{formatNullableMetric(comparison.fieldMtf50RmsDelta)}</strong></div>
+                <div className="compact-stat"><span>Matched ROIs</span><strong>{comparison.matchedFieldRoiCount}</strong></div>
+              </div>
+              <div className="maxwell-l71-comparison-bars">
+                {comparison.focusRows.map((row) => (
+                  <span key={row.focusZMm} title={`${row.focusZMm} mm measured ${formatNullableMetric(row.measured)} simulated ${formatNullableMetric(row.simulated)}`}>
+                    <i style={{ height: `${Math.max(2, clamp(row.measured ?? 0, 0, 1) * 100)}%` }} />
+                    <b style={{ height: `${Math.max(2, clamp(row.simulated ?? 0, 0, 1) * 100)}%` }} />
+                  </span>
+                ))}
+              </div>
+              <div className="empty-state">{comparison.diagnosticFit.note}</div>
+            </div>
+          ) : (
+            <div className="empty-state">Compare current focus/field diagnostics against a deterministic simulated reference.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ResolutionMtfWorkbenchPanel({
   mtfWidthPx,
   setMtfWidthPx,
@@ -3642,9 +4217,9 @@ function PracticalStudyWorkspacePanel({
   const calibrationMaxMean = cameraCalibrationRun ? Math.max(...cameraCalibrationRun.residuals.map((point) => Math.max(point.measuredMeanDn, point.simulatedMeanDn)), 1) : 1;
 
   return (
-    <div className="maxwell-study-card" aria-label="L7.0 Practical Study Workspace">
+    <div className="maxwell-study-card" aria-label="L7.1 Practical Study Workspace">
       <div className="maxwell-section-heading">
-        <h2>L7.0 Practical Study Workspace</h2>
+        <h2>L7.1 Practical Study Workspace</h2>
         <strong>{savedStudies.length} saved</strong>
       </div>
       <div className="l2-disclosure">
@@ -5550,6 +6125,41 @@ function mtfStudyMetrics(result: SlantedEdgeMtfResult): StudyMetric[] {
   ];
 }
 
+function l71StudyMetrics(focusSweep: L71FocusSweepResult, fieldMap: L71FieldMtfMapResult, qualification: L71QualificationResult): StudyMetric[] {
+  return [
+    { id: "bestFocusMm", label: "Best focus", value: focusSweep.bestFocus.focusZMm ?? Number.NaN, unit: "mm" },
+    { id: "bestFocusMetric", label: "Best focus metric", value: focusSweep.bestFocus.metricValue ?? Number.NaN },
+    { id: "depthOfFocusMm", label: "Depth of focus", value: focusSweep.depthOfFocus.rangeMm, unit: "mm" },
+    { id: "centerMtf50CyclesPerPx", label: "Center MTF50", value: fieldMap.centerMtf50CyclesPerPx ?? Number.NaN, unit: "cycles/pixel" },
+    { id: "cornerAverageMtf50CyclesPerPx", label: "Corner average MTF50", value: fieldMap.cornerAverageMtf50CyclesPerPx ?? Number.NaN, unit: "cycles/pixel" },
+    { id: "centerToCornerFalloff", label: "Center-corner falloff", value: fieldMap.centerToCornerFalloff ?? Number.NaN },
+    { id: "fieldUniformityScore", label: "Field uniformity", value: fieldMap.fieldUniformityScore ?? Number.NaN },
+    { id: "qualificationIssueCount", label: "Qualification issue count", value: qualification.issues.length }
+  ];
+}
+
+function selectedL71MetricValue(result: SlantedEdgeMtfResult, metric: L71FocusMetric): number | null {
+  if (metric === "mtf10") return result.metrics.mtf10CyclesPerPx;
+  if (metric === "nyquist") return result.metrics.mtfAtNyquist;
+  if (metric === "mtf-area") return mtfCurveArea(result);
+  return result.metrics.mtf50CyclesPerPx;
+}
+
+function mtfCurveArea(result: SlantedEdgeMtfResult): number {
+  if (result.mtf.length < 2) return 0;
+  let area = 0;
+  for (let index = 1; index < result.mtf.length; index += 1) {
+    const a = result.mtf[index - 1]!;
+    const b = result.mtf[index]!;
+    area += ((a.mtf + b.mtf) * 0.5) * Math.max(0, b.frequencyCyclesPerPx - a.frequencyCyclesPerPx);
+  }
+  return roundForUi(area);
+}
+
+function roundForUi(value: number): number {
+  return Number.isFinite(value) ? Number(value.toPrecision(12)) : value;
+}
+
 function formatNullableMetric(value: number | null): string {
   return value === null || !Number.isFinite(value) ? "n/a" : value.toPrecision(4);
 }
@@ -5605,7 +6215,11 @@ function exportStudyBundle(
   calibrationRun: L69CameraCalibrationResult | null,
   mtfRun: SlantedEdgeMtfResult | null,
   mtfComparison: L70MtfComparisonResult | null,
-  linePairRun: L70LinePairAnalysisResult | null
+  linePairRun: L70LinePairAnalysisResult | null,
+  focusSweepRun: L71FocusSweepResult | null,
+  fieldMtfMap: L71FieldMtfMapResult | null,
+  qualificationRun: L71QualificationResult | null,
+  focusFieldComparison: L71FocusFieldComparisonResult | null
 ): void {
   const bundle = studyBundleJson(study, {
     sweep: sweep ?? undefined,
@@ -5615,22 +6229,31 @@ function exportStudyBundle(
     calibrationRun: calibrationRun ?? undefined,
     mtfRun: mtfRun ?? undefined,
     mtfComparison: mtfComparison ?? undefined,
-    linePairRun: linePairRun ?? undefined
+    linePairRun: linePairRun ?? undefined,
+    focusSweepRun: focusSweepRun ?? undefined,
+    fieldMtfMap: fieldMtfMap ?? undefined,
+    qualificationRun: qualificationRun ?? undefined,
+    focusFieldComparison: focusFieldComparison ?? undefined
   });
-  downloadText("l70-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
-  downloadText("l70-study.md", "text/markdown", studyBundleMarkdown(bundle));
-  downloadText("l70-metrics.csv", "text/csv", bundle.metricsCsv);
-  downloadText("l70-profiles.csv", "text/csv", bundle.profilesCsv);
-  downloadText("l70-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
-  downloadText("l70-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
-  if (comparison) downloadText("l70-comparison.csv", "text/csv", studyComparisonCsv(comparison));
-  if (sweep) downloadText("l70-sweep.csv", "text/csv", practicalSweepCsv(sweep));
-  if (measuredComparison) downloadText("l70-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
-  if (cameraRun) downloadText("l70-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
-  if (calibrationRun) downloadText("l70-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
-  if (mtfRun) downloadText("l70-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
-  if (mtfComparison) downloadText("l70-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
-  if (linePairRun) downloadText("l70-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
+  downloadText("l71-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
+  downloadText("l71-study.md", "text/markdown", studyBundleMarkdown(bundle));
+  downloadText("l71-metrics.csv", "text/csv", bundle.metricsCsv);
+  downloadText("l71-profiles.csv", "text/csv", bundle.profilesCsv);
+  downloadText("l71-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+  downloadText("l71-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
+  if (comparison) downloadText("l71-comparison.csv", "text/csv", studyComparisonCsv(comparison));
+  if (sweep) downloadText("l71-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+  if (measuredComparison) downloadText("l71-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
+  if (cameraRun) downloadText("l71-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
+  if (calibrationRun) downloadText("l71-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
+  if (mtfRun) downloadText("l71-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
+  if (mtfComparison) downloadText("l71-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
+  if (linePairRun) downloadText("l71-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
+  if (focusSweepRun) downloadText("focus_sweep.csv", "text/csv", focusSweepCsv(focusSweepRun));
+  if (fieldMtfMap) downloadText("field_mtf_map.csv", "text/csv", fieldMtfMapCsv(fieldMtfMap));
+  if (qualificationRun) downloadText("qualification_report.json", "application/json", qualificationReportJson(qualificationRun));
+  if (qualificationRun) downloadText("qualification_report.md", "text/markdown", qualificationReportMarkdown(qualificationRun, focusSweepRun ?? undefined, fieldMtfMap ?? undefined, focusFieldComparison ?? undefined));
+  if (focusFieldComparison) downloadText("mtf_comparison.csv", "text/csv", focusFieldComparisonCsv(focusFieldComparison));
 }
 
 function exportPracticalSweepJson(result: PracticalSweepResult): void {
