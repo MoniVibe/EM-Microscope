@@ -828,6 +828,7 @@ h2 {
 .maxwell-camera-panel,
 .maxwell-camera-calibration-panel,
 .maxwell-l74-panel,
+.maxwell-l75-panel,
 .maxwell-l72-panel,
 .maxwell-l71-panel,
 .maxwell-mtf-panel {
@@ -870,6 +871,10 @@ h2 {
 
 .maxwell-l74-textarea {
   min-height: 156px;
+}
+
+.maxwell-l75-textarea {
+  min-height: 132px;
 }
 
 .maxwell-l72-panel .maxwell-study-controls {
@@ -1004,6 +1009,85 @@ h2 {
   font-size: 12px;
   font-style: normal;
   text-align: center;
+}
+
+.maxwell-l75-board-preview,
+.maxwell-l75-detection-preview {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+  border: 1px solid #c7d3df;
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(38, 50, 68, 0.08) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(38, 50, 68, 0.08) 1px, transparent 1px),
+    #f8fafc;
+  background-size: 28px 28px;
+}
+
+.maxwell-l75-board-preview::before,
+.maxwell-l75-detection-preview::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(47, 125, 115, 0.28);
+  pointer-events: none;
+}
+
+.maxwell-l75-board-preview i,
+.maxwell-l75-detection-preview i {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 4px;
+  transform: translate(-50%, -50%);
+  border: 1px solid #ffffff;
+  border-radius: 5px;
+  background: #2f7d73;
+  color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(47, 125, 115, 0.4);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.maxwell-l75-board-preview i span {
+  display: block;
+  max-width: 28px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.maxwell-l75-detection-preview i.rejected {
+  background: #9f1239;
+  box-shadow: 0 0 0 1px rgba(159, 18, 57, 0.5);
+  text-decoration: line-through;
+}
+
+.maxwell-l75-detection-preview i.selected {
+  background: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.35), 0 0 0 1px rgba(29, 78, 216, 0.55);
+}
+
+.maxwell-l75-board-preview > span,
+.maxwell-l75-detection-preview > span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  color: #66758a;
+  font-size: 12px;
+  text-align: center;
+}
+
+.maxwell-l75-export-list {
+  gap: 7px;
 }
 
 .maxwell-l72-status {

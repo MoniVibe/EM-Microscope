@@ -57,13 +57,50 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L7.4 batch session QA over planar/scalar execution without claiming certified calibration, sensor-stack EM, arbitrary 3D EM, fiducial detection, calibrated optical fitting, or lab metrology", () => {
+  it("labels L7.5 fiducial board workflow over planar/scalar execution without claiming certified calibration, sensor-stack EM, arbitrary 3D EM, real detector decoding, calibrated optical fitting, or lab metrology", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
     const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
     const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
+    expect(maxwellPanel).toContain("L7.5 Fiducial Board / ChArUco-style Target Workflow");
+    expect(maxwellPanel).toContain("diagnostic fiducial board generation, imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA");
+    expect(maxwellPanel).toContain("Fiducial Board / ChArUco-style Target");
+    expect(maxwellPanel).toContain("Diagnostic ChArUco-style synthetic fiducial board");
+    expect(maxwellPanel).toContain("not OpenCV-compatible");
+    expect(maxwellPanel).toContain("AprilTag decoding is not implemented");
+    expect(maxwellPanel).toContain("Generate Fiducial Board");
+    expect(maxwellPanel).toContain("Generate Synthetic Detections");
+    expect(maxwellPanel).toContain("Load Example Fiducial JSON");
+    expect(maxwellPanel).toContain("Import Fiducial JSON");
+    expect(maxwellPanel).toContain("Match Fiducial IDs");
+    expect(maxwellPanel).toContain("Reject Selected Marker");
+    expect(maxwellPanel).toContain("Accept Selected Marker");
+    expect(maxwellPanel).toContain("Move Selected Corner");
+    expect(maxwellPanel).toContain("Relabel Selected Marker");
+    expect(maxwellPanel).toContain("Run Fiducial Similarity Fit");
+    expect(maxwellPanel).toContain("Run Fiducial Affine Fit");
+    expect(maxwellPanel).toContain("Export Fiducial Bundle");
+    expect(maxwellPanel).toContain("Add Fiducial Frame to Session QA");
+    expect(maxwellPanel).toContain("Save Fiducial Study");
+    expect(maxwellPanel).toContain("L7.5 fiducial board generator smoke preview");
+    expect(maxwellPanel).toContain("L7.5 fiducial detection overlay smoke preview");
+    expect(maxwellPanel).toContain("L7.5 partial-view coverage smoke preview");
+    expect(maxwellPanel).toContain("L7.5 fiducial fit results smoke preview");
+    expect(maxwellPanel).toContain("L7.5 fiducial session handoff smoke preview");
+    expect(maxwellPanel).toContain("board_manifest.json");
+    expect(maxwellPanel).toContain("fiducial_detection_report.md");
+    expect(maxwellPanel).toContain("fiducial_detection_report.json");
+    expect(maxwellPanel).toContain("matched_points.csv");
+    expect(maxwellPanel).toContain("fitFiducialBoardDetection");
+    expect(maxwellPanel).toContain("generateFiducialBoard");
+    expect(maxwellPanel).toContain("generateSyntheticFiducialDetection");
+    expect(maxwellPanel).toContain("parseFiducialDetectionJson");
+    expect(maxwellPanel).toContain("applyFiducialManualEdits");
+    expect(maxwellPanel).toContain("l74FrameFromFiducialFit");
+    expect(maxwellPanel).toContain("l75CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/session handoff are the executable scope");
+    expect(maxwellPanel).toContain("real OpenCV ArUco/ChArUco marker decoding, AprilTag decoding");
     expect(maxwellPanel).toContain("L7.4 Batch Measurement Session + Repeatability QA");
-    expect(maxwellPanel).toContain("batch session manifest import, per-frame metric aggregation, repeatability/drift/outlier QA, session reports");
     expect(maxwellPanel).toContain("Batch Session Manifest");
     expect(maxwellPanel).toContain("Repeatability Thresholds");
     expect(maxwellPanel).toContain("Load Example Session Manifest");
@@ -87,8 +124,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("frameMetricsCsv");
     expect(maxwellPanel).toContain("sessionMetricsCsv");
     expect(maxwellPanel).toContain("outliersCsv");
-    expect(maxwellPanel).toContain("l74CapabilitiesMatrix");
-    expect(maxwellPanel).toContain("L7.4 diagnostic batch measurement session QA/repeatability aggregation are the executable scope");
+    expect(maxwellPanel).toContain("L7.4 diagnostic batch measurement session QA/repeatability aggregation");
     expect(maxwellPanel).toContain("certified metrology reports, lab-accredited metrology, lab accreditation workflows, hardware control");
     expect(maxwellPanel).toContain("L7.3 Measured Target Detection and ROI Hardening");
     expect(maxwellPanel).toContain("Import or generate measured target images, adjust ROI, auto-detect dot grids, correct points manually, fit L7.2 geometry, and export detection confidence reports.");
@@ -125,7 +161,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("Residual vector map");
     expect(maxwellPanel).toContain("Corrected / undistorted points");
     expect(maxwellPanel).toContain("diagnostic 2D image geometry only; not certified camera calibration, lab metrology, full 3D pose/stereo calibration");
-    expect(maxwellPanel).toContain("l74CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("l75CapabilitiesMatrix");
     expect(maxwellPanel).toContain("generateGeometricCalibrationTarget");
     expect(maxwellPanel).toContain("fitGeometricCalibration");
     expect(maxwellPanel).toContain("parseGeometricPointCsv");
@@ -153,8 +189,8 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("L7.1 measured vs simulated focus/field MTF");
     expect(maxwellPanel).toContain("not ISO 12233 certification, Imatest-equivalent testing, calibrated optical model fitting");
     expect(maxwellPanel).toContain("L7.0 Slanted-Edge / Resolution Target MTF Workbench");
-    expect(maxwellPanel).toContain("batch session manifest import, per-frame metric aggregation, repeatability/drift/outlier QA, session reports");
-    expect(maxwellPanel).toContain("L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, and L7.4 diagnostic batch measurement session QA/repeatability aggregation are the executable scope");
+    expect(maxwellPanel).toContain("Import a batch manifest, normalize existing diagnostic frame metrics, aggregate repeatability and drift");
+    expect(maxwellPanel).toContain("L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, and L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/session handoff are the executable scope");
     expect(maxwellPanel).toContain("Generate/import slanted-edge targets, compute ESF/LSF/SFR-MTF, compare measured vs simulated MTF, and sanity-check line-pair contrast.");
     expect(maxwellPanel).toContain("Generate Slanted Edge Target");
     expect(maxwellPanel).toContain("Run Slanted-Edge MTF");
@@ -307,7 +343,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("3D Maxwell solve");
     expect(maxwellPanel).toContain("not-implemented");
     expect(maxwellPanel).toContain("scaffold-only");
-    expect(maxwellPanel).toContain("l74CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("l75CapabilitiesMatrix");
     expect(maxwellPanel).toContain("runSyntheticFocusSweepMtf");
     expect(maxwellPanel).toContain("runFieldMtfMap");
     expect(maxwellPanel).toContain("qualifyFocusFieldMtf");
@@ -482,9 +518,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend + Batch QA");
-    expect(app).toContain("L7.4 Batch Measurement Session + Repeatability QA");
-    expect(app).toContain("batch session manifest import, repeatability aggregation, outlier and drift QA, session reports");
+    expect(app).toContain("PlanarTmmBackend + Fiducial QA");
+    expect(app).toContain("L7.5 Fiducial Board / ChArUco-style Target Workflow");
+    expect(app).toContain("diagnostic synthetic fiducial board generation, imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA handoff");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

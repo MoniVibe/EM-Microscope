@@ -3,6 +3,7 @@ import type { SolverWarning } from "../solvers/Solver";
 import type { SlantedEdgeMtfResult } from "../imageQuality/slantedEdgeMtf";
 import type { L71FieldMtfMapResult, L71FocusSweepResult, L71QualificationResult } from "../imageQuality/focusFieldMtfQualification";
 import type { L72GeometricFitResult } from "../measurement/geometricCalibration";
+import type { L75FiducialFitResult } from "../measurement/fiducialBoard";
 import type { L73DetectionResult } from "../measurement/targetDetection";
 import type { L68CameraRunResult } from "./cameraSensorLite";
 import type { L69CameraCalibrationResult } from "./cameraCalibration";
@@ -12,6 +13,7 @@ export type L74FrameType =
   | "point_csv"
   | "geometric_fit"
   | "target_detection"
+  | "fiducial_board"
   | "slanted_edge"
   | "focus_sweep_mtf"
   | "field_mtf_map"
@@ -239,6 +241,35 @@ export function l74FrameFromDetection(row: L74SessionManifestRow, detection: L73
     warnings: detection.warnings,
     limitations: detection.limitations,
     analysisSettings: { detector: detection.settings.detector, roi: detection.roi, manualEditCount: detection.manualEdits.length }
+  });
+}
+
+export function l74FrameFromFiducialFit(row: L74SessionManifestRow, result: L75FiducialFitResult): L74SessionFrame {
+  return createL74SessionFrame({
+    ...row,
+    type: "fiducial_board",
+    resultHash: result.resultHash,
+    metrics: compactMetrics([
+      metric("fiducial_marker_coverage", "Fiducial marker coverage", "detection", result.match.markerCoverageScore),
+      metric("fiducial_charuco_coverage", "Fiducial ChArUco-style corner coverage", "detection", result.match.charucoCoverageScore),
+      metric("fiducial_board_area_coverage", "Fiducial board area coverage", "detection", result.match.boardAreaCoverageScore),
+      metric("detection_coverage", "Detection coverage", "detection", result.match.coverageScore),
+      metric("accepted_point_count", "Accepted matched points", "detection", result.match.matchedPointCount),
+      metric("accepted_marker_count", "Accepted marker IDs", "detection", result.match.acceptedMarkerCount),
+      metric("missing_marker_count", "Missing marker IDs", "detection", result.match.missingMarkerIds.length),
+      metric("rms_residual_px", "Fiducial fit RMS residual", "geometry", result.fit?.metrics.rmsResidualPx, "px"),
+      metric("max_residual_px", "Fiducial fit max residual", "geometry", result.fit?.metrics.maxResidualPx, "px")
+    ]),
+    status: result.status,
+    warnings: result.warnings,
+    limitations: result.limitations,
+    analysisSettings: {
+      model: result.model,
+      markerCount: result.match.markerCount,
+      acceptedMarkerCount: result.match.acceptedMarkerCount,
+      acceptedCharucoCornerCount: result.match.acceptedCharucoCornerCount,
+      coveredQuadrants: result.match.coveredQuadrants
+    }
   });
 }
 
@@ -677,7 +708,7 @@ function thresholdOutlier(frame: L74SessionFrame, metricRow: L74FrameMetric, sev
 }
 
 function syntheticMetricsForRow(row: L74SessionManifestRow, index: number): L74FrameMetric[] {
-  if (row.type === "dot_grid" || row.type === "point_csv" || row.type === "geometric_fit" || row.type === "target_detection") {
+  if (row.type === "dot_grid" || row.type === "point_csv" || row.type === "geometric_fit" || row.type === "target_detection" || row.type === "fiducial_board") {
     const residual = index === 1 ? 1.35 : 0.18 + index * 0.03;
     const coverage = index === 1 ? 0.86 : 0.985 - index * 0.003;
     return compactMetrics([
@@ -730,6 +761,7 @@ function normalizeFrameType(value: string): L74FrameType | null {
   if (normalized === "point_csv" || normalized === "points_csv") return "point_csv";
   if (normalized === "geometric_fit" || normalized === "geometry") return "geometric_fit";
   if (normalized === "target_detection" || normalized === "detection") return "target_detection";
+  if (normalized === "fiducial_board" || normalized === "fiducial" || normalized === "charuco" || normalized === "charuco_board") return "fiducial_board";
   if (normalized === "slanted_edge" || normalized === "edge") return "slanted_edge";
   if (normalized === "focus_sweep" || normalized === "focus_sweep_mtf") return "focus_sweep_mtf";
   if (normalized === "field_mtf" || normalized === "field_mtf_map") return "field_mtf_map";
