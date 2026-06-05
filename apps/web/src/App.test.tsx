@@ -57,13 +57,42 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L7.1 focus/field MTF over planar/scalar execution without claiming certified calibration, sensor-stack EM, arbitrary 3D EM, or calibrated optical fitting", () => {
+  it("labels L7.2 geometric calibration over planar/scalar execution without claiming certified calibration, sensor-stack EM, arbitrary 3D EM, or calibrated optical fitting", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
     const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
     const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
+    expect(maxwellPanel).toContain("L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench");
+    expect(maxwellPanel).toContain("geometric calibration target generation/import, pixel-scale fitting, affine/skew diagnostics, radial distortion vectors, corrected previews");
+    expect(maxwellPanel).toContain("Geometric Calibration / Distortion Workbench");
+    expect(maxwellPanel).toContain("Generate Dot/Grid Target");
+    expect(maxwellPanel).toContain("Import Point CSV");
+    expect(maxwellPanel).toContain("Import Point File");
+    expect(maxwellPanel).toContain("Run Similarity Fit");
+    expect(maxwellPanel).toContain("Run Affine Fit");
+    expect(maxwellPanel).toContain("Run Radial Fit");
+    expect(maxwellPanel).toContain("Compare Geometry");
+    expect(maxwellPanel).toContain("Export Geometric Bundle");
+    expect(maxwellPanel).toContain("Save Geometric Study");
+    expect(maxwellPanel).toContain("Pixel scale");
+    expect(maxwellPanel).toContain("Rotation");
+    expect(maxwellPanel).toContain("Shear");
+    expect(maxwellPanel).toContain("RMS residual");
+    expect(maxwellPanel).toContain("Max residual");
+    expect(maxwellPanel).toContain("Radial k1");
+    expect(maxwellPanel).toContain("Residual vector map");
+    expect(maxwellPanel).toContain("Corrected / undistorted points");
+    expect(maxwellPanel).toContain("diagnostic 2D image geometry only; not certified camera calibration, lab metrology, full 3D pose/stereo calibration");
+    expect(maxwellPanel).toContain("l72CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("generateGeometricCalibrationTarget");
+    expect(maxwellPanel).toContain("fitGeometricCalibration");
+    expect(maxwellPanel).toContain("parseGeometricPointCsv");
+    expect(maxwellPanel).toContain("compareGeometricCalibrations");
+    expect(maxwellPanel).toContain("geometricCalibrationReportMarkdown");
+    expect(maxwellPanel).toContain("geometricResidualsCsv");
+    expect(maxwellPanel).toContain("distortionMapCsv");
     expect(maxwellPanel).toContain("L7.1 Focus + Field MTF Qualification Workbench");
-    expect(maxwellPanel).toContain("focus sweep MTF, field MTF maps, diagnostic qualification reports");
+    expect(maxwellPanel).toContain("Run synthetic or current-frame focus MTF sweeps, map field ROIs, apply diagnostic thresholds");
     expect(maxwellPanel).toContain("Run Focus Sweep");
     expect(maxwellPanel).toContain("Import Current MTF Into Sweep");
     expect(maxwellPanel).toContain("Run Field Map");
@@ -76,8 +105,8 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("L7.1 measured vs simulated focus/field MTF");
     expect(maxwellPanel).toContain("not ISO 12233 certification, Imatest-equivalent testing, calibrated optical model fitting");
     expect(maxwellPanel).toContain("L7.0 Slanted-Edge / Resolution Target MTF Workbench");
-    expect(maxwellPanel).toContain("focus sweep MTF, field MTF maps, diagnostic qualification reports, camera calibration, sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines");
-    expect(maxwellPanel).toContain("PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, and L7.1 focus/field MTF qualification diagnostics are the executable scope");
+    expect(maxwellPanel).toContain("geometric calibration target generation/import, pixel-scale fitting, affine/skew diagnostics, radial distortion vectors, corrected previews, focus sweep MTF, camera calibration, saved studies, capabilities, and exports over the existing planar/scalar engines");
+    expect(maxwellPanel).toContain("PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, and L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows are the executable scope");
     expect(maxwellPanel).toContain("Generate/import slanted-edge targets, compute ESF/LSF/SFR-MTF, compare measured vs simulated MTF, and sanity-check line-pair contrast.");
     expect(maxwellPanel).toContain("Generate Slanted Edge Target");
     expect(maxwellPanel).toContain("Run Slanted-Edge MTF");
@@ -230,7 +259,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("3D Maxwell solve");
     expect(maxwellPanel).toContain("not-implemented");
     expect(maxwellPanel).toContain("scaffold-only");
-    expect(maxwellPanel).toContain("l71CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("l72CapabilitiesMatrix");
     expect(maxwellPanel).toContain("runSyntheticFocusSweepMtf");
     expect(maxwellPanel).toContain("runFieldMtfMap");
     expect(maxwellPanel).toContain("qualifyFocusFieldMtf");
@@ -405,9 +434,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend + Focus Field MTF");
-    expect(app).toContain("L7.1 Focus + Field MTF Qualification Workbench");
-    expect(app).toContain("focus sweep MTF, field MTF maps, qualification reports, measured-vs-simulated focus/field comparison");
+    expect(app).toContain("PlanarTmmBackend + Geometric Calibration");
+    expect(app).toContain("L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench");
+    expect(app).toContain("geometric target generation/import, pixel-scale and distortion fitting, residual vector maps, corrected point previews");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

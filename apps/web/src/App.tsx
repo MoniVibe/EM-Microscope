@@ -263,13 +263,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L7.1 Focus + Field MTF Qualification Workbench</p>
+            <p>L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>PlanarTmmBackend + Focus Field MTF</span>
-          <strong>focus sweep MTF, field MTF maps, qualification reports, measured-vs-simulated focus/field comparison, slanted-edge SFR/MTF diagnostics, line-pair targets, diagnostic photon-transfer calibration, deterministic camera acquisition, executable planar backend, saved studies, sweeps, measurements, capabilities matrix, study bundle exports</strong>
+          <span>PlanarTmmBackend + Geometric Calibration</span>
+          <strong>geometric target generation/import, pixel-scale and distortion fitting, residual vector maps, corrected point previews, measured-vs-simulated geometry comparison, focus sweep MTF, slanted-edge SFR/MTF diagnostics, diagnostic photon-transfer calibration, deterministic camera acquisition, executable planar backend, saved studies, sweeps, capabilities matrix, study bundle exports</strong>
         </div>
       </header>
 
