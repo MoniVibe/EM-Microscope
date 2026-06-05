@@ -823,14 +823,28 @@ h2 {
 
 .maxwell-study-controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 8px;
 }
 
 .maxwell-study-controls input,
 .maxwell-study-controls select {
   width: 100%;
-  min-width: 96px;
+  min-width: 132px;
+}
+
+.maxwell-study-controls .number-input {
+  min-width: 148px;
+}
+
+.maxwell-study-controls .number-input input {
+  min-width: 88px;
+}
+
+.maxwell-study-controls .number-input em {
+  width: auto;
+  min-width: 36px;
+  white-space: nowrap;
 }
 
 .maxwell-measured-panel,
@@ -887,11 +901,11 @@ h2 {
 }
 
 .maxwell-l72-panel .maxwell-study-controls {
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
 }
 
 .maxwell-l72-panel .field-row {
-  grid-template-columns: minmax(104px, 1fr) minmax(108px, 0.85fr);
+  grid-template-columns: minmax(128px, 1fr) minmax(148px, 0.85fr);
 }
 
 .maxwell-l72-target-preview,
@@ -2572,13 +2586,17 @@ h2 {
 }
 
 .maxwell-only-main .maxwell-study-controls .field-row {
-  grid-template-columns: minmax(104px, 1fr) minmax(108px, 0.85fr);
+  grid-template-columns: minmax(128px, 1fr) minmax(148px, 0.85fr);
 }
 
 .maxwell-only-main .maxwell-study-controls input,
 .maxwell-only-main .maxwell-study-controls select,
 .maxwell-only-main .maxwell-study-controls .number-input {
-  min-width: 108px;
+  min-width: 148px;
+}
+
+.maxwell-only-main .maxwell-study-controls .number-input input {
+  min-width: 88px;
 }
 
 .maxwell-only-main .profile-meta {
