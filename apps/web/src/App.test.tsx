@@ -57,14 +57,27 @@ describe("solver disclosure copy", () => {
     expect(`${comparePanel}\n${fitPanel}`).not.toMatch(/certified ISO 12233 calibration|certified EMVA 1288 calibration|clinical calibration service|hardware calibration service/i);
   });
 
-  it("labels L7.0 resolution MTF over planar/scalar execution without claiming certified calibration, sensor-stack EM, or arbitrary 3D EM", () => {
+  it("labels L7.1 focus/field MTF over planar/scalar execution without claiming certified calibration, sensor-stack EM, arbitrary 3D EM, or calibrated optical fitting", () => {
     const maxwellPanel = readFileSync(resolve(testDir, "maxwell/MaxwellPanel.tsx"), "utf8");
     const explainability = readFileSync(resolve(testDir, "explainabilityContent.ts"), "utf8");
     const explainComponents = readFileSync(resolve(testDir, "explainability/Explainability.tsx"), "utf8");
 
+    expect(maxwellPanel).toContain("L7.1 Focus + Field MTF Qualification Workbench");
+    expect(maxwellPanel).toContain("focus sweep MTF, field MTF maps, diagnostic qualification reports");
+    expect(maxwellPanel).toContain("Run Focus Sweep");
+    expect(maxwellPanel).toContain("Import Current MTF Into Sweep");
+    expect(maxwellPanel).toContain("Run Field Map");
+    expect(maxwellPanel).toContain("Run Qualification");
+    expect(maxwellPanel).toContain("Export Qualification Bundle");
+    expect(maxwellPanel).toContain("Save Qualification Study");
+    expect(maxwellPanel).toContain("Compare Focus Field MTF");
+    expect(maxwellPanel).toContain("MTF50 vs focus");
+    expect(maxwellPanel).toContain("Worst-field ROI");
+    expect(maxwellPanel).toContain("L7.1 measured vs simulated focus/field MTF");
+    expect(maxwellPanel).toContain("not ISO 12233 certification, Imatest-equivalent testing, calibrated optical model fitting");
     expect(maxwellPanel).toContain("L7.0 Slanted-Edge / Resolution Target MTF Workbench");
-    expect(maxwellPanel).toContain("resolution MTF diagnostics, camera calibration, sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines");
-    expect(maxwellPanel).toContain("PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, and ISO 12233-inspired slanted-edge/line-pair MTF diagnostics are the executable scope");
+    expect(maxwellPanel).toContain("focus sweep MTF, field MTF maps, diagnostic qualification reports, camera calibration, sensor-lite acquisition, measured comparison, saved studies, sweeps, markers, comparisons, capabilities, and exports over the existing planar/scalar engines");
+    expect(maxwellPanel).toContain("PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, and L7.1 focus/field MTF qualification diagnostics are the executable scope");
     expect(maxwellPanel).toContain("Generate/import slanted-edge targets, compute ESF/LSF/SFR-MTF, compare measured vs simulated MTF, and sanity-check line-pair contrast.");
     expect(maxwellPanel).toContain("Generate Slanted Edge Target");
     expect(maxwellPanel).toContain("Run Slanted-Edge MTF");
@@ -217,7 +230,11 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).toContain("3D Maxwell solve");
     expect(maxwellPanel).toContain("not-implemented");
     expect(maxwellPanel).toContain("scaffold-only");
-    expect(maxwellPanel).toContain("l70CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("l71CapabilitiesMatrix");
+    expect(maxwellPanel).toContain("runSyntheticFocusSweepMtf");
+    expect(maxwellPanel).toContain("runFieldMtfMap");
+    expect(maxwellPanel).toContain("qualifyFocusFieldMtf");
+    expect(maxwellPanel).toContain("compareFocusFieldMtf");
     expect(maxwellPanel).toContain("runSlantedEdgeMtf");
     expect(maxwellPanel).toContain("generateSlantedEdgeTarget");
     expect(maxwellPanel).toContain("generateLinePairTarget");
@@ -379,7 +396,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toContain(">Apply Search<");
     expect(maxwellPanel).toContain("Tolerance Yield");
     expect(maxwellPanel).toContain("Yield JSON");
-    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified/i);
+    expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented/i);
   });
 
   it("keeps the visible app shell Maxwell-only", () => {
@@ -388,9 +405,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("PlanarTmmBackend + Resolution MTF");
-    expect(app).toContain("L7.0 Slanted-Edge / Resolution Target MTF Workbench");
-    expect(app).toContain("slanted-edge SFR/MTF diagnostics, line-pair targets, measured-vs-simulated MTF comparison, diagnostic photon-transfer calibration, deterministic camera acquisition, executable planar backend, saved studies, sweeps, measurements, capabilities matrix, study bundle exports");
+    expect(app).toContain("PlanarTmmBackend + Focus Field MTF");
+    expect(app).toContain("L7.1 Focus + Field MTF Qualification Workbench");
+    expect(app).toContain("focus sweep MTF, field MTF maps, qualification reports, measured-vs-simulated focus/field comparison");
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
   });

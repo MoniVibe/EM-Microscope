@@ -263,13 +263,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L7.0 Slanted-Edge / Resolution Target MTF Workbench</p>
+            <p>L7.1 Focus + Field MTF Qualification Workbench</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>PlanarTmmBackend + Resolution MTF</span>
-          <strong>slanted-edge SFR/MTF diagnostics, line-pair targets, measured-vs-simulated MTF comparison, diagnostic photon-transfer calibration, deterministic camera acquisition, executable planar backend, saved studies, sweeps, measurements, capabilities matrix, study bundle exports</strong>
+          <span>PlanarTmmBackend + Focus Field MTF</span>
+          <strong>focus sweep MTF, field MTF maps, qualification reports, measured-vs-simulated focus/field comparison, slanted-edge SFR/MTF diagnostics, line-pair targets, diagnostic photon-transfer calibration, deterministic camera acquisition, executable planar backend, saved studies, sweeps, measurements, capabilities matrix, study bundle exports</strong>
         </div>
       </header>
 
