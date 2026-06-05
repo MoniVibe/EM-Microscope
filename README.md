@@ -999,12 +999,18 @@ evidence export can be reviewed as one deterministic round trip.
   calibration, hardware control, digital twins, manufacturing certification, and full 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD
   execution are not implemented.
 
+## L7.8.1 CI and Bundle Hygiene
+
+L7.8.1 is maintenance-only. It keeps the L7.8 product behavior unchanged while cleaning up operational warnings:
+
+- `GitHub Actions`: the Pages workflow uses Node 24 explicitly with Node 24-compatible official actions where current
+  releases exist.
+- `Bundle splitting`: Vite uses Rollup `manualChunks` to split React, icons, the Maxwell panel, explainability content,
+  and core domains into named chunks. The build no longer relies on raising `chunkSizeWarningLimit`.
+- `Boundary`: no detector, physics, calibration, hardware, or UI feature behavior changes are part of this pass.
+
 Recommended next Maxwell steps:
 
-- Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
-  validation roadmap.
-- Consider an L6.x bundle hygiene pass: lazy-load heavy workbench panels/exports and split large chunks instead of
-  only raising Vite's chunk warning limit.
 - Consider L7.9 detector-review hardening next: add residual-vector overlays for imported detector corners, richer
   manual-review diffs, saved detector comparison studies, AprilTag as an external-helper path only if a real decoder is
   added, and stronger public Pages smoke coverage for imports, manual edits, saved studies, and exports.
