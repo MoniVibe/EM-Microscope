@@ -1,9 +1,10 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L7.5 Fiducial Board / ChArUco-style Target Workflow
-over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with diagnostic synthetic
-fiducial board generation, imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry
-handoff, L7.4 session QA handoff, batch session manifest import, per-frame metric aggregation, repeatability
+An EM-first light simulator MVP. The visible web app is now the L7.6 Real Detector Bridge / External CV Integration
+over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with diagnostic external
+detector JSON/CSV import, detector receipt validation, detector comparison, synthetic fiducial board generation,
+imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
+handoff, batch session manifest import, per-frame metric aggregation, repeatability
 standard deviation and coefficient-of-variation summaries,
 drift slopes, threshold-controlled outlier review, session report exports, measured target
 image import, generated-target image handoff, numeric ROI controls, auto/manual dot-grid thresholding, polarity
@@ -119,8 +120,12 @@ certification system.
 
 ## Current Visible Mode
 
-- `L7.5 Fiducial Board / ChArUco-style Target Workflow`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L7.6 Real Detector Bridge / External CV Integration`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
+  external detector JSON/CSV import using the canonical `emmicro.detector.v1` receipt schema, detector/image/board
+  hashes, import warnings, deterministic detector receipts, detector comparison, and exports named
+  `detector_bridge_report.md`, `detector_bridge_report.json`, `imported_detections.csv`, and
+  `detector_comparison.csv`,
   diagnostic ChArUco-style synthetic fiducial board generation, deterministic marker IDs and board coordinates,
   synthetic clean-board detections, JSON detection import, ID-to-board matching, partial-view coverage warnings,
   manual marker accept/reject/move/relabel correction, L7.2 similarity/affine/radial geometry-fit handoff, L7.4
@@ -920,15 +925,42 @@ synthetic target for internal diagnostics; it is not OpenCV-compatible ArUco/ChA
   calibration, lab-accredited metrology, hardware control, full 3D pose/stereo calibration, digital twins,
   manufacturing certification, and full 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution are not implemented.
 
+## L7.6 Real Detector Bridge / External CV Integration
+
+L7.6 adds the practical bridge between real external computer-vision detector output and the existing L7.5 fiducial
+workflow. It accepts detector results from outside the browser, validates their receipts, and hands accepted points to
+the same matching, manual review, geometry fit, and session QA path already used by synthetic fiducial detections.
+
+- `Canonical JSON import`: validates `emmicro.detector.v1` detector receipts with detector name/version, runner hash,
+  parameters, image hash/size, board ID/hash, marker corners, ChArUco-style corners, low-confidence warnings, mismatch
+  warnings, unknown-ID warnings, duplicate-ID rejection, corner-count rejection, corner-order checks, and image bounds
+  checks.
+- `CSV import`: supports marker-corner CSV with required `marker_id,corner_index,x_px,y_px` columns and optional
+  `frame_id`, `confidence`, `detector_name`, `detector_version`, `board_id`, `board_hash`, `image_hash`,
+  `image_width`, and `image_height` receipt columns.
+- `Detector receipts`: preserves detector name/version/parameters, input hashes, warning codes, source hash,
+  detection hash, and deterministic result hash.
+- `Handoffs`: imported detector points feed L7.5 matching/manual correction, L7.2 similarity/affine/radial geometry
+  fits, and L7.4 `fiducial_board` session QA frames.
+- `Comparison and exports`: compares synthetic-vs-imported, imported-vs-imported, or manual-corrected-vs-raw detector
+  sets with matched IDs, missing/extra IDs, mean/max corner deltas, coverage delta, and fit RMS delta. Exports include
+  `detector_bridge_report.md`, `detector_bridge_report.json`, `imported_detections.csv`, and
+  `detector_comparison.csv`.
+- `Tools scaffold`: `tools/detectors/` contains validating example JSON/CSV and an optional Python/OpenCV runner
+  template. Python/OpenCV is not required for npm tests.
+- `Capability boundaries`: browser-native OpenCV ArUco detector execution, AprilTag decoding, certified camera
+  calibration, lab-accredited metrology, full 3D pose/stereo calibration, hardware control, digital twins,
+  manufacturing certification, and full 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution are not implemented.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
 - Consider an L6.x bundle hygiene pass: lazy-load heavy workbench panels/exports and split large chunks instead of
   only raising Vite's chunk warning limit.
-- Consider L7.6 detector-bridge hardening next: keep the current diagnostic parser/matcher, but add optional
-  externally supplied OpenCV/AprilTag result adapters, richer CSV import modes in the UI, residual-vector overlays on
-  measured images, and stronger public Pages smoke coverage for imports, manual edits, saved studies, and exports.
+- Consider L7.7 detector-review hardening next: add residual-vector overlays for imported detector corners, richer
+  manual-review diffs, saved detector comparison studies, and stronger public Pages smoke coverage for imports,
+  manual edits, saved studies, and exports.
 
 ## Local Development
 

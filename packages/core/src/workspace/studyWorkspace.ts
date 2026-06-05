@@ -63,6 +63,7 @@ export type StudyMode =
   | "image-quality.target-detection"
   | "image-quality.batch-session-qa"
   | "image-quality.fiducial-board"
+  | "image-quality.external-detector-bridge"
   | "coating.planar-stack"
   | "coating.optimizer"
   | "coating.robust-optimizer";
@@ -71,7 +72,7 @@ export type StudySnapshotInput = {
   id?: string;
   name: string;
   mode: StudyMode;
-  selectedWorkbench: "validation-bench" | "coating-stack-workbench" | "advisor-review" | "measured-vs-simulated" | "camera-sensor-lite" | "camera-calibration" | "resolution-mtf" | "focus-field-mtf" | "geometric-calibration" | "batch-session-qa" | "fiducial-board";
+  selectedWorkbench: "validation-bench" | "coating-stack-workbench" | "advisor-review" | "measured-vs-simulated" | "camera-sensor-lite" | "camera-calibration" | "resolution-mtf" | "focus-field-mtf" | "geometric-calibration" | "batch-session-qa" | "fiducial-board" | "external-detector-bridge";
   inputs: unknown;
   appState?: unknown;
   backendReceipt: unknown;
@@ -87,7 +88,7 @@ export type StudySnapshotInput = {
 
 export type StudySnapshot = Required<Omit<StudySnapshotInput, "id" | "materialReceipts" | "uncertaintyReceipts" | "profiles" | "createdAtIso">> & {
   schema: "emmicro.studySnapshot.v1";
-  type: "l66PracticalStudy" | "l67PracticalStudy" | "l68PracticalStudy" | "l69PracticalStudy" | "l70PracticalStudy" | "l71PracticalStudy" | "l72PracticalStudy" | "l73PracticalStudy" | "l74PracticalStudy" | "l75PracticalStudy";
+  type: "l66PracticalStudy" | "l67PracticalStudy" | "l68PracticalStudy" | "l69PracticalStudy" | "l70PracticalStudy" | "l71PracticalStudy" | "l72PracticalStudy" | "l73PracticalStudy" | "l74PracticalStudy" | "l75PracticalStudy" | "l76PracticalStudy";
   id: string;
   createdAtIso: string;
   materialReceipts: unknown[];
@@ -134,6 +135,8 @@ export type StudyBundle = {
   fiducialBoard?: unknown;
   fiducialDetection?: unknown;
   fiducialFit?: unknown;
+  externalDetectorImport?: unknown;
+  externalDetectorComparison?: unknown;
   sweep?: PracticalSweepResult;
 };
 
@@ -271,10 +274,14 @@ export function l73CapabilitiesMatrix(): StudyCapability[] {
 }
 
 export function l74CapabilitiesMatrix(): StudyCapability[] {
-  return l75CapabilitiesMatrix();
+  return l76CapabilitiesMatrix();
 }
 
 export function l75CapabilitiesMatrix(): StudyCapability[] {
+  return l76CapabilitiesMatrix();
+}
+
+export function l76CapabilitiesMatrix(): StudyCapability[] {
   return [
     executable("planar-tmm-backend", "PlanarTmmBackend", "registered Maxwell backend executing 1D planar transfer-matrix coating stacks"),
     executable("coating-stack-optimizer", "Coating Stack Optimizer", "deterministic local material/order/thickness search over planar TMM runs"),
@@ -302,6 +309,10 @@ export function l75CapabilitiesMatrix(): StudyCapability[] {
     executable("charuco-style-fiducial-matching", "ChArUco-style fiducial matching", "diagnostic ID-to-board matching over imported/synthetic detections with coverage, missing-ID, partial-view, and residual evidence"),
     executable("fiducial-manual-correction", "Fiducial manual correction", "manual accept/reject/move/relabel edits for marker and ChArUco-style detections before geometry fitting"),
     executable("fiducial-geometry-session-handoff", "Fiducial geometry/session handoff", "matched fiducial points feed L7.2 similarity/affine/radial diagnostic fits and L7.4 session QA frame metrics"),
+    executable("external-detector-json-csv-import", "External detector JSON/CSV import", "canonical emmicro.detector.v1 JSON and marker-corner CSV import into the existing L7.5 fiducial detection workflow"),
+    executable("detector-receipt-validation", "Detector receipt validation", "detector/image/board receipt validation with deterministic source, detection, warning, and result hashes"),
+    executable("external-detector-comparison", "External detector comparison", "synthetic-vs-imported, imported-vs-imported, and manual-corrected-vs-raw detector comparison with mean/max pixel deltas, coverage deltas, and fit RMS deltas"),
+    executable("detector-bridge-reports", "Detector bridge report exports", "diagnostic detector_bridge_report.md, detector_bridge_report.json, imported_detections.csv, and detector_comparison.csv exports"),
     scaffold("checkerboard-target-detection", "Checkerboard automatic detection", "generated/checkerboard target metadata and manual/CSV workflow remain available; robust automatic checkerboard detection is scaffold-only"),
     scaffold("external-fdtd-export", "ExternalFdtdBackend export", "scene/result schema and Meep-style export scaffold only"),
     unavailable("3d-maxwell-solve", "3D Maxwell solve"),
@@ -323,6 +334,8 @@ export function l75CapabilitiesMatrix(): StudyCapability[] {
     unavailable("full-3d-pose-calibration", "Full 3D pose calibration"),
     unavailable("stereo-calibration", "Stereo calibration"),
     unavailable("apriltag-aruco-detection", "Real OpenCV ArUco/ChArUco or AprilTag detector execution"),
+    unavailable("browser-native-opencv-aruco-detector", "Browser-native OpenCV ArUco detector"),
+    unavailable("apriltag-decoder", "AprilTag decoder"),
     unavailable("material-uncertainty", "Material uncertainty"),
     unavailable("digital-twin-calibration", "Digital twin calibration"),
     unavailable("manufacturing-certification", "Manufacturing certification")
@@ -364,7 +377,7 @@ export function createStudySnapshot(input: StudySnapshotInput): StudySnapshot {
   const createdAtIso = input.createdAtIso ?? new Date().toISOString();
   const base = {
     schema: "emmicro.studySnapshot.v1" as const,
-    type: "l75PracticalStudy" as const,
+    type: "l76PracticalStudy" as const,
     id: input.id ?? slugId(input.name),
     name: input.name,
     mode: input.mode,
@@ -380,7 +393,7 @@ export function createStudySnapshot(input: StudySnapshotInput): StudySnapshot {
     profiles: input.profiles ?? {},
     warnings: [...input.warnings],
     limitations: [...input.limitations],
-    capabilities: l75CapabilitiesMatrix()
+    capabilities: l76CapabilitiesMatrix()
   };
   const resultHash = fnv1a64(stableStringify(studyForHash(base)));
   return { ...base, resultHash };
@@ -409,20 +422,22 @@ export function studyBundleJson(
     fiducialBoard?: unknown;
     fiducialDetection?: unknown;
     fiducialFit?: unknown;
+    externalDetectorImport?: unknown;
+    externalDetectorComparison?: unknown;
   } = {}
 ): StudyBundle {
   return {
     schema: "emmicro.studyBundle.v1",
-    appVersion: "L7.5 Fiducial Board / ChArUco-style Target Workflow",
+    appVersion: "L7.6 Real Detector Bridge / External CV Integration",
     manifest: {
-      appVersion: "L7.5",
+      appVersion: "L7.6",
       studyHash: study.resultHash,
       resultHashes: [...study.resultHashes],
       backendReceipt: study.backendReceipt,
       materialReceiptCount: study.materialReceipts.length,
       uncertaintyReceiptCount: study.uncertaintyReceipts.length,
       warningCount: study.warnings.length,
-      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, Camera/Sensor-Lite detector acquisition post-processing, EMVA-inspired diagnostic camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, and L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/geometry-fit/session-QA handoff only; pixel-level EM sensor stacks, certified camera calibration, ISO 12233 certification, Imatest-equivalent certification, lab-accredited metrology, EMVA 1288 certification, pure lens-only MTF certification, certified lab calibration, certified metrology reports, lab accreditation workflows, calibrated optical model fitting, full 3D pose/stereo calibration, real OpenCV ArUco/ChArUco marker decoding, AprilTag decoding, hardware control, 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD, digital twins, and manufacturing certification are not implemented."
+      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, Camera/Sensor-Lite detector acquisition post-processing, EMVA-inspired diagnostic camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/geometry-fit/session-QA handoff, and L7.6 external detector JSON/CSV import, receipt validation, comparison, and report exports only; pixel-level EM sensor stacks, certified camera calibration, ISO 12233 certification, Imatest-equivalent certification, lab-accredited metrology, EMVA 1288 certification, pure lens-only MTF certification, certified lab calibration, certified metrology reports, lab accreditation workflows, calibrated optical model fitting, full 3D pose/stereo calibration, browser-native OpenCV ArUco detector execution, AprilTag decoding, hardware control, 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD, digital twins, and manufacturing certification are not implemented."
     },
     study,
     metricsCsv: studyMetricsCsv(study),
@@ -448,6 +463,8 @@ export function studyBundleJson(
     fiducialBoard: options.fiducialBoard,
     fiducialDetection: options.fiducialDetection,
     fiducialFit: options.fiducialFit,
+    externalDetectorImport: options.externalDetectorImport,
+    externalDetectorComparison: options.externalDetectorComparison,
     sweep: options.sweep
   };
 }

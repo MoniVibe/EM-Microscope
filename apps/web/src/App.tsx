@@ -263,13 +263,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L7.5 Fiducial Board / ChArUco-style Target Workflow</p>
+            <p>L7.6 Real Detector Bridge / External CV Integration</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>PlanarTmmBackend + Fiducial QA</span>
-          <strong>diagnostic synthetic fiducial board generation, imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA handoff, session reports, measured target image ROI handling, dot-grid blob detection, confidence reports, geometric target generation/import, pixel-scale and distortion fitting, focus sweep MTF, slanted-edge SFR/MTF diagnostics, diagnostic photon-transfer calibration, deterministic camera acquisition, executable planar backend, saved studies, sweeps, capabilities matrix, study bundle exports</strong>
+          <span>PlanarTmmBackend + Detector Bridge</span>
+          <strong>diagnostic external detector JSON/CSV import, detector receipt validation, synthetic-vs-imported comparison, L7.5 fiducial matching/manual review, L7.2 geometry handoff, L7.4 session QA handoff, session reports, measured target image ROI handling, dot-grid blob detection, confidence reports, geometric target generation/import, pixel-scale and distortion fitting, focus sweep MTF, slanted-edge SFR/MTF diagnostics, diagnostic photon-transfer calibration, deterministic camera acquisition, executable planar backend, saved studies, sweeps, capabilities matrix, study bundle exports</strong>
         </div>
       </header>
 
