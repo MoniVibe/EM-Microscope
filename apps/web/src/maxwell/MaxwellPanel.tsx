@@ -98,8 +98,13 @@ import {
   rejectedPointsCsv,
   targetImageFromGeometricTarget,
   defaultL74Thresholds,
+  createDetectorRoundTripAcceptance,
   exampleL74SessionManifestCsv,
   frameMetricsCsv,
+  detectorRoundTripMetricsCsv,
+  detectorRoundTripReportJson,
+  detectorRoundTripReportMarkdown,
+  detectorRoundTripWarningsJson,
   l74FrameFromCameraCalibration,
   l74FrameFromCameraRun,
   l74FrameFromDetection,
@@ -234,6 +239,7 @@ import {
   type L75FiducialMatchResult,
   type L76DetectorComparisonResult,
   type L76ExternalDetectorImportResult,
+  type L78DetectorRoundTripReport,
   type SlantedEdgeMtfResult,
   type PlanarFieldMonitorResult,
   type PracticalSweepFamily,
@@ -382,7 +388,7 @@ export function MaxwellPanel() {
   const [coherenceSlitWidthUm, setCoherenceSlitWidthUm] = useState(20);
   const [coherenceSlitSeparationUm, setCoherenceSlitSeparationUm] = useState(100);
   const [coherencePropagationDistanceM, setCoherencePropagationDistanceM] = useState(1);
-  const [studyName, setStudyName] = useState("L7.7 detector bridge working study");
+  const [studyName, setStudyName] = useState("L7.8 detector round-trip working study");
   const [savedStudies, setSavedStudies] = useState<StudySnapshot[]>([]);
   const [selectedStudyId, setSelectedStudyId] = useState<string>("");
   const [studyStatus, setStudyStatus] = useState("No study saved yet.");
@@ -512,6 +518,7 @@ export function MaxwellPanel() {
   const [l76DetectorCsvText, setL76DetectorCsvText] = useState(exampleExternalDetectorMarkerCsv());
   const [l76DetectorImport, setL76DetectorImport] = useState<L76ExternalDetectorImportResult | null>(null);
   const [l76DetectorComparison, setL76DetectorComparison] = useState<L76DetectorComparisonResult | null>(null);
+  const [l78RoundTripReport, setL78RoundTripReport] = useState<L78DetectorRoundTripReport | null>(null);
   const materialCatalog = useMemo<MaxwellMaterialCatalog>(
     () => createMaterialCatalog({ id: materialImport ? "l54-material-catalog-with-imports" : "l54-built-in-material-catalog", imports: materialImport ? [materialImport] : [] }),
     [materialImport]
@@ -2131,6 +2138,7 @@ export function MaxwellPanel() {
     setL75SelectedMarkerId(board.markers[0]?.id.toString() ?? "");
     setL76DetectorImport(null);
     setL76DetectorComparison(null);
+    setL78RoundTripReport(null);
     setL76DetectorJsonText(exampleExternalDetectorJson(board));
     setL76DetectorCsvText(exampleExternalDetectorMarkerCsv(board));
     setStudyStatus(`Generated L7.5 fiducial board: ${board.markers.length} markers / ${board.charucoCorners.length} ChArUco-style corners / ${board.resultHash.slice(0, 10)}.`);
@@ -2371,6 +2379,7 @@ export function MaxwellPanel() {
   function applyL76DetectorImport(imported: L76ExternalDetectorImportResult): void {
     setL76DetectorImport(imported);
     setL76DetectorComparison(null);
+    setL78RoundTripReport(null);
     setL75Detection(imported.detection);
     setL75Match(imported.match);
     setL75Fit(null);
@@ -2554,6 +2563,92 @@ export function MaxwellPanel() {
       setStudyStatus(`L7.7 detector session handoff failed: ${(error as Error).message}`);
       return null;
     }
+  }
+
+  function runL78RoundTripAcceptance(fixtureKind: L78DetectorRoundTripReport["fixtureKind"] = "custom"): L78DetectorRoundTripReport | null {
+    try {
+      const hadBoard = Boolean(l75Board);
+      const board = l75Board ?? generateL75Board();
+      let imported = l76DetectorImport;
+      if (!imported) {
+        const detectorText = hadBoard ? l76DetectorJsonText : exampleExternalDetectorJson(board);
+        if (!hadBoard) setL76DetectorJsonText(detectorText);
+        imported = parseExternalDetectorJson(detectorText, {
+          id: `l78-detector-json-${Date.now().toString(36)}`,
+          label: "L7.8 round-trip detector JSON import",
+          board,
+          expectedBoardHash: board.resultHash,
+          expectedImageHash: board.image.imageHash,
+          minConfidence: 0.8
+        });
+        applyL76DetectorImport(imported);
+      }
+      let fit = l75Fit;
+      if (!fit) {
+        fit = fitExternalDetectorImport({
+          id: `l78-detector-fit-${Date.now().toString(36)}`,
+          label: "L7.8 round-trip detector geometry fit",
+          importResult: imported,
+          board,
+          model: "similarity"
+        });
+        setL75Fit(fit);
+        setL75Match(fit.match);
+        setL72FitModel("similarity");
+        setL72ImportedPointSet(fit.match.pointSet);
+        setL72Fit(fit.fit);
+        setL72Comparison(null);
+      }
+      let session = l74SessionQa;
+      if (!session) {
+        const manifestText = "frame_id,type,path_or_name,notes\next_001,fiducial_board,external_detector_import.json,L7.8 detector round-trip handoff";
+        const manifest = parseL74SessionManifestCsv(manifestText);
+        const frame = l74FrameFromFiducialFit(manifest.rows[0]!, fit);
+        session = runL74SessionQa({
+          id: `l78-detector-session-qa-${Date.now().toString(36)}`,
+          label: "L7.8 detector round-trip session QA handoff",
+          manifestHash: manifest.manifestHash,
+          frames: [frame],
+          thresholds: l74Thresholds(),
+          warnings: manifest.warnings
+        });
+        setL74ManifestText(manifestText);
+        setL74SessionQa(session);
+      }
+      const thresholds =
+        fixtureKind === "partial-view"
+          ? { allowPartialView: true, minMarkers: 8, minCharucoCorners: 12, minCoverage: 0.7 }
+          : fixtureKind === "blur-noise"
+            ? { minMeanConfidence: 0.85, maxFitRmsPx: 0.08, maxFitMaxResidualPx: 0.25 }
+            : {};
+      const report = createDetectorRoundTripAcceptance({
+        id: `l78-detector-roundtrip-${Date.now().toString(36)}`,
+        label: "L7.8 detector round-trip acceptance",
+        fixtureKind,
+        board,
+        importResult: imported,
+        comparison: l76DetectorComparison,
+        fit,
+        sessionQa: session,
+        thresholds
+      });
+      setL78RoundTripReport(report);
+      setStudyStatus(`L7.8 detector round-trip ${report.status.toUpperCase()}: ${report.metrics.matchedPoints} matched points / coverage ${report.metrics.coverageScore.toPrecision(4)} / ${report.warnings.length} warning(s).`);
+      return report;
+    } catch (error) {
+      setStudyStatus(`L7.8 detector round-trip acceptance failed: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  function exportL78RoundTripBundle(): void {
+    const report = l78RoundTripReport ?? runL78RoundTripAcceptance("custom");
+    if (!report) return;
+    downloadText("roundtrip_report.md", "text/markdown", detectorRoundTripReportMarkdown(report));
+    downloadText("roundtrip_report.json", "application/json", detectorRoundTripReportJson(report));
+    downloadText("roundtrip_metrics.csv", "text/csv", detectorRoundTripMetricsCsv(report));
+    downloadText("roundtrip_warnings.json", "application/json", detectorRoundTripWarningsJson(report));
+    setStudyStatus(`Exported L7.8 detector round-trip evidence bundle: ${report.status.toUpperCase()} / ${report.resultHash.slice(0, 10)}.`);
   }
 
   function saveL76DetectorBridgeStudy(): void {
@@ -3393,11 +3488,11 @@ export function MaxwellPanel() {
   }
 
   return (
-    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.7 External Detector Runner Pack / Real Detector Bridge">
-      <h2>L7.7 External Detector Runner Pack / Real Detector Bridge</h2>
+    <section className={`wave-panel maxwell-panel${explainMode ? " explain-mode-root" : ""}`} aria-label="L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge">
+      <h2>L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge</h2>
       <div className="l2-disclosure">
-        <strong>diagnostic external detector JSON/CSV import, receipt validation, detector comparison, fiducial board generation, imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA, measured target ROI handling, focus/field MTF, camera diagnostics, saved studies, capabilities, and exports over the existing planar/scalar engines</strong>
-        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/session handoff, and L7.7 external detector JSON/CSV import, detector receipt validation, comparison, and report exports are the executable scope; this is not pixel-level sensor-stack EM, certified camera calibration, certified metrology reports, lab-accredited metrology, lab accreditation workflows, hardware control, full 3D pose/stereo calibration, browser-native OpenCV.js/ArUco detector execution, AprilTag decoding, a digital twin, manufacturing certification, or 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution</span>
+        <strong>diagnostic detector round-trip acceptance over board export, optional external detector helper output, JSON/CSV import, receipt/hash validation, ID matching, geometry fit, session QA, and evidence exports over the existing planar/scalar engines</strong>
+        <span>PlanarTmmBackend, scalar validation, diagnostic measured comparison, detector acquisition post-processing, EMVA-inspired camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/session handoff, L7.7 external detector JSON/CSV import, detector receipt validation, comparison, report exports, and L7.8 detector round-trip acceptance reports are the executable scope; this is not pixel-level sensor-stack EM, certified camera calibration, certified metrology reports, lab-accredited metrology, lab accreditation workflows, hardware control, full 3D pose/stereo calibration, browser-native OpenCV.js/ArUco detector execution, AprilTag decoding, a digital twin, manufacturing certification, or 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution</span>
       </div>
       <div className="explain-toolbar" aria-label="Explainability controls">
         <label className="maxwell-material-check">
@@ -3452,7 +3547,8 @@ export function MaxwellPanel() {
             l75Detection,
             l75Fit,
             l76DetectorImport,
-            l76DetectorComparison
+            l76DetectorComparison,
+            l78RoundTripReport
           )
         }
         onImportBundle={importStudyBundleFile}
@@ -3710,6 +3806,9 @@ export function MaxwellPanel() {
         onAddDetectorToSession={addL76DetectorToSessionQa}
         onExportDetectorBridge={exportL76DetectorBridgeReport}
         onSaveDetectorBridgeStudy={saveL76DetectorBridgeStudy}
+        roundTripReport={l78RoundTripReport}
+        onRunRoundTripAcceptance={() => runL78RoundTripAcceptance("custom")}
+        onExportRoundTripBundle={exportL78RoundTripBundle}
         sessionQa={l74SessionQa}
       />
 
@@ -5260,6 +5359,9 @@ function GeometricCalibrationWorkbenchPanel({
   onAddDetectorToSession,
   onExportDetectorBridge,
   onSaveDetectorBridgeStudy,
+  roundTripReport,
+  onRunRoundTripAcceptance,
+  onExportRoundTripBundle,
   sessionQa
 }: {
   targetKind: L72TargetKind;
@@ -5387,6 +5489,9 @@ function GeometricCalibrationWorkbenchPanel({
   onAddDetectorToSession: () => void;
   onExportDetectorBridge: () => void;
   onSaveDetectorBridgeStudy: () => void;
+  roundTripReport: L78DetectorRoundTripReport | null;
+  onRunRoundTripAcceptance: () => void;
+  onExportRoundTripBundle: () => void;
   sessionQa: L74SessionQaResult | null;
 }) {
   const activePoints = importedPointSet?.points ?? target?.points ?? [];
@@ -5423,6 +5528,17 @@ function GeometricCalibrationWorkbenchPanel({
   const detectorParameterSummary = detectorImport ? formatDetectorParameterSummary(detectorImport.detector.parameters) : "none";
   const detectorBoardHashStatus = detectorImport ? hashStatusLabel(detectorImport.board.hashMatchesExpected) : "pending";
   const detectorImageHashStatus = detectorImport ? hashStatusLabel(detectorImport.image.hashMatchesExpected) : "pending";
+  const roundTripExportNames = ["roundtrip_report.md", "roundtrip_report.json", "roundtrip_metrics.csv", "roundtrip_warnings.json"];
+  const roundTripSteps = roundTripReport?.steps ?? [
+    { label: "Export board manifest / printable board", status: fiducialBoard ? "ready" : "not-started", requiredFile: "board_manifest.json", hash: fiducialBoard?.resultHash ?? null, nextAction: fiducialBoard ? "Run external detector helper" : "Generate/export a board" },
+    { label: "Run external detector helper", status: "ready", requiredFile: "detection.json or marker_corners.csv", hash: null, nextAction: "Import external detector output" },
+    { label: "Import detector JSON/CSV", status: detectorImport ? "pass" : "not-started", requiredFile: "detection.json / marker_corners.csv", hash: detectorImport?.resultHash ?? null, nextAction: detectorImport ? "Validate receipt and hashes" : "Import detector output" },
+    { label: "Validate receipt and hashes", status: detectorImport ? "pass" : "not-started", requiredFile: "detector receipt", hash: detectorImport?.receipt.resultHash ?? null, nextAction: "Match IDs to board" },
+    { label: "Match IDs to board", status: fiducialCoverage ? "pass" : "not-started", requiredFile: "matched_points.csv", hash: fiducialCoverage?.resultHash ?? null, nextAction: "Run geometry fit" },
+    { label: "Run geometry fit", status: fiducialFit?.fit ? fiducialFit.status : "not-started", requiredFile: "geometric_calibration_report.json", hash: fiducialFit?.fit?.resultHash ?? null, nextAction: "Add frame to session QA" },
+    { label: "Add to session QA", status: sessionQa ? sessionQa.status : "not-started", requiredFile: "session_report.json", hash: sessionQa?.resultHash ?? null, nextAction: "Export round-trip evidence" },
+    { label: "Export round-trip evidence", status: roundTripReport ? "ready" : "not-started", requiredFile: "roundtrip_report.md/json", hash: roundTripReport?.resultHash ?? null, nextAction: roundTripReport ? "Evidence bundle ready" : "Run L7.8 acceptance" }
+  ];
 
   return (
     <div className="maxwell-study-card maxwell-l72-panel" aria-label="L7.3 Measured Target Detection and ROI Hardening">
@@ -5632,6 +5748,52 @@ function GeometricCalibrationWorkbenchPanel({
           <div className="maxwell-data-table maxwell-l75-export-list" aria-label="L7.7 detector session handoff smoke preview">
             <div className="compact-stat"><span>Session QA handoff</span><strong>{sessionQa?.frames.some((frame) => frame.type === "fiducial_board") ? "ready" : "pending"}</strong></div>
             {detectorExportNames.map((name) => <div className="compact-stat" key={name}><span>{name}</span><strong>{detectorImport ? "ready" : "on import"}</strong></div>)}
+          </div>
+        </div>
+
+        <div className="maxwell-workspace-panel maxwell-l75-panel maxwell-l76-panel" aria-label="L7.8 Detector Round-Trip Acceptance Pack">
+          <div className="maxwell-section-heading">
+            <h2>External Detector Round Trip</h2>
+            <strong className={`maxwell-l72-status maxwell-l72-status-${roundTripReport?.status ?? "pending"}`}>{roundTripReport?.status.toUpperCase() ?? "not run"}</strong>
+          </div>
+          <div className="l2-disclosure">
+            <strong>L7.8 Detector Round-Trip Acceptance Pack</strong>
+            <span>Guided board-export, external-helper, import, receipt/hash validation, ID-match, diagnostic geometry fit, L7.4 session QA, and evidence-export acceptance only; this does not add browser-native OpenCV.js, AprilTag decoding, certified calibration, lab metrology, hardware control, full pose/stereo calibration, or full 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD physics.</span>
+          </div>
+          <div className="maxwell-layer-actions">
+            <button type="button" onClick={onRunRoundTripAcceptance}><ShieldCheck size={15} /><span>Run Round-Trip Acceptance</span></button>
+            <button type="button" onClick={onExportRoundTripBundle}><FileDown size={15} /><span>Export Round-Trip Evidence</span></button>
+          </div>
+          <div className="maxwell-data-table" aria-label="L7.8 detector round-trip wizard smoke preview">
+            <div className="maxwell-study-list">
+              {roundTripSteps.map((step) => (
+                <div className="compact-stat" key={`${step.label}-${step.requiredFile}`}>
+                  <span>{step.label}</span>
+                  <strong>{step.status}</strong>
+                  <small>{step.requiredFile} / {step.hash ? step.hash.slice(0, 10) : step.nextAction}</small>
+                </div>
+              ))}
+            </div>
+          </div>
+          {roundTripReport ? (
+            <div className="maxwell-data-table" aria-label="L7.8 detector round-trip acceptance smoke preview">
+              <div className="maxwell-study-list">
+                <div className="compact-stat"><span>Receipt</span><strong>{roundTripReport.metrics.detectorReceipt}</strong></div>
+                <div className="compact-stat"><span>Board hash</span><strong>{roundTripReport.metrics.boardHashStatus}</strong></div>
+                <div className="compact-stat"><span>Image hash</span><strong>{roundTripReport.metrics.imageHashStatus}</strong></div>
+                <div className="compact-stat"><span>Matched points</span><strong>{roundTripReport.metrics.matchedPoints}</strong></div>
+                <div className="compact-stat"><span>Coverage</span><strong>{roundTripReport.metrics.coverageScore.toPrecision(4)}</strong></div>
+                <div className="compact-stat"><span>Mean confidence</span><strong>{roundTripReport.metrics.meanConfidence.toPrecision(4)}</strong></div>
+                <div className="compact-stat"><span>Fit RMS</span><strong>{formatNullableMetric(roundTripReport.metrics.fitRmsPx)} px</strong></div>
+                <div className="compact-stat"><span>Session QA</span><strong>{roundTripReport.metrics.sessionQaStatus}</strong></div>
+              </div>
+              {roundTripReport.warnings.slice(0, 5).map((warning, index) => <div className="error-banner" key={`${warning.code}-${index}`}>{warning.message}</div>)}
+            </div>
+          ) : (
+            <div className="empty-state" aria-label="L7.8 detector round-trip acceptance smoke preview">Run acceptance after importing detector output to compute receipt, hash, match, fit, session QA, and export readiness.</div>
+          )}
+          <div className="maxwell-data-table maxwell-l75-export-list" aria-label="L7.8 detector round-trip export smoke preview">
+            {roundTripExportNames.map((name) => <div className="compact-stat" key={name}><span>{name}</span><strong>{roundTripReport ? "ready" : "on acceptance"}</strong></div>)}
           </div>
         </div>
 
@@ -8880,7 +9042,8 @@ function exportStudyBundle(
   fiducialDetection: L75FiducialDetectionBundle | null,
   fiducialFit: L75FiducialFitResult | null,
   externalDetectorImport: L76ExternalDetectorImportResult | null,
-  externalDetectorComparison: L76DetectorComparisonResult | null
+  externalDetectorComparison: L76DetectorComparisonResult | null,
+  roundTripReport: L78DetectorRoundTripReport | null
 ): void {
   const bundle = studyBundleJson(study, {
     sweep: sweep ?? undefined,
@@ -8904,21 +9067,22 @@ function exportStudyBundle(
     fiducialDetection: fiducialDetection ?? undefined,
     fiducialFit: fiducialFit ?? undefined,
     externalDetectorImport: externalDetectorImport ?? undefined,
-    externalDetectorComparison: externalDetectorComparison ?? undefined
+    externalDetectorComparison: externalDetectorComparison ?? undefined,
+    detectorRoundTripReport: roundTripReport ?? undefined
   });
-  downloadText("l76-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
-  downloadText("l76-study.md", "text/markdown", studyBundleMarkdown(bundle));
-  downloadText("l76-metrics.csv", "text/csv", bundle.metricsCsv);
-  downloadText("l76-profiles.csv", "text/csv", bundle.profilesCsv);
-  downloadText("l76-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
-  downloadText("l76-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
-  if (comparison) downloadText("l76-comparison.csv", "text/csv", studyComparisonCsv(comparison));
-  if (sweep) downloadText("l76-sweep.csv", "text/csv", practicalSweepCsv(sweep));
-  if (measuredComparison) downloadText("l76-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
-  if (cameraRun) downloadText("l76-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
-  if (calibrationRun) downloadText("l76-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
-  if (mtfRun) downloadText("l76-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
-  if (mtfComparison) downloadText("l76-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
+  downloadText("l78-study-bundle.json", "application/json", JSON.stringify(bundle, null, 2));
+  downloadText("l78-study.md", "text/markdown", studyBundleMarkdown(bundle));
+  downloadText("l78-metrics.csv", "text/csv", bundle.metricsCsv);
+  downloadText("l78-profiles.csv", "text/csv", bundle.profilesCsv);
+  downloadText("l78-warnings.json", "application/json", JSON.stringify(bundle.warningsJson, null, 2));
+  downloadText("l78-capabilities.json", "application/json", JSON.stringify(bundle.capabilities, null, 2));
+  if (comparison) downloadText("l78-comparison.csv", "text/csv", studyComparisonCsv(comparison));
+  if (sweep) downloadText("l78-sweep.csv", "text/csv", practicalSweepCsv(sweep));
+  if (measuredComparison) downloadText("l78-measured-residual-profile.csv", "text/csv", residualProfileCsv(measuredComparison));
+  if (cameraRun) downloadText("l78-camera_profile.csv", "text/csv", cameraProfileCsv(cameraRun));
+  if (calibrationRun) downloadText("l78-camera_calibration_residuals.csv", "text/csv", cameraCalibrationResidualsCsv(calibrationRun));
+  if (mtfRun) downloadText("l78-mtf_curve.csv", "text/csv", slantedEdgeMtfCurveCsv(mtfRun));
+  if (mtfComparison) downloadText("l78-mtf_comparison.csv", "text/csv", mtfComparisonCsv(mtfComparison));
   if (linePairRun) downloadText("l76-line_pair_contrast.csv", "text/csv", linePairContrastCsv(linePairRun));
   if (focusSweepRun) downloadText("focus_sweep.csv", "text/csv", focusSweepCsv(focusSweepRun));
   if (fieldMtfMap) downloadText("field_mtf_map.csv", "text/csv", fieldMtfMapCsv(fieldMtfMap));
@@ -8950,6 +9114,10 @@ function exportStudyBundle(
   if (externalDetectorImport) downloadText("detector_bridge_report.json", "application/json", detectorBridgeReportJson(externalDetectorImport, externalDetectorComparison ?? undefined, fiducialFit ?? undefined));
   if (externalDetectorImport) downloadText("imported_detections.csv", "text/csv", importedDetectionsCsv(externalDetectorImport));
   if (externalDetectorComparison) downloadText("detector_comparison.csv", "text/csv", detectorComparisonCsv(externalDetectorComparison));
+  if (roundTripReport) downloadText("roundtrip_report.md", "text/markdown", detectorRoundTripReportMarkdown(roundTripReport));
+  if (roundTripReport) downloadText("roundtrip_report.json", "application/json", detectorRoundTripReportJson(roundTripReport));
+  if (roundTripReport) downloadText("roundtrip_metrics.csv", "text/csv", detectorRoundTripMetricsCsv(roundTripReport));
+  if (roundTripReport) downloadText("roundtrip_warnings.json", "application/json", detectorRoundTripWarningsJson(roundTripReport));
 }
 
 function exportPracticalSweepJson(result: PracticalSweepResult): void {

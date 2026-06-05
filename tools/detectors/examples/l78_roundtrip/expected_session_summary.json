@@ -1,0 +1,26 @@
+{
+  "clean": {
+    "status": "pass",
+    "frameCount": 1,
+    "acceptedFrameCount": 1,
+    "rejectedFrameCount": 0,
+    "resultHash": "78066ab08204e424",
+    "acceptanceStatus": "pass"
+  },
+  "partial-view": {
+    "status": "warning",
+    "frameCount": 1,
+    "acceptedFrameCount": 1,
+    "rejectedFrameCount": 0,
+    "resultHash": "bc27496472a25681",
+    "acceptanceStatus": "warning"
+  },
+  "blur-noise": {
+    "status": "warning",
+    "frameCount": 1,
+    "acceptedFrameCount": 1,
+    "rejectedFrameCount": 0,
+    "resultHash": "3fd078232d919afa",
+    "acceptanceStatus": "fail"
+  }
+}

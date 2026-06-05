@@ -1,0 +1,26 @@
+[
+  {
+    "code": "fixture.blurNoise",
+    "message": "Synthetic blur/noise fixture has lowered confidence and residual stress."
+  },
+  {
+    "code": "l76.detector.lowConfidence",
+    "message": "External detector output includes low-confidence IDs below 0.8: markers 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, ChArUco-style corners 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47."
+  },
+  {
+    "code": "l72.fit.rmsResidualWarn",
+    "message": "RMS reprojection residual exceeds the warning threshold."
+  },
+  {
+    "code": "l78.roundtrip.lowMeanConfidence",
+    "message": "Mean confidence 0.6500 is below 0.85."
+  },
+  {
+    "code": "l78.roundtrip.fitRmsExceeded",
+    "message": "Fit RMS 0.4475 px exceeds 0.08 px."
+  },
+  {
+    "code": "l78.roundtrip.fitMaxResidualExceeded",
+    "message": "Fit max residual 0.7766 px exceeds 0.25 px."
+  }
+]

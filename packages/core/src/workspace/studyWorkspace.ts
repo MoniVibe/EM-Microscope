@@ -88,7 +88,7 @@ export type StudySnapshotInput = {
 
 export type StudySnapshot = Required<Omit<StudySnapshotInput, "id" | "materialReceipts" | "uncertaintyReceipts" | "profiles" | "createdAtIso">> & {
   schema: "emmicro.studySnapshot.v1";
-  type: "l66PracticalStudy" | "l67PracticalStudy" | "l68PracticalStudy" | "l69PracticalStudy" | "l70PracticalStudy" | "l71PracticalStudy" | "l72PracticalStudy" | "l73PracticalStudy" | "l74PracticalStudy" | "l75PracticalStudy" | "l76PracticalStudy" | "l77PracticalStudy";
+  type: "l66PracticalStudy" | "l67PracticalStudy" | "l68PracticalStudy" | "l69PracticalStudy" | "l70PracticalStudy" | "l71PracticalStudy" | "l72PracticalStudy" | "l73PracticalStudy" | "l74PracticalStudy" | "l75PracticalStudy" | "l76PracticalStudy" | "l77PracticalStudy" | "l78PracticalStudy";
   id: string;
   createdAtIso: string;
   materialReceipts: unknown[];
@@ -137,6 +137,7 @@ export type StudyBundle = {
   fiducialFit?: unknown;
   externalDetectorImport?: unknown;
   externalDetectorComparison?: unknown;
+  detectorRoundTripReport?: unknown;
   sweep?: PracticalSweepResult;
 };
 
@@ -315,6 +316,8 @@ export function l76CapabilitiesMatrix(): StudyCapability[] {
     executable("detector-bridge-reports", "Detector bridge report exports", "diagnostic detector_bridge_report.md, detector_bridge_report.json, imported_detections.csv, and detector_comparison.csv exports"),
     executable("opencv-charuco-external-helper", "OpenCV ChArUco external helper", "optional tools/detectors Python CLI can generate OpenCV-compatible ChArUco boards and emit canonical emmicro.detector.v1 JSON/CSV outside the web runtime"),
     executable("opencv-detector-json-import", "OpenCV detector JSON import", "OpenCV ChArUco runner receipts preserve dictionary, detector parameters, board hash, image hash, and warning evidence through the L7.6-compatible bridge schema"),
+    executable("detector-roundtrip-wizard", "Detector round-trip wizard", "guided board export, optional external helper output import, receipt/hash validation, ID match, diagnostic geometry fit, L7.4 session QA, and evidence-export chain"),
+    executable("detector-roundtrip-acceptance-reports", "Detector round-trip acceptance reports", "diagnostic roundtrip_report.md, roundtrip_report.json, roundtrip_metrics.csv, and roundtrip_warnings.json exports over imported detector evidence"),
     scaffold("checkerboard-target-detection", "Checkerboard automatic detection", "generated/checkerboard target metadata and manual/CSV workflow remain available; robust automatic checkerboard detection is scaffold-only"),
     scaffold("external-fdtd-export", "ExternalFdtdBackend export", "scene/result schema and Meep-style export scaffold only"),
     unavailable("3d-maxwell-solve", "3D Maxwell solve"),
@@ -379,7 +382,7 @@ export function createStudySnapshot(input: StudySnapshotInput): StudySnapshot {
   const createdAtIso = input.createdAtIso ?? new Date().toISOString();
   const base = {
     schema: "emmicro.studySnapshot.v1" as const,
-    type: "l77PracticalStudy" as const,
+    type: "l78PracticalStudy" as const,
     id: input.id ?? slugId(input.name),
     name: input.name,
     mode: input.mode,
@@ -426,20 +429,21 @@ export function studyBundleJson(
     fiducialFit?: unknown;
     externalDetectorImport?: unknown;
     externalDetectorComparison?: unknown;
+    detectorRoundTripReport?: unknown;
   } = {}
 ): StudyBundle {
   return {
     schema: "emmicro.studyBundle.v1",
-    appVersion: "L7.7 External Detector Runner Pack / Real Detector Bridge",
+    appVersion: "L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge",
     manifest: {
-      appVersion: "L7.7",
+      appVersion: "L7.8",
       studyHash: study.resultHash,
       resultHashes: [...study.resultHashes],
       backendReceipt: study.backendReceipt,
       materialReceiptCount: study.materialReceipts.length,
       uncertaintyReceiptCount: study.uncertaintyReceipts.length,
       warningCount: study.warnings.length,
-      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, Camera/Sensor-Lite detector acquisition post-processing, EMVA-inspired diagnostic camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/geometry-fit/session-QA handoff, L7.6 external detector JSON/CSV import, receipt validation, comparison, and report exports, and L7.7 optional external OpenCV ChArUco helper tooling only; pixel-level EM sensor stacks, certified camera calibration, ISO 12233 certification, Imatest-equivalent certification, lab-accredited metrology, EMVA 1288 certification, pure lens-only MTF certification, certified lab calibration, certified metrology reports, lab accreditation workflows, calibrated optical model fitting, full 3D pose/stereo calibration, browser-native OpenCV.js/ArUco detector execution, AprilTag decoding, hardware control, 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD, digital twins, and manufacturing certification are not implemented."
+      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, Camera/Sensor-Lite detector acquisition post-processing, EMVA-inspired diagnostic camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/geometry-fit/session-QA handoff, L7.6 external detector JSON/CSV import, receipt validation, comparison, and report exports, L7.7 optional external OpenCV ChArUco helper tooling, and L7.8 detector round-trip acceptance reports over imported evidence only; pixel-level EM sensor stacks, certified camera calibration, ISO 12233 certification, Imatest-equivalent certification, lab-accredited metrology, EMVA 1288 certification, pure lens-only MTF certification, certified lab calibration, certified metrology reports, lab accreditation workflows, calibrated optical model fitting, full 3D pose/stereo calibration, browser-native OpenCV.js/ArUco detector execution, AprilTag decoding, hardware control, 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD, digital twins, and manufacturing certification are not implemented."
     },
     study,
     metricsCsv: studyMetricsCsv(study),
@@ -467,6 +471,7 @@ export function studyBundleJson(
     fiducialFit: options.fiducialFit,
     externalDetectorImport: options.externalDetectorImport,
     externalDetectorComparison: options.externalDetectorComparison,
+    detectorRoundTripReport: options.detectorRoundTripReport,
     sweep: options.sweep
   };
 }

@@ -1,10 +1,10 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L7.7 External Detector Runner Pack / Real Detector Bridge
+An EM-first light simulator MVP. The visible web app is now the L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge
 over the existing Maxwell Design Foundry planar multilayer transfer-matrix workbench, with diagnostic external
-detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt validation, detector comparison, synthetic fiducial board generation,
+detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
-handoff, batch session manifest import, per-frame metric aggregation, repeatability
+handoff, round-trip evidence exports, batch session manifest import, per-frame metric aggregation, repeatability
 standard deviation and coefficient-of-variation summaries,
 drift slopes, threshold-controlled outlier review, session report exports, measured target
 image import, generated-target image handoff, numeric ROI controls, auto/manual dot-grid thresholding, polarity
@@ -120,8 +120,11 @@ certification system.
 
 ## Current Visible Mode
 
-- `L7.7 External Detector Runner Pack / Real Detector Bridge`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
+- `L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with
+  detector round-trip acceptance over board export, optional external detector helper output, import, receipt/hash
+  validation, ID matching, diagnostic geometry fit, session QA handoff, and exports named `roundtrip_report.md`,
+  `roundtrip_report.json`, `roundtrip_metrics.csv`, and `roundtrip_warnings.json`,
   external detector JSON/CSV import using the canonical `emmicro.detector.v1` receipt schema, optional external
   Python/OpenCV ChArUco runner tooling under `tools/detectors/`, detector/image/board hashes, import warnings,
   deterministic detector receipts, detector comparison, and exports named
@@ -976,15 +979,35 @@ assets, detect markers/corners from local images, and emit canonical `emmicro.de
   full 3D pose/stereo calibration, hardware control, digital twins, manufacturing certification, and full 3D
   Maxwell/FDTD/FEM/BEM/RCWA/CAD execution are not implemented.
 
+## L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge
+
+L7.8 adds an operational acceptance layer over the L7.7 detector bridge. It does not replace the external detector
+import contract; it packages the end-to-end evidence path so a detector board/export, external-helper run, imported
+JSON/CSV output, receipt/hash validation, ID matching, diagnostic geometry fit, L7.4 session QA handoff, and final
+evidence export can be reviewed as one deterministic round trip.
+
+- `Web wizard`: the External Detector Round Trip panel shows the eight-step chain from `board_manifest.json` through
+  detector import, receipt validation, matched points, geometry fit, session QA, and export readiness.
+- `Acceptance reports`: exports include `roundtrip_report.md`, `roundtrip_report.json`, `roundtrip_metrics.csv`, and
+  `roundtrip_warnings.json`.
+- `Fixture package`: `tools/detectors/examples/l78_roundtrip/` includes clean, partial-view, and blur/noise detector
+  fixture outputs plus expected fit/session summaries.
+- `Optional helper`: `python tools/detectors/run_roundtrip_example.py --fixture clean --out-dir artifacts/l78_roundtrip_clean`
+  copies a deterministic fixture bundle and prints a machine-readable status summary without requiring OpenCV.
+- `Capability boundaries`: L7.8 validates operational detector evidence only. Browser-native OpenCV.js/ArUco detector
+  execution, AprilTag decoding, certified camera calibration, lab-accredited metrology, full 3D pose/stereo
+  calibration, hardware control, digital twins, manufacturing certification, and full 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD
+  execution are not implemented.
+
 Recommended next Maxwell steps:
 
 - Track GitHub Actions Node 20 deprecation separately from physics work so deploy maintenance does not blur the
   validation roadmap.
 - Consider an L6.x bundle hygiene pass: lazy-load heavy workbench panels/exports and split large chunks instead of
   only raising Vite's chunk warning limit.
-- Consider L7.8 detector-review hardening next: add residual-vector overlays for imported detector corners, richer
-  manual-review diffs, saved detector comparison studies, and stronger public Pages smoke coverage for imports,
-  manual edits, saved studies, and exports.
+- Consider L7.9 detector-review hardening next: add residual-vector overlays for imported detector corners, richer
+  manual-review diffs, saved detector comparison studies, AprilTag as an external-helper path only if a real decoder is
+  added, and stronger public Pages smoke coverage for imports, manual edits, saved studies, and exports.
 
 ## Local Development
 
