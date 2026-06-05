@@ -1,0 +1,354 @@
+{
+  "version": "emmicro.board.opencv_charuco.v1",
+  "label": "L7.7 static bridge fixture. Regenerate with opencv_charuco_generate.py for a real OpenCV-compatible printed board.",
+  "boardId": "l75-board-7x5",
+  "dictionary": "DICT_4X4_50",
+  "squaresX": 7,
+  "squaresY": 5,
+  "squareLengthMm": 10,
+  "markerLengthMm": 6,
+  "boardHash": "747e6cb4591b8b8e",
+  "boardImageHash": "1c5472aa8dd261d7",
+  "worldCorners": [
+    {
+      "id": 0,
+      "row": 0,
+      "col": 0,
+      "xWorldUm": -35000,
+      "yWorldUm": -25000
+    },
+    {
+      "id": 1,
+      "row": 0,
+      "col": 1,
+      "xWorldUm": -25000,
+      "yWorldUm": -25000
+    },
+    {
+      "id": 2,
+      "row": 0,
+      "col": 2,
+      "xWorldUm": -15000,
+      "yWorldUm": -25000
+    },
+    {
+      "id": 3,
+      "row": 0,
+      "col": 3,
+      "xWorldUm": -5000,
+      "yWorldUm": -25000
+    },
+    {
+      "id": 4,
+      "row": 0,
+      "col": 4,
+      "xWorldUm": 5000,
+      "yWorldUm": -25000
+    },
+    {
+      "id": 5,
+      "row": 0,
+      "col": 5,
+      "xWorldUm": 15000,
+      "yWorldUm": -25000
+    },
+    {
+      "id": 6,
+      "row": 0,
+      "col": 6,
+      "xWorldUm": 25000,
+      "yWorldUm": -25000
+    },
+    {
+      "id": 7,
+      "row": 0,
+      "col": 7,
+      "xWorldUm": 35000,
+      "yWorldUm": -25000
+    },
+    {
+      "id": 8,
+      "row": 1,
+      "col": 0,
+      "xWorldUm": -35000,
+      "yWorldUm": -15000
+    },
+    {
+      "id": 9,
+      "row": 1,
+      "col": 1,
+      "xWorldUm": -25000,
+      "yWorldUm": -15000
+    },
+    {
+      "id": 10,
+      "row": 1,
+      "col": 2,
+      "xWorldUm": -15000,
+      "yWorldUm": -15000
+    },
+    {
+      "id": 11,
+      "row": 1,
+      "col": 3,
+      "xWorldUm": -5000,
+      "yWorldUm": -15000
+    },
+    {
+      "id": 12,
+      "row": 1,
+      "col": 4,
+      "xWorldUm": 5000,
+      "yWorldUm": -15000
+    },
+    {
+      "id": 13,
+      "row": 1,
+      "col": 5,
+      "xWorldUm": 15000,
+      "yWorldUm": -15000
+    },
+    {
+      "id": 14,
+      "row": 1,
+      "col": 6,
+      "xWorldUm": 25000,
+      "yWorldUm": -15000
+    },
+    {
+      "id": 15,
+      "row": 1,
+      "col": 7,
+      "xWorldUm": 35000,
+      "yWorldUm": -15000
+    },
+    {
+      "id": 16,
+      "row": 2,
+      "col": 0,
+      "xWorldUm": -35000,
+      "yWorldUm": -5000
+    },
+    {
+      "id": 17,
+      "row": 2,
+      "col": 1,
+      "xWorldUm": -25000,
+      "yWorldUm": -5000
+    },
+    {
+      "id": 18,
+      "row": 2,
+      "col": 2,
+      "xWorldUm": -15000,
+      "yWorldUm": -5000
+    },
+    {
+      "id": 19,
+      "row": 2,
+      "col": 3,
+      "xWorldUm": -5000,
+      "yWorldUm": -5000
+    },
+    {
+      "id": 20,
+      "row": 2,
+      "col": 4,
+      "xWorldUm": 5000,
+      "yWorldUm": -5000
+    },
+    {
+      "id": 21,
+      "row": 2,
+      "col": 5,
+      "xWorldUm": 15000,
+      "yWorldUm": -5000
+    },
+    {
+      "id": 22,
+      "row": 2,
+      "col": 6,
+      "xWorldUm": 25000,
+      "yWorldUm": -5000
+    },
+    {
+      "id": 23,
+      "row": 2,
+      "col": 7,
+      "xWorldUm": 35000,
+      "yWorldUm": -5000
+    },
+    {
+      "id": 24,
+      "row": 3,
+      "col": 0,
+      "xWorldUm": -35000,
+      "yWorldUm": 5000
+    },
+    {
+      "id": 25,
+      "row": 3,
+      "col": 1,
+      "xWorldUm": -25000,
+      "yWorldUm": 5000
+    },
+    {
+      "id": 26,
+      "row": 3,
+      "col": 2,
+      "xWorldUm": -15000,
+      "yWorldUm": 5000
+    },
+    {
+      "id": 27,
+      "row": 3,
+      "col": 3,
+      "xWorldUm": -5000,
+      "yWorldUm": 5000
+    },
+    {
+      "id": 28,
+      "row": 3,
+      "col": 4,
+      "xWorldUm": 5000,
+      "yWorldUm": 5000
+    },
+    {
+      "id": 29,
+      "row": 3,
+      "col": 5,
+      "xWorldUm": 15000,
+      "yWorldUm": 5000
+    },
+    {
+      "id": 30,
+      "row": 3,
+      "col": 6,
+      "xWorldUm": 25000,
+      "yWorldUm": 5000
+    },
+    {
+      "id": 31,
+      "row": 3,
+      "col": 7,
+      "xWorldUm": 35000,
+      "yWorldUm": 5000
+    },
+    {
+      "id": 32,
+      "row": 4,
+      "col": 0,
+      "xWorldUm": -35000,
+      "yWorldUm": 15000
+    },
+    {
+      "id": 33,
+      "row": 4,
+      "col": 1,
+      "xWorldUm": -25000,
+      "yWorldUm": 15000
+    },
+    {
+      "id": 34,
+      "row": 4,
+      "col": 2,
+      "xWorldUm": -15000,
+      "yWorldUm": 15000
+    },
+    {
+      "id": 35,
+      "row": 4,
+      "col": 3,
+      "xWorldUm": -5000,
+      "yWorldUm": 15000
+    },
+    {
+      "id": 36,
+      "row": 4,
+      "col": 4,
+      "xWorldUm": 5000,
+      "yWorldUm": 15000
+    },
+    {
+      "id": 37,
+      "row": 4,
+      "col": 5,
+      "xWorldUm": 15000,
+      "yWorldUm": 15000
+    },
+    {
+      "id": 38,
+      "row": 4,
+      "col": 6,
+      "xWorldUm": 25000,
+      "yWorldUm": 15000
+    },
+    {
+      "id": 39,
+      "row": 4,
+      "col": 7,
+      "xWorldUm": 35000,
+      "yWorldUm": 15000
+    },
+    {
+      "id": 40,
+      "row": 5,
+      "col": 0,
+      "xWorldUm": -35000,
+      "yWorldUm": 25000
+    },
+    {
+      "id": 41,
+      "row": 5,
+      "col": 1,
+      "xWorldUm": -25000,
+      "yWorldUm": 25000
+    },
+    {
+      "id": 42,
+      "row": 5,
+      "col": 2,
+      "xWorldUm": -15000,
+      "yWorldUm": 25000
+    },
+    {
+      "id": 43,
+      "row": 5,
+      "col": 3,
+      "xWorldUm": -5000,
+      "yWorldUm": 25000
+    },
+    {
+      "id": 44,
+      "row": 5,
+      "col": 4,
+      "xWorldUm": 5000,
+      "yWorldUm": 25000
+    },
+    {
+      "id": 45,
+      "row": 5,
+      "col": 5,
+      "xWorldUm": 15000,
+      "yWorldUm": 25000
+    },
+    {
+      "id": 46,
+      "row": 5,
+      "col": 6,
+      "xWorldUm": 25000,
+      "yWorldUm": 25000
+    },
+    {
+      "id": 47,
+      "row": 5,
+      "col": 7,
+      "xWorldUm": 35000,
+      "yWorldUm": 25000
+    }
+  ],
+  "limitations": [
+    "Fixture validates the EMMicro detector bridge without requiring Python/OpenCV.",
+    "Browser-native OpenCV.js detection and AprilTag decoding are not implemented."
+  ]
+}

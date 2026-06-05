@@ -80,6 +80,8 @@ describe("L6.6 Practical Study Workspace core", () => {
     expect(l76Capabilities.find((capability) => capability.id === "detector-receipt-validation")?.status).toBe("executable");
     expect(l76Capabilities.find((capability) => capability.id === "external-detector-comparison")?.status).toBe("executable");
     expect(l76Capabilities.find((capability) => capability.id === "detector-bridge-reports")?.status).toBe("executable");
+    expect(l76Capabilities.find((capability) => capability.id === "opencv-charuco-external-helper")?.status).toBe("executable");
+    expect(l76Capabilities.find((capability) => capability.id === "opencv-detector-json-import")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "external-fdtd-export")?.status).toBe("scaffold-only");
     expect(capabilities.find((capability) => capability.id === "3d-maxwell-solve")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "fdtd-fem-bem-rcwa-execution")?.status).toBe("not-implemented");
@@ -107,8 +109,9 @@ describe("L6.6 Practical Study Workspace core", () => {
     expect(markdown).toContain("Batch measurement session QA");
     expect(markdown).toContain("Synthetic fiducial board workflow");
     expect(markdown).toContain("External detector JSON/CSV import");
+    expect(markdown).toContain("OpenCV ChArUco external helper");
     expect(csv).toContain("ExternalFdtdBackend export");
-    expect(`${markdown}\n${csv}`).not.toMatch(/3D Maxwell solve executed|FDTD solver executable|FEM\/BEM\/RCWA available|digital twin certified|certified EMVA characterization executable|EMVA 1288 certification executable|pixel-level sensor stack executable|ISO 12233 certification executable|Imatest-equivalent certification executable|pure lens-only MTF certification executable|calibrated optical model fitting executable|certified camera calibration executable|lab-accredited metrology executable|certified metrology report executable|lab accreditation executable|full 3D pose calibration executable|stereo calibration executable|AprilTag detector executable|ArUco detector executable|browser-native OpenCV ArUco detector executable/i);
+    expect(`${markdown}\n${csv}`).not.toMatch(/3D Maxwell solve executed|FDTD solver executable|FEM\/BEM\/RCWA available|digital twin certified|certified EMVA characterization executable|EMVA 1288 certification executable|pixel-level sensor stack executable|ISO 12233 certification executable|Imatest-equivalent certification executable|pure lens-only MTF certification executable|calibrated optical model fitting executable|certified camera calibration executable|lab-accredited metrology executable|certified metrology report executable|lab accreditation executable|full 3D pose calibration executable|stereo calibration executable|AprilTag detector executable|browser-native OpenCV.js\/ArUco detector executable/i);
   });
 
   it("saves and reimports a validation study bundle deterministically", () => {
@@ -137,8 +140,8 @@ describe("L6.6 Practical Study Workspace core", () => {
     const bundle = studyBundleJson(study);
     const imported = parseStudyBundleJson(JSON.stringify(bundle));
 
-    expect(study.type).toBe("l76PracticalStudy");
-    expect(bundle.appVersion).toContain("L7.6");
+    expect(study.type).toBe("l77PracticalStudy");
+    expect(bundle.appVersion).toContain("L7.7");
     expect(imported.study.resultHash).toBe(study.resultHash);
     expect(imported.manifest.resultHashes).toEqual([result.resultHash]);
     expect(imported.manifest.materialReceiptCount).toBe(1);

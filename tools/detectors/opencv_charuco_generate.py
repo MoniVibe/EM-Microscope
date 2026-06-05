@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""Generate an optional OpenCV-compatible ChArUco board and EMMicro manifest."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+from pathlib import Path
+from typing import Any
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return f"sha256:{digest.hexdigest()}"
+
+
+def sha256_json(value: Any) -> str:
+    encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def script_hash() -> str:
+    return sha256_file(Path(__file__).resolve())
+
+
+def load_cv2() -> Any:
+    try:
+        import cv2  # type: ignore
+    except Exception as exc:  # pragma: no cover - optional external tool
+        raise SystemExit(
+            "OpenCV is optional and not installed. Install with "
+            "`python -m pip install -r tools/detectors/requirements-opencv.txt`."
+        ) from exc
+    if not hasattr(cv2, "aruco"):
+        raise SystemExit("The installed cv2 package has no aruco module. Install opencv-contrib-python.")
+    return cv2
+
+
+def predefined_dictionary(cv2: Any, name: str) -> Any:
+    dictionary_id = getattr(cv2.aruco, name, None)
+    if dictionary_id is None:
+        raise SystemExit(f"Unknown OpenCV ArUco dictionary: {name}")
+    return cv2.aruco.getPredefinedDictionary(dictionary_id)
+
+
+def make_board(cv2: Any, squares_x: int, squares_y: int, square_length: float, marker_length: float, dictionary: Any) -> Any:
+    if hasattr(cv2.aruco, "CharucoBoard"):
+        try:
+            return cv2.aruco.CharucoBoard((squares_x, squares_y), square_length, marker_length, dictionary)
+        except TypeError:
+            pass
+    if hasattr(cv2.aruco, "CharucoBoard_create"):
+        return cv2.aruco.CharucoBoard_create(squares_x, squares_y, square_length, marker_length, dictionary)
+    raise SystemExit("This OpenCV build does not expose a supported ChArUco board constructor.")
+
+
+def board_image(board: Any, width: int, height: int, margin: int, border_bits: int) -> Any:
+    try:
+        return board.generateImage((width, height), marginSize=margin, borderBits=border_bits)
+    except TypeError:
+        import numpy as np  # type: ignore
+
+        image = np.zeros((height, width), dtype="uint8")
+        board.generateImage((width, height), image, margin, border_bits)
+        return image
+
+
+def world_corners(squares_x: int, squares_y: int, square_length_mm: float) -> list[dict[str, float | int]]:
+    corners: list[dict[str, float | int]] = []
+    for row in range(squares_y - 1):
+        for col in range(squares_x - 1):
+            corners.append({
+                "id": row * (squares_x - 1) + col,
+                "row": row,
+                "col": col,
+                "xMm": round((col + 1) * square_length_mm, 9),
+                "yMm": round((row + 1) * square_length_mm, 9),
+                "zMm": 0.0,
+            })
+    return corners
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Generate an OpenCV-compatible ChArUco board image and manifest.")
+    parser.add_argument("--squares-x", type=int, default=7)
+    parser.add_argument("--squares-y", type=int, default=5)
+    parser.add_argument("--square-length-mm", type=float, default=10.0)
+    parser.add_argument("--marker-length-mm", type=float, default=6.0)
+    parser.add_argument("--dictionary", default="DICT_4X4_50")
+    parser.add_argument("--image-width-px", type=int, default=1200)
+    parser.add_argument("--image-height-px", type=int, default=900)
+    parser.add_argument("--margin-px", type=int, default=24)
+    parser.add_argument("--border-bits", type=int, default=1)
+    parser.add_argument("--out-board-png", required=True)
+    parser.add_argument("--out-manifest", required=True)
+    args = parser.parse_args()
+
+    if args.squares_x < 2 or args.squares_y < 2:
+        raise SystemExit("ChArUco boards require at least 2 squares in each direction.")
+    if args.marker_length_mm >= args.square_length_mm:
+        raise SystemExit("--marker-length-mm must be smaller than --square-length-mm.")
+
+    cv2 = load_cv2()
+    dictionary = predefined_dictionary(cv2, args.dictionary)
+    board = make_board(cv2, args.squares_x, args.squares_y, args.square_length_mm, args.marker_length_mm, dictionary)
+    image = board_image(board, args.image_width_px, args.image_height_px, args.margin_px, args.border_bits)
+    out_png = Path(args.out_board_png)
+    out_manifest = Path(args.out_manifest)
+    if not cv2.imwrite(str(out_png), image):
+        raise SystemExit(f"Failed to write board image: {out_png}")
+    image_hash = sha256_file(out_png)
+    manifest_without_hash = {
+        "version": "emmicro.board.opencv_charuco.v1",
+        "label": "OpenCV-compatible ChArUco board generated by optional external tooling.",
+        "boardId": f"opencv-charuco-{args.squares_x}x{args.squares_y}-{args.dictionary}",
+        "dictionary": args.dictionary,
+        "squaresX": args.squares_x,
+        "squaresY": args.squares_y,
+        "squareLengthMm": args.square_length_mm,
+        "markerLengthMm": args.marker_length_mm,
+        "image": {
+            "path": out_png.name,
+            "widthPx": args.image_width_px,
+            "heightPx": args.image_height_px,
+            "imageHash": image_hash,
+        },
+        "worldCorners": world_corners(args.squares_x, args.squares_y, args.square_length_mm),
+        "generator": {
+            "name": "tools/detectors/opencv_charuco_generate.py",
+            "runnerHash": script_hash(),
+            "opencvVersion": str(getattr(cv2, "__version__", "unknown")),
+        },
+        "limitations": [
+            "Optional external OpenCV-compatible board tooling only; not certified camera calibration or lab metrology.",
+            "Browser-native OpenCV.js detector execution and AprilTag decoding are not implemented.",
+        ],
+    }
+    manifest = {**manifest_without_hash, "boardHash": sha256_json(manifest_without_hash)}
+    out_manifest.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

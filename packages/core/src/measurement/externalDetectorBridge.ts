@@ -18,6 +18,8 @@ import type { L72FitModel } from "./geometricCalibration";
 
 export type L76ExternalDetectorFormat = "json" | "csv";
 
+export const l77ExternalDetectorAppVersion = "L7.7 External Detector Runner Pack / Real Detector Bridge" as const;
+
 export type L76ExternalDetectorReceipt = {
   name: string;
   version: string;
@@ -55,7 +57,7 @@ export type L76DetectorReceipt = {
 
 export type L76ExternalDetectorImportResult = {
   schema: "emmicro.l76.externalDetectorImport.v1";
-  appVersion: "L7.6 Real Detector Bridge / External CV Integration";
+  appVersion: typeof l77ExternalDetectorAppVersion;
   id: string;
   label: string;
   sourceFormat: L76ExternalDetectorFormat;
@@ -102,7 +104,7 @@ export type L76DetectorComparisonRow = {
 
 export type L76DetectorComparisonResult = {
   schema: "emmicro.l76.detectorComparison.v1";
-  appVersion: "L7.6 Real Detector Bridge / External CV Integration";
+  appVersion: typeof l77ExternalDetectorAppVersion;
   id: string;
   label: string;
   comparisonKind: "synthetic-vs-imported" | "imported-vs-imported" | "manual-corrected-vs-raw";
@@ -173,8 +175,8 @@ type CanonicalDetectorJson = {
 };
 
 export const l76ExternalDetectorLimitations = [
-  "L7.6 external detector bridge imports, validates, receipts, compares, and hands off detector outputs only; it does not run browser-native OpenCV or AprilTag decoding.",
-  "The bridge is diagnostic evidence plumbing over L7.5 fiducial matching, L7.2 geometry fits, and L7.4 session QA; it is not certified camera calibration, lab-accredited metrology, or an OpenCV-equivalent detector.",
+  "L7.7 external detector runner pack imports, validates, receipts, compares, and hands off detector outputs from optional external tooling only; it does not run browser-native OpenCV.js or AprilTag decoding.",
+  "The bridge is diagnostic evidence plumbing over L7.5 fiducial matching, L7.2 geometry fits, and L7.4 session QA; it is not certified camera calibration, lab-accredited metrology, or an OpenCV-equivalent browser detector.",
   "The workflow does not implement full 3D pose calibration, stereo calibration, hardware camera control, digital twin calibration, manufacturing certification, or full 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution."
 ] as const;
 
@@ -194,7 +196,7 @@ export function parseExternalDetectorJson(text: string, options: L76ExternalDete
     sourceFormat: "json",
     sourceText: text,
     id: options.id,
-    label: options.label ?? "L7.6 external detector JSON import",
+    label: options.label ?? "L7.7 external detector JSON import",
     detector,
     image,
     board,
@@ -298,7 +300,7 @@ export function parseExternalDetectorMarkerCsv(text: string, options: L76Externa
     sourceFormat: "csv",
     sourceText: text,
     id: options.id,
-    label: options.label ?? "L7.6 external detector CSV import",
+    label: options.label ?? "L7.7 external detector CSV import",
     detector: { name: detectorName, version: detectorVersion, runnerHash: options.detector?.runnerHash, parameters: options.detector?.parameters ?? {} },
     image,
     board,
@@ -319,7 +321,7 @@ export function fitExternalDetectorImport(input: {
 }): L75FiducialFitResult {
   return fitFiducialBoardDetection({
     id: input.id ?? "l76-external-detector-fit",
-    label: input.label ?? "L7.6 external detector L7.2 geometry handoff",
+    label: input.label ?? "L7.7 external detector L7.2 geometry handoff",
     board: input.board,
     detection: input.importResult.detection,
     model: input.model
@@ -429,9 +431,9 @@ export function compareExternalDetectors(input: {
   if (missingMarkerIdsInA.length || missingMarkerIdsInB.length) warnings.push({ code: "l76.comparison.markerCoverageDelta", message: "Detector comparison has marker IDs present in one detection set but missing in the other." });
   const partial = {
     schema: "emmicro.l76.detectorComparison.v1" as const,
-    appVersion: "L7.6 Real Detector Bridge / External CV Integration" as const,
+    appVersion: l77ExternalDetectorAppVersion,
     id: input.id ?? "l76-detector-comparison",
-    label: input.label ?? "L7.6 external detector comparison",
+    label: input.label ?? "L7.7 external detector comparison",
     comparisonKind: input.comparisonKind ?? "synthetic-vs-imported",
     a: { label: a.label, detectionHash: a.detection.resultHash, detectorName: a.detectorName },
     b: { label: b.label, detectionHash: b.detection.resultHash, detectorName: b.detectorName },
@@ -459,10 +461,22 @@ export function compareExternalDetectors(input: {
 }
 
 export function detectorBridgeReportJson(importResult: L76ExternalDetectorImportResult, comparison?: L76DetectorComparisonResult, fit?: L75FiducialFitResult): string {
-  return JSON.stringify({ importResult, comparison, fit }, null, 2);
+  return JSON.stringify({
+    runnerPack: {
+      version: l77ExternalDetectorAppVersion,
+      optionalExternalTooling: true,
+      browserNativeOpenCvJsDetector: false,
+      aprilTagDecoder: false
+    },
+    importResult,
+    comparison,
+    fit
+  }, null, 2);
 }
 
 export function detectorBridgeReportMarkdown(importResult: L76ExternalDetectorImportResult, comparison?: L76DetectorComparisonResult, fit?: L75FiducialFitResult): string {
+  const dictionary = detectorParameter(importResult.detector.parameters, "dictionary") ?? "not supplied";
+  const parameters = detectorParametersSummary(importResult.detector.parameters);
   return [
     `# ${importResult.label}`,
     "",
@@ -474,10 +488,14 @@ export function detectorBridgeReportMarkdown(importResult: L76ExternalDetectorIm
     "## Detector Receipt",
     `- Detector: ${importResult.detector.name} ${importResult.detector.version}`,
     `- Runner hash: ${importResult.detector.runnerHash ?? "not supplied"}`,
+    `- Dictionary: ${dictionary}`,
+    `- Parameters: ${parameters}`,
     `- Image: ${importResult.image.sourceName} (${importResult.image.widthPx} x ${importResult.image.heightPx})`,
     `- Image hash: ${importResult.image.imageHash}`,
+    `- Image hash status: ${hashStatus(importResult.image.hashMatchesExpected)}`,
     `- Board: ${importResult.board.boardId}`,
     `- Board hash: ${importResult.board.boardHash}`,
+    `- Board hash status: ${hashStatus(importResult.board.hashMatchesExpected)}`,
     "",
     "## Imported Detections",
     `- Markers: ${importResult.detection.markers.length}`,
@@ -507,16 +525,44 @@ export function detectorBridgeReportMarkdown(importResult: L76ExternalDetectorIm
     "",
     "## Boundary",
     ...importResult.limitations.map((limitation) => `- ${limitation}`),
-    "- browser-native OpenCV ArUco detector is not implemented.",
+    "- browser-native OpenCV.js/ArUco detector execution is not implemented.",
     "- AprilTag decoding is not implemented."
   ].join("\n");
 }
 
 export function importedDetectionsCsv(importResult: L76ExternalDetectorImportResult): string {
   return [
-    "kind,id,corner_index,x_px,y_px,confidence,status,source",
-    ...importResult.detection.markers.flatMap((marker) => marker.cornersPx.map((corner, index) => ["marker", marker.id, index, corner.xPx, corner.yPx, marker.confidence, marker.status, marker.source].map(csvEscape).join(","))),
-    ...importResult.detection.charucoCorners.map((corner) => ["charuco", corner.id, "", corner.xPx, corner.yPx, corner.confidence, corner.status, corner.source].map(csvEscape).join(","))
+    "kind,id,corner_index,x_px,y_px,confidence,status,source,detector_name,detector_version,board_id,board_hash,image_hash",
+    ...importResult.detection.markers.flatMap((marker) => marker.cornersPx.map((corner, index) => [
+      "marker",
+      marker.id,
+      index,
+      corner.xPx,
+      corner.yPx,
+      marker.confidence,
+      marker.status,
+      marker.source,
+      importResult.detector.name,
+      importResult.detector.version,
+      importResult.board.boardId,
+      importResult.board.boardHash,
+      importResult.image.imageHash
+    ].map(csvEscape).join(","))),
+    ...importResult.detection.charucoCorners.map((corner) => [
+      "charuco",
+      corner.id,
+      "",
+      corner.xPx,
+      corner.yPx,
+      corner.confidence,
+      corner.status,
+      corner.source,
+      importResult.detector.name,
+      importResult.detector.version,
+      importResult.board.boardId,
+      importResult.board.boardHash,
+      importResult.image.imageHash
+    ].map(csvEscape).join(","))
   ].join("\n");
 }
 
@@ -529,19 +575,23 @@ export function detectorComparisonCsv(result: L76DetectorComparisonResult): stri
 
 export function externalDetectorBoardInstructionsMarkdown(board: L75FiducialBoard): string {
   return [
-    "# EMMicro L7.6 External Detector Bridge",
+    "# EMMicro L7.7 External Detector Runner Pack",
     "",
     "Use `board_manifest.json` as the board receipt and write detector results as canonical `emmicro.detector.v1` JSON or marker-corner CSV.",
-    "Use `detector_readme.md` as the short handoff note for external runner authors.",
+    "The browser app imports detector outputs; optional Python/OpenCV helpers live outside the web runtime in `tools/detectors/`.",
     "",
     "Required CSV columns: `marker_id,corner_index,x_px,y_px`.",
     "Recommended receipt columns: `frame_id,confidence,detector_name,detector_version,board_id,board_hash,image_hash,image_width,image_height`.",
+    "",
+    "Optional helper commands:",
+    "- `python tools/detectors/opencv_charuco_generate.py --squares-x 7 --squares-y 5 --square-length-mm 10 --marker-length-mm 6 --dictionary DICT_4X4_50 --out-board-png charuco_board.png --out-manifest charuco_board_manifest.json`",
+    "- `python tools/detectors/opencv_charuco_detect.py --image frame_001.png --board-manifest charuco_board_manifest.json --dictionary DICT_4X4_50 --out-json frame_001_detection.json --out-csv frame_001_marker_corners.csv --out-overlay frame_001_detection_overlay.png`",
     "",
     `Board ID: ${board.id}`,
     `Board hash: ${board.resultHash}`,
     `Board image hash: ${board.image.imageHash}`,
     "",
-    "The browser app imports and validates external detector output, but browser-native OpenCV ArUco detector is not implemented and AprilTag decoding is not implemented."
+    "The browser app imports and validates external detector output, but browser-native OpenCV.js/ArUco detector execution is not implemented and AprilTag decoding is not implemented."
   ].join("\n");
 }
 
@@ -552,11 +602,12 @@ export function exampleExternalDetectorJson(board: L75FiducialBoard = generateFi
       version: "emmicro.detector.v1",
       detector: {
         name: "opencv-charuco",
-        version: "external-example",
+        version: "l77-fixture",
         runnerHash: "example-runner-fnv1a64",
         parameters: {
           dictionary: "DICT_4X4_50",
-          cornerRefinement: true
+          cornerRefinement: true,
+          source: "tools/detectors/examples/charuco_detection.json"
         }
       },
       image: {
@@ -605,7 +656,7 @@ export function exampleExternalDetectorMarkerCsv(board: L75FiducialBoard = gener
         corner.yPx,
         marker.confidence,
         "opencv-charuco",
-        "external-example",
+        "l77-fixture",
         board.id,
         board.resultHash,
         board.image.imageHash,
@@ -645,7 +696,7 @@ function createExternalDetectorImport(input: {
       yPx: corner.yPx,
       confidence: corner.confidence
     }))
-  }), { id: "l76-external-detector-detection", label: "L7.6 imported external detector fiducial detections" });
+  }), { id: "l76-external-detector-detection", label: "L7.7 imported external detector fiducial detections" });
   return finalizeExternalDetectorImport({
     id: input.id ?? "l76-external-detector-import",
     label: input.label,
@@ -686,7 +737,7 @@ function finalizeExternalDetectorImport(input: {
   });
   const partial = {
     schema: "emmicro.l76.externalDetectorImport.v1" as const,
-    appVersion: "L7.6 Real Detector Bridge / External CV Integration" as const,
+    appVersion: l77ExternalDetectorAppVersion,
     id: input.id,
     label: input.label,
     sourceFormat: input.sourceFormat,
@@ -1031,6 +1082,32 @@ function maxOrNull(values: number[]): number | null {
 
 function round(value: number): number {
   return Number(value.toPrecision(12));
+}
+
+function detectorParameter(parameters: Record<string, unknown>, key: string): string | null {
+  const value = parameters[key];
+  if (value === undefined || value === null) return null;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  return JSON.stringify(value);
+}
+
+function detectorParametersSummary(parameters: Record<string, unknown>): string {
+  const entries = Object.entries(parameters);
+  if (!entries.length) return "none";
+  return entries.map(([key, value]) => `${key}=${formatDetectorParameterValue(value)}`).join(", ");
+}
+
+function formatDetectorParameterValue(value: unknown): string {
+  if (value === undefined || value === null) return "null";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
+  return JSON.stringify(value);
+}
+
+function hashStatus(value: boolean | null): string {
+  if (value === true) return "matched";
+  if (value === false) return "mismatched";
+  return "present, not compared";
 }
 
 function formatMaybe(value: number | null): string {

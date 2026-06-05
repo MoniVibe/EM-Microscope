@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -25,7 +25,7 @@ import { l74FrameFromFiducialFit, parseL74SessionManifestCsv, runL74SessionQa } 
 
 const testDir = fileURLToPath(new URL(".", import.meta.url));
 
-describe("L7.6 external detector JSON/CSV bridge", () => {
+describe("L7.7 external detector runner pack and JSON/CSV bridge", () => {
   it("imports canonical detector JSON with deterministic detector receipts and L7.5 match handoff", () => {
     const board = generateFiducialBoard({ id: "board_7x5_v1" });
     const text = exampleExternalDetectorJson(board);
@@ -99,7 +99,7 @@ describe("L7.6 external detector JSON/CSV bridge", () => {
       edits: [{ type: "reject-marker", id: selected.id, reason: "operator review" }]
     });
     const fit = fitExternalDetectorImport({ importResult: edited, board, model: "similarity" });
-    const manifest = parseL74SessionManifestCsv("frame_id,type,path_or_name,notes\next_001,fiducial_board,external_detector.json,L7.6 external detector bridge");
+    const manifest = parseL74SessionManifestCsv("frame_id,type,path_or_name,notes\next_001,fiducial_board,external_detector.json,L7.7 external detector bridge");
     const frame = l74FrameFromFiducialFit(manifest.rows[0]!, fit);
     const session = runL74SessionQa({ manifestHash: manifest.manifestHash, frames: [frame], warnings: manifest.warnings });
 
@@ -150,23 +150,46 @@ describe("L7.6 external detector JSON/CSV bridge", () => {
       externalDetectorBoardInstructionsMarkdown(board)
     ].join("\n");
 
-    expect(text).toContain("browser-native OpenCV ArUco detector is not implemented");
+    expect(text).toContain("browser-native OpenCV.js/ArUco detector execution is not implemented");
     expect(text).toContain("AprilTag decoding is not implemented");
     expect(text).toContain("board_manifest.json");
-    expect(text).toContain("detector_readme.md");
-    expect(text).not.toMatch(/OpenCV detector executable|AprilTag decoder executable|certified camera calibration result|full 3D pose calibration result|stereo calibration result|hardware camera control implemented|full 3D Maxwell solved|digital twin certified|manufacturing certified/i);
+    expect(text).toContain("opencv_charuco_detect.py");
+    expect(text).not.toMatch(/AprilTag decoder executable|certified camera calibration result|full 3D pose calibration result|stereo calibration result|hardware camera control implemented|full 3D Maxwell solved|digital twin certified|manufacturing certified/i);
   });
 
-  it("ships detector scaffold examples that validate without requiring Python", () => {
+  it("ships OpenCV detector runner pack examples and docs that validate without requiring Python/OpenCV during npm tests", () => {
     const repoRoot = resolve(testDir, "../../../..");
     const readme = readFileSync(resolve(repoRoot, "tools/detectors/README.md"), "utf8");
-    const json = readFileSync(resolve(repoRoot, "tools/detectors/examples/example_detection.json"), "utf8");
-    const csv = readFileSync(resolve(repoRoot, "tools/detectors/examples/example_marker_corners.csv"), "utf8");
+    const manifest = JSON.parse(readFileSync(resolve(repoRoot, "tools/detectors/examples/charuco_board_manifest.json"), "utf8")) as { boardHash: string; boardImageHash: string; dictionary: string };
+    const json = readFileSync(resolve(repoRoot, "tools/detectors/examples/charuco_detection.json"), "utf8");
+    const csv = readFileSync(resolve(repoRoot, "tools/detectors/examples/charuco_marker_corners.csv"), "utf8");
+    const png = readFileSync(resolve(repoRoot, "tools/detectors/examples/charuco_board.png"));
     const board = generateFiducialBoard({ id: "l75-board-7x5" });
+    const importedJson = parseExternalDetectorJson(json, { board, expectedBoardHash: board.resultHash, expectedImageHash: board.image.imageHash });
+    const importedCsv = parseExternalDetectorMarkerCsv(csv, { board, expectedBoardHash: board.resultHash, expectedImageHash: board.image.imageHash });
 
-    expect(readme).toContain("Python/OpenCV is optional");
-    expect(readme).toContain("browser-native OpenCV ArUco detector is not implemented");
-    expect(parseExternalDetectorJson(json, { board }).schema).toBe("emmicro.l76.externalDetectorImport.v1");
-    expect(parseExternalDetectorMarkerCsv(csv, { board }).schema).toBe("emmicro.l76.externalDetectorImport.v1");
+    expect(readme).toContain("L7.7 External Detector Runner Pack");
+    expect(readme).toContain("Python/OpenCV");
+    expect(readme).toContain("opencv_charuco_generate.py");
+    expect(readme).toContain("opencv_charuco_detect.py");
+    expect(readme).toContain("browser-native OpenCV.js/ArUco detector execution is not implemented");
+    expect(existsSync(resolve(repoRoot, "tools/detectors/requirements-opencv.txt"))).toBe(true);
+    expect(existsSync(resolve(repoRoot, "tools/detectors/opencv_charuco_generate.py"))).toBe(true);
+    expect(existsSync(resolve(repoRoot, "tools/detectors/opencv_charuco_detect.py"))).toBe(true);
+    expect(existsSync(resolve(repoRoot, "tools/detectors/validate_emmicro_detector_json.py"))).toBe(true);
+    expect(existsSync(resolve(repoRoot, "tools/detectors/apriltag_detect.py"))).toBe(true);
+    expect(png.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+    expect(manifest.dictionary).toBe("DICT_4X4_50");
+    expect(manifest.boardHash).toBe(board.resultHash);
+    expect(manifest.boardImageHash).toBe(board.image.imageHash);
+    expect(importedJson.schema).toBe("emmicro.l76.externalDetectorImport.v1");
+    expect(importedJson.appVersion).toContain("L7.7");
+    expect(importedJson.detector.version).toBe("l77-fixture");
+    expect(importedJson.detector.parameters.dictionary).toBe("DICT_4X4_50");
+    expect(importedJson.board.hashMatchesExpected).toBe(true);
+    expect(importedJson.image.hashMatchesExpected).toBe(true);
+    expect(fitExternalDetectorImport({ importResult: importedJson, board }).fit).not.toBeNull();
+    expect(importedDetectionsCsv(importedJson)).toContain("detector_name,detector_version");
+    expect(importedCsv.schema).toBe("emmicro.l76.externalDetectorImport.v1");
   });
 });
