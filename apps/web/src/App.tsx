@@ -263,13 +263,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L7.2 Geometric Calibration / Distortion & Pixel-Scale Workbench</p>
+            <p>L7.3 Measured Target Detection and ROI Hardening</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>PlanarTmmBackend + Geometric Calibration</span>
-          <strong>geometric target generation/import, pixel-scale and distortion fitting, residual vector maps, corrected point previews, measured-vs-simulated geometry comparison, focus sweep MTF, slanted-edge SFR/MTF diagnostics, diagnostic photon-transfer calibration, deterministic camera acquisition, executable planar backend, saved studies, sweeps, capabilities matrix, study bundle exports</strong>
+          <span>PlanarTmmBackend + Target Detection</span>
+          <strong>measured target image ROI handling, dot-grid blob detection, manual point correction, confidence reports, geometric target generation/import, pixel-scale and distortion fitting, residual vector maps, corrected point previews, focus sweep MTF, slanted-edge SFR/MTF diagnostics, diagnostic photon-transfer calibration, deterministic camera acquisition, executable planar backend, saved studies, sweeps, capabilities matrix, study bundle exports</strong>
         </div>
       </header>
 
