@@ -168,7 +168,8 @@ describe("L7.7 external detector runner pack and JSON/CSV bridge", () => {
     const importedJson = parseExternalDetectorJson(json, { board, expectedBoardHash: board.resultHash, expectedImageHash: board.image.imageHash });
     const importedCsv = parseExternalDetectorMarkerCsv(csv, { board, expectedBoardHash: board.resultHash, expectedImageHash: board.image.imageHash });
 
-    expect(readme).toContain("L7.7 External Detector Runner Pack");
+    expect(readme).toContain("L7.8 Detector Round-Trip Acceptance Pack");
+    expect(readme).toContain("canonical L7.6/L7.7 bridge contract");
     expect(readme).toContain("Python/OpenCV");
     expect(readme).toContain("opencv_charuco_generate.py");
     expect(readme).toContain("opencv_charuco_detect.py");

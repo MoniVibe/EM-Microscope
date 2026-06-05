@@ -1,0 +1,16 @@
+metric_id,value
+detectorReceipt,pass
+boardHashStatus,match
+imageHashStatus,match
+detectedMarkers,35
+detectedCharucoCorners,48
+acceptedMarkers,35
+acceptedCharucoCorners,48
+matchedPoints,188
+coverageScore,1
+meanConfidence,0.99
+fitRmsPx,3.65959764674e-10
+fitMaxResidualPx,6.55480038036e-10
+sessionQaStatus,pass
+manualEditCount,0
+warningCount,0

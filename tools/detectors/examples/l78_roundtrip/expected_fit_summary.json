@@ -1,0 +1,32 @@
+{
+  "clean": {
+    "status": "pass",
+    "model": "similarity",
+    "matchedPointCount": 188,
+    "coverageScore": 1,
+    "rmsResidualPx": 3.65959764674e-10,
+    "maxResidualPx": 6.55480038036e-10,
+    "resultHash": "1a6962a1eb4fdd25",
+    "acceptanceStatus": "pass"
+  },
+  "partial-view": {
+    "status": "warning",
+    "model": "similarity",
+    "matchedPointCount": 22,
+    "coverageScore": 0.117857142857,
+    "rmsResidualPx": 2.49853475489e-10,
+    "maxResidualPx": 4.52800092552e-10,
+    "resultHash": "67e2aec3ad67e166",
+    "acceptanceStatus": "warning"
+  },
+  "blur-noise": {
+    "status": "warning",
+    "model": "similarity",
+    "matchedPointCount": 188,
+    "coverageScore": 1,
+    "rmsResidualPx": 0.447517768498,
+    "maxResidualPx": 0.77659107585,
+    "resultHash": "59a546d195c605e4",
+    "acceptanceStatus": "fail"
+  }
+}

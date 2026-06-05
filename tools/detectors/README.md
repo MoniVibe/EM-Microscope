@@ -1,4 +1,4 @@
-# L7.7 External Detector Runner Pack
+# L7.8 Detector Round-Trip Acceptance Pack
 
 This folder contains optional command-line helpers for producing EMMicro-compatible external detector output.
 The web app imports detector results; it does not run OpenCV, OpenCV.js, AprilTag, camera hardware, or native
@@ -81,6 +81,33 @@ python tools/detectors/validate_emmicro_detector_json.py --json tools/detectors/
 
 This validator checks the bridge schema shape only. It does not certify calibration quality.
 
+## Run the L7.8 Round-Trip Fixture Pack
+
+The L7.8 fixture pack demonstrates one complete, reproducible chain:
+
+```text
+board manifest -> printable board image -> detector JSON/CSV -> receipt/hash validation -> fiducial match -> geometry fit -> L7.4 session QA -> round-trip report
+```
+
+It uses shipped deterministic fixtures by default and requires only the Python standard library:
+
+```bash
+python tools/detectors/run_roundtrip_example.py --fixture clean --out-dir artifacts/l78_roundtrip_clean
+python tools/detectors/run_roundtrip_example.py --fixture partial-view --out-dir artifacts/l78_roundtrip_partial
+python tools/detectors/run_roundtrip_example.py --fixture blur-noise --out-dir artifacts/l78_roundtrip_blur_noise
+```
+
+Expected fixture behavior:
+
+- `clean`: acceptance `PASS` under default thresholds.
+- `partial-view`: acceptance `WARNING` because coverage is intentionally low.
+- `blur-noise`: acceptance warning/fail path under stricter thresholds because confidence and residual stress are intentionally lower.
+
+The helper copies the relevant board, image, detector JSON/CSV, and acceptance report into the output directory and writes:
+
+- `roundtrip_report.md`
+- `roundtrip_report.json`
+
 ## Bundled Fixtures
 
 - `examples/charuco_board_manifest.json`
@@ -88,6 +115,22 @@ This validator checks the bridge schema shape only. It does not certify calibrat
 - `examples/charuco_detection.json`
 - `examples/charuco_marker_corners.csv`
 - Legacy aliases retained for L7.6 tests: `examples/example_detection.json`, `examples/example_marker_corners.csv`
+- `examples/l78_roundtrip/board_manifest.json`
+- `examples/l78_roundtrip/board_print.png`
+- `examples/l78_roundtrip/synthetic_capture_clean.png`
+- `examples/l78_roundtrip/synthetic_capture_perspective.png`
+- `examples/l78_roundtrip/synthetic_capture_blur_noise.png`
+- `examples/l78_roundtrip/detection_clean.json`
+- `examples/l78_roundtrip/detection_perspective.json`
+- `examples/l78_roundtrip/detection_blur_noise.json`
+- `examples/l78_roundtrip/marker_corners_clean.csv`
+- `examples/l78_roundtrip/marker_corners_perspective.csv`
+- `examples/l78_roundtrip/marker_corners_blur_noise.csv`
+- `examples/l78_roundtrip/expected_fit_summary.json`
+- `examples/l78_roundtrip/expected_session_summary.json`
+- `examples/l78_roundtrip/roundtrip_report_*.md/json`
+- `examples/l78_roundtrip/roundtrip_metrics_*.csv`
+- `examples/l78_roundtrip/roundtrip_warnings_*.json`
 
 The fixture JSON/CSV validate through the web app import bridge without Python/OpenCV. Regenerate real lab boards and
 detector outputs with the scripts above when working with actual images.
@@ -95,6 +138,7 @@ detector outputs with the scripts above when working with actual images.
 ## Boundaries
 
 - OpenCV ChArUco helper execution is optional external tooling.
+- L7.8 acceptance reports validate operational receipt/fit/session handoff evidence; they are not new detector physics.
 - browser-native OpenCV.js/ArUco detector execution is not implemented.
 - AprilTag decoding is not implemented; `apriltag_detect.py` is a scaffold only.
 - Certified camera calibration, lab-accredited metrology, full 3D pose calibration, stereo calibration, hardware

@@ -18,6 +18,7 @@ export * from "./measurement/comparisonReport";
 export * from "./measurement/fitParameters";
 export * from "./measurement/fitRunner";
 export * from "./measurement/externalDetectorBridge";
+export * from "./measurement/detectorRoundTrip";
 export * from "./measurement/fiducialBoard";
 export * from "./measurement/geometricCalibration";
 export * from "./measurement/measuredImage2d";

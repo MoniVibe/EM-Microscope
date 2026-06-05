@@ -1,0 +1,168 @@
+{
+  "schema": "emmicro.l78.detectorRoundTripAcceptance.v1",
+  "appVersion": "L7.8 Detector Round-Trip Acceptance Pack",
+  "id": "l78-detector-roundtrip-acceptance",
+  "label": "L7.8 detector round-trip acceptance",
+  "status": "fail",
+  "fixtureKind": "blur-noise",
+  "thresholds": {
+    "minMarkers": 4,
+    "minCharucoCorners": 8,
+    "minCoverage": 0.2,
+    "maxFitRmsPx": 0.08,
+    "maxFitMaxResidualPx": 0.25,
+    "minMeanConfidence": 0.85,
+    "allowPartialView": false
+  },
+  "metrics": {
+    "detectorReceipt": "warning",
+    "boardHashStatus": "match",
+    "imageHashStatus": "match",
+    "detectedMarkers": 35,
+    "detectedCharucoCorners": 48,
+    "acceptedMarkers": 35,
+    "acceptedCharucoCorners": 48,
+    "matchedPoints": 188,
+    "coverageScore": 1,
+    "meanConfidence": 0.65,
+    "fitRmsPx": 0.447517768498,
+    "fitMaxResidualPx": 0.77659107585,
+    "sessionQaStatus": "warning",
+    "manualEditCount": 0,
+    "warningCount": 10
+  },
+  "steps": [
+    {
+      "id": "board-export",
+      "label": "Export board manifest / printable board",
+      "status": "pass",
+      "requiredFile": "board_manifest.json + board_print.png",
+      "hash": "747e6cb4591b8b8e",
+      "warnings": [],
+      "nextAction": "Run external detector helper"
+    },
+    {
+      "id": "external-helper",
+      "label": "Run external detector helper",
+      "status": "pass",
+      "requiredFile": "synthetic_capture_*.png",
+      "hash": "717ed9c3a4cdc206",
+      "warnings": [],
+      "nextAction": "Import detector output"
+    },
+    {
+      "id": "import-output",
+      "label": "Import detector JSON/CSV",
+      "status": "pass",
+      "requiredFile": "detection_*.json or marker CSV",
+      "hash": "5ece674a1bbbc282",
+      "warnings": [],
+      "nextAction": "Validate receipt and hashes"
+    },
+    {
+      "id": "receipt-validation",
+      "label": "Validate receipt and hashes",
+      "status": "pass",
+      "requiredFile": "detector receipt",
+      "hash": "d41fafac1cd34af5",
+      "warnings": [],
+      "nextAction": "Match IDs to board"
+    },
+    {
+      "id": "id-match",
+      "label": "Match IDs to board",
+      "status": "warning",
+      "requiredFile": "board_manifest.json + detection_*.json",
+      "hash": "b8574eebe981d8c3",
+      "warnings": [
+        {
+          "code": "l78.roundtrip.lowMeanConfidence",
+          "message": "Mean confidence 0.6500 is below 0.85."
+        }
+      ],
+      "nextAction": "Run geometry fit"
+    },
+    {
+      "id": "geometry-fit",
+      "label": "Run geometry fit",
+      "status": "fail",
+      "requiredFile": "matched_points.csv",
+      "hash": "799d1fc43ca6d191",
+      "warnings": [
+        {
+          "code": "l78.roundtrip.fitRmsExceeded",
+          "message": "Fit RMS 0.4475 px exceeds 0.08 px."
+        },
+        {
+          "code": "l78.roundtrip.fitMaxResidualExceeded",
+          "message": "Fit max residual 0.7766 px exceeds 0.25 px."
+        }
+      ],
+      "nextAction": "Add to session QA"
+    },
+    {
+      "id": "session-qa",
+      "label": "Add to batch session QA",
+      "status": "warning",
+      "requiredFile": "session_report.json",
+      "hash": "3fd078232d919afa",
+      "warnings": [],
+      "nextAction": "Export round-trip evidence"
+    },
+    {
+      "id": "evidence-export",
+      "label": "Export round-trip evidence",
+      "status": "ready",
+      "requiredFile": "roundtrip_report.md/json/csv",
+      "hash": null,
+      "warnings": [],
+      "nextAction": "Export report bundle"
+    }
+  ],
+  "importResult": {
+    "resultHash": "5ece674a1bbbc282",
+    "receiptHash": "d41fafac1cd34af5",
+    "detectorName": "opencv-charuco",
+    "detectorVersion": "l78-blur-noise-fixture",
+    "runnerHash": "l78-blur-noise-runner-fnv1a64",
+    "dictionary": "DICT_4X4_50",
+    "boardHash": "747e6cb4591b8b8e",
+    "imageHash": "1c5472aa8dd261d7",
+    "sourceFormat": "json"
+  },
+  "comparisonHash": null,
+  "fitHash": "59a546d195c605e4",
+  "sessionHash": "3fd078232d919afa",
+  "warnings": [
+    {
+      "code": "fixture.blurNoise",
+      "message": "Synthetic blur/noise fixture has lowered confidence and residual stress."
+    },
+    {
+      "code": "l76.detector.lowConfidence",
+      "message": "External detector output includes low-confidence IDs below 0.8: markers 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, ChArUco-style corners 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47."
+    },
+    {
+      "code": "l72.fit.rmsResidualWarn",
+      "message": "RMS reprojection residual exceeds the warning threshold."
+    },
+    {
+      "code": "l78.roundtrip.lowMeanConfidence",
+      "message": "Mean confidence 0.6500 is below 0.85."
+    },
+    {
+      "code": "l78.roundtrip.fitRmsExceeded",
+      "message": "Fit RMS 0.4475 px exceeds 0.08 px."
+    },
+    {
+      "code": "l78.roundtrip.fitMaxResidualExceeded",
+      "message": "Fit max residual 0.7766 px exceeds 0.25 px."
+    }
+  ],
+  "limitations": [
+    "L7.8 is an operational detector round-trip acceptance package over L7.7 external detector imports; it does not add browser-native OpenCV.js, AprilTag decoding, or new detector physics.",
+    "Acceptance metrics validate receipts, hashes, ID matching, diagnostic geometry fit, and L7.4 session QA handoff only; they are not certified camera calibration, lab-accredited metrology, or full 3D pose/stereo calibration.",
+    "The workflow does not execute hardware camera control, pixel-level sensor-stack EM, a digital twin, manufacturing certification, or full 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD physics."
+  ],
+  "resultHash": "66cfdb0420e616d4"
+}

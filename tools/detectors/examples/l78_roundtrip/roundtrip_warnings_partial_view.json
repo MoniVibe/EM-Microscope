@@ -1,0 +1,30 @@
+[
+  {
+    "code": "fixture.partialView",
+    "message": "Synthetic partial-view fixture intentionally omits board coverage."
+  },
+  {
+    "code": "l75.match.poorBoardCoverage",
+    "message": "Matched fiducial points cover a narrow board area; partial-view fit may be fragile."
+  },
+  {
+    "code": "l75.match.radialCoverageLow",
+    "message": "Radial distortion fit is not trustworthy with this narrow fiducial coverage."
+  },
+  {
+    "code": "l75.match.missingMarkers",
+    "message": "31 board marker IDs are not visible or accepted."
+  },
+  {
+    "code": "l78.roundtrip.minMarkers",
+    "message": "Accepted marker count 4 is below 8 (partial-view warning)."
+  },
+  {
+    "code": "l78.roundtrip.minCharucoCorners",
+    "message": "Accepted ChArUco corner count 6 is below 12 (partial-view warning)."
+  },
+  {
+    "code": "l78.roundtrip.minCoverage",
+    "message": "Coverage score 0.1179 is below 0.7."
+  }
+]

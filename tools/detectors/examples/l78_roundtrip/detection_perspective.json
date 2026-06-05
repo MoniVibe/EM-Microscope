@@ -1,0 +1,162 @@
+{
+  "version": "emmicro.detector.v1",
+  "detector": {
+    "name": "opencv-charuco",
+    "version": "l78-partial-view-fixture",
+    "runnerHash": "l78-partial-view-runner-fnv1a64",
+    "parameters": {
+      "pythonVersion": "fixture-python-3.x",
+      "opencvVersion": "fixture-opencv-4.x",
+      "dictionary": "DICT_4X4_50",
+      "cornerRefinement": true,
+      "detectorParameters": "partial-view",
+      "scriptHash": "tools/detectors/run_roundtrip_example.py fixture"
+    }
+  },
+  "image": {
+    "sourceName": "synthetic_capture_perspective.png",
+    "imageHash": "1c5472aa8dd261d7",
+    "width": 560,
+    "height": 400
+  },
+  "board": {
+    "boardId": "l75-board-7x5",
+    "boardHash": "747e6cb4591b8b8e"
+  },
+  "detections": {
+    "markers": [
+      {
+        "id": 0,
+        "cornersPx": [
+          [
+            51.2660547759,
+            18.2972143795
+          ],
+          [
+            97.9787633421,
+            21.1542860298
+          ],
+          [
+            95.1216916919,
+            67.8669945959
+          ],
+          [
+            48.4089831257,
+            65.0099229457
+          ]
+        ],
+        "confidence": 0.92
+      },
+      {
+        "id": 1,
+        "cornersPx": [
+          [
+            123.131760262,
+            22.692709226
+          ],
+          [
+            169.844468828,
+            25.5497808763
+          ],
+          [
+            166.987397178,
+            72.2624894424
+          ],
+          [
+            120.274688612,
+            69.4054177922
+          ]
+        ],
+        "confidence": 0.92
+      },
+      {
+        "id": 2,
+        "cornersPx": [
+          [
+            194.997465749,
+            27.0882040726
+          ],
+          [
+            241.710174315,
+            29.9452757228
+          ],
+          [
+            238.853102665,
+            76.6579842889
+          ],
+          [
+            192.140394098,
+            73.8009126387
+          ]
+        ],
+        "confidence": 0.92
+      },
+      {
+        "id": 3,
+        "cornersPx": [
+          [
+            266.863171235,
+            31.4836989191
+          ],
+          [
+            313.575879801,
+            34.3407705693
+          ],
+          [
+            310.718808151,
+            81.0534791354
+          ],
+          [
+            264.006099585,
+            78.1964074852
+          ]
+        ],
+        "confidence": 0.92
+      }
+    ],
+    "charucoCorners": [
+      {
+        "id": 0,
+        "xPx": 39.458767914,
+        "yPx": 4.95150432128,
+        "confidence": 0.92
+      },
+      {
+        "id": 1,
+        "xPx": 111.3244734,
+        "yPx": 9.34699916779,
+        "confidence": 0.92
+      },
+      {
+        "id": 2,
+        "xPx": 183.190178887,
+        "yPx": 13.7424940143,
+        "confidence": 0.92
+      },
+      {
+        "id": 3,
+        "xPx": 255.055884373,
+        "yPx": 18.1379888608,
+        "confidence": 0.92
+      },
+      {
+        "id": 4,
+        "xPx": 326.921589859,
+        "yPx": 22.5334837073,
+        "confidence": 0.92
+      },
+      {
+        "id": 8,
+        "xPx": 35.0632730675,
+        "yPx": 76.8172098077,
+        "confidence": 0.92
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "fixture.partialView",
+      "message": "Synthetic partial-view fixture intentionally omits board coverage."
+    }
+  ]
+}
