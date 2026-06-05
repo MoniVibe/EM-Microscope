@@ -50,6 +50,7 @@ export * from "./maxwell/planarTmm";
 export * from "./maxwell/planarTmmBackend";
 export * from "./maxwell/solverBackend";
 export * from "./maxwell/solverRegistry";
+export * from "./maxwell/simulationBuilder";
 export * from "./metrics/resolutionTargetMetrics";
 export * from "./metrics/slantedEdgeSfr";
 export * from "./metrics/targetContrast2d";

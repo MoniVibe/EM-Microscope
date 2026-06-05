@@ -284,6 +284,10 @@ export function l75CapabilitiesMatrix(): StudyCapability[] {
 
 export function l76CapabilitiesMatrix(): StudyCapability[] {
   return [
+    executable("sequential-simulation-builder", "Sequential Simulation Builder", "L8.0 ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate workflow with z-axis placement"),
+    executable("transparent-interface-slab-validation", "Transparent interface/slab validation", "PlanarTmmBackend/Fresnel normal-incidence R/T/A residual and energy-balance check"),
+    executable("reflective-surface-validation", "Reflective surface validation", "ideal mirror/PEC-like analytic R near 1, T near 0, A near 0 validation case"),
+    executable("absorbing-slab-validation", "Absorbing slab validation", "Beer-Lambert attenuation check with thickness-dependent transmission and R/T/A energy balance"),
     executable("planar-tmm-backend", "PlanarTmmBackend", "registered Maxwell backend executing 1D planar transfer-matrix coating stacks"),
     executable("coating-stack-optimizer", "Coating Stack Optimizer", "deterministic local material/order/thickness search over planar TMM runs"),
     executable("robust-coating-drift-yield", "Robust coating drift/yield", "deterministic thickness drift/yield re-ranking over planar coating candidates"),
@@ -320,6 +324,7 @@ export function l76CapabilitiesMatrix(): StudyCapability[] {
     executable("detector-roundtrip-acceptance-reports", "Detector round-trip acceptance reports", "diagnostic roundtrip_report.md, roundtrip_report.json, roundtrip_metrics.csv, and roundtrip_warnings.json exports over imported detector evidence"),
     scaffold("checkerboard-target-detection", "Checkerboard automatic detection", "generated/checkerboard target metadata and manual/CSV workflow remain available; robust automatic checkerboard detection is scaffold-only"),
     scaffold("external-fdtd-export", "ExternalFdtdBackend export", "scene/result schema and Meep-style export scaffold only"),
+    unavailable("arbitrary-3d-material-geometry", "Arbitrary 3D material geometry"),
     unavailable("3d-maxwell-solve", "3D Maxwell solve"),
     unavailable("fdtd-fem-bem-rcwa-execution", "FDTD/FEM/BEM/RCWA execution"),
     unavailable("arbitrary-cad-geometry", "Arbitrary CAD geometry"),

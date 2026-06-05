@@ -2554,11 +2554,11 @@ h2 {
 }
 
 .maxwell-only-shell {
-  grid-template-rows: 64px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .maxwell-only-topbar {
-  grid-template-columns: minmax(180px, 1fr) minmax(0, auto);
+  grid-template-columns: minmax(180px, 0.8fr) minmax(260px, 1.2fr) auto;
 }
 
 .maxwell-only-workspace {
@@ -2569,8 +2569,27 @@ h2 {
 }
 
 .maxwell-only-main {
-  width: min(920px, 100%);
+  width: min(1280px, 100%);
   margin: 0 auto;
+}
+
+.simulation-mode-actions {
+  flex-wrap: nowrap;
+}
+
+.simulation-mode-actions button {
+  min-height: 34px;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.simulation-mode-actions button.active {
+  border-color: #24566a;
+  background: #e7f3f5;
+  color: #123c4b;
 }
 
 .maxwell-only-main .maxwell-panel {
@@ -2626,6 +2645,310 @@ h2 {
   grid-template-columns: 24px minmax(0, 1fr) 84px;
 }
 
+.simulation-builder-panel {
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.simulation-builder-title h2 {
+  color: #3d4f68;
+}
+
+.simulation-stepper {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.simulation-step {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.simulation-step span {
+  min-width: 0;
+  color: #263244;
+  font-size: 12px;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.simulation-step strong {
+  color: #5d6c7f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.simulation-step-validated,
+.simulation-step-computed,
+.simulation-step-ready {
+  border-color: #b6d1c0;
+  background: #f4fbf6;
+}
+
+.simulation-step-warning,
+.simulation-step-unsupported {
+  border-color: #e2c487;
+  background: #fffaf0;
+}
+
+.simulation-builder-layout,
+.simulation-builder-footer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.simulation-builder-wide {
+  grid-column: 1 / -1;
+}
+
+.simulation-builder-card {
+  min-width: 0;
+}
+
+.simulation-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.simulation-field-grid label {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(84px, 0.9fr) minmax(0, auto);
+  align-items: center;
+  gap: 6px;
+  color: #4a5870;
+  font-size: 12px;
+}
+
+.simulation-field-grid label > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.simulation-field-grid input,
+.simulation-field-grid select {
+  min-width: 0;
+  width: 100%;
+  height: 34px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  padding: 0 8px;
+  background: #ffffff;
+  color: #263244;
+}
+
+.simulation-field-grid em {
+  color: #66758a;
+  font-style: normal;
+  font-size: 11px;
+}
+
+.simulation-builder-note {
+  color: #6a4b18;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.simulation-builder-actions {
+  align-items: center;
+}
+
+.simulation-elements-table {
+  display: grid;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.simulation-elements-row {
+  min-width: 760px;
+  display: grid;
+  grid-template-columns: 54px minmax(160px, 1.2fr) 74px minmax(120px, 0.8fr) minmax(150px, 1fr) 128px;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #516078;
+  font-size: 12px;
+}
+
+.simulation-elements-header {
+  background: #eef4f8;
+  color: #40506a;
+  font-weight: 750;
+}
+
+.simulation-elements-row strong,
+.simulation-elements-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.simulation-capability {
+  justify-self: start;
+  border: 1px solid #c8d1dd;
+  border-radius: 999px;
+  padding: 3px 7px;
+  font-style: normal;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.simulation-capability-executable {
+  border-color: #8fc19d;
+  background: #edf8f0;
+  color: #1f5d34;
+}
+
+.simulation-capability-scaffold-only {
+  border-color: #dec27d;
+  background: #fff8e6;
+  color: #765414;
+}
+
+.simulation-capability-not-implemented {
+  border-color: #d9a2a2;
+  background: #fff2f2;
+  color: #8b3030;
+}
+
+.simulation-axis {
+  position: relative;
+  height: 172px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #fbfdff;
+  overflow: hidden;
+}
+
+.simulation-axis-line {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 82px;
+  height: 2px;
+  background: #8aa0b8;
+}
+
+.simulation-axis-node {
+  position: absolute;
+  top: 20px;
+  width: 148px;
+  min-height: 96px;
+  transform: translateX(-50%);
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(42, 57, 78, 0.08);
+}
+
+.simulation-axis-node::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 1px;
+  height: 28px;
+  background: #8aa0b8;
+}
+
+.simulation-axis-node span,
+.simulation-axis-node strong,
+.simulation-axis-node em {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.simulation-axis-node span {
+  color: #263244;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.simulation-axis-node strong,
+.simulation-axis-node em {
+  color: #5b697d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-style: normal;
+}
+
+.simulation-axis-node-source {
+  border-color: #8fbfd0;
+  background: #edf7fa;
+}
+
+.simulation-axis-node-target {
+  border-color: #a9c99d;
+  background: #f3fbef;
+}
+
+.simulation-axis-node-observation {
+  border-color: #c5b4d5;
+  background: #f8f3fb;
+}
+
+.simulation-bars {
+  display: grid;
+  gap: 7px;
+}
+
+.simulation-bar {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: 8px;
+  color: #56657b;
+  font-size: 12px;
+}
+
+.simulation-bar div {
+  height: 10px;
+  border: 1px solid #c8d1dd;
+  border-radius: 999px;
+  background: #eef2f7;
+  overflow: hidden;
+}
+
+.simulation-bar strong {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #27788b;
+}
+
+.simulation-bar em {
+  justify-self: end;
+  color: #263244;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-style: normal;
+}
+
+.simulation-capability-list,
+.simulation-release-trail {
+  display: grid;
+  gap: 7px;
+}
+
 @media (max-width: 1040px) {
   .topbar {
     grid-template-columns: 1fr auto;
@@ -2655,8 +2978,23 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .simulation-mode-actions {
+    justify-content: flex-start;
+  }
+
   .maxwell-only-main .profile-meta {
     grid-template-columns: 1fr;
+  }
+
+  .simulation-stepper,
+  .simulation-builder-layout,
+  .simulation-builder-footer,
+  .simulation-field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .simulation-builder-wide {
+    grid-column: auto;
   }
 
   .maxwell-mental-model-grid {
