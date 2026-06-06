@@ -3021,6 +3021,69 @@ h2 {
   gap: 8px;
 }
 
+.fdtd2d-validation-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.fdtd2d-diagnostic-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fdtd2d-diagnostic-section {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  border: 1px solid #d6dee8;
+  border-radius: 6px;
+  padding: 10px;
+  background: #fbfdff;
+}
+
+.fdtd2d-diagnostic-section .maxwell-section-heading h2 {
+  font-size: 14px;
+}
+
+.fdtd2d-diagnostic-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fdtd2d-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fdtd2d-convergence-table {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.fdtd2d-convergence-row {
+  display: grid;
+  grid-template-columns: 1.1fr repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid #d6dee8;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.fdtd2d-convergence-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fdtd2d-convergence-header {
+  color: #4b5a6d;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 .fdtd2d-validation-stat {
   min-height: 48px;
   align-items: center;
@@ -4441,6 +4504,10 @@ button.l88-scenario-row.active {
   .fdtd-grid,
   .fdtd2d-layout,
   .fdtd2d-validation-grid,
+  .fdtd2d-diagnostic-layout,
+  .fdtd2d-diagnostic-stats,
+  .fdtd2d-reference-grid,
+  .fdtd2d-convergence-row,
   .l85-grid,
   .l86-layout,
   .l86-summary-grid,

@@ -15,7 +15,7 @@ export type Fdtd2dSourceKind = "point" | "line";
 export type Fdtd2dWaveform = "continuous" | "gaussian-pulse";
 export type Fdtd2dObjectKind = "dielectric-rectangle" | "absorbing-rectangle" | "pec-block" | "slit-screen";
 export type Fdtd2dMonitorKind = "point" | "line";
-export type Fdtd2dFixtureKind = "empty-space" | "pec-wall" | "dielectric-interface" | "absorbing-slab" | "slit-diagnostic";
+export type Fdtd2dFixtureKind = "empty-space" | "pec-wall" | "dielectric-interface" | "absorbing-slab" | "point-source-symmetry" | "slit-diagnostic";
 
 export type Fdtd2dGrid = {
   nx: number;
@@ -196,14 +196,17 @@ export type Fdtd2dReport = {
   reportHash: string;
 };
 
-export const l90Fdtd2dBoundary = [
-  "L9.0 is a bounded in-browser 2D FDTD Maxwell sandbox using one TMz polarization: Ez, Hx, and Hy.",
+export const l91Fdtd2dBoundary = [
+  "L9.1 is a bounded in-browser 2D FDTD Maxwell sandbox using one TMz polarization: Ez, Hx, and Hy.",
   "It is a diagnostic live field-evolution sandbox for small grids only, not full 3D Maxwell and not production FDTD.",
-  "CPU typed-array stepping is the L9.0 executable path; WebGPU is optional future acceleration and is not required.",
+  "CPU typed-array stepping is the L9.1 executable path; WebGPU acceleration is not implemented in this pass.",
+  "Validation, stability, boundary, and convergence diagnostics are executable trust checks, not production certification.",
   "Hard grid, memory, object, step, and monitor-sample caps are enforced before stepping.",
   "The L8.9 external Meep/FDTD path remains the serious path for large, 3D, or production solver work.",
   "No FEM/BEM/RCWA execution, arbitrary CAD/freeform geometry, sensor-stack EM, digital twin, hardware control, lab accreditation, or manufacturing certification is claimed."
 ] as const;
+
+export const l90Fdtd2dBoundary = l91Fdtd2dBoundary;
 
 export const defaultFdtd2dGrid: Fdtd2dGrid = {
   nx: 256,
@@ -219,13 +222,15 @@ export const defaultFdtd2dGrid: Fdtd2dGrid = {
 const c0 = 299_792_458;
 const warningCells = 512 * 512;
 const maxCells = 1024 * 1024;
+export const fdtd2dCflStabilityLimit = 0.7;
+export const fdtd2dCflMarginalLimit = 0.65;
 
 export function createFdtd2dScene(input: Partial<Omit<Fdtd2dScene, "schema" | "sceneHash" | "limitations">> = {}): Fdtd2dScene {
   const grid = sanitizeGrid({ ...defaultFdtd2dGrid, ...(input.grid ?? {}) });
   const draft = {
     schema: "emmicro.fdtd2d.scene.v1" as const,
-    id: input.id ?? "l90-fdtd2d-default",
-    label: input.label ?? "L9.0 bounded 2D FDTD sandbox",
+    id: input.id ?? "l91-fdtd2d-default",
+    label: input.label ?? "L9.1 bounded 2D FDTD sandbox",
     polarization: "TMz" as const,
     grid,
     sources: input.sources ?? [defaultPointSource(grid)],
@@ -235,7 +240,7 @@ export function createFdtd2dScene(input: Partial<Omit<Fdtd2dScene, "schema" | "s
       kind: "simple-absorbing" as const,
       note: "Simple lossy edge damping scaffold; not production PML."
     },
-    limitations: [...l90Fdtd2dBoundary]
+    limitations: [...l91Fdtd2dBoundary]
   };
   return {
     ...draft,
@@ -249,7 +254,7 @@ export function createFdtd2dFixtureScene(kind: Fdtd2dFixtureKind): Fdtd2dScene {
   if (kind === "empty-space") {
     return createFdtd2dScene({
       id: "l90-empty-space",
-      label: "L9.0 empty-space 2D FDTD propagation fixture",
+      label: "L9.1 empty-space 2D FDTD propagation fixture",
       grid,
       sources: [{ ...source, waveform: "gaussian-pulse", amplitude: 0.85 }],
       monitors: [defaultLineMonitor(grid)]
@@ -258,7 +263,7 @@ export function createFdtd2dFixtureScene(kind: Fdtd2dFixtureKind): Fdtd2dScene {
   if (kind === "pec-wall") {
     return createFdtd2dScene({
       id: "l90-pec-wall",
-      label: "L9.0 PEC-like reflection fixture",
+      label: "L9.1 PEC-like reflection fixture",
       grid,
       sources: [{ ...source, waveform: "gaussian-pulse", amplitude: 0.9 }],
       objects: [{ id: "pec-wall", label: "PEC-like reflector wall", kind: "pec-block", x: 112, y: 18, width: 5, height: 124 }],
@@ -268,26 +273,48 @@ export function createFdtd2dFixtureScene(kind: Fdtd2dFixtureKind): Fdtd2dScene {
   if (kind === "dielectric-interface") {
     return createFdtd2dScene({
       id: "l90-dielectric-interface",
-      label: "L9.0 dielectric interface rough Fresnel fixture",
+      label: "L9.1 dielectric interface rough Fresnel fixture",
       grid,
       sources: [{ ...source, kind: "line", x: 34, y: 25, x2: 34, y2: 135, waveform: "gaussian-pulse", amplitude: 0.7 }],
       objects: [{ id: "glass-halfspace", label: "n 1.5 dielectric half-space", kind: "dielectric-rectangle", x: 105, y: 10, width: 70, height: 140, epsilonR: 2.25 }],
-      monitors: [defaultLineMonitor(grid), { id: "transmitted-interface", label: "Transmitted side monitor", kind: "line", x: 150, y: 28, x2: 150, y2: 132 }]
+      monitors: [
+        { id: "incident-interface", label: "Incident side monitor", kind: "line", x: 72, y: 28, x2: 72, y2: 132 },
+        defaultLineMonitor(grid),
+        { id: "transmitted-interface", label: "Transmitted side monitor", kind: "line", x: 150, y: 28, x2: 150, y2: 132 }
+      ]
     });
   }
   if (kind === "absorbing-slab") {
     return createFdtd2dScene({
       id: "l90-absorbing-slab",
-      label: "L9.0 absorbing slab attenuation fixture",
+      label: "L9.1 absorbing slab attenuation fixture",
       grid,
       sources: [{ ...source, kind: "line", x: 34, y: 25, x2: 34, y2: 135, waveform: "gaussian-pulse", amplitude: 0.7 }],
       objects: [{ id: "lossy-slab", label: "Lossy absorbing slab", kind: "absorbing-rectangle", x: 92, y: 20, width: 28, height: 120, epsilonR: 1.4, sigma: 0.08 }],
-      monitors: [defaultLineMonitor(grid), { id: "after-absorber", label: "After absorber monitor", kind: "line", x: 150, y: 28, x2: 150, y2: 132 }]
+      monitors: [
+        { id: "before-absorber", label: "Before absorber monitor", kind: "line", x: 72, y: 28, x2: 72, y2: 132 },
+        defaultLineMonitor(grid),
+        { id: "after-absorber", label: "After absorber monitor", kind: "line", x: 150, y: 28, x2: 150, y2: 132 }
+      ]
+    });
+  }
+  if (kind === "point-source-symmetry") {
+    return createFdtd2dScene({
+      id: "l91-point-source-symmetry",
+      label: "L9.1 point-source radial symmetry fixture",
+      grid,
+      sources: [{ ...source, x: Math.round(grid.nx / 2), y: Math.round(grid.ny / 2), waveform: "gaussian-pulse", amplitude: 0.75 }],
+      monitors: [
+        { id: "symmetry-east", label: "East symmetry monitor", kind: "point", x: Math.round(grid.nx * 0.68), y: Math.round(grid.ny / 2) },
+        { id: "symmetry-west", label: "West symmetry monitor", kind: "point", x: Math.round(grid.nx * 0.32), y: Math.round(grid.ny / 2) },
+        { id: "symmetry-north", label: "North symmetry monitor", kind: "point", x: Math.round(grid.nx / 2), y: Math.round(grid.ny * 0.32) },
+        { id: "symmetry-south", label: "South symmetry monitor", kind: "point", x: Math.round(grid.nx / 2), y: Math.round(grid.ny * 0.68) }
+      ]
     });
   }
   return createFdtd2dScene({
     id: "l90-slit-diagnostic",
-    label: "L9.0 qualitative 2D FDTD slit diagnostic",
+    label: "L9.1 qualitative 2D FDTD slit diagnostic",
     grid,
     sources: [{ ...source, kind: "line", x: 34, y: 25, x2: 34, y2: 135, waveform: "gaussian-pulse", amplitude: 0.7 }],
     objects: [{ id: "slit-screen", label: "PEC-like screen with slit", kind: "slit-screen", x: 95, y: 12, width: 5, height: 136, apertureWidth: 24, apertureCenterY: 80 }],
@@ -303,30 +330,35 @@ export function estimateFdtd2dBudget(grid: Fdtd2dGrid, objectCount = 0): Fdtd2dB
   if (cells > warningCells) {
     warnings.push({
       code: "fdtd2d.grid.large",
-      message: "Grid is above the L9.0 warning threshold; reduce dimensions unless you intentionally need an experimental run."
+      message: "Grid is above the L9.1 warning threshold; reduce dimensions unless you intentionally need an experimental run."
     });
   }
   if (cells > maxCells) {
     warnings.push({
       code: "fdtd2d.grid.blocked",
-      message: "Grid exceeds the L9.0 hard maximum of 1024 x 1024 cells."
+      message: "Grid exceeds the L9.1 hard maximum of 1024 x 1024 cells."
     });
   }
   if (objectCount > grid.maxObjects) {
     warnings.push({
       code: "fdtd2d.objects.tooMany",
-      message: `Scene has ${objectCount} objects, above the L9.0 cap of ${grid.maxObjects}.`
+      message: `Scene has ${objectCount} objects, above the L9.1 cap of ${grid.maxObjects}.`
     });
   }
-  if (grid.cfl <= 0 || grid.cfl > 0.7) {
+  if (grid.cfl <= 0 || grid.cfl > fdtd2dCflStabilityLimit) {
+    warnings.push({
+      code: "fdtd2d.cfl.blocked",
+      message: "Run blocked: CFL factor exceeds stability limit."
+    });
+  } else if (grid.cfl > fdtd2dCflMarginalLimit) {
     warnings.push({
       code: "fdtd2d.cfl.warning",
-      message: "CFL factor should stay in (0, 0.7] for this normalized 2D TMz sandbox."
+      message: "CFL factor is marginal for this normalized 2D TMz sandbox."
     });
   }
   const estimatedFieldBytes = cells * 3 * Float32Array.BYTES_PER_ELEMENT;
   const estimatedTotalBytes = cells * (5 * Float32Array.BYTES_PER_ELEMENT + Uint8Array.BYTES_PER_ELEMENT * 2);
-  const status: Fdtd2dGridStatus = cells > maxCells || objectCount > grid.maxObjects || grid.cfl <= 0 || grid.cfl > 0.9 ? "blocked" : cells > warningCells || warnings.length > 0 ? "warning" : "safe";
+  const status: Fdtd2dGridStatus = cells > maxCells || objectCount > grid.maxObjects || grid.cfl <= 0 || grid.cfl > fdtd2dCflStabilityLimit ? "blocked" : cells > warningCells || warnings.length > 0 ? "warning" : "safe";
   const draft = {
     schema: "emmicro.fdtd2d.budget.v1" as const,
     nx,
@@ -360,7 +392,8 @@ export function initializeFdtd2dState(scene: Fdtd2dScene): Fdtd2dState {
   const budget = estimateFdtd2dBudget(grid, scene.objects.length);
   const cells = grid.nx * grid.ny;
   if (budget.status === "blocked") {
-    throw new Error(`L9.0 2D FDTD grid is blocked: ${budget.warnings.map((warning) => warning.message).join(" ")}`);
+    const cflWarning = budget.warnings.find((warning) => warning.code === "fdtd2d.cfl.blocked");
+    throw new Error(cflWarning?.message ?? `L9.1 2D FDTD grid is blocked: ${budget.warnings.map((warning) => warning.message).join(" ")}`);
   }
   const { dtCells, dtSeconds } = stableDtForFdtd2d(grid);
   const state: Fdtd2dState = {
@@ -524,7 +557,7 @@ export function createFdtd2dSandboxReport(result: Fdtd2dRunResult): Fdtd2dReport
     monitorIds: Object.keys(result.monitorTraces),
     status: result.status,
     warnings: uniqueWarnings(result.warnings),
-    boundary: [...l90Fdtd2dBoundary]
+    boundary: [...l91Fdtd2dBoundary]
   };
   return {
     ...draft,
@@ -538,7 +571,7 @@ export function fdtd2dSandboxReportJson(report: Fdtd2dReport): string {
 
 export function fdtd2dSandboxReportMarkdown(report: Fdtd2dReport): string {
   return [
-    "# L9.0 In-Browser 2D FDTD Maxwell Sandbox Report",
+    "# L9.1 In-Browser 2D FDTD Maxwell Sandbox Report",
     "",
     `Label: ${report.label}`,
     `Scene hash: ${report.sceneHash}`,
@@ -643,15 +676,15 @@ export function simulationBuilderToFdtd2dSandbox(scenario: SimulationBuilderScen
         warnings.push({ code: "fdtd2d.handoff.apertureQualitative", message: `${element.label} maps to a qualitative 2D slit/screen diagnostic only.`, elementId: element.id });
       }
     } else if (element.kind === "curved-material-lens" || element.kind === "finite-metal-aperture") {
-      blocked.push({ id: element.id, label: element.label, reason: "curved/freeform/finite metal geometry is unsupported in the bounded L9.0 2D sandbox" });
+      blocked.push({ id: element.id, label: element.label, reason: "curved/freeform/finite metal geometry is unsupported in the bounded L9.1 2D sandbox" });
     }
   }
   if (objects.length > grid.maxObjects) {
-    warnings.push({ code: "fdtd2d.handoff.objectCap", message: "Mapped object count exceeds the L9.0 object cap; extra objects are not safe to run." });
+    warnings.push({ code: "fdtd2d.handoff.objectCap", message: "Mapped object count exceeds the L9.1 object cap; extra objects are not safe to run." });
   }
   const scene = createFdtd2dScene({
-    id: `l90-handoff-${scenario.id}`,
-    label: `L9.0 2D sandbox slice from ${scenario.label}`,
+    id: `l91-handoff-${scenario.id}`,
+    label: `L9.1 2D sandbox slice from ${scenario.label}`,
     grid,
     sources,
     objects: objects.slice(0, grid.maxObjects),
@@ -857,10 +890,14 @@ function applySlitScreen(state: Fdtd2dState, object: Fdtd2dObject): void {
 function fixtureMetrics(kind: Fdtd2dFixtureKind, result: Fdtd2dRunResult): Record<string, number> {
   const centerEnergy = result.snapshot.totalEnergy;
   if (kind === "dielectric-interface") {
+    const incidentRms = rms(result.monitorTraces["incident-interface"] ?? []);
+    const transmittedRms = rms(result.monitorTraces["transmitted-interface"] ?? []);
     return {
       totalEnergy: centerEnergy,
       fresnelR: fresnelReflectanceNormal(1, 1.5),
-      transmittedMonitorRms: rms(result.monitorTraces["transmitted-interface"] ?? [])
+      incidentMonitorRms: incidentRms,
+      transmittedMonitorRms: transmittedRms,
+      transmissionRatio: transmittedRms / Math.max(incidentRms, 1e-9)
     };
   }
   if (kind === "pec-wall") {
@@ -871,10 +908,30 @@ function fixtureMetrics(kind: Fdtd2dFixtureKind, result: Fdtd2dRunResult): Recor
     };
   }
   if (kind === "absorbing-slab") {
+    const beforeRms = rms(result.monitorTraces["before-absorber"] ?? result.monitorTraces["center-line"] ?? []);
+    const afterRms = rms(result.monitorTraces["after-absorber"] ?? []);
     return {
       totalEnergy: centerEnergy,
-      afterAbsorberRms: rms(result.monitorTraces["after-absorber"] ?? []),
-      sourceSideRms: rms(result.monitorTraces["center-line"] ?? [])
+      beforeAbsorberRms: beforeRms,
+      afterAbsorberRms: afterRms,
+      sourceSideRms: rms(result.monitorTraces["center-line"] ?? []),
+      transmissionRatio: afterRms / Math.max(beforeRms, 1e-9)
+    };
+  }
+  if (kind === "point-source-symmetry") {
+    const east = rms(result.monitorTraces["symmetry-east"] ?? []);
+    const west = rms(result.monitorTraces["symmetry-west"] ?? []);
+    const north = rms(result.monitorTraces["symmetry-north"] ?? []);
+    const south = rms(result.monitorTraces["symmetry-south"] ?? []);
+    const mean = (east + west + north + south) / 4;
+    const spread = Math.sqrt(((east - mean) ** 2 + (west - mean) ** 2 + (north - mean) ** 2 + (south - mean) ** 2) / 4);
+    return {
+      totalEnergy: centerEnergy,
+      radialSymmetryScore: Math.max(0, 1 - spread / Math.max(mean, 1e-9)),
+      eastRms: east,
+      westRms: west,
+      northRms: north,
+      southRms: south
     };
   }
   if (kind === "slit-diagnostic") {
@@ -893,7 +950,8 @@ function fixtureMetrics(kind: Fdtd2dFixtureKind, result: Fdtd2dRunResult): Recor
 function fixtureReference(kind: Fdtd2dFixtureKind): string {
   if (kind === "pec-wall") return "PEC-like wall should reflect fields and keep low transmitted field behind the blocker.";
   if (kind === "dielectric-interface") return "Dielectric interface is compared qualitatively to normal-incidence Fresnel reflectance R=((n1-n2)/(n1+n2))^2.";
-  if (kind === "absorbing-slab") return "Absorbing slab should attenuate downstream monitor amplitude; Beer-Lambert-style interpretation is qualitative in L9.0.";
+  if (kind === "absorbing-slab") return "Absorbing slab should attenuate downstream monitor amplitude; Beer-Lambert-style interpretation is qualitative in L9.1.";
+  if (kind === "point-source-symmetry") return "Centered point source should keep roughly radial spreading symmetry before boundary reflections dominate.";
   if (kind === "slit-diagnostic") return "Qualitative 2D FDTD slit diagnostic: downstream spreading/diffraction is expected, not certified agreement.";
   return "Empty-space pulse should propagate with finite fields and boundary damping loss.";
 }
@@ -902,6 +960,7 @@ function validationStatusForFixture(kind: Fdtd2dFixtureKind, metrics: Record<str
   if (!energyFinite || !Number.isFinite(maxAbsEz) || maxAbsEz > 1e6) return "fail";
   if (kind === "pec-wall" && (metrics.behindWallRms ?? 1) > Math.max(0.25, (metrics.sourceSideRms ?? 0) * 0.9)) return "warning";
   if (kind === "absorbing-slab" && (metrics.afterAbsorberRms ?? 1) > Math.max(0.25, (metrics.sourceSideRms ?? 0) * 1.1)) return "warning";
+  if (kind === "point-source-symmetry" && (metrics.radialSymmetryScore ?? 1) < 0.5) return "warning";
   if (warnings.some((warning) => warning.code.includes("blocked"))) return "fail";
   return warnings.length > 0 ? "warning" : "pass";
 }

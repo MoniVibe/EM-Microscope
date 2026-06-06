@@ -109,7 +109,12 @@ describe("L6.6 Practical Study Workspace core", () => {
     expect(capabilities.find((capability) => capability.id === "engineering-evidence-campaign")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "golden-scenario-validation-dossier")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "in-browser-2d-fdtd-sandbox")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "fdtd2d-stability-diagnostics")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "fdtd2d-validation-fixtures")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "fdtd2d-convergence-diagnostics")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "external-fdtd-backend-runner")?.status).toBe("scaffold-only");
+    expect(capabilities.find((capability) => capability.id === "webgpu-fdtd-acceleration")?.status).toBe("not-implemented");
+    expect(capabilities.find((capability) => capability.id === "in-browser-3d-fdtd")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "production-browser-fdtd-execution")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "3d-maxwell-solve")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "fdtd-fem-bem-rcwa-execution")?.status).toBe("not-implemented");

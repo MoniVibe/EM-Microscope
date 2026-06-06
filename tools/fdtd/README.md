@@ -1,6 +1,6 @@
-# EMMicro L8.1-L8.9 External FDTD Helpers + L9.0 2D Sandbox Smoke
+# EMMicro L8.1-L8.9 External FDTD Helpers + L9.1 2D Sandbox Validation Smoke
 
-These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, the L8.8a two-view interaction hardening smoke flow, the L8.9 `Real External FDTD Run Ingestion` workflow, and L9.0 browser smoke for the capped 2D FDTD sandbox.
+These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, the L8.8a two-view interaction hardening smoke flow, the L8.9 `Real External FDTD Run Ingestion` workflow, L9.0 browser smoke for the capped 2D FDTD sandbox, and L9.1 browser smoke for validation/stability/convergence diagnostics.
 
 Scope:
 - The web app exports an EMMicro FDTD scene manifest and a deterministic Meep-style Python helper script.
@@ -17,9 +17,11 @@ Scope:
 - L8.8a two-view interaction hardening adds explicit Optical Axis Placement vs X-Z Surface Geometry roles, Inspect/Edit Geometry mode, z-only axis drag, finite geometry body/handle edits, warning visuals, and source-of-truth inspector copy.
 - L8.9 real-run packs add `scene_manifest.json`, `meep_scene.py`, `expected_reference.json`, `run_config.json`, `material_receipts.json`, `monitor_receipts.json`, `README.md`, `reproduce.sh`, `reproduce.ps1`, `postprocess.py`, and `requirements-meep.txt` exports; import `real_run_bundle.json` or individual receipt/flux/field/energy/postprocess artifacts; validate hashes and required monitors/files; compare R/T/A, energy balance, and field-slice residuals; promote accepted evidence; and export reproducibility reports.
 - L9.0 sandbox smoke covers the in-browser diagnostic 2D TMz sandbox, grid caps, field/intensity/material views, Simulation Builder 2D slice handoff, and exports named `fdtd2d_sandbox_report.md`, `fdtd2d_sandbox_report.json`, `field_snapshot.csv`, `monitor_trace.csv`, and `energy_trace.csv`.
+- L9.1 sandbox smoke covers CFL/dt/grid stability, unsafe-CFL blocking, NaN/Infinity guard copy, validation fixtures, Fresnel/absorber/symmetry reference checks, bounded grid convergence, boundary diagnostics, Simulation Builder 2D slice handoff, and exports named `fdtd2d_validation_report.md`, `fdtd2d_validation_report.json`, `fdtd2d_convergence.csv`, `fdtd2d_energy_trace.csv`, `fdtd2d_monitor_trace.csv`, and `fdtd2d_stability_report.json`.
 
 Not scope:
-- No production browser FDTD execution; L9.0 is capped diagnostic 2D TMz only.
+- No production browser FDTD execution; L9.1 is capped diagnostic 2D TMz only.
+- No WebGPU acceleration in L9.1.
 - No arbitrary 3D CAD Maxwell solve.
 - No FEM/BEM/RCWA execution.
 - No browser finite-geometry Maxwell solve or arbitrary material geometry solver.
@@ -125,6 +127,14 @@ L9.0 smoke artifacts include:
 - `l90-fdtd-material-scatter-smoke.png`
 - `l90-fdtd-monitor-trace-smoke.png`
 - `l90-builder-to-sandbox-smoke.png`
+
+L9.1 smoke artifacts include:
+
+- `l91-fdtd-stability-dashboard-smoke.png`
+- `l91-fdtd-fixtures-smoke.png`
+- `l91-fresnel-absorber-reference-smoke.png`
+- `l91-grid-convergence-smoke.png`
+- `l91-validation-export-smoke.png`
 
 L8.9 fixture manifest:
 
@@ -248,4 +258,13 @@ Playwright CLI smoke helper for L9.0 in-browser 2D FDTD sandbox: grid budget con
 ```powershell
 npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
 npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l90_browser_smoke_code.js
+```
+
+`l91_browser_smoke_code.js`
+
+Playwright CLI smoke helper for L9.1 in-browser 2D FDTD validation and stability: CFL/dt/grid status, unsafe-CFL blocking, validation fixtures, reference checks, bounded convergence table, validation exports, Simulation Builder handoff, and L8.9/L8.8 regression visibility:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
+npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l91_browser_smoke_code.js
 ```

@@ -10,6 +10,7 @@ export * from "./fdtd/fdtdMultiElementBench";
 export * from "./fdtd/fdtdRunImport";
 export * from "./fdtd/fdtdSceneExport";
 export * from "./fdtd/fdtd2dSandbox";
+export * from "./fdtd/fdtd2dValidation";
 export * from "./fdtd/fdtdRealRun";
 export * from "./fdtd/fdtdTypes";
 export * from "./fdtd/fdtdValidation";

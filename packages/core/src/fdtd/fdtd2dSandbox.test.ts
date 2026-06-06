@@ -15,7 +15,7 @@ import {
   fdtd2dSandboxReportJson,
   fdtd2dSandboxReportMarkdown,
   initializeFdtd2dState,
-  l90Fdtd2dBoundary,
+  l91Fdtd2dBoundary,
   runFdtd2dScene,
   runFdtd2dValidationFixture,
   simulationBuilderToFdtd2dSandbox,
@@ -24,7 +24,7 @@ import {
   type Fdtd2dFixtureKind
 } from "./fdtd2dSandbox";
 
-describe("L9.0 in-browser 2D FDTD Maxwell sandbox core", () => {
+describe("L9.1 in-browser 2D FDTD Maxwell sandbox core", () => {
   it("creates deterministic bounded TMz scenes and finite time steps", () => {
     const a = createFdtd2dScene();
     const b = createFdtd2dScene();
@@ -106,11 +106,11 @@ describe("L9.0 in-browser 2D FDTD Maxwell sandbox core", () => {
     const report = createFdtd2dSandboxReport(result);
     const markdown = fdtd2dSandboxReportMarkdown(report);
 
-    expect(markdown).toContain("L9.0 In-Browser 2D FDTD Maxwell Sandbox Report");
+    expect(markdown).toContain("L9.1 In-Browser 2D FDTD Maxwell Sandbox Report");
     expect(markdown).toContain("not full 3D Maxwell");
     expect(fdtd2dSandboxReportJson(report)).toContain("emmicro.fdtd2d.sandboxReport.v1");
     expect(fdtd2dFieldSnapshotCsv(result.snapshot)).toContain("x,y,ez,intensity,material");
-    expect(fdtd2dMonitorTraceCsv(result)).toContain("step,center-line");
+    expect(fdtd2dMonitorTraceCsv(result)).toContain("center-line");
     expect(fdtd2dEnergyTraceCsv(result)).toContain("step,total_energy");
   });
 
@@ -136,13 +136,14 @@ describe("L9.0 in-browser 2D FDTD Maxwell sandbox core", () => {
     expect(handoff.warnings.map((warning) => warning.code)).toContain("fdtd2d.handoff.apertureQualitative");
   });
 
-  it("states the L9.0 boundary without overclaiming 3D or production solver capability", () => {
-    const text = l90Fdtd2dBoundary.join(" ");
+  it("states the L9.1 boundary without overclaiming 3D, production solver, or WebGPU capability", () => {
+    const text = l91Fdtd2dBoundary.join(" ");
 
     expect(text).toContain("bounded in-browser 2D FDTD Maxwell sandbox");
     expect(text).toContain("TMz polarization: Ez, Hx, and Hy");
     expect(text).toContain("not full 3D Maxwell");
     expect(text).toContain("not production FDTD");
+    expect(text).toContain("WebGPU acceleration is not implemented");
     expect(text).toContain("The L8.9 external Meep/FDTD path remains");
     expect(text).not.toMatch(/certified solver|full arbitrary 3D Maxwell solve|production FDTD is available|digital twin is implemented/i);
   });

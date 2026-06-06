@@ -1268,17 +1268,17 @@ export function SimulationBuilderPanel(props: { onExportSandboxScene?: (scene: F
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L9.0 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L9.1 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L9.0 Simulation Builder + 2D Sandbox Handoff</h2>
+        <h2>L9.1 Simulation Builder + 2D Sandbox Handoff</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, a bounded L9.0 2D FDTD sandbox handoff exporting fdtd2d_sandbox_scene.json and fdtd2d_sandbox_handoff.json, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, real external FDTD run ingestion and reproducibility reports, precise numeric edits, optional diagram drag, and a validation report.
-          The L9.0 sandbox is capped 2D TMz only. Arbitrary 3D Maxwell material geometry/CAD solving, production FDTD, FDTD/FEM/BEM/RCWA execution beyond the bounded 2D sandbox, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
+          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, a bounded L9.1 2D FDTD sandbox handoff exporting fdtd2d_sandbox_scene.json and fdtd2d_sandbox_handoff.json, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, real external FDTD run ingestion and reproducibility reports, precise numeric edits, optional diagram drag, and a validation report.
+          The L9.1 sandbox is capped 2D TMz only with stability, validation, boundary, and convergence diagnostics. Arbitrary 3D Maxwell material geometry/CAD solving, production FDTD, WebGPU acceleration, FDTD/FEM/BEM/RCWA execution beyond the bounded 2D sandbox, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
           certification are not implemented.
         </span>
       </div>

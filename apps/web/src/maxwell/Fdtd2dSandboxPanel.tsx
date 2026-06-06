@@ -13,7 +13,6 @@ import {
   fdtd2dSandboxReportJson,
   fdtd2dSandboxReportMarkdown,
   initializeFdtd2dState,
-  runFdtd2dValidationFixture,
   stepFdtd2dState,
   type Fdtd2dFixtureKind,
   type Fdtd2dObject,
@@ -21,6 +20,17 @@ import {
   type Fdtd2dScene,
   type Fdtd2dState,
   type Fdtd2dWaveform
+} from "@emmicro/core";
+import {
+  createFdtd2dStabilityReport,
+  createFdtd2dValidationHarnessReport,
+  fdtd2dConvergenceCsv,
+  fdtd2dStabilityReportJson,
+  fdtd2dValidationReportJson,
+  fdtd2dValidationReportMarkdown,
+  runFdtd2dConvergenceDiagnostic,
+  runFdtd2dValidationSuite,
+  type Fdtd2dConvergenceReport
 } from "@emmicro/core";
 import { Download, Pause, Play, Plus, RotateCcw, ShieldCheck, StepForward, Waves } from "lucide-react";
 
@@ -31,6 +41,7 @@ const fixtureKinds: Array<{ kind: Fdtd2dFixtureKind; label: string }> = [
   { kind: "pec-wall", label: "PEC Wall" },
   { kind: "dielectric-interface", label: "Dielectric" },
   { kind: "absorbing-slab", label: "Absorber" },
+  { kind: "point-source-symmetry", label: "Point Symmetry" },
   { kind: "slit-diagnostic", label: "Slit" }
 ];
 
@@ -67,6 +78,7 @@ export function Fdtd2dSandboxPanel(props: { scene: Fdtd2dScene; onSceneChange: (
   const [running, setRunning] = useState(false);
   const [stepsPerTick, setStepsPerTick] = useState(4);
   const [runBatchSteps, setRunBatchSteps] = useState(120);
+  const [convergenceReport, setConvergenceReport] = useState<Fdtd2dConvergenceReport | null>(null);
   const [init, setInit] = useState(() => createInitialState(props.scene));
 
   useEffect(() => {
@@ -90,7 +102,9 @@ export function Fdtd2dSandboxPanel(props: { scene: Fdtd2dScene; onSceneChange: (
   const budget = useMemo(() => estimateFdtd2dBudget(props.scene.grid, props.scene.objects.length), [props.scene]);
   const snapshot = useMemo(() => (init.state ? createFdtd2dSnapshot(init.state) : null), [init.state]);
   const result = useMemo(() => (init.state ? fdtd2dRunResultFromState(init.state, init.state.step) : null), [init.state]);
-  const validationReports = useMemo(() => fixtureKinds.map((fixture) => runFdtd2dValidationFixture(fixture.kind, 80)), []);
+  const stabilityReport = useMemo(() => createFdtd2dStabilityReport(init.state ?? props.scene), [init.state, props.scene]);
+  const validationSuite = useMemo(() => runFdtd2dValidationSuite(80), []);
+  const validationReports = validationSuite.fixtureReports;
 
   useEffect(() => {
     if (!init.state) return;
@@ -99,6 +113,7 @@ export function Fdtd2dSandboxPanel(props: { scene: Fdtd2dScene; onSceneChange: (
 
   function replaceScene(scene: Fdtd2dScene): void {
     setRunning(false);
+    setConvergenceReport(null);
     props.onSceneChange(scene);
   }
 
@@ -144,19 +159,31 @@ export function Fdtd2dSandboxPanel(props: { scene: Fdtd2dScene; onSceneChange: (
   function exportArtifacts(): void {
     if (!result) return;
     const report = createFdtd2dSandboxReport(result);
+    const validationReport = createFdtd2dValidationHarnessReport({ scene: props.scene, state: init.state, validationSuite, convergence: convergenceReport ?? undefined });
     downloadText("fdtd2d_sandbox_report.md", "text/markdown", `${fdtd2dSandboxReportMarkdown(report)}\n`);
     downloadText("fdtd2d_sandbox_report.json", "application/json", fdtd2dSandboxReportJson(report));
+    downloadText("fdtd2d_validation_report.md", "text/markdown", `${fdtd2dValidationReportMarkdown(validationReport)}\n`);
+    downloadText("fdtd2d_validation_report.json", "application/json", fdtd2dValidationReportJson(validationReport));
+    if (convergenceReport) downloadText("fdtd2d_convergence.csv", "text/csv", `${fdtd2dConvergenceCsv(convergenceReport)}\n`);
+    downloadText("fdtd2d_stability_report.json", "application/json", fdtd2dStabilityReportJson(stabilityReport));
     downloadText("field_snapshot.csv", "text/csv", `${fdtd2dFieldSnapshotCsv(result.snapshot)}\n`);
     downloadText("monitor_trace.csv", "text/csv", `${fdtd2dMonitorTraceCsv(result)}\n`);
     downloadText("energy_trace.csv", "text/csv", `${fdtd2dEnergyTraceCsv(result)}\n`);
+    downloadText("fdtd2d_monitor_trace.csv", "text/csv", `${fdtd2dMonitorTraceCsv(result)}\n`);
+    downloadText("fdtd2d_energy_trace.csv", "text/csv", `${fdtd2dEnergyTraceCsv(result)}\n`);
+  }
+
+  function runConvergence(): void {
+    setConvergenceReport(runFdtd2dConvergenceDiagnostic({ fixtureKind: "empty-space", levels: [128, 256, 384], steps: 80 }));
   }
 
   const statusClass = `fdtd2d-status fdtd2d-status-${budget.status}`;
+  const stabilityClass = `fdtd2d-status fdtd2d-status-${stabilityReport.status === "stable" ? "safe" : stabilityReport.status === "marginal" ? "warning" : "blocked"}`;
 
   return (
-    <section className="wave-panel simulation-builder-panel fdtd2d-panel" aria-label="L9.0 In-Browser 2D FDTD Maxwell Sandbox">
+    <section className="wave-panel simulation-builder-panel fdtd2d-panel" aria-label="L9.1 In-Browser 2D FDTD Maxwell Sandbox">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L9.0 In-Browser 2D FDTD Maxwell Sandbox</h2>
+        <h2>L9.1 In-Browser 2D FDTD Maxwell Sandbox</h2>
         <strong className={statusClass}>{budget.status.toUpperCase()}</strong>
       </div>
 
@@ -167,7 +194,7 @@ export function Fdtd2dSandboxPanel(props: { scene: Fdtd2dScene; onSceneChange: (
         </span>
       </div>
 
-      <div className="fdtd2d-scene-meta" aria-label="L9.0 sandbox scene identity">
+      <div className="fdtd2d-scene-meta" aria-label="L9.1 sandbox scene identity">
         <strong>{props.scene.label}</strong>
         <span>{props.scene.id}</span>
         <span>{props.scene.polarization}</span>
@@ -198,14 +225,20 @@ export function Fdtd2dSandboxPanel(props: { scene: Fdtd2dScene; onSceneChange: (
         </button>
         <button type="button" onClick={exportArtifacts} disabled={!result}>
           <Download size={15} />
-          <span>Export Sandbox Report</span>
+          <span>Export Validation Report</span>
         </button>
       </div>
 
-      <div className="fdtd2d-export-list" aria-label="L9.0 sandbox export files">
+      <div className="fdtd2d-export-list" aria-label="L9.1 sandbox export files">
         <strong>Exports</strong>
         <span>fdtd2d_sandbox_report.md</span>
         <span>fdtd2d_sandbox_report.json</span>
+        <span>fdtd2d_validation_report.md</span>
+        <span>fdtd2d_validation_report.json</span>
+        <span>fdtd2d_convergence.csv</span>
+        <span>fdtd2d_stability_report.json</span>
+        <span>fdtd2d_energy_trace.csv</span>
+        <span>fdtd2d_monitor_trace.csv</span>
         <span>field_snapshot.csv</span>
         <span>monitor_trace.csv</span>
         <span>energy_trace.csv</span>
@@ -298,21 +331,111 @@ export function Fdtd2dSandboxPanel(props: { scene: Fdtd2dScene; onSceneChange: (
           </div>
         </div>
 
-        <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide">
+        <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide fdtd2d-validation-panel">
           <div className="maxwell-section-heading">
-            <h2>Validation Fixtures</h2>
-            <strong><ShieldCheck size={15} /> diagnostic</strong>
+            <h2>Validation + Stability</h2>
+            <strong className={stabilityClass}><ShieldCheck size={15} /> {stabilityReport.statusLabel}</strong>
           </div>
-          <div className="fdtd2d-validation-grid">
-            {validationReports.map((report) => (
-              <div className="compact-stat fdtd2d-validation-stat" key={report.kind}>
-                <span>{report.kind}</span>
-                <strong>{report.status} / {formatNumber(report.maxAbsEz)}</strong>
+          <div className="fdtd2d-diagnostic-layout">
+            <div className="fdtd2d-diagnostic-section">
+              <div className="maxwell-section-heading">
+                <h2>1. Stability</h2>
+                <strong>{stabilityReport.statusLabel}</strong>
               </div>
-            ))}
+              <div className="profile-meta fdtd2d-diagnostic-stats">
+                <Stat label="CFL factor" value={formatNumber(stabilityReport.cflFactor)} />
+                <Stat label="dt s" value={formatNumber(stabilityReport.dtSeconds)} />
+                <Stat label="dx / dy" value={`${formatNumber(stabilityReport.dxUm)} um`} />
+                <Stat label="wave speed" value={`${formatNumber(stabilityReport.waveSpeedEstimateMPerS)} m/s`} />
+                <Stat label="Max |Ez|" value={formatNumber(stabilityReport.maxAbsEz)} />
+                <Stat label="Max |Hx|" value={formatNumber(stabilityReport.maxAbsHx)} />
+                <Stat label="Max |Hy|" value={formatNumber(stabilityReport.maxAbsHy)} />
+                <Stat label="NaN / Infinity" value={stabilityReport.hasNonFinite ? "detected" : "clear"} />
+                <Stat label="Energy trend" value={stabilityReport.energyTrend} />
+                <Stat label="Boundary loss" value={formatNumber(stabilityReport.boundaryEnergyFraction)} />
+                <Stat label="Memory" value={formatBytes(stabilityReport.memoryEstimateBytes)} />
+              </div>
+            </div>
+
+            <div className="fdtd2d-diagnostic-section">
+              <div className="maxwell-section-heading">
+                <h2>2. FDTD Validation Fixtures</h2>
+                <strong>{validationSuite.status}</strong>
+              </div>
+              <div className="fdtd2d-validation-grid">
+                {validationReports.map((report) => (
+                  <div className="compact-stat fdtd2d-validation-stat" key={report.kind}>
+                    <span>{report.kind}</span>
+                    <strong>{report.status} / {formatNumber(report.maxAbsEz)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="fdtd2d-diagnostic-section">
+              <div className="maxwell-section-heading">
+                <h2>3. Reference Checks</h2>
+                <strong>Fresnel + absorber</strong>
+              </div>
+              <div className="fdtd2d-reference-grid">
+                {validationSuite.referenceChecks.map((check) => (
+                  <div className="compact-stat fdtd2d-validation-stat" key={check.id}>
+                    <span>{check.label}</span>
+                    <strong>{check.status} / residual {formatNumber(check.residual)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="fdtd2d-diagnostic-section">
+              <div className="maxwell-section-heading">
+                <h2>4. Grid Convergence</h2>
+                <strong>2D sandbox convergence diagnostic</strong>
+              </div>
+              <div className="maxwell-layer-actions simulation-builder-actions fdtd2d-action-row">
+                <button type="button" onClick={runConvergence} disabled={budget.status === "blocked"}>
+                  <StepForward size={15} />
+                  <span>Run Bounded Convergence</span>
+                </button>
+              </div>
+              {convergenceReport ? (
+                <div className="fdtd2d-convergence-table" aria-label="L9.1 convergence residual table">
+                  <div className="fdtd2d-convergence-row fdtd2d-convergence-header">
+                    <span>grid</span>
+                    <span>energy</span>
+                    <span>monitor</span>
+                    <span>residual</span>
+                    <span>delta</span>
+                  </div>
+                  {convergenceReport.rows.map((row) => (
+                    <div className="fdtd2d-convergence-row" key={row.level}>
+                      <span>{row.nx}x{row.ny}</span>
+                      <span>{formatNumber(row.finalEnergy)}</span>
+                      <span>{formatNumber(row.monitorRms)}</span>
+                      <span>{formatNumber(row.residualFromPrevious)}</span>
+                      <span>{formatNumber(row.fieldSnapshotDelta)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="simulation-builder-note">Run the bounded 128 x 128, 256 x 256, 384 x 384 convergence diagnostic to populate the residual-vs-grid table.</p>
+              )}
+            </div>
+
+            <div className="fdtd2d-diagnostic-section">
+              <div className="maxwell-section-heading">
+                <h2>5. Boundaries</h2>
+                <strong>{props.scene.boundary.kind}</strong>
+              </div>
+              <div className="fdtd-warning-list">
+                {stabilityReport.warnings.length ? stabilityReport.warnings.map((warning) => (
+                  <span key={`${warning.code}:${warning.elementId ?? ""}`}><strong>{warning.code}</strong> {warning.message}</span>
+                )) : <span><strong>clear</strong> source/object/monitor proximity checks are clear</span>}
+              </div>
+            </div>
           </div>
           <p className="simulation-builder-note">
-            Fixture checks are sanity diagnostics: empty propagation, PEC-like wall, rough Fresnel dielectric interface, lossy slab attenuation, and qualitative slit spreading. They are not ISO, lab, or production solver certification.
+            Fixture checks are sanity diagnostics: empty propagation, PEC-like wall, rough Fresnel dielectric interface, lossy slab attenuation, point-source radial symmetry, and qualitative slit spreading. This is not ISO, lab, production FDTD, WebGPU acceleration, 3D Maxwell, or solver certification.
           </p>
         </div>
       </div>

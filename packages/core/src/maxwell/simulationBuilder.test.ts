@@ -149,7 +149,7 @@ describe("surface interaction validation", () => {
 
     expect(json.validation.expected.reflectance).toBeCloseTo(0.04, 12);
     expect(markdown).toContain("Surface Validation");
-    expect(markdown).toContain("No production FDTD, FEM, BEM, or RCWA execution");
+    expect(markdown).toContain("No production FDTD, FEM, BEM, RCWA, or WebGPU acceleration");
     expect(csv).toContain("reflectance");
   });
 });
@@ -199,7 +199,7 @@ describe("workflow clarity boundaries", () => {
   it("does not claim FDTD/FEM/BEM/RCWA execution", () => {
     const result = runSimulationBuilderScenario(defaultSimulationBuilderScenario());
 
-    expect(result.limitations.join(" ")).toContain("No production FDTD, FEM, BEM, or RCWA execution");
+    expect(result.limitations.join(" ")).toContain("No production FDTD, FEM, BEM, RCWA, or WebGPU acceleration");
     expect(result.limitations.join(" ")).not.toMatch(/FDTD execution is available|FEM execution is available|RCWA execution is available/i);
   });
 

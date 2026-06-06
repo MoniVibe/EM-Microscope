@@ -545,7 +545,7 @@ export function createEngineeringEvidenceCapabilityTruthTable(): EngineeringEvid
 
 export function createEngineeringEvidenceUnsupportedItems(): EngineeringEvidenceUnsupportedItem[] {
   return [
-    { id: "production-browser-fdtd", label: "Production in-browser FDTD execution", status: "not-implemented", reason: "L9.0 adds only a capped diagnostic 2D TMz sandbox; production FDTD remains external." },
+    { id: "production-browser-fdtd", label: "Production in-browser FDTD execution", status: "not-implemented", reason: "L9.1 adds only a capped diagnostic 2D TMz sandbox with stability and convergence diagnostics; production FDTD remains external." },
     { id: "arbitrary-3d-maxwell", label: "Arbitrary 3D Maxwell/CAD solve", status: "not-implemented", reason: "Current 3D work is schema/export/import scaffolding and diagnostics, not a full 3D solver." },
     { id: "fem-bem-rcwa", label: "FEM/BEM/RCWA execution", status: "not-implemented", reason: "No FEM, BEM, or RCWA backend is shipped." },
     { id: "certified-tolerancing", label: "Certified optical tolerancing", status: "not-implemented", reason: "L8.6/L8.7/L8.8 are diagnostic engineering aids only." },

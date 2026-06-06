@@ -13,7 +13,7 @@ async function smoke(page) {
   await page.setViewportSize({ width: 1500, height: 1040 });
   step("navigate");
   await page.goto(url, { waitUntil: "networkidle" });
-  await expectText("L9.0 In-Browser 2D FDTD Maxwell Sandbox");
+  await expectText("L9.1 In-Browser 2D FDTD Maxwell Sandbox");
   await expectText("2D Maxwell Sandbox");
 
   step("open sandbox");
@@ -48,8 +48,8 @@ async function smoke(page) {
   await expectText("Export 2D Slice to Maxwell Sandbox");
   await expectText("fdtd2d_sandbox_scene.json");
   await page.getByRole("button", { name: "Export 2D Slice to Maxwell Sandbox" }).click();
-  await expectText("L9.0 In-Browser 2D FDTD Maxwell Sandbox");
-  await expectText("L9.0 2D sandbox slice");
+  await expectText("L9.1 In-Browser 2D FDTD Maxwell Sandbox");
+  await expectText("L9.1 2D sandbox slice");
   await page.screenshot({ path: `${artifactDir}/l90-builder-to-sandbox-smoke.png`, fullPage: true });
 
   const unexpectedConsoleIssues = consoleIssues.filter((message) => !message.includes("Download the React DevTools"));
