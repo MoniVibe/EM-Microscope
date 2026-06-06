@@ -1,8 +1,21 @@
 import { useMemo, useState } from "react";
 import {
   addSimulationBuilderElement,
+  apertureConvergenceCsv,
+  apertureFluxSummaryJson,
+  apertureKindLabel,
+  apertureMetricsCsv,
+  apertureProfileCsv,
+  apertureReceiptJson,
+  apertureValidationReportJson,
+  apertureValidationReportMarkdown,
+  apertureValidationSceneJson,
   createAbsorbingFdtdExampleBundle,
   createAbsorbingFdtdExampleScenario,
+  createApertureConvergenceReport,
+  createApertureValidationExampleBundle,
+  createApertureValidationScenario,
+  createApertureValidationScene,
   createFdtdBenchmarkExampleBundle,
   createFdtdBenchmarkPack,
   createFdtdBenchmarkScenario,
@@ -41,7 +54,13 @@ import {
   surfaceGeometrySceneJson,
   surfaceGeometryValidationReportJson,
   surfaceGeometryValidationReportMarkdown,
+  validateApertureImportedRun,
   validateFdtdImportedRunAgainstScenario,
+  type ApertureConvergenceReport,
+  type ApertureScreenModel,
+  type ApertureValidationExampleBundle,
+  type ApertureValidationKind,
+  type ApertureValidationReport,
   type FdtdBenchmarkKind,
   type FdtdConvergenceSummary,
   type FdtdFieldSlice,
@@ -86,6 +105,13 @@ const surfaceGeometryActions: Array<{ kind: SurfaceGeometryKind; label: string }
   { kind: "tilted-wedge", label: "Add Tilted Wedge" }
 ];
 
+const apertureValidationActions: Array<{ kind: ApertureValidationKind; label: string; addLabel: string; fixtureLabel: string }> = [
+  { kind: "long-slit", label: "Long Slit", addLabel: "Add Long Slit", fixtureLabel: "Load Long Slit Fixture" },
+  { kind: "circular-pinhole", label: "Circular Pinhole", addLabel: "Add Circular Pinhole", fixtureLabel: "Load Circular Pinhole Fixture" },
+  { kind: "rectangular-aperture", label: "Rectangular Aperture", addLabel: "Add Rectangular Aperture", fixtureLabel: "Load Rectangular Aperture Fixture" },
+  { kind: "opaque-blocker", label: "Opaque Blocker", addLabel: "Add Opaque Blocker", fixtureLabel: "Load Opaque Blocker Fixture" }
+];
+
 function downloadText(filename: string, mime: string, text: string): void {
   const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -109,11 +135,24 @@ export function SimulationBuilderPanel() {
   const [fdtdConvergenceError, setFdtdConvergenceError] = useState<string | null>(null);
   const [surfaceGeometryKind, setSurfaceGeometryKind] = useState<SurfaceGeometryKind>("transparent-block");
   const [surfaceGeometryExample, setSurfaceGeometryExample] = useState<SurfaceGeometryExampleBundle | null>(null);
+  const [apertureKind, setApertureKind] = useState<ApertureValidationKind>("long-slit");
+  const [apertureScreenModel, setApertureScreenModel] = useState<ApertureScreenModel>("absorbing-screen");
+  const [apertureExample, setApertureExample] = useState<ApertureValidationExampleBundle | null>(null);
+  const [apertureReport, setApertureReport] = useState<ApertureValidationReport | null>(null);
+  const [apertureFieldSlice, setApertureFieldSlice] = useState<FdtdFieldSlice | null>(null);
+  const [apertureImportError, setApertureImportError] = useState<string | null>(null);
   const result = useMemo(() => runSimulationBuilderScenario(scenario), [scenario]);
   const fdtdBundle = useMemo(() => exportFdtdBundleFromSimulationBuilder(scenario), [scenario]);
   const fdtdBenchmarkPack = useMemo(() => createFdtdBenchmarkPack({ benchmarkKind, scenario }), [benchmarkKind, scenario]);
   const surfaceGeometryScene = useMemo(() => surfaceGeometryExample?.scene ?? createSurfaceGeometryScene(scenario), [scenario, surfaceGeometryExample]);
   const surfaceGeometryConvergencePack = useMemo(() => createSurfaceGeometryConvergencePack(surfaceGeometryScene.kind), [surfaceGeometryScene.kind]);
+  const apertureScene = useMemo(
+    () => apertureExample?.scene ?? (hasApertureValidationElement(scenario) ? createApertureValidationScene(scenario, apertureScreenModel) : createApertureValidationScene(apertureKind, apertureScreenModel)),
+    [apertureExample, apertureKind, apertureScreenModel, scenario]
+  );
+  const apertureConvergence = useMemo<ApertureConvergenceReport>(() => apertureReport?.convergence ?? apertureExample?.validation.convergence ?? createApertureConvergenceReport(apertureScene.kind), [apertureExample, apertureReport, apertureScene.kind]);
+  const activeApertureReport = apertureReport ?? apertureExample?.validation ?? null;
+  const activeApertureFieldSlice = apertureFieldSlice ?? apertureExample?.fieldSlice ?? null;
   const fdtdValidation = useMemo<FdtdValidationReport | null>(
     () => (importedFdtd ? validateFdtdImportedRunAgainstScenario(scenario, fdtdBundle, importedFdtd) : null),
     [fdtdBundle, importedFdtd, scenario]
@@ -203,6 +242,95 @@ export function SimulationBuilderPanel() {
     setImportedFdtd(example.imported);
     setFdtdImportError(null);
     setHasComputed(true);
+  }
+
+  function clearApertureEvidence(): void {
+    setApertureExample(null);
+    setApertureReport(null);
+    setApertureFieldSlice(null);
+    setApertureImportError(null);
+  }
+
+  function selectApertureScreenModel(model: ApertureScreenModel): void {
+    setApertureScreenModel(model);
+    clearApertureEvidence();
+    if (hasApertureValidationElement(scenario)) {
+      setScenario(createApertureValidationScenario(apertureKind, model));
+      setHasComputed(true);
+    }
+  }
+
+  function addApertureValidation(kind: ApertureValidationKind): void {
+    setApertureKind(kind);
+    clearApertureEvidence();
+    setScenario(createApertureValidationScenario(kind, apertureScreenModel));
+    setImportedFdtd(null);
+    setHasComputed(true);
+  }
+
+  function loadApertureFixture(kind: ApertureValidationKind): void {
+    const example = createApertureValidationExampleBundle(kind, apertureScreenModel);
+    setApertureKind(kind);
+    setApertureExample(example);
+    setApertureReport(example.validation);
+    setApertureFieldSlice(example.fieldSlice);
+    setApertureImportError(null);
+    setScenario(example.scene.scenario);
+    setImportedFdtd(example.imported);
+    setHasComputed(true);
+  }
+
+  function exportApertureScene(): void {
+    downloadText("aperture_validation_scene.json", "application/json", apertureValidationSceneJson(apertureScene));
+    downloadText("aperture_fdtd_scene_manifest.json", "application/json", fdtdManifestJson(apertureScene.bundle.manifest));
+    downloadText("aperture_meep.py", "text/x-python", fdtdMeepScriptText(apertureScene.bundle.script));
+  }
+
+  function exportApertureDossier(): void {
+    const report = activeApertureReport;
+    if (!report) return;
+    downloadText("aperture_validation_report.md", "text/markdown", `${apertureValidationReportMarkdown(report)}\n`);
+    downloadText("aperture_validation_report.json", "application/json", apertureValidationReportJson(report));
+    downloadText("aperture_metrics.csv", "text/csv", `${apertureMetricsCsv(report)}\n`);
+    downloadText("aperture_profile.csv", "text/csv", `${apertureProfileCsv(report)}\n`);
+    downloadText("aperture_convergence.csv", "text/csv", `${apertureConvergenceCsv(report)}\n`);
+    if (apertureExample) {
+      downloadText("aperture_run_receipt.json", "application/json", apertureReceiptJson(apertureExample));
+      downloadText("aperture_flux_summary.json", "application/json", apertureFluxSummaryJson(apertureExample));
+      downloadText("aperture_field_slice_xz.csv", "text/csv", `${apertureExample.fieldSliceCsv}\n`);
+    }
+  }
+
+  async function importApertureFiles(files: FileList | null): Promise<void> {
+    setApertureImportError(null);
+    if (!files || files.length === 0) return;
+    const entries = await Promise.all(Array.from(files).map(async (file) => ({ name: file.name.toLowerCase(), text: await file.text() })));
+    const receipt = entries.find((entry) => entry.name.includes("receipt") && entry.name.endsWith(".json"));
+    const flux = entries.find((entry) => entry.name.includes("flux") && entry.name.endsWith(".json"));
+    const fieldSlice = entries.find((entry) => entry.name.includes("slice") && entry.name.endsWith(".csv")) ?? entries.find((entry) => entry.name.endsWith(".csv"));
+    if (!receipt || !flux || !fieldSlice) {
+      setApertureImportError("Select an aperture run receipt JSON, flux summary JSON, and field-slice CSV together.");
+      return;
+    }
+    try {
+      const imported = importFdtdRunArtifacts({
+        receiptJson: receipt.text,
+        fluxJson: flux.text,
+        fieldSliceCsv: fieldSlice.text,
+        fieldSlice: {
+          id: "aperture-field-slice-xz",
+          sourceScenarioHash: apertureScene.bundle.manifest.sourceScenarioHash,
+          manifestHash: apertureScene.bundle.manifest.manifestHash
+        }
+      });
+      setApertureExample(null);
+      setApertureReport(validateApertureImportedRun(apertureScene, imported));
+      setApertureFieldSlice(imported.fieldSlice);
+      setImportedFdtd(imported);
+      setHasComputed(true);
+    } catch (error) {
+      setApertureImportError(error instanceof Error ? error.message : String(error));
+    }
   }
 
   function selectBenchmarkKind(kind: FdtdBenchmarkKind): void {
@@ -309,9 +437,9 @@ export function SimulationBuilderPanel() {
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L8.3 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L8.4 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L8.3 Surface Geometry Interaction + External FDTD Benchmark Convergence</h2>
+        <h2>L8.4 Aperture / Blocker Edge-Diffraction Validation + Surface Geometry FDTD Evidence</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
@@ -319,8 +447,8 @@ export function SimulationBuilderPanel() {
         <strong>Simulation Builder</strong>
         <span>
           Define grid density, source, ordered z-axis elements, finite surface geometry, target/material surface, compute path, validation report, L8.1 field-map import evidence, L8.2 benchmark convergence
-          diagnostics, and L8.3 placed transparent/absorbing/reflective/aperture/wedge external FDTD fixtures. Browser FDTD, arbitrary 3D Maxwell material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution,
-          real curved material lens solving, sensor-stack EM, digital twin behavior, and manufacturing certification are not implemented.
+          diagnostics, L8.3 placed transparent/absorbing/reflective/aperture/wedge external FDTD fixtures, and L8.4 aperture/blocker scalar-reference validation. Browser FDTD, arbitrary 3D Maxwell
+          material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, sensor-stack EM, digital twin behavior, and manufacturing certification are not implemented.
         </span>
       </div>
 
@@ -660,6 +788,151 @@ export function SimulationBuilderPanel() {
                   </span>
                 ))}
                 {surfaceGeometryScene.warnings.length === 0 && <span>No finite-geometry warnings for the current fixture setup.</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide" aria-label="L8.4 Aperture / Blocker Edge-Diffraction Validation">
+          <div className="maxwell-section-heading">
+            <h2>L8.4 Aperture / Blocker Edge-Diffraction Validation</h2>
+            <strong>{activeApertureReport?.classification ?? "fixture ready"}</strong>
+          </div>
+          <div className="l2-disclosure">
+            <strong>Aperture / Blocker Validation</strong>
+            <span>
+              Long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker external FDTD evidence can be compared against scalar limiting references: single-slit-sinc2, airy-bessel,
+              rectangular-sinc2, and blocked power / shadow flux diagnostics. Browser FDTD execution, production metal aperture models, arbitrary CAD aperture solving, FEM/BEM/RCWA, sensor-stack EM,
+              digital twins, and manufacturing certification are not implemented.
+            </span>
+          </div>
+          <div className="simulation-field-grid fdtd-verification-controls aperture-validation-controls">
+            <label>
+              <span>Aperture kind</span>
+              <select aria-label="Aperture validation kind" value={apertureKind} onChange={(event) => addApertureValidation(event.currentTarget.value as ApertureValidationKind)}>
+                <option value="long-slit">long slit</option>
+                <option value="circular-pinhole">circular pinhole</option>
+                <option value="rectangular-aperture">rectangular aperture</option>
+                <option value="opaque-blocker">opaque blocker</option>
+              </select>
+            </label>
+            <label>
+              <span>Screen model</span>
+              <select aria-label="Aperture screen model" value={apertureScreenModel} onChange={(event) => selectApertureScreenModel(event.currentTarget.value as ApertureScreenModel)}>
+                <option value="absorbing-screen">absorbing screen</option>
+                <option value="ideal-reflective-screen">ideal reflective screen</option>
+                <option value="transparent-reference">transparent reference</option>
+              </select>
+            </label>
+            {apertureValidationActions.map((action) => (
+              <button type="button" key={`add-${action.kind}`} onClick={() => addApertureValidation(action.kind)}>
+                <Plus size={15} />
+                <span>{action.addLabel}</span>
+              </button>
+            ))}
+            {apertureValidationActions.map((action) => (
+              <button type="button" key={`fixture-${action.kind}`} onClick={() => loadApertureFixture(action.kind)}>
+                <Sparkles size={15} />
+                <span>{action.fixtureLabel}</span>
+              </button>
+            ))}
+            <label className="fdtd-file-import">
+              <span>Import Aperture Run</span>
+              <input aria-label="Import aperture receipt flux and field slice" type="file" accept=".json,.csv" multiple onChange={(event) => void importApertureFiles(event.currentTarget.files)} />
+            </label>
+            <button type="button" onClick={exportApertureScene}>
+              <FileDown size={15} />
+              <span>Export Aperture Scene</span>
+            </button>
+            <button type="button" disabled={!activeApertureReport} onClick={exportApertureDossier}>
+              <FileDown size={15} />
+              <span>Export Aperture Dossier</span>
+            </button>
+          </div>
+          {apertureImportError && <div className="error-banner">{apertureImportError}</div>}
+          <div className="fdtd-grid aperture-validation-grid">
+            <div className="maxwell-data-table" aria-label="L8.4 aperture scalar reference smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Aperture Scene</h2>
+                <strong>{apertureKindLabel(apertureScene.kind)}</strong>
+              </div>
+              <div className="maxwell-study-list">
+                <Stat label="Reference" value={apertureScene.reference.model} />
+                <Stat label="Screen model" value={apertureScene.screenModel} />
+                <Stat label="Scene hash" value={apertureScene.sceneHash.slice(0, 10)} />
+                <Stat label="Manifest hash" value={apertureScene.bundle.manifest.manifestHash.slice(0, 10)} />
+                <Stat label="Script hash" value={apertureScene.bundle.script.scriptHash.slice(0, 10)} />
+                <Stat label="First minimum" value={apertureScene.reference.expectedFirstMinimumUm === null ? "n/a" : `${formatCompact(apertureScene.reference.expectedFirstMinimumUm)} um`} />
+              </div>
+            </div>
+
+            <div className="maxwell-data-table" aria-label="L8.4 aperture cells across diagnostics smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Resolution Diagnostics</h2>
+                <strong>{formatCompact(apertureScene.diagnostics.gridSpacingNm)} nm/cell</strong>
+              </div>
+              <div className="maxwell-study-list">
+                <Stat label="aperture cells across" value={formatCompact(apertureScene.diagnostics.apertureCellsAcross)} />
+                <Stat label="thickness cells" value={formatCompact(apertureScene.diagnostics.screenThicknessCells)} />
+                <Stat label="PML distance" value={`${formatCompact(apertureScene.diagnostics.pmlDistanceWavelengths)} lambda`} />
+                <Stat label="monitor distance" value={`${formatCompact(apertureScene.diagnostics.monitorDistanceWavelengths)} lambda`} />
+                <Stat label="minimum in window" value={apertureScene.diagnostics.observationContainsFirstMinimum ? "yes" : "no"} />
+                <Stat label="blocked power" value={activeApertureReport ? pct(activeApertureReport.imported.blockedPower) : "pending"} />
+              </div>
+            </div>
+
+            <div className="maxwell-data-table fdtd-wide" aria-label="L8.4 aperture x-z preview smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>X-Z Aperture / Blocker Preview</h2>
+                <strong>{apertureScene.geometryIds.length} geometry ids</strong>
+              </div>
+              <SurfaceGeometryCrossSection scenario={apertureScene.scenario} zMin={apertureScene.scenario.grid.zStartMm} zMax={apertureScene.scenario.grid.zEndMm} />
+            </div>
+
+            <div className="maxwell-data-table" aria-label="L8.4 aperture field slice smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Aperture Field Slice</h2>
+                <strong>{activeApertureFieldSlice ? `${activeApertureFieldSlice.xCount} x ${activeApertureFieldSlice.zCount}` : "no import"}</strong>
+              </div>
+              {activeApertureFieldSlice ? <FdtdFieldSlicePreview slice={activeApertureFieldSlice} /> : <div className="empty-state">No aperture/blocker field slice imported yet.</div>}
+            </div>
+
+            <div className="maxwell-data-table" aria-label="L8.4 aperture profile comparison smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Scalar Profile Comparison</h2>
+                <strong>{activeApertureReport?.reference.model ?? apertureScene.reference.model}</strong>
+              </div>
+              {activeApertureReport ? (
+                <ApertureProfilePreview report={activeApertureReport} />
+              ) : (
+                <div className="maxwell-study-list">
+                  <Stat label="single-slit-sinc2" value={apertureScene.kind === "long-slit" ? "active" : "available"} />
+                  <Stat label="airy-bessel" value={apertureScene.kind === "circular-pinhole" ? "active" : "available"} />
+                  <Stat label="rectangular-sinc2" value={apertureScene.kind === "rectangular-aperture" ? "active" : "available"} />
+                  <Stat label="blocker-shadow-flux" value={apertureScene.kind === "opaque-blocker" ? "active" : "available"} />
+                </div>
+              )}
+            </div>
+
+            <div className="maxwell-data-table" aria-label="L8.4 aperture residual vs resolution smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Residual vs Resolution</h2>
+                <strong>{apertureConvergence.trend}</strong>
+              </div>
+              <ApertureConvergenceTable report={apertureConvergence} />
+            </div>
+
+            <div className="maxwell-data-table fdtd-wide" aria-label="L8.4 aperture warning smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Aperture / PML / Monitor Warnings</h2>
+                <strong>{(activeApertureReport?.warnings ?? apertureScene.warnings).length}</strong>
+              </div>
+              <div className="fdtd-warning-list">
+                {(activeApertureReport?.warnings ?? apertureScene.warnings).map((warning, index) => (
+                  <span key={`${warning.code}:${warning.elementId ?? ""}:${index}`}>
+                    <strong>{warning.code}</strong> {warning.message}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
@@ -1077,6 +1350,51 @@ function FdtdFieldSlicePreview(props: { slice: FdtdFieldSlice }) {
   );
 }
 
+function ApertureProfilePreview(props: { report: ApertureValidationReport }) {
+  const maxValue = Math.max(1e-9, ...props.report.profile.map((point) => Math.max(point.importedIntensity, point.referenceIntensity)));
+  return (
+    <div className="aperture-profile-preview">
+      <div className="maxwell-study-list">
+        <Stat label="Classification" value={props.report.classification} />
+        <Stat label="Profile RMS" value={formatCompact(props.report.residuals.profileRms)} />
+        <Stat label="Reference residual" value={formatCompact(props.report.residuals.referenceResidual)} />
+        <Stat label="First minimum" value={props.report.residuals.firstMinimumUm === null ? "n/a" : `${formatCompact(props.report.residuals.firstMinimumUm)} um`} />
+      </div>
+      <div className="aperture-profile-bars" aria-label="Imported versus scalar aperture profile">
+        {props.report.profile.slice(0, 28).map((point, index) => (
+          <div className="aperture-profile-bar" key={`${point.coordinateUm}:${index}`} title={`x ${formatCompact(point.coordinateUm)} um; imported ${formatCompact(point.importedIntensity)}; reference ${formatCompact(point.referenceIntensity)}`}>
+            <span style={{ height: `${Math.max(2, (point.referenceIntensity / maxValue) * 100)}%` }} />
+            <strong style={{ height: `${Math.max(2, (point.importedIntensity / maxValue) * 100)}%` }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ApertureConvergenceTable(props: { report: ApertureConvergenceReport }) {
+  return (
+    <div className="fdtd-sweep-table aperture-convergence-table">
+      <div className="fdtd-sweep-row fdtd-sweep-header">
+        <span>ppw</span>
+        <span>cells</span>
+        <span>PML</span>
+        <span>residual</span>
+        <span>status</span>
+      </div>
+      {props.report.rows.map((row) => (
+        <div className="fdtd-sweep-row" key={row.runId}>
+          <span>{row.resolutionPpw}</span>
+          <span>{formatCompact(row.apertureCellsAcross)}</span>
+          <span>{formatCompact(row.pmlPaddingLambda)}</span>
+          <span>{formatCompact(row.referenceResidual)}</span>
+          <span>{row.status}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function FdtdConvergenceTrendTable(props: { summary: FdtdConvergenceSummary }) {
   return (
     <div className="fdtd-sweep-table">
@@ -1127,6 +1445,10 @@ function FdtdConvergenceRunsTable(props: { summary: FdtdConvergenceSummary }) {
 
 function isSurfaceGeometryElementKind(kind: SimulationBuilderElementKind): boolean {
   return kind === "finite-transparent-block" || kind === "finite-absorbing-block" || kind === "finite-reflective-plate" || kind === "finite-aperture-blocker" || kind === "tilted-interface-wedge";
+}
+
+function hasApertureValidationElement(scenario: SimulationBuilderScenario): boolean {
+  return scenario.elements.some((element) => element.kind === "finite-aperture-blocker" && Boolean(element.apertureShape));
 }
 
 function surfaceGeometryDisplayName(kind: SurfaceGeometryKind): string {

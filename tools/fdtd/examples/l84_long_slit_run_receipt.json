@@ -1,0 +1,61 @@
+{
+  "schema": "emmicro.fdtd.runReceipt.v1",
+  "runId": "l84-fixture-long-slit",
+  "sourceScenarioHash": "d96beb814449f702",
+  "manifestHash": "c1075ced58ef74a9",
+  "scriptHash": "622e04573dc8aaeb",
+  "tool": {
+    "name": "example-fixture",
+    "version": "l84-deterministic",
+    "postprocessorVersion": "emmicro.fdtd.aperture.fixture.v1"
+  },
+  "createdAtIso": "2026-06-06T00:00:00.000Z",
+  "settings": {
+    "resolution": 8,
+    "until": 320,
+    "pmlThicknessUm": 0.75
+  },
+  "warnings": [
+    {
+      "code": "fdtd.geometry.monitorProximity",
+      "message": "Long-slit aperture has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+      "message": "Long-slit aperture has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Long-slit aperture finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Scalar diffraction reference is a limiting-case check for diagnostic comparison, not an exact finite FDTD screen solution.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.nearFieldFarField",
+      "message": "Near-field slices are not the same as far-field diffraction patterns; use far-field or downstream observation evidence with convergence.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.convergenceRequired",
+      "message": "Current aperture/blocker diagnostics require convergence sweep evidence before physical interpretation.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.monitorTooClose",
+      "message": "Flux monitor is within two wavelengths of aperture/blocker edges.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.edgeStaircasing",
+      "message": "Aperture edges are staircasing-sensitive at this grid density; increase resolution and compare residual trends.",
+      "elementId": "l84-long-slit"
+    }
+  ],
+  "receiptHash": "e8daca8b0225732c"
+}

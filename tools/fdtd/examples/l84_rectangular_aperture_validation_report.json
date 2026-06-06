@@ -1,0 +1,689 @@
+{
+  "schema": "emmicro.fdtd.apertureValidationReport.v1",
+  "kind": "rectangular-aperture",
+  "screenModel": "absorbing-screen",
+  "sourceScenarioHash": "690bcd0934d9aa12",
+  "manifestHash": "c0382146f92ba396",
+  "scriptHash": "05c7fa222ae012de",
+  "sceneHash": "25c012532a0f947a",
+  "geometryHash": "3e65e055186c0225",
+  "diagnostics": {
+    "gridSpacingNm": 62.5,
+    "apertureCellsAcross": 64,
+    "screenThicknessCells": 12.8,
+    "pmlDistanceWavelengths": 47.7,
+    "monitorDistanceWavelengths": 1.6,
+    "observationContainsFirstMinimum": true
+  },
+  "monitorPositions": [
+    {
+      "id": "incident-flux",
+      "zUm": 104,
+      "normal": "+z"
+    },
+    {
+      "id": "reflected-flux",
+      "zUm": 54,
+      "normal": "-z"
+    },
+    {
+      "id": "transmitted-flux",
+      "zUm": 55,
+      "normal": "+z"
+    },
+    {
+      "id": "field-slice-xz",
+      "zUm": 30,
+      "normal": "+y"
+    },
+    {
+      "id": "l84-rectangular-aperture-front-flux",
+      "zUm": 23.8,
+      "normal": "+z"
+    },
+    {
+      "id": "l84-rectangular-aperture-back-flux",
+      "zUm": 26.2,
+      "normal": "+z"
+    }
+  ],
+  "reference": {
+    "kind": "rectangular-aperture",
+    "model": "rectangular-sinc2",
+    "wavelengthNm": 500,
+    "observationDistanceUm": 30,
+    "apertureWidthUm": 4,
+    "apertureHeightUm": 6,
+    "apertureDiameterUm": 6,
+    "expectedMinimaUm": [
+      3.7796447300922726,
+      7.745966692414833,
+      12.135597524338358
+    ],
+    "expectedFirstMinimumUm": 3.7796447300922726,
+    "apertureOpenFraction": 0.16666666666666666,
+    "invariant": "Rectangular aperture diagnostic uses separable sinc-style scalar envelopes in the far-field limit.",
+    "referenceHash": "e638d2dae3497e6b"
+  },
+  "imported": {
+    "reflectance": 0.019666666666666666,
+    "transmittance": 0.16216666666666665,
+    "absorbance": 0.8181666666666666,
+    "blockedPower": 0.8378333333333333
+  },
+  "residuals": {
+    "reflectance": 0.002999999999999999,
+    "transmittance": 0.004500000000000004,
+    "absorbance": 0.0014999999999999458,
+    "energyBalance": 1.1102230246251565e-16,
+    "referenceResidual": 0.004500000000000004,
+    "profileRms": 0.010683729605522201,
+    "firstMinimumUm": 0.005249904694771116
+  },
+  "energyBalance": 0.9999999999999999,
+  "profile": [
+    {
+      "coordinateUm": -8,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.0000049268763521797395,
+      "residual": 0.0000049268763521797395
+    },
+    {
+      "coordinateUm": -7.8,
+      "importedIntensity": 0,
+      "referenceIntensity": 1.206781760283316e-7,
+      "residual": 1.206781760283316e-7
+    },
+    {
+      "coordinateUm": -7.6,
+      "importedIntensity": 0,
+      "referenceIntensity": 2.9895797285624795e-7,
+      "residual": 2.9895797285624795e-7
+    },
+    {
+      "coordinateUm": -7.4,
+      "importedIntensity": 0.0013667471413388872,
+      "referenceIntensity": 6.368906237983382e-8,
+      "residual": 0.0013666834522765073
+    },
+    {
+      "coordinateUm": -7.2,
+      "importedIntensity": 0.014409565749987646,
+      "referenceIntensity": 0.000001957681402240688,
+      "residual": 0.014407608068585405
+    },
+    {
+      "coordinateUm": -7,
+      "importedIntensity": 0.017627959710678348,
+      "referenceIntensity": 0.000020420788133543323,
+      "residual": 0.017607538922544803
+    },
+    {
+      "coordinateUm": -6.8,
+      "importedIntensity": 0.008864432529892162,
+      "referenceIntensity": 0.00008364198301683644,
+      "residual": 0.008780790546875325
+    },
+    {
+      "coordinateUm": -6.6,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.00023201236935966034,
+      "residual": 0.00023201236935966034
+    },
+    {
+      "coordinateUm": -6.4,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.000512287546266008,
+      "residual": 0.000512287546266008
+    },
+    {
+      "coordinateUm": -6.2,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.0009673222059528349,
+      "residual": 0.0009673222059528349
+    },
+    {
+      "coordinateUm": -6,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.001622291175125859,
+      "residual": 0.001622291175125859
+    },
+    {
+      "coordinateUm": -5.8,
+      "importedIntensity": 0.012763644908644624,
+      "referenceIntensity": 0.00246952549065264,
+      "residual": 0.010294119417991984
+    },
+    {
+      "coordinateUm": -5.6,
+      "importedIntensity": 0.021346507791914493,
+      "referenceIntensity": 0.0034552617402720627,
+      "residual": 0.01789124605164243
+    },
+    {
+      "coordinateUm": -5.4,
+      "importedIntensity": 0.01774037854899046,
+      "referenceIntensity": 0.004472468827204618,
+      "residual": 0.01326790972178584
+    },
+    {
+      "coordinateUm": -5.2,
+      "importedIntensity": 0.00494624847278815,
+      "referenceIntensity": 0.005364207611585259,
+      "residual": 0.0004179591387971091
+    },
+    {
+      "coordinateUm": -5,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.005941464403001241,
+      "residual": 0.005941464403001241
+    },
+    {
+      "coordinateUm": -4.8,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.006017944215286451,
+      "residual": 0.006017944215286451
+    },
+    {
+      "coordinateUm": -4.6,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.00546192646717176,
+      "residual": 0.00546192646717176
+    },
+    {
+      "coordinateUm": -4.4,
+      "importedIntensity": 0.009402914885236417,
+      "referenceIntensity": 0.0042621676876131364,
+      "residual": 0.005140747197623281
+    },
+    {
+      "coordinateUm": -4.2,
+      "importedIntensity": 0.01896899137683927,
+      "referenceIntensity": 0.002601362558335745,
+      "residual": 0.016367628818503524
+    },
+    {
+      "coordinateUm": -4,
+      "importedIntensity": 0.01734212441468135,
+      "referenceIntensity": 0.0009273831875482503,
+      "residual": 0.016414741227133097
+    },
+    {
+      "coordinateUm": -3.8,
+      "importedIntensity": 0.00525993947662476,
+      "referenceIntensity": 0.000010034781853644426,
+      "residual": 0.005249904694771116,
+      "label": "expected minimum/ring"
+    },
+    {
+      "coordinateUm": -3.5999999999999996,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.0009700157513012409,
+      "residual": 0.0009700157513012409
+    },
+    {
+      "coordinateUm": -3.4000000000000004,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.005267652415361166,
+      "residual": 0.005267652415361166
+    },
+    {
+      "coordinateUm": -3.2,
+      "importedIntensity": 0.0007509305325147445,
+      "referenceIntensity": 0.014642057982017214,
+      "residual": 0.01389112744950247
+    },
+    {
+      "coordinateUm": -3,
+      "importedIntensity": 0.03046465133352808,
+      "referenceIntensity": 0.03099658046866149,
+      "residual": 0.0005319291351334118
+    },
+    {
+      "coordinateUm": -2.8,
+      "importedIntensity": 0.06942391753099028,
+      "referenceIntensity": 0.056233318694538764,
+      "residual": 0.013190598836451517
+    },
+    {
+      "coordinateUm": -2.5999999999999996,
+      "importedIntensity": 0.10995070326187566,
+      "referenceIntensity": 0.09204730244397152,
+      "residual": 0.017903400817904133
+    },
+    {
+      "coordinateUm": -2.4000000000000004,
+      "importedIntensity": 0.1500860125804168,
+      "referenceIntensity": 0.13969857495395502,
+      "residual": 0.01038743762646177
+    },
+    {
+      "coordinateUm": -2.2,
+      "importedIntensity": 0.19556309149563422,
+      "referenceIntensity": 0.19978666770345488,
+      "residual": 0.004223576207820656
+    },
+    {
+      "coordinateUm": -2,
+      "importedIntensity": 0.2561059404470653,
+      "referenceIntensity": 0.2720556527969026,
+      "residual": 0.015949712349837275
+    },
+    {
+      "coordinateUm": -1.7999999999999998,
+      "importedIntensity": 0.33847664899124974,
+      "referenceIntensity": 0.35525818254901975,
+      "residual": 0.016781533557770012
+    },
+    {
+      "coordinateUm": -1.5999999999999996,
+      "importedIntensity": 0.4409523285771767,
+      "referenceIntensity": 0.4471032000299996,
+      "residual": 0.0061508714528228925
+    },
+    {
+      "coordinateUm": -1.4000000000000004,
+      "importedIntensity": 0.5529855043358746,
+      "referenceIntensity": 0.544304413418495,
+      "residual": 0.008681090917379564
+    },
+    {
+      "coordinateUm": -1.2000000000000002,
+      "importedIntensity": 0.6603193739814042,
+      "referenceIntensity": 0.642735865775951,
+      "residual": 0.01758350820545318
+    },
+    {
+      "coordinateUm": -1,
+      "importedIntensity": 0.7521639105335101,
+      "referenceIntensity": 0.7376882502933382,
+      "residual": 0.014475660240171884
+    },
+    {
+      "coordinateUm": -0.7999999999999998,
+      "importedIntensity": 0.825687007112929,
+      "referenceIntensity": 0.8242066710555538,
+      "residual": 0.0014803360573751867
+    },
+    {
+      "coordinateUm": -0.5999999999999996,
+      "importedIntensity": 0.8849530324227809,
+      "referenceIntensity": 0.897479151461638,
+      "residual": 0.012526119038857142
+    },
+    {
+      "coordinateUm": -0.40000000000000036,
+      "importedIntensity": 0.9352603424722236,
+      "referenceIntensity": 0.953237057873439,
+      "residual": 0.01797671540121548
+    },
+    {
+      "coordinateUm": -0.20000000000000018,
+      "importedIntensity": 0.9769765900561114,
+      "referenceIntensity": 0.9881250597461956,
+      "residual": 0.011148469690084206
+    },
+    {
+      "coordinateUm": 0,
+      "importedIntensity": 1,
+      "referenceIntensity": 1,
+      "residual": 0
+    },
+    {
+      "coordinateUm": 0.1999999999999993,
+      "importedIntensity": 1,
+      "referenceIntensity": 0.988125059746196,
+      "residual": 0.011874940253803978
+    },
+    {
+      "coordinateUm": 0.40000000000000036,
+      "importedIntensity": 0.9703386494293308,
+      "referenceIntensity": 0.953237057873439,
+      "residual": 0.01710159155589175
+    },
+    {
+      "coordinateUm": 0.5999999999999996,
+      "importedIntensity": 0.9045138603159647,
+      "referenceIntensity": 0.897479151461638,
+      "residual": 0.007034708854326666
+    },
+    {
+      "coordinateUm": 0.8000000000000007,
+      "importedIntensity": 0.8163694993470583,
+      "referenceIntensity": 0.8242066710555531,
+      "residual": 0.00783717170849485
+    },
+    {
+      "coordinateUm": 1,
+      "importedIntensity": 0.7203323112890273,
+      "referenceIntensity": 0.7376882502933382,
+      "residual": 0.017355939004310872
+    },
+    {
+      "coordinateUm": 1.1999999999999993,
+      "importedIntensity": 0.6277159855280102,
+      "referenceIntensity": 0.6427358657759518,
+      "residual": 0.015019880247941542
+    },
+    {
+      "coordinateUm": 1.4000000000000004,
+      "importedIntensity": 0.5418797929773399,
+      "referenceIntensity": 0.544304413418495,
+      "residual": 0.002424620441155101
+    },
+    {
+      "coordinateUm": 1.5999999999999996,
+      "importedIntensity": 0.4589299557005642,
+      "referenceIntensity": 0.4471032000299996,
+      "residual": 0.011826755670564626
+    },
+    {
+      "coordinateUm": 1.8000000000000007,
+      "importedIntensity": 0.3732581497790188,
+      "referenceIntensity": 0.3552581825490192,
+      "residual": 0.01799996722999958
+    },
+    {
+      "coordinateUm": 2,
+      "importedIntensity": 0.2839341075495864,
+      "referenceIntensity": 0.2720556527969026,
+      "residual": 0.011878454752683842
+    },
+    {
+      "coordinateUm": 2.1999999999999993,
+      "importedIntensity": 0.19743013280960486,
+      "referenceIntensity": 0.19978666770345507,
+      "residual": 0.0023565348938502095
+    },
+    {
+      "coordinateUm": 2.4000000000000004,
+      "importedIntensity": 0.12471666146633845,
+      "referenceIntensity": 0.13969857495395502,
+      "residual": 0.014981913487616572
+    },
+    {
+      "coordinateUm": 2.5999999999999996,
+      "importedIntensity": 0.07467327854130645,
+      "referenceIntensity": 0.09204730244397152,
+      "residual": 0.01737402390266507
+    },
+    {
+      "coordinateUm": 2.8000000000000007,
+      "importedIntensity": 0.04833436316452699,
+      "referenceIntensity": 0.056233318694538646,
+      "residual": 0.007898955530011659
+    },
+    {
+      "coordinateUm": 3,
+      "importedIntensity": 0.03796800749044248,
+      "referenceIntensity": 0.03099658046866149,
+      "residual": 0.0069714270217809925
+    },
+    {
+      "coordinateUm": 3.1999999999999993,
+      "importedIntensity": 0.03172209381012029,
+      "referenceIntensity": 0.014642057982017285,
+      "residual": 0.017080035828103003
+    },
+    {
+      "coordinateUm": 3.4000000000000004,
+      "importedIntensity": 0.020789924308042752,
+      "referenceIntensity": 0.005267652415361166,
+      "residual": 0.015522271892681586
+    },
+    {
+      "coordinateUm": 3.5999999999999996,
+      "importedIntensity": 0.004332168331721264,
+      "referenceIntensity": 0.0009700157513012409,
+      "residual": 0.003362152580420023
+    },
+    {
+      "coordinateUm": 3.8000000000000007,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.000010034781853644953,
+      "residual": 0.000010034781853644953,
+      "label": "expected minimum/ring"
+    },
+    {
+      "coordinateUm": 4,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.0009273831875482503,
+      "residual": 0.0009273831875482503
+    },
+    {
+      "coordinateUm": 4.199999999999999,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.0026013625583357356,
+      "residual": 0.0026013625583357356
+    },
+    {
+      "coordinateUm": 4.4,
+      "importedIntensity": 0.00567403171831536,
+      "referenceIntensity": 0.0042621676876131364,
+      "residual": 0.0014118640307022234
+    },
+    {
+      "coordinateUm": 4.6,
+      "importedIntensity": 0.01989665275197318,
+      "referenceIntensity": 0.00546192646717176,
+      "residual": 0.014434726284801419
+    },
+    {
+      "coordinateUm": 4.800000000000001,
+      "importedIntensity": 0.02361601612562977,
+      "referenceIntensity": 0.006017944215286449,
+      "residual": 0.01759807191034332
+    },
+    {
+      "coordinateUm": 5,
+      "importedIntensity": 0.014682669071167258,
+      "referenceIntensity": 0.005941464403001241,
+      "residual": 0.008741204668166018
+    },
+    {
+      "coordinateUm": 5.199999999999999,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.005364207611585263,
+      "residual": 0.005364207611585263
+    },
+    {
+      "coordinateUm": 5.4,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.004472468827204618,
+      "residual": 0.004472468827204618
+    },
+    {
+      "coordinateUm": 5.6,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.0034552617402720627,
+      "residual": 0.0034552617402720627
+    },
+    {
+      "coordinateUm": 5.800000000000001,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.002469525490652639,
+      "residual": 0.002469525490652639
+    },
+    {
+      "coordinateUm": 6,
+      "importedIntensity": 0.011953551653979922,
+      "referenceIntensity": 0.001622291175125859,
+      "residual": 0.010331260478854062
+    },
+    {
+      "coordinateUm": 6.199999999999999,
+      "importedIntensity": 0.018863485415395235,
+      "referenceIntensity": 0.0009673222059528349,
+      "residual": 0.0178961632094424
+    },
+    {
+      "coordinateUm": 6.4,
+      "importedIntensity": 0.013749531900108707,
+      "referenceIntensity": 0.000512287546266008,
+      "residual": 0.013237244353842699
+    },
+    {
+      "coordinateUm": 6.6,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.00023201236935966034,
+      "residual": 0.00023201236935966034
+    },
+    {
+      "coordinateUm": 6.800000000000001,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.00008364198301683584,
+      "residual": 0.00008364198301683584
+    },
+    {
+      "coordinateUm": 7,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.000020420788133543323,
+      "residual": 0.000020420788133543323
+    },
+    {
+      "coordinateUm": 7.199999999999999,
+      "importedIntensity": 0,
+      "referenceIntensity": 0.000001957681402240688,
+      "residual": 0.000001957681402240688
+    },
+    {
+      "coordinateUm": 7.4,
+      "importedIntensity": 0.0051842229045979925,
+      "referenceIntensity": 6.368906237983382e-8,
+      "residual": 0.005184159215535613
+    },
+    {
+      "coordinateUm": 7.6,
+      "importedIntensity": 0.016386732386550112,
+      "referenceIntensity": 2.9895797285624795e-7,
+      "residual": 0.016386433428577256
+    },
+    {
+      "coordinateUm": 7.800000000000001,
+      "importedIntensity": 0.01639621477907847,
+      "referenceIntensity": 1.206781760283316e-7,
+      "residual": 0.016396094100902443
+    },
+    {
+      "coordinateUm": 8,
+      "importedIntensity": 0.005211469469058618,
+      "referenceIntensity": 0.0000049268763521797395,
+      "residual": 0.005206542592706438
+    }
+  ],
+  "convergence": {
+    "schema": "emmicro.fdtd.apertureConvergence.v1",
+    "kind": "rectangular-aperture",
+    "rows": [
+      {
+        "runId": "l84-rectangular-aperture-r6",
+        "resolutionPpw": 6,
+        "apertureCellsAcross": 48,
+        "pmlPaddingLambda": 1.5,
+        "monitorDistanceLambda": 1.5,
+        "referenceResidual": 0.11,
+        "energyResidual": 0.0495,
+        "status": "fail"
+      },
+      {
+        "runId": "l84-rectangular-aperture-r8",
+        "resolutionPpw": 8,
+        "apertureCellsAcross": 64,
+        "pmlPaddingLambda": 1.5,
+        "monitorDistanceLambda": 2.4,
+        "referenceResidual": 0.0462493028389543,
+        "energyResidual": 0.020812186277529437,
+        "status": "warning"
+      },
+      {
+        "runId": "l84-rectangular-aperture-r12",
+        "resolutionPpw": 12,
+        "apertureCellsAcross": 96,
+        "pmlPaddingLambda": 2.5,
+        "monitorDistanceLambda": 2.4,
+        "referenceResidual": 0.02786064180722506,
+        "energyResidual": 0.012537288813251278,
+        "status": "pass"
+      },
+      {
+        "runId": "l84-rectangular-aperture-r16",
+        "resolutionPpw": 16,
+        "apertureCellsAcross": 128,
+        "pmlPaddingLambda": 2.5,
+        "monitorDistanceLambda": 2.4,
+        "referenceResidual": 0.019445436482630057,
+        "energyResidual": 0.008750446417183526,
+        "status": "pass"
+      },
+      {
+        "runId": "l84-rectangular-aperture-r24",
+        "resolutionPpw": 24,
+        "apertureCellsAcross": 192,
+        "pmlPaddingLambda": 2.5,
+        "monitorDistanceLambda": 2.4,
+        "referenceResidual": 0.014712286709481284,
+        "energyResidual": 0.006620529019266578,
+        "status": "pass"
+      }
+    ],
+    "trend": "decreasing",
+    "bestResidual": 0.014712286709481284,
+    "worstResidual": 0.11,
+    "warnings": [
+      {
+        "code": "fdtd.aperture.convergenceRequired",
+        "message": "Aperture/blocker edge fields require residual-vs-resolution, aperture-cells, PML, and monitor-distance convergence evidence."
+      },
+      {
+        "code": "fdtd.aperture.monitorSensitivity",
+        "message": "At least one convergence row keeps flux monitors within two wavelengths of aperture edges."
+      }
+    ],
+    "convergenceHash": "be0974cd15199959"
+  },
+  "status": "pass",
+  "classification": "PASS",
+  "warnings": [
+    {
+      "code": "fdtd.geometry.monitorProximity",
+      "message": "Rectangular aperture has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+      "elementId": "l84-rectangular-aperture"
+    },
+    {
+      "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+      "message": "Rectangular aperture has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+      "elementId": "l84-rectangular-aperture"
+    },
+    {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Rectangular aperture finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.",
+      "elementId": "l84-rectangular-aperture"
+    },
+    {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Scalar diffraction reference is a limiting-case check for diagnostic comparison, not an exact finite FDTD screen solution.",
+      "elementId": "l84-rectangular-aperture"
+    },
+    {
+      "code": "fdtd.aperture.nearFieldFarField",
+      "message": "Near-field slices are not the same as far-field diffraction patterns; use far-field or downstream observation evidence with convergence.",
+      "elementId": "l84-rectangular-aperture"
+    },
+    {
+      "code": "fdtd.aperture.convergenceRequired",
+      "message": "Current aperture/blocker diagnostics require convergence sweep evidence before physical interpretation.",
+      "elementId": "l84-rectangular-aperture"
+    },
+    {
+      "code": "fdtd.aperture.monitorTooClose",
+      "message": "Flux monitor is within two wavelengths of aperture/blocker edges.",
+      "elementId": "l84-rectangular-aperture"
+    },
+    {
+      "code": "fdtd.aperture.edgeStaircasing",
+      "message": "Aperture edges are staircasing-sensitive at this grid density; increase resolution and compare residual trends.",
+      "elementId": "l84-rectangular-aperture"
+    }
+  ],
+  "reportHash": "16fb1c81e193ff4f"
+}

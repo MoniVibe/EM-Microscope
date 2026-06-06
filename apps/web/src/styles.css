@@ -2865,6 +2865,55 @@ h2 {
   align-items: end;
 }
 
+.aperture-validation-grid {
+  margin-top: 10px;
+}
+
+.aperture-profile-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.aperture-profile-bars {
+  height: 132px;
+  display: grid;
+  grid-template-columns: repeat(28, minmax(3px, 1fr));
+  align-items: end;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.aperture-profile-bar {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  display: grid;
+  align-items: end;
+}
+
+.aperture-profile-bar span,
+.aperture-profile-bar strong {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: block;
+  border-radius: 3px 3px 0 0;
+}
+
+.aperture-profile-bar span {
+  background: rgba(180, 83, 9, 0.28);
+}
+
+.aperture-profile-bar strong {
+  width: 42%;
+  margin: 0 auto;
+  background: #0b7788;
+}
+
 .surface-cross-section {
   display: grid;
   gap: 8px;

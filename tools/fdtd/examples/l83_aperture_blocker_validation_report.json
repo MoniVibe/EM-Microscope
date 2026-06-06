@@ -1,11 +1,11 @@
 {
   "schema": "emmicro.fdtd.surfaceGeometryValidationReport.v1",
   "kind": "aperture-blocker",
-  "sourceScenarioHash": "97fd288cdfbf1c8c",
-  "manifestHash": "d91477717e995069",
-  "scriptHash": "96e6f49f4b1beb6e",
-  "sceneHash": "8a66b672dc21182d",
-  "geometryHash": "005c7b5109a3534c",
+  "sourceScenarioHash": "4bfd03c065f43f6e",
+  "manifestHash": "dcd47a93a79ca5b3",
+  "scriptHash": "dcd29415727afd05",
+  "sceneHash": "ee5ff5479f1cf48c",
+  "geometryHash": "7c7915c1b7f38713",
   "grid": {
     "gridSpacingNm": 41.666666666666664,
     "pointsPerWavelength": 12,
@@ -83,6 +83,11 @@
       "elementId": "l83-aperture-blocker"
     },
     {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Finite aperture/blocker finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.",
+      "elementId": "l83-aperture-blocker"
+    },
+    {
       "code": "fdtd.export.largeGrid",
       "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
     },
@@ -92,5 +97,5 @@
       "elementId": "l83-aperture-blocker"
     }
   ],
-  "reportHash": "9347ede89e37c961"
+  "reportHash": "a22517eed73f72dc"
 }

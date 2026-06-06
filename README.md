@@ -1,8 +1,8 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L8.3 Surface Geometry Interaction Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L8.4 Aperture / Blocker Edge-Diffraction Validation Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L8.3 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+Real Detector Bridge. L8.4 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
 workflow, optical-axis placement, transparent dielectric Fresnel validation, ideal mirror validation, absorbing slab
 Beer-Lambert validation, scenario/report exports, and a milestone trail that states iteration count is not validation,
 then includes the L8.1 external FDTD scene manifest export, deterministic Meep helper script export, importable run receipt/flux
@@ -13,7 +13,11 @@ PML sensitivity warnings, and exportable benchmark dossiers. L8.3 adds finite pl
 block, ideal reflective plate, aperture/blocker, and tilted wedge/interface geometry export/import diagnostics with
 x/y/z placement, finite dimensions, X-Z cross-section previews, deterministic field/flux fixtures, validation
 reports, and warnings for under-resolution, PML/monitor proximity, ideal-reflector interpretation, aperture
-diagnostic limits, and staircasing/convergence sensitivity.
+diagnostic limits, and staircasing/convergence sensitivity. L8.4 adds finite aperture/blocker edge-diffraction
+validation for long slits, circular pinholes, rectangular apertures, and opaque blockers, including scalar
+single-slit/Airy/rectangular-sinc limiting references, blocked-power diagnostics, aperture cells-across/thickness/PML
+and monitor-distance warnings, field-slice/profile previews, residual-vs-resolution convergence rows, and exportable
+aperture validation dossiers.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
@@ -133,7 +137,7 @@ certification system.
 
 ## Current Visible Mode
 
-- `L8.3 Surface Geometry Interaction + External FDTD Benchmark Convergence`: a top-level Simulation Builder workflow that
+- `L8.4 Aperture / Blocker Edge-Diffraction Validation + Surface Geometry FDTD Evidence`: a top-level Simulation Builder workflow that
   follows `Grid -> Source -> Elements -> Target / Material -> Compute -> Validate`. It lets users define domain
   units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
   of apertures, ideal lenses, planar material interfaces/slabs, mirrors, absorbers, and L8.3 finite transparent
@@ -160,10 +164,14 @@ certification system.
   `surface_geometry_validation_report.md`, `surface_geometry_validation_report.json`, and
   `surface_geometry_metrics.csv` exports plus bundled `tools/fdtd/examples/l83_*` field, flux, receipt, manifest,
   script, and sweep-plan fixtures for transparent-block, absorbing-block, reflective-plate, aperture-blocker, and
-  tilted-wedge diagnostics. Boundary: this is limited ordered optical-bench validation plus external FDTD
+  tilted-wedge diagnostics. L8.4 adds `aperture_validation_scene.json`, `aperture_validation_report.md`,
+  `aperture_validation_report.json`, `aperture_metrics.csv`, `aperture_profile.csv`, and
+  `aperture_convergence.csv` exports plus bundled `tools/fdtd/examples/l84_*` scene, manifest, script, receipt, flux,
+  field-slice, profile, and convergence fixtures for long-slit, circular-pinhole, rectangular-aperture, and
+  opaque-blocker diagnostics. Boundary: this is limited ordered optical-bench validation plus external FDTD
   export/import and benchmark convergence evidence only, not browser FDTD execution, arbitrary 3D material geometry,
-  FEM/BEM/RCWA execution, real curved material lens solving, finite-thickness
-  metal aperture Maxwell solving, sensor-stack EM, digital twin behavior, or manufacturing certification.
+  FEM/BEM/RCWA execution, real curved material lens solving, production metal aperture models, arbitrary CAD
+  aperture-edge solving, sensor-stack EM, digital twin behavior, or manufacturing certification.
 
 - `L7.8 Detector Round-Trip Acceptance Pack / Real Detector Bridge`: frequency-domain Maxwell planar multilayer transfer-matrix special case through
   the executable registered `PlanarTmmBackend`, with

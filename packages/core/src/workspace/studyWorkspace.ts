@@ -332,11 +332,16 @@ export function l76CapabilitiesMatrix(): StudyCapability[] {
     executable("external-fdtd-finite-surface-geometry-export", "External FDTD finite surface geometry export", "L8.3 exports finite transparent blocks, absorbing blocks, ideal reflective plates, aperture/blockers, and tilted interface/wedge scenes with x/y/z placement, dimensions, monitors, warnings, and Meep helper geometry"),
     executable("external-fdtd-surface-geometry-fixtures", "Surface geometry fixture import/validation", "L8.3 imports deterministic field/flux/receipt fixtures and validates broad-block, Beer-Lambert, ideal reflector, aperture diagnostic, and tilted-wedge diagnostic references"),
     executable("surface-geometry-xz-cross-section", "Surface geometry X-Z cross-section", "L8.3 renders finite placed geometry previews and warning/report evidence without browser solver execution"),
+    executable("external-fdtd-long-slit-aperture-diagnostic", "Long-slit aperture diagnostic", "L8.4 exports/imports long-slit aperture evidence and compares profiles against the scalar single-slit sinc2 limiting reference"),
+    executable("external-fdtd-circular-pinhole-diagnostic", "Circular pinhole diagnostic", "L8.4 exports/imports circular-pinhole evidence and compares the first ring/profile against the scalar Airy/Bessel limiting reference"),
+    executable("external-fdtd-opaque-blocker-diagnostic", "Opaque blocker diagnostic", "L8.4 exports/imports opaque-blocker evidence with blocked-power and shadow-flux diagnostics without a closed-form finite-edge overclaim"),
+    executable("aperture-edge-convergence-diagnostics", "Aperture edge convergence diagnostics", "L8.4 reports aperture cells-across, thickness cells, PML distance, monitor distance, residual-vs-resolution rows, field-slice evidence, and PASS/WARNING/DIAGNOSTIC dossiers over external evidence"),
     scaffold("external-fdtd-backend-runner", "ExternalFdtdBackend runner", "External execution remains outside the browser; in-app FDTD solving is not implemented"),
     unavailable("arbitrary-3d-material-geometry", "Arbitrary 3D material geometry"),
     unavailable("3d-maxwell-solve", "3D Maxwell solve"),
     unavailable("browser-fdtd-execution", "Browser FDTD execution"),
     unavailable("fdtd-fem-bem-rcwa-execution", "In-app FDTD/FEM/BEM/RCWA execution"),
+    unavailable("production-metal-aperture-model", "Production metal aperture model"),
     unavailable("arbitrary-cad-geometry", "Arbitrary CAD geometry"),
     unavailable("pixel-level-sensor-stack", "Pixel-level EM sensor stack"),
     unavailable("sensor-stack-simulation", "Sensor-stack simulation"),
@@ -449,16 +454,16 @@ export function studyBundleJson(
 ): StudyBundle {
   return {
     schema: "emmicro.studyBundle.v1",
-    appVersion: "L8.3 Surface Geometry Interaction / L7.8 Detector Round-Trip Acceptance Pack",
+    appVersion: "L8.4 Aperture / Blocker Edge-Diffraction Validation / L7.8 Detector Round-Trip Acceptance Pack",
     manifest: {
-      appVersion: "L8.3",
+      appVersion: "L8.4",
       studyHash: study.resultHash,
       resultHashes: [...study.resultHashes],
       backendReceipt: study.backendReceipt,
       materialReceiptCount: study.materialReceipts.length,
       uncertaintyReceiptCount: study.uncertaintyReceipts.length,
       warningCount: study.warnings.length,
-      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, Camera/Sensor-Lite detector acquisition post-processing, EMVA-inspired diagnostic camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/geometry-fit/session-QA handoff, L7.6 external detector JSON/CSV import, receipt validation, comparison, and report exports, L7.7 optional external OpenCV ChArUco helper tooling, L7.8 detector round-trip acceptance reports over imported evidence only, L8.1 external FDTD manifest/script export plus receipt/flux/field-slice import evidence, L8.2 external FDTD benchmark export/convergence import diagnostics over external evidence, and L8.3 finite placed transparent/absorbing/reflective/aperture/wedge geometry export/import diagnostics over external FDTD evidence; pixel-level EM sensor stacks, certified camera calibration, ISO 12233 certification, Imatest-equivalent certification, lab-accredited metrology, EMVA 1288 certification, pure lens-only MTF certification, certified lab calibration, certified metrology reports, lab accreditation workflows, calibrated optical model fitting, full 3D pose/stereo calibration, browser-native OpenCV.js/ArUco detector execution, AprilTag decoding, hardware control, browser FDTD execution, in-app FDTD/FEM/BEM/RCWA, arbitrary 3D Maxwell/CAD solving, digital twins, and manufacturing certification are not implemented."
+      capabilityBoundary: "Executable capabilities are scalar validation, planar TMM, diagnostic measured-vs-simulated comparison, Camera/Sensor-Lite detector acquisition post-processing, EMVA-inspired diagnostic camera calibration, ISO 12233-inspired slanted-edge/line-pair MTF diagnostics, L7.1 focus/field MTF qualification diagnostics, L7.2 diagnostic 2D geometric calibration/distortion/pixel-scale workflows, L7.3 diagnostic ROI-limited dot-grid measured target detection, L7.4 diagnostic batch measurement session QA/repeatability aggregation, L7.5 diagnostic synthetic fiducial board generation/imported detection matching/manual correction/geometry-fit/session-QA handoff, L7.6 external detector JSON/CSV import, receipt validation, comparison, and report exports, L7.7 optional external OpenCV ChArUco helper tooling, L7.8 detector round-trip acceptance reports over imported evidence only, L8.1 external FDTD manifest/script export plus receipt/flux/field-slice import evidence, L8.2 external FDTD benchmark export/convergence import diagnostics over external evidence, L8.3 finite placed transparent/absorbing/reflective/aperture/wedge geometry export/import diagnostics over external FDTD evidence, and L8.4 long-slit/circular-pinhole/rectangular-aperture/opaque-blocker edge-diffraction validation dossiers over external FDTD evidence with scalar limiting references and convergence warnings; pixel-level EM sensor stacks, certified camera calibration, ISO 12233 certification, Imatest-equivalent certification, lab-accredited metrology, EMVA 1288 certification, pure lens-only MTF certification, certified lab calibration, certified metrology reports, lab accreditation workflows, calibrated optical model fitting, production metal aperture models, full 3D pose/stereo calibration, browser-native OpenCV.js/ArUco detector execution, AprilTag decoding, hardware control, browser FDTD execution, in-app FDTD/FEM/BEM/RCWA, arbitrary 3D Maxwell/CAD solving, digital twins, and manufacturing certification are not implemented."
     },
     study,
     metricsCsv: studyMetricsCsv(study),

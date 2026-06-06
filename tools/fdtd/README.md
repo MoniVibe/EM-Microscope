@@ -1,6 +1,6 @@
-# EMMicro L8.1/L8.2/L8.3 External FDTD Helpers
+# EMMicro L8.1/L8.2/L8.3/L8.4 External FDTD Helpers
 
-These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, and the L8.3 `Surface Geometry Interaction Starter Set`.
+These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, and the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench.
 
 Scope:
 - The web app exports an EMMicro FDTD scene manifest and a deterministic Meep-style Python helper script.
@@ -8,12 +8,14 @@ Scope:
 - The browser imports receipt, flux summary, and field-slice evidence for comparison against the L8.0 analytic/TMM surface result.
 - L8.2 benchmark packs add bounded resolution/PML/padding sweep plans, expected reference files, convergence summary import, residual-vs-resolution diagnostics, and benchmark dossiers.
 - L8.3 surface-geometry packs add finite transparent block, absorbing block, ideal reflective plate, aperture/blocker, and tilted wedge/interface scene manifests, Meep helper scripts, deterministic field/flux fixtures, validation reports, and convergence sweep hooks.
+- L8.4 aperture/blocker packs add long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker scene manifests, Meep helper scripts, deterministic field/flux fixtures, scalar limiting-case profile comparisons, aperture cells-across diagnostics, convergence rows, and validation dossiers.
 
 Not scope:
 - No browser FDTD execution.
 - No arbitrary 3D CAD Maxwell solve.
 - No FEM/BEM/RCWA execution.
 - No browser finite-geometry Maxwell solve or arbitrary material geometry solver.
+- No production metal aperture model or arbitrary CAD aperture-edge solver.
 - No production solver validation, digital twin, sensor-stack EM, or manufacturing certification.
 
 Typical flow:
@@ -40,6 +42,13 @@ L8.3 example prefixes include:
 - `l83_reflective_plate_*`
 - `l83_aperture_blocker_*`
 - `l83_tilted_wedge_*`
+
+L8.4 example prefixes include:
+
+- `l84_long_slit_*`
+- `l84_circular_pinhole_*`
+- `l84_rectangular_aperture_*`
+- `l84_opaque_blocker_*`
 
 ## Scripts
 
@@ -78,4 +87,13 @@ Playwright CLI smoke helper for the L8.3 finite surface-geometry palette, fixtur
 ```powershell
 npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
 npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l83_browser_smoke_code.js
+```
+
+`l84_browser_smoke_code.js`
+
+Playwright CLI smoke helper for the L8.4 aperture/blocker validation workbench, including L8.3/L8.2/L8.1/L7.8 regressions:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
+npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l84_browser_smoke_code.js
 ```

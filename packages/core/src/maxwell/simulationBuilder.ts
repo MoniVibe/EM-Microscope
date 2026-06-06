@@ -8,6 +8,8 @@ export type SimulationBuilderStepStatus = "not-set" | "ready" | "warning" | "com
 export type SimulationBuilderCapabilityStatus = "executable" | "scaffold-only" | "not-implemented";
 export type SimulationBuilderSourceType = "plane-wave" | "point-source";
 export type SimulationBuilderCoherenceMode = "coherent" | "incoherent" | "partial";
+export type SimulationBuilderApertureShape = "long-slit" | "circular-pinhole" | "rectangular-aperture" | "opaque-blocker";
+export type SimulationBuilderScreenModel = "absorbing-screen" | "ideal-reflective-screen" | "transparent-reference";
 export type SimulationBuilderElementKind =
   | "circular-aperture"
   | "ideal-lens"
@@ -57,6 +59,8 @@ export type SimulationBuilderElement = {
   apertureDiameterUm?: number;
   apertureWidthUm?: number;
   apertureHeightUm?: number;
+  apertureShape?: SimulationBuilderApertureShape;
+  screenModel?: SimulationBuilderScreenModel;
   focalLengthMm?: number;
   thicknessUm?: number;
   orientationDeg?: number;
@@ -173,7 +177,8 @@ export const l80ReleaseTrail = [
   { milestone: "L8.0", label: "Sequential Simulation Builder", runnable: "grid/source/elements/material validation report" },
   { milestone: "L8.1", label: "External FDTD field maps", runnable: "manifest/script export plus imported flux/field validation" },
   { milestone: "L8.2", label: "FDTD benchmark convergence suite", runnable: "sweep-plan export plus imported convergence/PML diagnostics" },
-  { milestone: "L8.3", label: "Finite surface geometry starter set", runnable: "placed transparent/absorbing/reflective/aperture/wedge external FDTD fixtures" }
+  { milestone: "L8.3", label: "Finite surface geometry starter set", runnable: "placed transparent/absorbing/reflective/aperture/wedge external FDTD fixtures" },
+  { milestone: "L8.4", label: "Aperture/blocker edge-diffraction validation", runnable: "long-slit/circular/rectangular/blocker scalar reference and external FDTD fixture diagnostics" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -236,6 +241,8 @@ export function createSimulationBuilderElement(
     apertureDiameterUm: kind === "circular-aperture" ? 1 : undefined,
     apertureWidthUm: kind === "finite-aperture-blocker" ? 4 : undefined,
     apertureHeightUm: kind === "finite-aperture-blocker" ? 6 : undefined,
+    apertureShape: kind === "finite-aperture-blocker" ? "rectangular-aperture" : undefined,
+    screenModel: kind === "finite-aperture-blocker" ? "absorbing-screen" : undefined,
     focalLengthMm: kind === "ideal-lens" ? 20 : undefined,
     thicknessUm: kind === "material-slab" || kind === "absorbing-slab" ? 1000 : finiteGeometryKind(kind) ? defaultFiniteGeometryThicknessUm(kind) : undefined,
     orientationDeg: kind === "tilted-interface-wedge" ? 12 : undefined,
@@ -667,6 +674,12 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       evidence: "L8.3 exports finite blocker/aperture masks and reports diagnostic edge-field/convergence warnings"
     },
     {
+      id: "aperture-blocker-edge-diffraction-diagnostic",
+      label: "Aperture/blocker edge-diffraction diagnostic",
+      status: "executable" as const,
+      evidence: "L8.4 compares long-slit and circular-pinhole external FDTD fixtures against scalar limiting-case references with edge/PML/monitor warnings"
+    },
+    {
       id: "tilted-wedge-interface-diagnostic",
       label: "Tilted interface/wedge external FDTD diagnostic",
       status: "executable" as const,
@@ -788,7 +801,7 @@ function elementModel(kind: SimulationBuilderElementKind): string {
     case "finite-reflective-plate":
       return "external FDTD ideal reflector diagnostic";
     case "finite-aperture-blocker":
-      return "external FDTD finite mask diagnostic";
+      return "external FDTD finite aperture/blocker diagnostic";
     case "tilted-interface-wedge":
       return "external FDTD tilted interface diagnostic";
     case "curved-material-lens":
@@ -820,7 +833,7 @@ function elementValidation(kind: SimulationBuilderElementKind, status: Simulatio
     case "finite-reflective-plate":
       return "external FDTD ideal R near 1, T near 0 diagnostic; not real metal production optics";
     case "finite-aperture-blocker":
-      return "external FDTD diagnostic field-map fixture; edge diffraction requires convergence evidence";
+      return "external FDTD aperture/blocker diagnostic field-map fixture; edge diffraction requires scalar-reference and convergence evidence";
     case "tilted-interface-wedge":
       return "external FDTD Snell/Fresnel direction diagnostic with staircasing warning";
     case "curved-material-lens":

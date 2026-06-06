@@ -1,0 +1,6 @@
+run_id,resolution_ppw,aperture_cells_across,pml_padding_lambda,monitor_distance_lambda,reference_residual,energy_residual,status
+l84-long-slit-r6,6,24,1.5,1.5,0.09,0.0405,fail
+l84-long-slit-r8,8,32,1.5,2.4,0.03784033868641715,0.01702815240888772,warning
+l84-long-slit-r12,12,48,2.5,2.4,0.022795070569547774,0.010257781756296498,pass
+l84-long-slit-r16,16,64,2.5,2.4,0.01590990257669732,0.0071594561595137935,pass
+l84-long-slit-r24,24,96,2.5,2.4,0.012037325489575595,0.005416796470309018,pass

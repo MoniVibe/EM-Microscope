@@ -232,7 +232,8 @@
     "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
     "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
     "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
+    "L8.4 aperture/blocker edge-diffraction validation is limited to long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker diagnostic scenes with scalar limiting-case references and convergence warnings.",
     "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
   ],
-  "manifestHash": "e5e493ebc9761bac"
+  "manifestHash": "8b1d0dba2373cb65"
 }

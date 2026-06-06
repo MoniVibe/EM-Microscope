@@ -3,14 +3,14 @@
   "id": "l82-empty-space-benchmark",
   "label": "L8.2 Empty-space propagation convergence benchmark",
   "benchmarkKind": "empty-space",
-  "sourceScenarioHash": "97fd288cdfbf1c8c",
-  "baseManifestHash": "d91477717e995069",
+  "sourceScenarioHash": "4bfd03c065f43f6e",
+  "baseManifestHash": "dcd47a93a79ca5b3",
   "baseManifest": {
     "schema": "emmicro.fdtd.sceneManifest.v1",
     "id": "l81-fdtd-l83-aperture-blocker-surface-geometry",
     "label": "L8.1 external FDTD export for L8.3 Finite aperture/blocker external FDTD finite-geometry diagnostic",
     "sourceScenarioId": "l83-aperture-blocker-surface-geometry",
-    "sourceScenarioHash": "97fd288cdfbf1c8c",
+    "sourceScenarioHash": "4bfd03c065f43f6e",
     "targetKind": "transparent-dielectric",
     "units": "um",
     "grid": {
@@ -99,6 +99,8 @@
           "width": 4,
           "height": 6
         },
+        "apertureShape": "rectangular-aperture",
+        "screenModel": "absorbing-screen",
         "diagnostic": "edge-field",
         "sourceElementId": "l83-aperture-blocker"
       }
@@ -241,22 +243,28 @@
           "elementId": "l83-aperture-blocker"
         },
         {
+          "code": "fdtd.aperture.scalarLimit",
+          "message": "Finite aperture/blocker finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.",
+          "elementId": "l83-aperture-blocker"
+        },
+        {
           "code": "fdtd.export.largeGrid",
           "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
         }
       ],
       "estimatedCells": 49766400000,
       "gridSpacingNm": 41.666666666666664,
-      "sceneHash": "97fd288cdfbf1c8c"
+      "sceneHash": "4bfd03c065f43f6e"
     },
     "limitations": [
       "External FDTD export/import only; the browser app does not execute FDTD.",
       "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
       "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
       "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
+      "L8.4 aperture/blocker edge-diffraction validation is limited to long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker diagnostic scenes with scalar limiting-case references and convergence warnings.",
       "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
     ],
-    "manifestHash": "d91477717e995069"
+    "manifestHash": "dcd47a93a79ca5b3"
   },
   "reference": {
     "benchmarkKind": "empty-space",
@@ -285,5 +293,5 @@
     "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
   ],
   "warnings": [],
-  "benchmarkHash": "389b0beb93128bcd"
+  "benchmarkHash": "e813e0f778b06aee"
 }
