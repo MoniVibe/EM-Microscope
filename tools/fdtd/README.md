@@ -1,6 +1,6 @@
-# EMMicro L8.1/L8.2/L8.3/L8.4/L8.5/L8.5.1 External FDTD Helpers
+# EMMicro L8.1/L8.2/L8.3/L8.4/L8.5/L8.5.1/L8.6 External FDTD Helpers
 
-These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, and the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench.
+These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, and the L8.6 `Process / Tolerance Runner`.
 
 Scope:
 - The web app exports an EMMicro FDTD scene manifest and a deterministic Meep-style Python helper script.
@@ -11,6 +11,7 @@ Scope:
 - L8.4 aperture/blocker packs add long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker scene manifests, Meep helper scripts, deterministic field/flux fixtures, scalar limiting-case profile comparisons, aperture cells-across diagnostics, convergence rows, and validation dossiers.
 - L8.5 multi-element packs add ordered bench scene JSON, solver plan JSON, monitor stack CSV, validation report JSON/Markdown, metrics CSV, FDTD manifest/script exports, and bundled receipt/flux/field-slice evidence for supported finite geometry chains.
 - L8.5.1 adds element selection, numeric inspector editing, optional x-z diagram drag, keyboard nudges, snap, undo/redo, custom monitor editing, and export-blocking warnings for invalid edited scenes.
+- L8.6 tolerance packs add diagnostic variation specs, run tables, sensitivity rankings, failing-case exports, FDTD variation sweep manifests, and imported external sweep summary receipts.
 
 Not scope:
 - No browser FDTD execution.
@@ -19,6 +20,7 @@ Not scope:
 - No browser finite-geometry Maxwell solve or arbitrary material geometry solver.
 - No production metal aperture model or arbitrary CAD aperture-edge solver.
 - No production solver validation, digital twin, sensor-stack EM, or manufacturing certification.
+- No certified optical tolerancing, auto redesign, or inverse optimization.
 
 Typical flow:
 
@@ -63,6 +65,13 @@ L8.5.1 smoke artifacts include:
 - `l851-element-actions-smoke.png`
 - `l851-edit-warnings-smoke.png`
 - `l851-undo-export-smoke.png`
+
+L8.6 smoke artifacts include:
+
+- `l86-variation-setup-smoke.png`
+- `l86-sensitivity-table-smoke.png`
+- `l86-worst-case-passfail-smoke.png`
+- `l86-fdtd-sweep-smoke.png`
 
 ## Scripts
 
@@ -128,4 +137,13 @@ Playwright CLI smoke helper for the L8.5.1 element inspector, synchronized selec
 ```powershell
 npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
 npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l851_browser_smoke_code.js
+```
+
+`l86_browser_smoke_code.js`
+
+Playwright CLI smoke helper for the L8.6 process/tolerance runner, one-at-a-time/grid studies, sensitivity and worst-case tables, report export, external FDTD variation sweep summary import, L8.5.1 editing, and L8.4/L8.2/L7.8 regressions:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
+npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l86_browser_smoke_code.js
 ```

@@ -1,12 +1,12 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L8.5.1 Element Inspector + Multi-Element Optical Bench Editing Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L8.6 Process / Tolerance Runner + Multi-Element Optical Bench Editing Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L8.5.1 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
-workflow and adds a multi-element scene graph plus an element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
+Real Detector Bridge. L8.6 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+workflow, adds a diagnostic process/tolerance variation runner over the editable bench, and keeps the L8.5.1 multi-element scene graph plus element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
 including numeric source-of-truth editing, optional diagram drag, non-drag nudge/order controls, snap settings, undo/redo, custom monitors, edit warnings,
 x-z bench cross-section, solver-plan routing, scalar multi-plane monitor snapshots, external FDTD chain fixture import,
-scene/solver/monitor/report exports, and a milestone trail that states iteration count is not validation,
+scene/solver/monitor/report exports, tolerance sensitivity ranking, pass/fail thresholds, worst-case tables, tolerance report exports, external FDTD variation sweep manifest/summary receipts, and a milestone trail that states iteration count is not validation,
 then includes the L8.1 external FDTD scene manifest export, deterministic Meep helper script export, importable run receipt/flux
 summary/field-slice CSV evidence, field-map preview, R/T/A energy-balance comparison against the L8.0 analytic/TMM
 target result, deterministic fixtures, optional helper scripts under `tools/fdtd/`, and L8.2 external FDTD benchmark
@@ -24,6 +24,9 @@ the scalar preview path, finite transparent/absorbing/reflective/aperture/wedge 
 export/import evidence, scaffold-only/unsupported elements stay visible in the solver plan, and the boundary remains
 explicit that this is not browser FDTD, arbitrary 3D Maxwell/FEM/BEM/RCWA, production metal optics, digital twin, or
 manufacturing certification.
+L8.6 tolerance/process variation is diagnostic only: it is not certified optical tolerancing, automatic redesign,
+inverse optimization, browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA, production EM solving, digital
+twin behavior, or manufacturing certification.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
@@ -143,7 +146,7 @@ certification system.
 
 ## Current Visible Mode
 
-- `L8.5.1 Element Inspector + Direct Optical Bench Editing`: a top-level Simulation Builder workflow that
+- `L8.6 Process / Tolerance Runner + Direct Optical Bench Editing`: a top-level Simulation Builder workflow that
   follows `Grid -> Source -> Elements -> Target / Material -> Observation / Monitors -> Validate`. It lets users define domain
   units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
   of apertures, ideal lenses, planar material interfaces/slabs, mirrors, absorbers, and L8.3 finite transparent
@@ -156,8 +159,18 @@ certification system.
   `solver_plan.json`, `monitor_stack.csv`, `multielement_validation_report.md`,
   `multielement_validation_report.json`, and `multielement_metrics.csv`. The optical-axis diagram and X-Z
   cross-section show the source, every placed element, finite dimensions, target, and observation plane with z
-  positions and capability tags. The executable
-  material cases are deliberately limited and checkable:
+  positions and capability tags.
+
+  The L8.6 process/tolerance runner attaches source, element, material, geometry, and monitor variation specs to that
+  current editable scene, then runs one-at-a-time, bounded deterministic-grid, or seeded deterministic diagnostic
+  studies. It reports pass/fail threshold checks, sensitivity rankings, run/worst-case tables, exports
+  `tolerance_report.md`, `tolerance_report.json`, `tolerance_run_table.csv`, `tolerance_sensitivity.csv`, and
+  `failing_cases.csv`, and exports/imports external FDTD variation sweep evidence via
+  `fdtd_variation_sweep_manifest.json` and `fdtd_variation_sweep_fixture_summary.json`. It is diagnostic process
+  variation only, not certified tolerancing, auto redesign, inverse optimization, browser FDTD, arbitrary 3D Maxwell,
+  FEM/BEM/RCWA, production EM solving, digital twin behavior, or manufacturing certification.
+
+  The executable material cases are deliberately limited and checkable:
   - transparent dielectric interface/slab: PlanarTmmBackend/Fresnel normal-incidence R/T/A validation, including the
     default air-to-glass R ~= 4 percent and R+T+A energy balance;
   - reflective surface: ideal mirror/PEC-like analytic check with R ~= 1 and T ~= 0;
