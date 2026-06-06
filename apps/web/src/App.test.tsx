@@ -549,21 +549,22 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented|certified metrology report executable|lab accreditation workflow executable|hardware control implemented|AprilTag detector executable|ArUco detector executable/i);
   });
 
-  it("keeps the visible app shell focused on L8.2 FDTD benchmark convergence with L8.1 field maps and L7.8 diagnostics still reachable", () => {
+  it("keeps the visible app shell focused on L8.3 surface geometry with L8.2/L8.1 FDTD and L7.8 diagnostics still reachable", () => {
     const app = readFileSync(resolve(testDir, "App.tsx"), "utf8");
     const simulationBuilder = readFileSync(resolve(testDir, "maxwell/SimulationBuilderPanel.tsx"), "utf8");
     const maxwellReturn = app.indexOf("return <MaxwellOnlyApp />;");
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("L8.2 FDTD Benchmark Convergence / L7.8 Detector Round Trip");
-    expect(app).toContain("Simulation Builder + FDTD Benchmark Convergence");
+    expect(app).toContain("L8.3 Surface Geometry / L8.2 FDTD Benchmark Convergence / L7.8 Detector Round Trip");
+    expect(app).toContain("Simulation Builder + Surface Geometry FDTD Evidence");
+    expect(app).toContain("L8.3 finite transparent/absorbing/reflective/aperture/wedge geometry export/import fixtures");
     expect(app).toContain("external FDTD manifest and Meep helper export");
     expect(app).toContain("L8.2 benchmark sweep convergence diagnostics");
     expect(app).toContain("Diagnostic Workbenches");
     expect(app).toContain("<SimulationBuilderPanel />");
     expect(app).toContain("<MaxwellPanel />");
-    expect(simulationBuilder).toContain("L8.2 Sequential Optical Bench + External FDTD Benchmark Convergence");
+    expect(simulationBuilder).toContain("L8.3 Surface Geometry Interaction + External FDTD Benchmark Convergence");
     expect(simulationBuilder).toContain("Simulation Builder");
     expect(simulationBuilder).toContain("1 Grid");
     expect(simulationBuilder).toContain("2 Source");
@@ -571,6 +572,31 @@ describe("solver disclosure copy", () => {
     expect(simulationBuilder).toContain("4 Target / Material");
     expect(simulationBuilder).toContain("5 Compute");
     expect(simulationBuilder).toContain("6 Validate");
+    expect(simulationBuilder).toContain("Surface Geometry Elements");
+    expect(simulationBuilder).toContain("Add Transparent Block");
+    expect(simulationBuilder).toContain("Add Absorbing Block");
+    expect(simulationBuilder).toContain("Add Reflective Plate");
+    expect(simulationBuilder).toContain("Add Aperture/Blocker");
+    expect(simulationBuilder).toContain("Add Tilted Wedge");
+    expect(simulationBuilder).toContain("L8.3 Surface Geometry Interaction Starter Set");
+    expect(simulationBuilder).toContain("L8.3 surface geometry palette smoke preview");
+    expect(simulationBuilder).toContain("L8.3 x-z cross-section geometry smoke preview");
+    expect(simulationBuilder).toContain("L8.3 transparent block field smoke preview");
+    expect(simulationBuilder).toContain("L8.3 absorbing block field smoke preview");
+    expect(simulationBuilder).toContain("L8.3 reflective plate smoke preview");
+    expect(simulationBuilder).toContain("L8.3 aperture blocker diagnostic smoke preview");
+    expect(simulationBuilder).toContain("L8.3 wedge warning smoke preview");
+    expect(simulationBuilder).toContain("Load Transparent Block Fixture");
+    expect(simulationBuilder).toContain("Load Absorbing Block Fixture");
+    expect(simulationBuilder).toContain("Load Reflective Plate Fixture");
+    expect(simulationBuilder).toContain("Load Aperture Blocker Fixture");
+    expect(simulationBuilder).toContain("Load Wedge Fixture");
+    expect(simulationBuilder).toContain("Export Surface Geometry Scene");
+    expect(simulationBuilder).toContain("Export Surface Geometry Report");
+    expect(simulationBuilder).toContain("surface_geometry_scene.json");
+    expect(simulationBuilder).toContain("surface_geometry_validation_report.md");
+    expect(simulationBuilder).toContain("surface_geometry_validation_report.json");
+    expect(simulationBuilder).toContain("surface_geometry_metrics.csv");
     expect(simulationBuilder).toContain("L8.2 External FDTD / Field Maps");
     expect(simulationBuilder).toContain("L8.1 FDTD export readiness smoke preview");
     expect(simulationBuilder).toContain("L8.1 Meep script export smoke preview");

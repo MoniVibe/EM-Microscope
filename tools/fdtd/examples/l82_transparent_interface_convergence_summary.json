@@ -2,8 +2,8 @@
   "schema": "emmicro.fdtd.convergenceSummary.v1",
   "benchmarkKind": "transparent-interface",
   "sourceScenarioHash": "aaee306f50bff012",
-  "benchmarkHash": "dbb9371e47724b4e",
-  "sweepHash": "c53b7cf77a1056d4",
+  "benchmarkHash": "c100346f14168785",
+  "sweepHash": "ed84da8acda4950e",
   "reference": {
     "benchmarkKind": "transparent-interface",
     "referenceModel": "fresnel-normal-incidence",
@@ -1080,5 +1080,5 @@
       "message": "Sweep contains 36 external runs; review cost before launching an external solver."
     }
   ],
-  "summaryHash": "e67796ca9b4b2a7a"
+  "summaryHash": "54ffaeba26a81cd1"
 }

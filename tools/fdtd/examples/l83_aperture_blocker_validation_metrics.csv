@@ -1,0 +1,5 @@
+metric,reference,imported,residual,status,classification
+reflectance,0,0.0036,0.0036,warning,DIAGNOSTIC
+transmittance,0.24,0.222,0.017999999999999988,warning,DIAGNOSTIC
+absorbance,0.76,0.7744,0.014399999999999968,warning,DIAGNOSTIC
+energy_balance,1,1,0,warning,DIAGNOSTIC

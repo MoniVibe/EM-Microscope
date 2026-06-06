@@ -1,15 +1,19 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L8.2 External FDTD Benchmark Convergence Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L8.3 Surface Geometry Interaction Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L8.2 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+Real Detector Bridge. L8.3 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
 workflow, optical-axis placement, transparent dielectric Fresnel validation, ideal mirror validation, absorbing slab
 Beer-Lambert validation, scenario/report exports, and a milestone trail that states iteration count is not validation,
 then includes the L8.1 external FDTD scene manifest export, deterministic Meep helper script export, importable run receipt/flux
 summary/field-slice CSV evidence, field-map preview, R/T/A energy-balance comparison against the L8.0 analytic/TMM
 target result, deterministic fixtures, optional helper scripts under `tools/fdtd/`, and L8.2 external FDTD benchmark
 packs with bounded resolution/PML/padding sweeps, convergence summary import, residual-vs-resolution diagnostics,
-PML sensitivity warnings, and exportable benchmark dossiers.
+PML sensitivity warnings, and exportable benchmark dossiers. L8.3 adds finite placed transparent block, absorbing
+block, ideal reflective plate, aperture/blocker, and tilted wedge/interface geometry export/import diagnostics with
+x/y/z placement, finite dimensions, X-Z cross-section previews, deterministic field/flux fixtures, validation
+reports, and warnings for under-resolution, PML/monitor proximity, ideal-reflector interpretation, aperture
+diagnostic limits, and staircasing/convergence sensitivity.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
@@ -129,11 +133,13 @@ certification system.
 
 ## Current Visible Mode
 
-- `L8.2 Sequential Optical Bench + External FDTD Benchmark Convergence`: a top-level Simulation Builder workflow that
+- `L8.3 Surface Geometry Interaction + External FDTD Benchmark Convergence`: a top-level Simulation Builder workflow that
   follows `Grid -> Source -> Elements -> Target / Material -> Compute -> Validate`. It lets users define domain
   units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
-  of apertures, ideal lenses, planar material interfaces/slabs, mirrors, and absorbers. The optical-axis diagram shows
-  the source, every placed element, target, and observation plane with z positions and capability tags. The executable
+  of apertures, ideal lenses, planar material interfaces/slabs, mirrors, absorbers, and L8.3 finite transparent
+  blocks, absorbing blocks, ideal reflective plates, aperture/blockers, and tilted interface wedges. The optical-axis
+  diagram and X-Z cross-section show the source, every placed element, finite dimensions, target, and observation
+  plane with z positions and capability tags. The executable
   material cases are deliberately limited and checkable:
   - transparent dielectric interface/slab: PlanarTmmBackend/Fresnel normal-incidence R/T/A validation, including the
     default air-to-glass R ~= 4 percent and R+T+A energy balance;
@@ -150,7 +156,11 @@ certification system.
   `fdtd_benchmark_report.json`, `fdtd_convergence_metrics.csv`, and `fdtd_run_table.csv` exports; imports
   `convergence_summary.json` plus optional per-run flux summaries; and shows residual-vs-resolution, energy-balance,
   field-delta, and PML/padding sensitivity diagnostics for empty-space, transparent-interface, transparent-slab,
-  absorbing-slab, and mirror fixtures. Boundary: this is limited ordered optical-bench validation plus external FDTD
+  absorbing-slab, and mirror fixtures. L8.3 adds `surface_geometry_scene.json`, `surface_geometry_meep.py`,
+  `surface_geometry_validation_report.md`, `surface_geometry_validation_report.json`, and
+  `surface_geometry_metrics.csv` exports plus bundled `tools/fdtd/examples/l83_*` field, flux, receipt, manifest,
+  script, and sweep-plan fixtures for transparent-block, absorbing-block, reflective-plate, aperture-blocker, and
+  tilted-wedge diagnostics. Boundary: this is limited ordered optical-bench validation plus external FDTD
   export/import and benchmark convergence evidence only, not browser FDTD execution, arbitrary 3D material geometry,
   FEM/BEM/RCWA execution, real curved material lens solving, finite-thickness
   metal aperture Maxwell solving, sensor-stack EM, digital twin behavior, or manufacturing certification.

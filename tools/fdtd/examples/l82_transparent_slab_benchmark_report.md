@@ -2,9 +2,9 @@
 
 Status: PASS
 Reference model: planar-tmm-stack
-Benchmark hash: 92097488353096c8
-Sweep hash: c0edd91261872253
-Summary hash: 41f28c7c19d04826
+Benchmark hash: 68715c9fe3b1d50d
+Sweep hash: af619b36f8168239
+Summary hash: 9a0faeac58f29fa6
 
 ## Reference
 

@@ -4,7 +4,7 @@
   "label": "L8.2 Transparent slab convergence benchmark",
   "benchmarkKind": "transparent-slab",
   "sourceScenarioHash": "b9e9d2c32c66a0a6",
-  "baseManifestHash": "5c1c9af9a1abd306",
+  "baseManifestHash": "e5a9df377946834f",
   "baseManifest": {
     "schema": "emmicro.fdtd.sceneManifest.v1",
     "id": "l81-fdtd-l82-transparent-slab-fdtd-benchmark",
@@ -189,9 +189,10 @@
       "External FDTD export/import only; the browser app does not execute FDTD.",
       "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
       "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
+      "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
       "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
     ],
-    "manifestHash": "5c1c9af9a1abd306"
+    "manifestHash": "e5a9df377946834f"
   },
   "reference": {
     "benchmarkKind": "transparent-slab",
@@ -220,5 +221,5 @@
     "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
   ],
   "warnings": [],
-  "benchmarkHash": "92097488353096c8"
+  "benchmarkHash": "68715c9fe3b1d50d"
 }

@@ -1,0 +1,376 @@
+{
+  "schema": "emmicro.fdtd.surfaceGeometryScene.v1",
+  "kind": "aperture-blocker",
+  "scenario": {
+    "schema": "emmicro.simulationBuilder.v1",
+    "id": "l83-aperture-blocker-surface-geometry",
+    "label": "L8.3 Finite aperture/blocker external FDTD finite-geometry diagnostic",
+    "grid": {
+      "units": "um",
+      "domainWidthUm": 12,
+      "domainHeightUm": 12,
+      "zStartMm": 0,
+      "zEndMm": 25,
+      "pointsPerWavelength": 12
+    },
+    "source": {
+      "type": "plane-wave",
+      "label": "500 nm coherent plane wave for finite geometry",
+      "wavelengthNm": 500,
+      "xUm": 0,
+      "yUm": 0,
+      "zMm": 1,
+      "direction": "+z",
+      "coherence": "coherent"
+    },
+    "elements": [
+      {
+        "id": "l83-aperture-blocker",
+        "kind": "finite-aperture-blocker",
+        "label": "Finite aperture/blocker",
+        "zMm": 9.5,
+        "xUm": 0,
+        "yUm": 0,
+        "widthUm": 10,
+        "heightUm": 10,
+        "apertureWidthUm": 4,
+        "apertureHeightUm": 6,
+        "thicknessUm": 0.8,
+        "materialLabel": "finite absorbing blocker mask",
+        "model": "external FDTD finite mask diagnostic",
+        "status": "executable",
+        "validation": "external FDTD diagnostic field-map fixture; edge diffraction requires convergence evidence"
+      }
+    ],
+    "target": {
+      "kind": "transparent-dielectric",
+      "label": "Air reference monitor target",
+      "zMm": 22,
+      "incidentIndex": 1,
+      "substrateIndex": 1,
+      "extinctionCoefficient": 0,
+      "absorptionCoefficientPerM": 0,
+      "thicknessUm": 0
+    },
+    "observationPlaneZMm": 23.5,
+    "boundary": [
+      "Limited finite surface-geometry diagnostics only: placed transparent block, absorbing block, ideal reflective plate, aperture/blocker, and tilted wedge/interface.",
+      "External FDTD export/import only; the browser app does not execute FDTD or arbitrary 3D Maxwell.",
+      "Field maps, flux summaries, and validation reports are imported evidence or deterministic fixtures, not in-browser Maxwell solves.",
+      "Ideal reflector and aperture/blocker modes are diagnostic and require convergence evidence before physical interpretation.",
+      "No arbitrary CAD import, freeform curved material lens solve, conformal multilayer curved coating solve, production metal optics model, FEM/BEM/RCWA execution, sensor-stack EM, digital twin, or manufacturing certification is claimed."
+    ]
+  },
+  "bundle": {
+    "manifest": {
+      "schema": "emmicro.fdtd.sceneManifest.v1",
+      "id": "l81-fdtd-l83-aperture-blocker-surface-geometry",
+      "label": "L8.1 external FDTD export for L8.3 Finite aperture/blocker external FDTD finite-geometry diagnostic",
+      "sourceScenarioId": "l83-aperture-blocker-surface-geometry",
+      "sourceScenarioHash": "97fd288cdfbf1c8c",
+      "targetKind": "transparent-dielectric",
+      "units": "um",
+      "grid": {
+        "domainWidthUm": 12,
+        "domainHeightUm": 12,
+        "zStartUm": 0,
+        "zEndUm": 25000,
+        "gridSpacingNm": 41.666666666666664,
+        "pointsPerWavelength": 12,
+        "estimatedCells": 49766400000
+      },
+      "source": {
+        "kind": "plane-wave",
+        "wavelengthUm": 0.5,
+        "centerUm": {
+          "x": 0,
+          "y": 0,
+          "z": 1000
+        },
+        "direction": "+z",
+        "component": "Ez"
+      },
+      "materials": [
+        {
+          "id": "air",
+          "label": "Air",
+          "refractiveIndex": {
+            "n": 1,
+            "k": 0
+          },
+          "materialHash": "2653810c8f22d751"
+        },
+        {
+          "id": "target-dielectric",
+          "label": "Air reference monitor target",
+          "refractiveIndex": {
+            "n": 1,
+            "k": 0
+          },
+          "materialHash": "364b4770be60882f"
+        },
+        {
+          "id": "element-l83-aperture-blocker-blocker",
+          "label": "Finite aperture/blocker",
+          "refractiveIndex": {
+            "n": 1.1,
+            "k": 0.05
+          },
+          "absorptionCoefficientPerM": 25000,
+          "materialHash": "4ff6536d42d40b9b"
+        }
+      ],
+      "geometry": [
+        {
+          "id": "target-block",
+          "kind": "transparent-slab",
+          "label": "Air reference monitor target",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 22000
+          },
+          "sizeUm": {
+            "x": 12,
+            "y": 12,
+            "z": 100
+          },
+          "materialId": "target-dielectric"
+        },
+        {
+          "id": "l83-aperture-blocker",
+          "kind": "finite-aperture-blocker",
+          "label": "Finite aperture/blocker",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 9500
+          },
+          "sizeUm": {
+            "x": 10,
+            "y": 10,
+            "z": 0.8
+          },
+          "materialId": "element-l83-aperture-blocker-blocker",
+          "apertureUm": {
+            "width": 4,
+            "height": 6
+          },
+          "diagnostic": "edge-field",
+          "sourceElementId": "l83-aperture-blocker"
+        }
+      ],
+      "monitors": [
+        {
+          "id": "incident-flux",
+          "kind": "flux-plane",
+          "label": "Incident flux plane",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 21500
+          },
+          "sizeUm": {
+            "x": 12,
+            "y": 12,
+            "z": 0
+          },
+          "normal": "+z"
+        },
+        {
+          "id": "reflected-flux",
+          "kind": "flux-plane",
+          "label": "Reflected flux plane",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 21200
+          },
+          "sizeUm": {
+            "x": 12,
+            "y": 12,
+            "z": 0
+          },
+          "normal": "-z"
+        },
+        {
+          "id": "transmitted-flux",
+          "kind": "flux-plane",
+          "label": "Transmitted flux plane",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 22800
+          },
+          "sizeUm": {
+            "x": 12,
+            "y": 12,
+            "z": 0
+          },
+          "normal": "+z"
+        },
+        {
+          "id": "field-slice-xz",
+          "kind": "field-slice",
+          "label": "XZ field/intensity slice",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 12500
+          },
+          "sizeUm": {
+            "x": 12,
+            "y": 0,
+            "z": 25000
+          },
+          "normal": "+y",
+          "fields": [
+            "Ez",
+            "intensity"
+          ]
+        },
+        {
+          "id": "l83-aperture-blocker-front-flux",
+          "kind": "flux-plane",
+          "label": "Finite aperture/blocker front flux",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 9498.800000000001
+          },
+          "sizeUm": {
+            "x": 10,
+            "y": 10,
+            "z": 0
+          },
+          "normal": "+z"
+        },
+        {
+          "id": "l83-aperture-blocker-back-flux",
+          "kind": "flux-plane",
+          "label": "Finite aperture/blocker back flux",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 9501.199999999999
+          },
+          "sizeUm": {
+            "x": 10,
+            "y": 10,
+            "z": 0
+          },
+          "normal": "+z"
+        }
+      ],
+      "boundaries": {
+        "pmlThicknessUm": 0.75,
+        "note": "PML boundary scaffold for optional external Meep execution."
+      },
+      "readiness": {
+        "status": "warning",
+        "supported": [
+          {
+            "id": "source",
+            "label": "500 nm coherent plane wave for finite geometry",
+            "evidence": "plane-wave source exported as Meep source scaffold"
+          },
+          {
+            "id": "l83-aperture-blocker",
+            "label": "Finite aperture/blocker",
+            "evidence": "finite surface geometry export with L8.3 validation warnings"
+          },
+          {
+            "id": "target",
+            "label": "Air reference monitor target",
+            "evidence": "transparent dielectric slab/block export with Fresnel/TMM comparison"
+          }
+        ],
+        "unsupported": [],
+        "warnings": [
+          {
+            "code": "fdtd.geometry.monitorProximity",
+            "message": "Finite aperture/blocker has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+            "elementId": "l83-aperture-blocker"
+          },
+          {
+            "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+            "message": "Finite aperture/blocker has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+            "elementId": "l83-aperture-blocker"
+          },
+          {
+            "code": "fdtd.export.largeGrid",
+            "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+          }
+        ],
+        "estimatedCells": 49766400000,
+        "gridSpacingNm": 41.666666666666664,
+        "sceneHash": "97fd288cdfbf1c8c"
+      },
+      "limitations": [
+        "External FDTD export/import only; the browser app does not execute FDTD.",
+        "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
+        "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
+        "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
+        "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
+      ],
+      "manifestHash": "d91477717e995069"
+    },
+    "script": {
+      "schema": "emmicro.fdtd.meepScript.v1",
+      "manifestHash": "d91477717e995069",
+      "sourceScenarioHash": "97fd288cdfbf1c8c",
+      "scriptHash": "96e6f49f4b1beb6e",
+      "python": "# Generated by EMMicro L8.1 External FDTD / Field Maps.\n# Optional external helper only; the browser app does not execute FDTD.\n# source_scenario_hash: 97fd288cdfbf1c8c\n# manifest_hash: d91477717e995069\n\nimport json\nimport meep as mp\n\ncell_size = mp.Vector3(12, 12, 25000)\nresolution = 24\npml_layers = [mp.PML(0.75)]\n\nmaterials = {\n    \"air\": mp.Medium(index=1),  # k=0 hash=2653810c8f22d751\n    \"target-dielectric\": mp.Medium(index=1),  # k=0 hash=364b4770be60882f\n    \"element-l83-aperture-blocker-blocker\": mp.Medium(index=1.1),  # k=0.05 hash=4ff6536d42d40b9b\n}\n\ngeometry = [\n    mp.Block(center=mp.Vector3(0, 0, 22000), size=mp.Vector3(12, 12, 100), material=materials[\"target-dielectric\"]),  # transparent-slab\n    # finite-aperture-blocker: four absorbing/reflective blocker blocks around a rectangular aperture\n    mp.Block(center=mp.Vector3(-3.5, 0, 9500), size=mp.Vector3(3, 10, 0.8), material=materials[\"element-l83-aperture-blocker-blocker\"]),\n    mp.Block(center=mp.Vector3(3.5, 0, 9500), size=mp.Vector3(3, 10, 0.8), material=materials[\"element-l83-aperture-blocker-blocker\"]),\n    mp.Block(center=mp.Vector3(0, -4, 9500), size=mp.Vector3(4, 2, 0.8), material=materials[\"element-l83-aperture-blocker-blocker\"]),\n    mp.Block(center=mp.Vector3(0, 4, 9500), size=mp.Vector3(4, 2, 0.8), material=materials[\"element-l83-aperture-blocker-blocker\"]),\n]\n\nsources = [\n    mp.Source(mp.ContinuousSource(wavelength=0.5), component=mp.Ez, center=mp.Vector3(0, 0, 1000), size=mp.Vector3(12, 12, 0)),\n]\n\nsim = mp.Simulation(cell_size=cell_size, boundary_layers=pml_layers, geometry=geometry, sources=sources, resolution=resolution)\n\n# Monitor definitions. External postprocess writes flux_summary.json and field_slice_xz.csv.\n# monitor incident-flux: flux-plane center=(0, 0, 21500) size=(12, 12, 0) normal=+z\n# monitor reflected-flux: flux-plane center=(0, 0, 21200) size=(12, 12, 0) normal=-z\n# monitor transmitted-flux: flux-plane center=(0, 0, 22800) size=(12, 12, 0) normal=+z\n# monitor field-slice-xz: field-slice center=(0, 0, 12500) size=(12, 0, 25000) normal=+y\n# monitor l83-aperture-blocker-front-flux: flux-plane center=(0, 0, 9498.8) size=(10, 10, 0) normal=+z\n# monitor l83-aperture-blocker-back-flux: flux-plane center=(0, 0, 9501.2) size=(10, 10, 0) normal=+z\n\n# sim.run(until=200)\n# sim.output_efield_z()\n# Use tools/fdtd/postprocess_meep_output.py to produce importable JSON/CSV summaries.\n",
+      "warnings": []
+    }
+  },
+  "geometryIds": [
+    "l83-aperture-blocker"
+  ],
+  "monitorIds": [
+    "field-slice-xz",
+    "l83-aperture-blocker-front-flux",
+    "l83-aperture-blocker-back-flux"
+  ],
+  "reference": {
+    "kind": "aperture-blocker",
+    "model": "aperture-open-fraction",
+    "expected": {
+      "reflectance": 0,
+      "transmittance": 0.24,
+      "absorbance": 0.76
+    },
+    "apertureOpenFraction": 0.24,
+    "invariant": "Blocked/transmitted power follows aperture open fraction only as a diagnostic; edge diffraction requires convergence evidence.",
+    "referenceHash": "12abfd92fb9c8b91"
+  },
+  "warnings": [
+    {
+      "code": "fdtd.geometry.monitorProximity",
+      "message": "Finite aperture/blocker has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+      "elementId": "l83-aperture-blocker"
+    },
+    {
+      "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+      "message": "Finite aperture/blocker has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+      "elementId": "l83-aperture-blocker"
+    },
+    {
+      "code": "fdtd.export.largeGrid",
+      "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+    },
+    {
+      "code": "fdtd.surfaceGeometry.noClosedFormAperture",
+      "message": "Finite aperture/blocker edge fields are diagnostic and need convergence evidence.",
+      "elementId": "l83-aperture-blocker"
+    }
+  ],
+  "limitations": [
+    "Limited finite surface-geometry diagnostics only: placed transparent block, absorbing block, ideal reflective plate, aperture/blocker, and tilted wedge/interface.",
+    "External FDTD export/import only; the browser app does not execute FDTD or arbitrary 3D Maxwell.",
+    "Field maps, flux summaries, and validation reports are imported evidence or deterministic fixtures, not in-browser Maxwell solves.",
+    "Ideal reflector and aperture/blocker modes are diagnostic and require convergence evidence before physical interpretation.",
+    "No arbitrary CAD import, freeform curved material lens solve, conformal multilayer curved coating solve, production metal optics model, FEM/BEM/RCWA execution, sensor-stack EM, digital twin, or manufacturing certification is claimed."
+  ],
+  "sceneHash": "8a66b672dc21182d"
+}

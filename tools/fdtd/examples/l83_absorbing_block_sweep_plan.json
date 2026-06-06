@@ -1,0 +1,242 @@
+{
+  "schema": "emmicro.fdtd.sweepPlan.v1",
+  "benchmarkHash": "0988a70082f1918d",
+  "sourceScenarioHash": "1773357db69b79b3",
+  "baseManifestHash": "5d06db76b4244ab1",
+  "settings": {
+    "resolutionPointsPerWavelength": [
+      10,
+      15,
+      20,
+      30
+    ],
+    "pmlThicknessUm": [
+      0.5,
+      1,
+      1.5
+    ],
+    "paddingWavelengths": [
+      1,
+      2,
+      3
+    ],
+    "monitorOffsetWavelengths": [
+      1.5
+    ],
+    "runUntil": 240,
+    "maxRunCount": 18
+  },
+  "requestedRunCount": 36,
+  "runCount": 18,
+  "budget": {
+    "maxRunCount": 18,
+    "truncated": true
+  },
+  "runs": [
+    {
+      "runId": "l82-absorbing-slab-r10-pml0p5-pad1-m1p5",
+      "index": 0,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 31104000000,
+      "scriptHash": "ca7743381e5a7d5d"
+    },
+    {
+      "runId": "l82-absorbing-slab-r10-pml0p5-pad2-m1p5",
+      "index": 1,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 33408000000,
+      "scriptHash": "5097f51a5c489e26"
+    },
+    {
+      "runId": "l82-absorbing-slab-r10-pml0p5-pad3-m1p5",
+      "index": 2,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 35712000000,
+      "scriptHash": "6ed7cc0a85a4e13b"
+    },
+    {
+      "runId": "l82-absorbing-slab-r10-pml1-pad1-m1p5",
+      "index": 3,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 31104000000,
+      "scriptHash": "3a780d0e1890396a"
+    },
+    {
+      "runId": "l82-absorbing-slab-r10-pml1-pad2-m1p5",
+      "index": 4,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 33408000000,
+      "scriptHash": "ac140fe5005d29ab"
+    },
+    {
+      "runId": "l82-absorbing-slab-r10-pml1-pad3-m1p5",
+      "index": 5,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 35712000000,
+      "scriptHash": "0ee7c4468b77339c"
+    },
+    {
+      "runId": "l82-absorbing-slab-r10-pml1p5-pad1-m1p5",
+      "index": 6,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 31104000000,
+      "scriptHash": "264631df9c567c67"
+    },
+    {
+      "runId": "l82-absorbing-slab-r10-pml1p5-pad2-m1p5",
+      "index": 7,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 33408000000,
+      "scriptHash": "37774d1e09ec08d0"
+    },
+    {
+      "runId": "l82-absorbing-slab-r10-pml1p5-pad3-m1p5",
+      "index": 8,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 35712000000,
+      "scriptHash": "d904b8fd9b813ce5"
+    },
+    {
+      "runId": "l82-absorbing-slab-r15-pml0p5-pad1-m1p5",
+      "index": 9,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 104976000000,
+      "scriptHash": "c2e4e48953484086"
+    },
+    {
+      "runId": "l82-absorbing-slab-r15-pml0p5-pad2-m1p5",
+      "index": 10,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 112752000000,
+      "scriptHash": "3e023d3bfab8e4a2"
+    },
+    {
+      "runId": "l82-absorbing-slab-r15-pml0p5-pad3-m1p5",
+      "index": 11,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 120528000000,
+      "scriptHash": "addc6762f92814e1"
+    },
+    {
+      "runId": "l82-absorbing-slab-r15-pml1-pad1-m1p5",
+      "index": 12,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 104976000000,
+      "scriptHash": "15fd4af44841c9ce"
+    },
+    {
+      "runId": "l82-absorbing-slab-r15-pml1-pad2-m1p5",
+      "index": 13,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 112752000000,
+      "scriptHash": "bdba342740eae1bd"
+    },
+    {
+      "runId": "l82-absorbing-slab-r15-pml1-pad3-m1p5",
+      "index": 14,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 120528000000,
+      "scriptHash": "e93f1a0cda630108"
+    },
+    {
+      "runId": "l82-absorbing-slab-r15-pml1p5-pad1-m1p5",
+      "index": 15,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 104976000000,
+      "scriptHash": "cd5af97541ee6655"
+    },
+    {
+      "runId": "l82-absorbing-slab-r15-pml1p5-pad2-m1p5",
+      "index": 16,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 112752000000,
+      "scriptHash": "191fdb6f7dce32e4"
+    },
+    {
+      "runId": "l82-absorbing-slab-r15-pml1p5-pad3-m1p5",
+      "index": 17,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 120528000000,
+      "scriptHash": "90a3059665c9c413"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "fdtd.benchmark.sweepTruncated",
+      "message": "Sweep requested 36 runs and was truncated to 18."
+    }
+  ],
+  "sweepHash": "d1d5297e08334065"
+}

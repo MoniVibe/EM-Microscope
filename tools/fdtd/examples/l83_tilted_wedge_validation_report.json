@@ -1,0 +1,91 @@
+{
+  "schema": "emmicro.fdtd.surfaceGeometryValidationReport.v1",
+  "kind": "tilted-wedge",
+  "sourceScenarioHash": "25afdd13c6357779",
+  "manifestHash": "cfd4b992c5469472",
+  "scriptHash": "5803553f97149ebd",
+  "sceneHash": "950c1f9bf83d1f95",
+  "geometryHash": "29302a7e197191a2",
+  "grid": {
+    "gridSpacingNm": 41.666666666666664,
+    "pointsPerWavelength": 12,
+    "estimatedCells": 49766400000
+  },
+  "pmlThicknessUm": 0.75,
+  "monitorPositions": [
+    {
+      "id": "incident-flux",
+      "zUm": 21500,
+      "normal": "+z"
+    },
+    {
+      "id": "reflected-flux",
+      "zUm": 21200,
+      "normal": "-z"
+    },
+    {
+      "id": "transmitted-flux",
+      "zUm": 22800,
+      "normal": "+z"
+    },
+    {
+      "id": "field-slice-xz",
+      "zUm": 12500,
+      "normal": "+y"
+    },
+    {
+      "id": "l83-tilted-wedge-front-flux",
+      "zUm": 9995.5,
+      "normal": "+z"
+    },
+    {
+      "id": "l83-tilted-wedge-back-flux",
+      "zUm": 10004.5,
+      "normal": "+z"
+    }
+  ],
+  "reference": {
+    "kind": "tilted-wedge",
+    "model": "snell-fresnel",
+    "expected": {
+      "reflectance": 0.04000000000000001,
+      "transmittance": 0.96,
+      "absorbance": 0
+    },
+    "snellDirectionDeg": 7.9672932880678475,
+    "invariant": "Tilted dielectric surface reports Snell direction and Fresnel trend while warning about staircasing/convergence.",
+    "referenceHash": "1d0ef5119a72851b"
+  },
+  "imported": {
+    "reflectance": 0.04240000000000001,
+    "transmittance": 0.948,
+    "absorbance": 0.009600000000000053
+  },
+  "residuals": {
+    "reflectance": 0.0023999999999999994,
+    "transmittance": 0.01200000000000001,
+    "absorbance": 0.009600000000000053,
+    "energyBalance": 0,
+    "referenceResidual": 0.01200000000000001
+  },
+  "energyBalance": 1,
+  "status": "warning",
+  "classification": "WARNING",
+  "warnings": [
+    {
+      "code": "fdtd.geometry.staircasingSensitive",
+      "message": "Tilted transparent interface/wedge has tilted finite surfaces; staircasing/subpixel-smoothing sensitivity must be checked by convergence sweep.",
+      "elementId": "l83-tilted-wedge"
+    },
+    {
+      "code": "fdtd.export.largeGrid",
+      "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+    },
+    {
+      "code": "fdtd.surfaceGeometry.tiltedConvergenceRequired",
+      "message": "Tilted/wedge surfaces need resolution and PML convergence evidence before interpreting direction residuals.",
+      "elementId": "l83-tilted-wedge"
+    }
+  ],
+  "reportHash": "8427d833c0057cc3"
+}

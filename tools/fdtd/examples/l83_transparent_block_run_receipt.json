@@ -1,0 +1,25 @@
+{
+  "schema": "emmicro.fdtd.runReceipt.v1",
+  "runId": "l83-example-transparent-block",
+  "sourceScenarioHash": "19fb44b37e9129fb",
+  "manifestHash": "e5e493ebc9761bac",
+  "scriptHash": "eda157d0ed9f8729",
+  "tool": {
+    "name": "example-fixture",
+    "version": "emmicro.l83.fixture",
+    "postprocessorVersion": "emmicro.fdtd.surfaceGeometry.fixture.v1"
+  },
+  "createdAtIso": "2026-06-06T00:00:00.000Z",
+  "settings": {
+    "resolution": 24,
+    "until": 240,
+    "pmlThicknessUm": 0.75
+  },
+  "warnings": [
+    {
+      "code": "fdtd.export.largeGrid",
+      "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+    }
+  ],
+  "receiptHash": "b2a623d91a6af6f8"
+}

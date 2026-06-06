@@ -1,0 +1,280 @@
+{
+  "schema": "emmicro.fdtd.benchmarkManifest.v1",
+  "id": "l82-absorbing-slab-benchmark",
+  "label": "L8.2 Absorbing slab convergence benchmark",
+  "benchmarkKind": "absorbing-slab",
+  "sourceScenarioHash": "1773357db69b79b3",
+  "baseManifestHash": "5d06db76b4244ab1",
+  "baseManifest": {
+    "schema": "emmicro.fdtd.sceneManifest.v1",
+    "id": "l81-fdtd-l83-absorbing-block-surface-geometry",
+    "label": "L8.1 external FDTD export for L8.3 Finite absorbing block external FDTD finite-geometry diagnostic",
+    "sourceScenarioId": "l83-absorbing-block-surface-geometry",
+    "sourceScenarioHash": "1773357db69b79b3",
+    "targetKind": "transparent-dielectric",
+    "units": "um",
+    "grid": {
+      "domainWidthUm": 12,
+      "domainHeightUm": 12,
+      "zStartUm": 0,
+      "zEndUm": 25000,
+      "gridSpacingNm": 41.666666666666664,
+      "pointsPerWavelength": 12,
+      "estimatedCells": 49766400000
+    },
+    "source": {
+      "kind": "plane-wave",
+      "wavelengthUm": 0.5,
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 1000
+      },
+      "direction": "+z",
+      "component": "Ez"
+    },
+    "materials": [
+      {
+        "id": "air",
+        "label": "Air",
+        "refractiveIndex": {
+          "n": 1,
+          "k": 0
+        },
+        "materialHash": "2653810c8f22d751"
+      },
+      {
+        "id": "target-dielectric",
+        "label": "Air reference monitor target",
+        "refractiveIndex": {
+          "n": 1,
+          "k": 0
+        },
+        "materialHash": "364b4770be60882f"
+      },
+      {
+        "id": "element-l83-absorbing-block-absorber",
+        "label": "Finite absorbing block",
+        "refractiveIndex": {
+          "n": 1.2,
+          "k": 0.02
+        },
+        "absorptionCoefficientPerM": 5000,
+        "materialHash": "20bfa1b146697a24"
+      }
+    ],
+    "geometry": [
+      {
+        "id": "target-block",
+        "kind": "transparent-slab",
+        "label": "Air reference monitor target",
+        "centerUm": {
+          "x": 0,
+          "y": 0,
+          "z": 22000
+        },
+        "sizeUm": {
+          "x": 12,
+          "y": 12,
+          "z": 100
+        },
+        "materialId": "target-dielectric"
+      },
+      {
+        "id": "l83-absorbing-block",
+        "kind": "finite-absorbing-block",
+        "label": "Finite absorbing block",
+        "centerUm": {
+          "x": 0,
+          "y": 0,
+          "z": 10500
+        },
+        "sizeUm": {
+          "x": 6,
+          "y": 6,
+          "z": 100
+        },
+        "materialId": "element-l83-absorbing-block-absorber",
+        "diagnostic": "analytic-reference",
+        "sourceElementId": "l83-absorbing-block"
+      }
+    ],
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "kind": "flux-plane",
+        "label": "Incident flux plane",
+        "centerUm": {
+          "x": 0,
+          "y": 0,
+          "z": 21500
+        },
+        "sizeUm": {
+          "x": 12,
+          "y": 12,
+          "z": 0
+        },
+        "normal": "+z"
+      },
+      {
+        "id": "reflected-flux",
+        "kind": "flux-plane",
+        "label": "Reflected flux plane",
+        "centerUm": {
+          "x": 0,
+          "y": 0,
+          "z": 21200
+        },
+        "sizeUm": {
+          "x": 12,
+          "y": 12,
+          "z": 0
+        },
+        "normal": "-z"
+      },
+      {
+        "id": "transmitted-flux",
+        "kind": "flux-plane",
+        "label": "Transmitted flux plane",
+        "centerUm": {
+          "x": 0,
+          "y": 0,
+          "z": 22800
+        },
+        "sizeUm": {
+          "x": 12,
+          "y": 12,
+          "z": 0
+        },
+        "normal": "+z"
+      },
+      {
+        "id": "field-slice-xz",
+        "kind": "field-slice",
+        "label": "XZ field/intensity slice",
+        "centerUm": {
+          "x": 0,
+          "y": 0,
+          "z": 12500
+        },
+        "sizeUm": {
+          "x": 12,
+          "y": 0,
+          "z": 25000
+        },
+        "normal": "+y",
+        "fields": [
+          "Ez",
+          "intensity"
+        ]
+      },
+      {
+        "id": "l83-absorbing-block-front-flux",
+        "kind": "flux-plane",
+        "label": "Finite absorbing block front flux",
+        "centerUm": {
+          "x": 0,
+          "y": 0,
+          "z": 10350
+        },
+        "sizeUm": {
+          "x": 6,
+          "y": 6,
+          "z": 0
+        },
+        "normal": "+z"
+      },
+      {
+        "id": "l83-absorbing-block-back-flux",
+        "kind": "flux-plane",
+        "label": "Finite absorbing block back flux",
+        "centerUm": {
+          "x": 0,
+          "y": 0,
+          "z": 10650
+        },
+        "sizeUm": {
+          "x": 6,
+          "y": 6,
+          "z": 0
+        },
+        "normal": "+z"
+      }
+    ],
+    "boundaries": {
+      "pmlThicknessUm": 0.75,
+      "note": "PML boundary scaffold for optional external Meep execution."
+    },
+    "readiness": {
+      "status": "warning",
+      "supported": [
+        {
+          "id": "source",
+          "label": "500 nm coherent plane wave for finite geometry",
+          "evidence": "plane-wave source exported as Meep source scaffold"
+        },
+        {
+          "id": "l83-absorbing-block",
+          "label": "Finite absorbing block",
+          "evidence": "finite surface geometry export with L8.3 validation warnings"
+        },
+        {
+          "id": "target",
+          "label": "Air reference monitor target",
+          "evidence": "transparent dielectric slab/block export with Fresnel/TMM comparison"
+        }
+      ],
+      "unsupported": [],
+      "warnings": [
+        {
+          "code": "fdtd.geometry.absorberDispersionUnverified",
+          "message": "Finite absorbing block uses a simple lossy diagnostic material; dispersive material fitting and convergence evidence are required before production claims.",
+          "elementId": "l83-absorbing-block"
+        },
+        {
+          "code": "fdtd.export.largeGrid",
+          "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+        }
+      ],
+      "estimatedCells": 49766400000,
+      "gridSpacingNm": 41.666666666666664,
+      "sceneHash": "1773357db69b79b3"
+    },
+    "limitations": [
+      "External FDTD export/import only; the browser app does not execute FDTD.",
+      "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
+      "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
+      "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
+      "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
+    ],
+    "manifestHash": "5d06db76b4244ab1"
+  },
+  "reference": {
+    "benchmarkKind": "absorbing-slab",
+    "referenceModel": "beer-lambert",
+    "expected": {
+      "reflectance": 0,
+      "transmittance": 1,
+      "absorbance": 0
+    },
+    "invariant": "Beer-Lambert attenuation residual and energy balance stabilize as grid density increases.",
+    "thresholds": {
+      "referenceResidualPass": 0.02,
+      "referenceResidualWarning": 0.06,
+      "energyBalancePass": 0.01,
+      "energyBalanceWarning": 0.03,
+      "pmlSensitivityWarning": 0.015,
+      "pmlSensitivityFail": 0.05,
+      "fieldDeltaWarning": 0.08
+    },
+    "referenceHash": "9173a65eeafd1273"
+  },
+  "limitations": [
+    "External FDTD benchmark/convergence support only; the browser app does not execute FDTD.",
+    "Benchmark packs export deterministic manifests, sweep plans, and Meep helper scripts for optional external execution.",
+    "Imported convergence summaries are evidence from external runs or deterministic fixtures, not in-browser Maxwell solves.",
+    "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
+  ],
+  "warnings": [],
+  "benchmarkHash": "0988a70082f1918d"
+}

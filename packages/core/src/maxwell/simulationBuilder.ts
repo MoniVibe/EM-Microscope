@@ -15,6 +15,11 @@ export type SimulationBuilderElementKind =
   | "material-slab"
   | "mirror-surface"
   | "absorbing-slab"
+  | "finite-transparent-block"
+  | "finite-absorbing-block"
+  | "finite-reflective-plate"
+  | "finite-aperture-blocker"
+  | "tilted-interface-wedge"
   | "curved-material-lens"
   | "finite-metal-aperture";
 export type SimulationBuilderTargetKind = "transparent-dielectric" | "mirror" | "absorbing-slab";
@@ -44,10 +49,20 @@ export type SimulationBuilderElement = {
   id: string;
   kind: SimulationBuilderElementKind;
   label: string;
+  xUm?: number;
+  yUm?: number;
   zMm: number;
+  widthUm?: number;
+  heightUm?: number;
   apertureDiameterUm?: number;
+  apertureWidthUm?: number;
+  apertureHeightUm?: number;
   focalLengthMm?: number;
   thicknessUm?: number;
+  orientationDeg?: number;
+  materialIndex?: number;
+  extinctionCoefficient?: number;
+  absorptionCoefficientPerM?: number;
   materialLabel: string;
   model: string;
   status: SimulationBuilderCapabilityStatus;
@@ -157,7 +172,8 @@ export const l80ReleaseTrail = [
   { milestone: "L7.6", label: "External detector bridge", runnable: "detector JSON/CSV receipt validation" },
   { milestone: "L8.0", label: "Sequential Simulation Builder", runnable: "grid/source/elements/material validation report" },
   { milestone: "L8.1", label: "External FDTD field maps", runnable: "manifest/script export plus imported flux/field validation" },
-  { milestone: "L8.2", label: "FDTD benchmark convergence suite", runnable: "sweep-plan export plus imported convergence/PML diagnostics" }
+  { milestone: "L8.2", label: "FDTD benchmark convergence suite", runnable: "sweep-plan export plus imported convergence/PML diagnostics" },
+  { milestone: "L8.3", label: "Finite surface geometry starter set", runnable: "placed transparent/absorbing/reflective/aperture/wedge external FDTD fixtures" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -213,9 +229,19 @@ export function createSimulationBuilderElement(
     kind,
     label,
     zMm,
+    xUm: finiteGeometryKind(kind) ? 0 : undefined,
+    yUm: finiteGeometryKind(kind) ? 0 : undefined,
+    widthUm: finiteGeometryKind(kind) ? defaultFiniteGeometryWidthUm(kind) : undefined,
+    heightUm: finiteGeometryKind(kind) ? defaultFiniteGeometryHeightUm(kind) : undefined,
     apertureDiameterUm: kind === "circular-aperture" ? 1 : undefined,
+    apertureWidthUm: kind === "finite-aperture-blocker" ? 4 : undefined,
+    apertureHeightUm: kind === "finite-aperture-blocker" ? 6 : undefined,
     focalLengthMm: kind === "ideal-lens" ? 20 : undefined,
-    thicknessUm: kind === "material-slab" || kind === "absorbing-slab" ? 1000 : undefined,
+    thicknessUm: kind === "material-slab" || kind === "absorbing-slab" ? 1000 : finiteGeometryKind(kind) ? defaultFiniteGeometryThicknessUm(kind) : undefined,
+    orientationDeg: kind === "tilted-interface-wedge" ? 12 : undefined,
+    materialIndex: kind === "finite-transparent-block" || kind === "tilted-interface-wedge" ? 1.5 : kind === "finite-absorbing-block" ? 1.2 : undefined,
+    extinctionCoefficient: kind === "finite-absorbing-block" ? 0.02 : undefined,
+    absorptionCoefficientPerM: kind === "finite-absorbing-block" ? 5000 : undefined,
     materialLabel: elementMaterialLabel(kind),
     model: elementModel(kind),
     status,
@@ -617,6 +643,36 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       evidence: "L8.2 computes reference residual trends, field-slice deltas, and PML/padding sensitivity warnings over external-run evidence"
     },
     {
+      id: "finite-transparent-block-fdtd",
+      label: "Finite transparent block external FDTD export/import",
+      status: "executable" as const,
+      evidence: "L8.3 exports placed finite dielectric blocks and validates imported fixtures against Fresnel/TMM-style broad-block references"
+    },
+    {
+      id: "finite-absorbing-block-fdtd",
+      label: "Finite absorbing block external FDTD export/import",
+      status: "executable" as const,
+      evidence: "L8.3 exports placed lossy blocks and validates imported fixtures against Beer-Lambert attenuation and energy balance"
+    },
+    {
+      id: "finite-reflective-plate-diagnostic",
+      label: "Finite ideal reflective plate diagnostic",
+      status: "executable" as const,
+      evidence: "L8.3 exports ideal reflector diagnostics with explicit non-production-metal warnings"
+    },
+    {
+      id: "finite-aperture-blocker-diagnostic",
+      label: "Finite aperture/blocker external FDTD diagnostic",
+      status: "executable" as const,
+      evidence: "L8.3 exports finite blocker/aperture masks and reports diagnostic edge-field/convergence warnings"
+    },
+    {
+      id: "tilted-wedge-interface-diagnostic",
+      label: "Tilted interface/wedge external FDTD diagnostic",
+      status: "executable" as const,
+      evidence: "L8.3 exports tilted dielectric surface diagnostics with staircasing and convergence warnings"
+    },
+    {
       id: "arbitrary-3d-material-geometry",
       label: "Arbitrary 3D material geometry",
       status: "not-implemented" as const,
@@ -663,6 +719,16 @@ function simulationElementLabel(kind: SimulationBuilderElementKind): string {
       return "Ideal mirror surface";
     case "absorbing-slab":
       return "Absorbing slab";
+    case "finite-transparent-block":
+      return "Finite transparent block";
+    case "finite-absorbing-block":
+      return "Finite absorbing block";
+    case "finite-reflective-plate":
+      return "Finite ideal reflective plate";
+    case "finite-aperture-blocker":
+      return "Finite aperture/blocker";
+    case "tilted-interface-wedge":
+      return "Tilted interface/wedge";
     case "curved-material-lens":
       return "Curved material lens";
     case "finite-metal-aperture":
@@ -684,6 +750,16 @@ function elementMaterialLabel(kind: SimulationBuilderElementKind): string {
       return "ideal mirror";
     case "absorbing-slab":
       return "homogeneous absorber";
+    case "finite-transparent-block":
+      return "finite dielectric n=1.5";
+    case "finite-absorbing-block":
+      return "finite lossy dielectric";
+    case "finite-reflective-plate":
+      return "ideal PEC-like reflector";
+    case "finite-aperture-blocker":
+      return "finite absorbing blocker mask";
+    case "tilted-interface-wedge":
+      return "tilted dielectric geometry";
     case "curved-material-lens":
       return "curved dielectric geometry";
     case "finite-metal-aperture":
@@ -705,6 +781,16 @@ function elementModel(kind: SimulationBuilderElementKind): string {
       return "analytic ideal reflector";
     case "absorbing-slab":
       return "Beer-Lambert slab";
+    case "finite-transparent-block":
+      return "external FDTD finite dielectric block";
+    case "finite-absorbing-block":
+      return "external FDTD lossy block";
+    case "finite-reflective-plate":
+      return "external FDTD ideal reflector diagnostic";
+    case "finite-aperture-blocker":
+      return "external FDTD finite mask diagnostic";
+    case "tilted-interface-wedge":
+      return "external FDTD tilted interface diagnostic";
     case "curved-material-lens":
       return "scaffold only";
     case "finite-metal-aperture":
@@ -727,10 +813,44 @@ function elementValidation(kind: SimulationBuilderElementKind, status: Simulatio
       return "ideal mirror analytic R/T/A check";
     case "absorbing-slab":
       return "Beer-Lambert attenuation check";
+    case "finite-transparent-block":
+      return "external FDTD export/import with Fresnel/TMM broad-block reference";
+    case "finite-absorbing-block":
+      return "external FDTD export/import with Beer-Lambert attenuation reference";
+    case "finite-reflective-plate":
+      return "external FDTD ideal R near 1, T near 0 diagnostic; not real metal production optics";
+    case "finite-aperture-blocker":
+      return "external FDTD diagnostic field-map fixture; edge diffraction requires convergence evidence";
+    case "tilted-interface-wedge":
+      return "external FDTD Snell/Fresnel direction diagnostic with staircasing warning";
     case "curved-material-lens":
     case "finite-metal-aperture":
       return "not executable";
   }
+}
+
+function finiteGeometryKind(kind: SimulationBuilderElementKind): boolean {
+  return kind === "finite-transparent-block" || kind === "finite-absorbing-block" || kind === "finite-reflective-plate" || kind === "finite-aperture-blocker" || kind === "tilted-interface-wedge";
+}
+
+function defaultFiniteGeometryWidthUm(kind: SimulationBuilderElementKind): number {
+  if (kind === "finite-reflective-plate") return 8;
+  if (kind === "finite-aperture-blocker") return 10;
+  if (kind === "tilted-interface-wedge") return 8;
+  return 6;
+}
+
+function defaultFiniteGeometryHeightUm(kind: SimulationBuilderElementKind): number {
+  if (kind === "finite-aperture-blocker") return 10;
+  return defaultFiniteGeometryWidthUm(kind);
+}
+
+function defaultFiniteGeometryThicknessUm(kind: SimulationBuilderElementKind): number {
+  if (kind === "finite-reflective-plate") return 0.5;
+  if (kind === "finite-aperture-blocker") return 0.8;
+  if (kind === "tilted-interface-wedge") return 3;
+  if (kind === "finite-absorbing-block") return 100;
+  return 4;
 }
 
 function targetKindLabel(kind: SimulationBuilderTargetKind): string {

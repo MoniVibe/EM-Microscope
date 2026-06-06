@@ -2,8 +2,8 @@
   "schema": "emmicro.fdtd.runReceipt.v1",
   "runId": "l81-example-transparent-slab",
   "sourceScenarioHash": "dc8f68ca2eb20de5",
-  "manifestHash": "3e49f5e56ed836c9",
-  "scriptHash": "a131de2b6ba8e109",
+  "manifestHash": "10b72314c5d2f8be",
+  "scriptHash": "98c64d354cf7292b",
   "tool": {
     "name": "example-fixture",
     "version": "emmicro.l81.fixture",
@@ -16,5 +16,5 @@
     "pmlThicknessUm": 0.75
   },
   "warnings": [],
-  "receiptHash": "5bc860cc97c73451"
+  "receiptHash": "69a4d0983a944ac4"
 }

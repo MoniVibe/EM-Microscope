@@ -1,0 +1,248 @@
+{
+  "schema": "emmicro.fdtd.sceneManifest.v1",
+  "id": "l81-fdtd-l83-reflective-plate-surface-geometry",
+  "label": "L8.1 external FDTD export for L8.3 Finite ideal reflective plate external FDTD finite-geometry diagnostic",
+  "sourceScenarioId": "l83-reflective-plate-surface-geometry",
+  "sourceScenarioHash": "a110586a3ad019e0",
+  "targetKind": "transparent-dielectric",
+  "units": "um",
+  "grid": {
+    "domainWidthUm": 12,
+    "domainHeightUm": 12,
+    "zStartUm": 0,
+    "zEndUm": 25000,
+    "gridSpacingNm": 41.666666666666664,
+    "pointsPerWavelength": 12,
+    "estimatedCells": 49766400000
+  },
+  "source": {
+    "kind": "plane-wave",
+    "wavelengthUm": 0.5,
+    "centerUm": {
+      "x": 0,
+      "y": 0,
+      "z": 1000
+    },
+    "direction": "+z",
+    "component": "Ez"
+  },
+  "materials": [
+    {
+      "id": "air",
+      "label": "Air",
+      "refractiveIndex": {
+        "n": 1,
+        "k": 0
+      },
+      "materialHash": "2653810c8f22d751"
+    },
+    {
+      "id": "target-dielectric",
+      "label": "Air reference monitor target",
+      "refractiveIndex": {
+        "n": 1,
+        "k": 0
+      },
+      "materialHash": "364b4770be60882f"
+    },
+    {
+      "id": "element-l83-reflective-plate-ideal-reflector",
+      "label": "Finite ideal reflective plate",
+      "refractiveIndex": {
+        "n": 1000000,
+        "k": 0
+      },
+      "materialHash": "d6b8aefb22bfb3a6"
+    }
+  ],
+  "geometry": [
+    {
+      "id": "target-block",
+      "kind": "transparent-slab",
+      "label": "Air reference monitor target",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 22000
+      },
+      "sizeUm": {
+        "x": 12,
+        "y": 12,
+        "z": 100
+      },
+      "materialId": "target-dielectric"
+    },
+    {
+      "id": "l83-reflective-plate",
+      "kind": "finite-reflective-plate",
+      "label": "Finite ideal reflective plate",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 11000
+      },
+      "sizeUm": {
+        "x": 8,
+        "y": 8,
+        "z": 0.5
+      },
+      "materialId": "element-l83-reflective-plate-ideal-reflector",
+      "diagnostic": "ideal-reflector",
+      "sourceElementId": "l83-reflective-plate"
+    }
+  ],
+  "monitors": [
+    {
+      "id": "incident-flux",
+      "kind": "flux-plane",
+      "label": "Incident flux plane",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 21500
+      },
+      "sizeUm": {
+        "x": 12,
+        "y": 12,
+        "z": 0
+      },
+      "normal": "+z"
+    },
+    {
+      "id": "reflected-flux",
+      "kind": "flux-plane",
+      "label": "Reflected flux plane",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 21200
+      },
+      "sizeUm": {
+        "x": 12,
+        "y": 12,
+        "z": 0
+      },
+      "normal": "-z"
+    },
+    {
+      "id": "transmitted-flux",
+      "kind": "flux-plane",
+      "label": "Transmitted flux plane",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 22800
+      },
+      "sizeUm": {
+        "x": 12,
+        "y": 12,
+        "z": 0
+      },
+      "normal": "+z"
+    },
+    {
+      "id": "field-slice-xz",
+      "kind": "field-slice",
+      "label": "XZ field/intensity slice",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 12500
+      },
+      "sizeUm": {
+        "x": 12,
+        "y": 0,
+        "z": 25000
+      },
+      "normal": "+y",
+      "fields": [
+        "Ez",
+        "intensity"
+      ]
+    },
+    {
+      "id": "l83-reflective-plate-front-flux",
+      "kind": "flux-plane",
+      "label": "Finite ideal reflective plate front flux",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 10999.25
+      },
+      "sizeUm": {
+        "x": 8,
+        "y": 8,
+        "z": 0
+      },
+      "normal": "+z"
+    },
+    {
+      "id": "l83-reflective-plate-back-flux",
+      "kind": "flux-plane",
+      "label": "Finite ideal reflective plate back flux",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 11000.75
+      },
+      "sizeUm": {
+        "x": 8,
+        "y": 8,
+        "z": 0
+      },
+      "normal": "+z"
+    }
+  ],
+  "boundaries": {
+    "pmlThicknessUm": 0.75,
+    "note": "PML boundary scaffold for optional external Meep execution."
+  },
+  "readiness": {
+    "status": "warning",
+    "supported": [
+      {
+        "id": "source",
+        "label": "500 nm coherent plane wave for finite geometry",
+        "evidence": "plane-wave source exported as Meep source scaffold"
+      },
+      {
+        "id": "l83-reflective-plate",
+        "label": "Finite ideal reflective plate",
+        "evidence": "finite surface geometry export with L8.3 validation warnings"
+      },
+      {
+        "id": "target",
+        "label": "Air reference monitor target",
+        "evidence": "transparent dielectric slab/block export with Fresnel/TMM comparison"
+      }
+    ],
+    "unsupported": [],
+    "warnings": [
+      {
+        "code": "fdtd.geometry.monitorProximity",
+        "message": "Finite ideal reflective plate has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+        "elementId": "l83-reflective-plate"
+      },
+      {
+        "code": "fdtd.geometry.idealReflector",
+        "message": "Finite ideal reflective plate is an ideal reflector diagnostic, not a real finite-thickness metal optics model.",
+        "elementId": "l83-reflective-plate"
+      },
+      {
+        "code": "fdtd.export.largeGrid",
+        "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+      }
+    ],
+    "estimatedCells": 49766400000,
+    "gridSpacingNm": 41.666666666666664,
+    "sceneHash": "a110586a3ad019e0"
+  },
+  "limitations": [
+    "External FDTD export/import only; the browser app does not execute FDTD.",
+    "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
+    "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
+    "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
+    "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
+  ],
+  "manifestHash": "16e42a25843a8094"
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "emmicro.fdtd.fluxSummary.v1",
+  "runId": "l83-example-transparent-block",
+  "sourceScenarioHash": "19fb44b37e9129fb",
+  "manifestHash": "e5e493ebc9761bac",
+  "incidentFlux": 1,
+  "reflectedFlux": 0.0008,
+  "transmittedFlux": 0.996,
+  "absorbedFlux": 0.0031999999999999806,
+  "reflectance": 0.0008,
+  "transmittance": 0.996,
+  "absorbance": 0.0031999999999999806,
+  "energyBalance": 1,
+  "monitors": [
+    {
+      "id": "incident-flux",
+      "flux": 1
+    },
+    {
+      "id": "reflected-flux",
+      "flux": 0.0008
+    },
+    {
+      "id": "transmitted-flux",
+      "flux": 0.996
+    },
+    {
+      "id": "absorbed-estimate",
+      "flux": 0.0031999999999999806
+    }
+  ],
+  "warnings": [
+    {
+      "code": "fdtd.export.largeGrid",
+      "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+    }
+  ],
+  "fluxHash": "6b17804b24407312"
+}

@@ -3,7 +3,7 @@
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r10-pml0p5-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -27,13 +27,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "81b01993fbe13e68"
+    "fluxHash": "bb83d5d992e63508"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r10-pml0p5-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -57,13 +57,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "73a591ee9c45d0bc"
+    "fluxHash": "f9f44bd8481ea310"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r10-pml0p5-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -87,13 +87,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "9506664f38de1e37"
+    "fluxHash": "4326e47592d32abb"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r10-pml1-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -117,13 +117,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "ecbbe208ab809029"
+    "fluxHash": "c8a97a62422e3fcd"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r10-pml1-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -147,13 +147,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "42bacf364eb44c5c"
+    "fluxHash": "975de6c2d5b9a2b0"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r10-pml1-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -177,13 +177,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "878a88c8c55ce52a"
+    "fluxHash": "4d000fa8b368a242"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r10-pml1p5-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -207,13 +207,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "911bb945d44eceb0"
+    "fluxHash": "6d25527d765f6a7c"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r10-pml1p5-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -237,13 +237,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "db825430607c36ed"
+    "fluxHash": "cd2c44dadf828fa9"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r10-pml1p5-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -267,13 +267,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "b27b1ed17f8049d7"
+    "fluxHash": "40641361d675a2ef"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r15-pml0p5-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -297,13 +297,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "1dd0dfa0456e2429"
+    "fluxHash": "3509c83f8bf4307d"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r15-pml0p5-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -327,13 +327,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "0c4a15a745f4765d"
+    "fluxHash": "f449a78e8b5a4715"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r15-pml0p5-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -357,13 +357,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "6b11bfc474851c84"
+    "fluxHash": "b833dabb4685eef0"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r15-pml1-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -387,13 +387,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "6271355e92926b94"
+    "fluxHash": "42d366449146cbdc"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r15-pml1-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -417,13 +417,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "543e932871d2e4b3"
+    "fluxHash": "c6c315a3dbdf6fa7"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r15-pml1-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -447,13 +447,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "9cfe400895bac63f"
+    "fluxHash": "462aea7beac53f83"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r15-pml1p5-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -477,13 +477,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "04e54f224216a83d"
+    "fluxHash": "afb3baf610c44565"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r15-pml1p5-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -507,13 +507,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "a3c15047f1a8c6a2"
+    "fluxHash": "8e3c98cd7fcc9c5e"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r15-pml1p5-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -537,13 +537,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "834719516ff48a8a"
+    "fluxHash": "ba68cc545f595c16"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r20-pml0p5-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -567,13 +567,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "137b535fdb011917"
+    "fluxHash": "f652f22158a5c337"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r20-pml0p5-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -597,13 +597,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "38a9e15a3edac0a1"
+    "fluxHash": "773e69e00dce51f9"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r20-pml0p5-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -627,13 +627,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "e479b03304ebecd8"
+    "fluxHash": "e2323000fa966324"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r20-pml1-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -657,13 +657,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "812f8ff151fb584e"
+    "fluxHash": "0411264ae53ca752"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r20-pml1-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -687,13 +687,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "543c6a8149367cb3"
+    "fluxHash": "6268a54756ec949f"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r20-pml1-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -717,13 +717,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "dfccfa53c85147e3"
+    "fluxHash": "94bb144756477457"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r20-pml1p5-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -747,13 +747,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "eed83e571e36d1e7"
+    "fluxHash": "031c6f5c93746323"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r20-pml1p5-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -777,13 +777,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "de9e4346f0641ea2"
+    "fluxHash": "454d495c4f917a16"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r20-pml1p5-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -807,13 +807,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "ec4cde90faa431f6"
+    "fluxHash": "e27f3e495e5411a2"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r30-pml0p5-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -837,13 +837,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "fc80420e9e58d725"
+    "fluxHash": "1670f0928f2999b5"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r30-pml0p5-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -867,13 +867,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "aefbafd024551303"
+    "fluxHash": "c57622d5b0e21053"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r30-pml0p5-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -897,13 +897,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "2787b5e4327c5024"
+    "fluxHash": "97906d4d97f6570c"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r30-pml1-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -927,13 +927,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "e10e31ec1f574ce8"
+    "fluxHash": "66efa01fc145c45c"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r30-pml1-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -957,13 +957,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "51f9b46158c98e2e"
+    "fluxHash": "9d1e0dfbcfa5fc9a"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r30-pml1-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -987,13 +987,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "27cd6e3bdb8035a4"
+    "fluxHash": "166e601f22b8d274"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r30-pml1p5-pad1-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -1017,13 +1017,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "6de720b1c3fef9b9"
+    "fluxHash": "73bfba9dc7f391e5"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r30-pml1p5-pad2-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -1047,13 +1047,13 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "b1deb4b31146dacf"
+    "fluxHash": "3d8c2a50a25d1503"
   },
   {
     "schema": "emmicro.fdtd.fluxSummary.v1",
     "runId": "l82-mirror-r30-pml1p5-pad3-m1p5",
     "sourceScenarioHash": "9bea0bd00510266d",
-    "manifestHash": "6df229171dfe7327",
+    "manifestHash": "4dbfba9a38c1acb4",
     "incidentFlux": 1,
     "reflectedFlux": 1,
     "transmittedFlux": 0,
@@ -1077,6 +1077,6 @@
       }
     ],
     "warnings": [],
-    "fluxHash": "8fc057a851fc3c81"
+    "fluxHash": "311a314d46446711"
   }
 ]

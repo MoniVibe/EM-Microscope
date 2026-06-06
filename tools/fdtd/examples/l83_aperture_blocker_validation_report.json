@@ -1,0 +1,96 @@
+{
+  "schema": "emmicro.fdtd.surfaceGeometryValidationReport.v1",
+  "kind": "aperture-blocker",
+  "sourceScenarioHash": "97fd288cdfbf1c8c",
+  "manifestHash": "d91477717e995069",
+  "scriptHash": "96e6f49f4b1beb6e",
+  "sceneHash": "8a66b672dc21182d",
+  "geometryHash": "005c7b5109a3534c",
+  "grid": {
+    "gridSpacingNm": 41.666666666666664,
+    "pointsPerWavelength": 12,
+    "estimatedCells": 49766400000
+  },
+  "pmlThicknessUm": 0.75,
+  "monitorPositions": [
+    {
+      "id": "incident-flux",
+      "zUm": 21500,
+      "normal": "+z"
+    },
+    {
+      "id": "reflected-flux",
+      "zUm": 21200,
+      "normal": "-z"
+    },
+    {
+      "id": "transmitted-flux",
+      "zUm": 22800,
+      "normal": "+z"
+    },
+    {
+      "id": "field-slice-xz",
+      "zUm": 12500,
+      "normal": "+y"
+    },
+    {
+      "id": "l83-aperture-blocker-front-flux",
+      "zUm": 9498.800000000001,
+      "normal": "+z"
+    },
+    {
+      "id": "l83-aperture-blocker-back-flux",
+      "zUm": 9501.199999999999,
+      "normal": "+z"
+    }
+  ],
+  "reference": {
+    "kind": "aperture-blocker",
+    "model": "aperture-open-fraction",
+    "expected": {
+      "reflectance": 0,
+      "transmittance": 0.24,
+      "absorbance": 0.76
+    },
+    "apertureOpenFraction": 0.24,
+    "invariant": "Blocked/transmitted power follows aperture open fraction only as a diagnostic; edge diffraction requires convergence evidence.",
+    "referenceHash": "12abfd92fb9c8b91"
+  },
+  "imported": {
+    "reflectance": 0.0036,
+    "transmittance": 0.222,
+    "absorbance": 0.7744
+  },
+  "residuals": {
+    "reflectance": 0.0036,
+    "transmittance": 0.017999999999999988,
+    "absorbance": 0.014399999999999968,
+    "energyBalance": 0,
+    "referenceResidual": 0.017999999999999988
+  },
+  "energyBalance": 1,
+  "status": "warning",
+  "classification": "DIAGNOSTIC",
+  "warnings": [
+    {
+      "code": "fdtd.geometry.monitorProximity",
+      "message": "Finite aperture/blocker has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+      "elementId": "l83-aperture-blocker"
+    },
+    {
+      "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+      "message": "Finite aperture/blocker has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+      "elementId": "l83-aperture-blocker"
+    },
+    {
+      "code": "fdtd.export.largeGrid",
+      "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+    },
+    {
+      "code": "fdtd.surfaceGeometry.noClosedFormAperture",
+      "message": "Finite aperture/blocker edge fields are diagnostic and need convergence evidence.",
+      "elementId": "l83-aperture-blocker"
+    }
+  ],
+  "reportHash": "9347ede89e37c961"
+}
