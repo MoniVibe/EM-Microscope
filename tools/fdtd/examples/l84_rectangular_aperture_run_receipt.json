@@ -2,8 +2,8 @@
   "schema": "emmicro.fdtd.runReceipt.v1",
   "runId": "l84-fixture-rectangular-aperture",
   "sourceScenarioHash": "690bcd0934d9aa12",
-  "manifestHash": "c0382146f92ba396",
-  "scriptHash": "05c7fa222ae012de",
+  "manifestHash": "80d7cf1849f3a70e",
+  "scriptHash": "b0b61bd5a7e830a0",
   "tool": {
     "name": "example-fixture",
     "version": "l84-deterministic",
@@ -57,5 +57,5 @@
       "elementId": "l84-rectangular-aperture"
     }
   ],
-  "receiptHash": "0322357b366250b8"
+  "receiptHash": "08827346008d34e4"
 }

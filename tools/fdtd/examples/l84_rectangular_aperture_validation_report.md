@@ -1,8 +1,8 @@
 # L8.4 Rectangular aperture Aperture Validation Report
 
-Scene hash: 25c012532a0f947a
-Manifest hash: c0382146f92ba396
-Script hash: 05c7fa222ae012de
+Scene hash: c9a5069d89adc05e
+Manifest hash: 80d7cf1849f3a70e
+Script hash: b0b61bd5a7e830a0
 Geometry hash: 3e65e055186c0225
 Status: PASS
 

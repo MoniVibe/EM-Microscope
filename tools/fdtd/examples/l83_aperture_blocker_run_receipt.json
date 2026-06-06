@@ -2,8 +2,8 @@
   "schema": "emmicro.fdtd.runReceipt.v1",
   "runId": "l83-example-aperture-blocker",
   "sourceScenarioHash": "4bfd03c065f43f6e",
-  "manifestHash": "dcd47a93a79ca5b3",
-  "scriptHash": "dcd29415727afd05",
+  "manifestHash": "eece0113ac228cd3",
+  "scriptHash": "48bcd479fb464c3f",
   "tool": {
     "name": "example-fixture",
     "version": "emmicro.l83.fixture",
@@ -41,5 +41,5 @@
       "elementId": "l83-aperture-blocker"
     }
   ],
-  "receiptHash": "c8143b963a3a594e"
+  "receiptHash": "09465853c06cc6a0"
 }

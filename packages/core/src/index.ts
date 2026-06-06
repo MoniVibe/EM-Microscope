@@ -52,6 +52,7 @@ export * from "./maxwell/maxwell3dValidation";
 export * from "./maxwell/maxwellProblem";
 export * from "./maxwell/maxwellResult";
 export * from "./maxwell/meepExport";
+export * from "./maxwell/multiElementBench";
 export * from "./maxwell/planarFieldMonitor";
 export * from "./maxwell/planarSceneCompiler";
 export * from "./maxwell/planarTmm";

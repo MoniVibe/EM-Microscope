@@ -4,7 +4,7 @@
   "label": "L8.2 Ideal mirror convergence benchmark",
   "benchmarkKind": "mirror",
   "sourceScenarioHash": "a110586a3ad019e0",
-  "baseManifestHash": "245908edf05f0f6f",
+  "baseManifestHash": "9f35e9fe1bebdf17",
   "baseManifest": {
     "schema": "emmicro.fdtd.sceneManifest.v1",
     "id": "l81-fdtd-l83-reflective-plate-surface-geometry",
@@ -250,9 +250,10 @@
       "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
       "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
       "L8.4 aperture/blocker edge-diffraction validation is limited to long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker diagnostic scenes with scalar limiting-case references and convergence warnings.",
+      "L8.5 multi-element optical bench export/import composes supported finite geometry into deterministic external FDTD helper scenes with monitor definitions and receipts; it is not an in-browser FDTD solve.",
       "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
     ],
-    "manifestHash": "245908edf05f0f6f"
+    "manifestHash": "9f35e9fe1bebdf17"
   },
   "reference": {
     "benchmarkKind": "mirror",
@@ -281,5 +282,5 @@
     "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
   ],
   "warnings": [],
-  "benchmarkHash": "ad0f5a819634f161"
+  "benchmarkHash": "804fe4134d3a3dbd"
 }

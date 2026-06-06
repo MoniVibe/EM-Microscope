@@ -2,7 +2,7 @@
   "schema": "emmicro.fdtd.fluxSummary.v1",
   "runId": "l83-example-absorbing-block",
   "sourceScenarioHash": "1773357db69b79b3",
-  "manifestHash": "6f977e6393ebfe7c",
+  "manifestHash": "9e2fe32f36e0591c",
   "incidentFlux": 1,
   "reflectedFlux": 0.0008,
   "transmittedFlux": 0.6025306597126334,
@@ -40,5 +40,5 @@
       "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
     }
   ],
-  "fluxHash": "b7618687f7beddb9"
+  "fluxHash": "365b376fb0436fc2"
 }

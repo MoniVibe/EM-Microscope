@@ -2,7 +2,7 @@
   "schema": "emmicro.fdtd.fluxSummary.v1",
   "runId": "l84-fixture-long-slit",
   "sourceScenarioHash": "d96beb814449f702",
-  "manifestHash": "c1075ced58ef74a9",
+  "manifestHash": "33d117e7c5e980b1",
   "incidentFlux": 1,
   "reflectedFlux": 0.020142857142857143,
   "transmittedFlux": 0.13835714285714285,
@@ -71,5 +71,5 @@
       "elementId": "l84-long-slit"
     }
   ],
-  "fluxHash": "8f39bf0e1f840eb1"
+  "fluxHash": "e416965cfcb8af1a"
 }

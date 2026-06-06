@@ -1,0 +1,9 @@
+metric,value,unit,status
+scene_hash,588269a545ca93a2,,external-results-imported
+element_count,4,count,external-results-imported
+monitor_count,11,count,external-results-imported
+scalar_snapshot_count,9,count,external-results-imported
+external_reflectance,0.08,relative,external-results-imported
+external_transmittance,0.74,relative,external-results-imported
+external_absorbance,0.18,relative,external-results-imported
+warning_count,3,count,external-results-imported

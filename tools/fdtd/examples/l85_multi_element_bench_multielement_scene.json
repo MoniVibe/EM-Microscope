@@ -1,0 +1,270 @@
+{
+  "schema": "emmicro.opticalBenchScene.v1",
+  "id": "l85-multi-element-optical-bench-chain",
+  "label": "L8.5 Multi-Element Optical Bench Propagation Chain",
+  "grid": {
+    "domainWidthUm": 24,
+    "domainHeightUm": 18,
+    "zStartMm": 0,
+    "zEndMm": 65,
+    "pointsPerWavelength": 12
+  },
+  "source": {
+    "id": "source",
+    "label": "500 nm coherent plane-wave source",
+    "wavelengthNm": 500,
+    "zMm": 0,
+    "xUm": 0,
+    "yUm": 0,
+    "direction": "+z"
+  },
+  "elements": [
+    {
+      "id": "circular-aperture-10000",
+      "label": "Circular aperture 1",
+      "type": "circular-aperture",
+      "zMm": 10,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 8,
+      "heightUm": 8,
+      "thicknessUm": 0,
+      "orientationDeg": 0,
+      "materialModel": "ideal scalar aperture mask",
+      "enabled": true,
+      "locked": false,
+      "status": "executable",
+      "solverRoute": "scalar-chain",
+      "validationReference": "scalar aperture mask; circular aperture Airy/Bessel validation family",
+      "sourceElementKind": "circular-aperture"
+    },
+    {
+      "id": "ideal-lens-20000",
+      "label": "Ideal thin lens 1",
+      "type": "ideal-thin-lens",
+      "zMm": 20,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 8,
+      "heightUm": 8,
+      "thicknessUm": 0,
+      "orientationDeg": 0,
+      "materialModel": "zero-thickness phase mask",
+      "enabled": true,
+      "locked": false,
+      "status": "executable",
+      "solverRoute": "scalar-chain",
+      "validationReference": "ideal zero-thickness thin-lens phase mask; scalar focal-plane validation family",
+      "sourceElementKind": "ideal-lens",
+      "focalLengthMm": 30
+    },
+    {
+      "id": "finite-transparent-block-30000",
+      "label": "Transparent block 1",
+      "type": "transparent-block",
+      "zMm": 30,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 8,
+      "heightUm": 8,
+      "thicknessUm": 5,
+      "orientationDeg": 0,
+      "materialModel": "finite dielectric n=1.5",
+      "enabled": true,
+      "locked": false,
+      "status": "external-only",
+      "solverRoute": "external-fdtd",
+      "validationReference": "external FDTD export/import with broad-block Fresnel/TMM reference",
+      "sourceElementKind": "finite-transparent-block"
+    },
+    {
+      "id": "finite-absorbing-block-40000",
+      "label": "Absorbing blocker 1",
+      "type": "absorbing-block",
+      "zMm": 40,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 8,
+      "heightUm": 8,
+      "thicknessUm": 100,
+      "orientationDeg": 0,
+      "materialModel": "finite lossy dielectric",
+      "enabled": true,
+      "locked": false,
+      "status": "external-only",
+      "solverRoute": "external-fdtd",
+      "validationReference": "external FDTD export/import with Beer-Lambert attenuation and energy-balance reference",
+      "sourceElementKind": "finite-absorbing-block"
+    }
+  ],
+  "monitors": [
+    {
+      "id": "after-source",
+      "label": "After source",
+      "kind": "field",
+      "zMm": 0,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 24,
+      "heightUm": 18,
+      "solverRoute": "scalar-chain",
+      "warningCodes": []
+    },
+    {
+      "id": "circular-aperture-10000-after-field",
+      "label": "After Circular aperture 1",
+      "kind": "field",
+      "zMm": 10.25,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 24,
+      "heightUm": 18,
+      "sourceElementId": "circular-aperture-10000",
+      "solverRoute": "scalar-chain",
+      "warningCodes": []
+    },
+    {
+      "id": "ideal-lens-20000-after-field",
+      "label": "After Ideal thin lens 1",
+      "kind": "field",
+      "zMm": 20.25,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 24,
+      "heightUm": 18,
+      "sourceElementId": "ideal-lens-20000",
+      "solverRoute": "scalar-chain",
+      "warningCodes": []
+    },
+    {
+      "id": "finite-transparent-block-30000-before-field",
+      "label": "Before Transparent block 1",
+      "kind": "field",
+      "zMm": 29.75,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 8,
+      "heightUm": 8,
+      "sourceElementId": "finite-transparent-block-30000",
+      "solverRoute": "external-fdtd",
+      "warningCodes": [
+        "opticalBench.external.required"
+      ]
+    },
+    {
+      "id": "finite-transparent-block-30000-after-field",
+      "label": "After Transparent block 1",
+      "kind": "field",
+      "zMm": 30.25,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 8,
+      "heightUm": 8,
+      "sourceElementId": "finite-transparent-block-30000",
+      "solverRoute": "external-fdtd",
+      "warningCodes": [
+        "opticalBench.external.required"
+      ]
+    },
+    {
+      "id": "finite-transparent-block-30000-flux",
+      "label": "Transparent block 1 flux",
+      "kind": "flux",
+      "zMm": 30.375,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 8,
+      "heightUm": 8,
+      "sourceElementId": "finite-transparent-block-30000",
+      "solverRoute": "external-fdtd",
+      "warningCodes": [
+        "opticalBench.external.required"
+      ]
+    },
+    {
+      "id": "finite-absorbing-block-40000-before-field",
+      "label": "Before Absorbing blocker 1",
+      "kind": "field",
+      "zMm": 39.75,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 8,
+      "heightUm": 8,
+      "sourceElementId": "finite-absorbing-block-40000",
+      "solverRoute": "external-fdtd",
+      "warningCodes": [
+        "opticalBench.external.required"
+      ]
+    },
+    {
+      "id": "finite-absorbing-block-40000-after-field",
+      "label": "After Absorbing blocker 1",
+      "kind": "field",
+      "zMm": 40.25,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 8,
+      "heightUm": 8,
+      "sourceElementId": "finite-absorbing-block-40000",
+      "solverRoute": "external-fdtd",
+      "warningCodes": [
+        "opticalBench.external.required"
+      ]
+    },
+    {
+      "id": "finite-absorbing-block-40000-flux",
+      "label": "Absorbing blocker 1 flux",
+      "kind": "flux",
+      "zMm": 40.375,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 8,
+      "heightUm": 8,
+      "sourceElementId": "finite-absorbing-block-40000",
+      "solverRoute": "external-fdtd",
+      "warningCodes": [
+        "opticalBench.external.required"
+      ]
+    },
+    {
+      "id": "target-field",
+      "label": "At target",
+      "kind": "field",
+      "zMm": 50,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 24,
+      "heightUm": 18,
+      "solverRoute": "scalar-chain",
+      "warningCodes": []
+    },
+    {
+      "id": "observation-plane",
+      "label": "Observation plane",
+      "kind": "observation",
+      "zMm": 60,
+      "xUm": 0,
+      "yUm": 0,
+      "widthUm": 24,
+      "heightUm": 18,
+      "solverRoute": "scalar-chain",
+      "warningCodes": []
+    }
+  ],
+  "target": {
+    "id": "target",
+    "label": "Transparent target plane",
+    "zMm": 50,
+    "widthUm": 24,
+    "heightUm": 18
+  },
+  "boundary": [
+    "L8.5 is an ordered multi-element optical-bench workflow, not a general-purpose Maxwell solver.",
+    "Scalar chain preview is limited to ideal plane elements: free-space propagation, apertures/slits, ideal thin lenses, and observation planes.",
+    "Finite transparent blocks, absorbing blocks, reflective plates, aperture/blocker screens, and tilted wedges route to external FDTD export/import evidence.",
+    "Imported external FDTD field/flux maps require receipts and scene/script hashes before they are reported as evidence.",
+    "No in-browser FDTD execution, arbitrary CAD/freeform geometry solve, general arbitrary 3D Maxwell, FEM/BEM/RCWA, production metal optics model, curved material lens solve, conformal multilayer curved coating solver, sensor-stack EM, digital twin calibration, hardware control, or manufacturing certification is implemented."
+  ],
+  "sourceScenarioHash": "2569f7e424c2366a",
+  "sceneHash": "588269a545ca93a2"
+}

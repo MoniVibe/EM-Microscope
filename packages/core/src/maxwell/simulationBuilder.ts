@@ -155,7 +155,9 @@ export type SimulationBuilderValidationInput = {
 };
 
 export const l80SimulationBuilderBoundary = [
-  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate only.",
+  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration only.",
+  "L8.5 scalar chain preview is limited to ideal plane elements and observation planes.",
+  "L8.5 finite geometry routes to external FDTD export/import evidence with receipts; the browser does not execute FDTD.",
   "Transparent, reflective, and absorbing planar surface/slab cases are executable.",
   "Apertures and ideal lenses are placement-aware scalar/ideal elements in this builder, not material Maxwell geometry solves.",
   "No arbitrary 3D material geometry is executable in-app.",
@@ -178,7 +180,8 @@ export const l80ReleaseTrail = [
   { milestone: "L8.1", label: "External FDTD field maps", runnable: "manifest/script export plus imported flux/field validation" },
   { milestone: "L8.2", label: "FDTD benchmark convergence suite", runnable: "sweep-plan export plus imported convergence/PML diagnostics" },
   { milestone: "L8.3", label: "Finite surface geometry starter set", runnable: "placed transparent/absorbing/reflective/aperture/wedge external FDTD fixtures" },
-  { milestone: "L8.4", label: "Aperture/blocker edge-diffraction validation", runnable: "long-slit/circular/rectangular/blocker scalar reference and external FDTD fixture diagnostics" }
+  { milestone: "L8.4", label: "Aperture/blocker edge-diffraction validation", runnable: "long-slit/circular/rectangular/blocker scalar reference and external FDTD fixture diagnostics" },
+  { milestone: "L8.5", label: "Multi-element optical bench propagation chain", runnable: "ordered multi-element scene graph, solver plan, scalar monitor stack, and external FDTD chain fixture" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -595,6 +598,24 @@ function surfaceValidationResult(input: {
 
 function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]): SimulationBuilderResult["capabilitySummary"] {
   const base = [
+    {
+      id: "multi-element-optical-bench-chain",
+      label: "Multi-element optical bench chain",
+      status: "executable" as const,
+      evidence: "L8.5 ordered source/elements/target/monitor scene graph, solver plan, scalar preview, external FDTD handoff, and validation report exports"
+    },
+    {
+      id: "scalar-multi-plane-preview",
+      label: "Scalar multi-plane preview",
+      status: "executable" as const,
+      evidence: "L8.5 computes deterministic field/intensity monitor snapshots for ideal apertures, slits, thin lenses, and observation planes"
+    },
+    {
+      id: "external-fdtd-chain-export-import",
+      label: "External FDTD chain export/import",
+      status: "executable" as const,
+      evidence: "L8.5 exports deterministic multi-element manifests/scripts and imports bundled field/flux/receipt evidence for supported finite geometry"
+    },
     {
       id: "sequential-simulation-builder",
       label: "Sequential Simulation Builder",

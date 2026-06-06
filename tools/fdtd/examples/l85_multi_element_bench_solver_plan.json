@@ -1,0 +1,62 @@
+[
+  {
+    "id": "segment-circular-aperture-10000",
+    "label": "Circular aperture 1",
+    "segment": "500 nm coherent plane-wave source -> Circular aperture 1",
+    "zStartMm": 0,
+    "zEndMm": 10,
+    "solverRoute": "scalar-chain",
+    "status": "executable",
+    "executable": true,
+    "validationReference": "scalar aperture mask; circular aperture Airy/Bessel validation family",
+    "warnings": []
+  },
+  {
+    "id": "segment-ideal-lens-20000",
+    "label": "Ideal thin lens 1",
+    "segment": "Circular aperture 1 -> Ideal thin lens 1",
+    "zStartMm": 10,
+    "zEndMm": 20,
+    "solverRoute": "scalar-chain",
+    "status": "executable",
+    "executable": true,
+    "validationReference": "ideal zero-thickness thin-lens phase mask; scalar focal-plane validation family",
+    "warnings": []
+  },
+  {
+    "id": "segment-finite-transparent-block-30000",
+    "label": "Transparent block 1",
+    "segment": "Ideal thin lens 1 -> Transparent block 1",
+    "zStartMm": 20,
+    "zEndMm": 30,
+    "solverRoute": "external-fdtd",
+    "status": "external-only",
+    "executable": false,
+    "validationReference": "external FDTD export/import with broad-block Fresnel/TMM reference",
+    "warnings": []
+  },
+  {
+    "id": "segment-finite-absorbing-block-40000",
+    "label": "Absorbing blocker 1",
+    "segment": "Transparent block 1 -> Absorbing blocker 1",
+    "zStartMm": 30,
+    "zEndMm": 40,
+    "solverRoute": "external-fdtd",
+    "status": "external-only",
+    "executable": false,
+    "validationReference": "external FDTD export/import with Beer-Lambert attenuation and energy-balance reference",
+    "warnings": []
+  },
+  {
+    "id": "segment-target",
+    "label": "Transparent target plane",
+    "segment": "Absorbing blocker 1 -> Transparent target plane",
+    "zStartMm": 40,
+    "zEndMm": 50,
+    "solverRoute": "scalar-chain",
+    "status": "computed",
+    "executable": true,
+    "validationReference": "target/observation plane placement with scalar preview and external evidence if finite geometry exists upstream",
+    "warnings": []
+  }
+]

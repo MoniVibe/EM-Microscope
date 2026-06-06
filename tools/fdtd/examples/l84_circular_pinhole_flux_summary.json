@@ -2,7 +2,7 @@
   "schema": "emmicro.fdtd.fluxSummary.v1",
   "runId": "l84-fixture-circular-pinhole",
   "sourceScenarioHash": "c4f75c6515cf0057",
-  "manifestHash": "6da38901feba2cf8",
+  "manifestHash": "4988876e01a19248",
   "incidentFlux": 1,
   "reflectedFlux": 0.02245467074800567,
   "transmittedFlux": 0.08096646259971647,
@@ -71,5 +71,5 @@
       "elementId": "l84-circular-pinhole"
     }
   ],
-  "fluxHash": "cd455b3bd9f32fb1"
+  "fluxHash": "30c3e951ef335157"
 }

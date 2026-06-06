@@ -1,0 +1,330 @@
+{
+  "schema": "emmicro.fdtd.sceneManifest.v1",
+  "id": "l81-fdtd-l85-multi-element-optical-bench-chain",
+  "label": "L8.1 external FDTD export for L8.5 Multi-Element Optical Bench Propagation Chain",
+  "sourceScenarioId": "l85-multi-element-optical-bench-chain",
+  "sourceScenarioHash": "2569f7e424c2366a",
+  "targetKind": "transparent-dielectric",
+  "units": "um",
+  "grid": {
+    "domainWidthUm": 24,
+    "domainHeightUm": 18,
+    "zStartUm": 0,
+    "zEndUm": 65000,
+    "gridSpacingNm": 41.666666666666664,
+    "pointsPerWavelength": 12,
+    "estimatedCells": 388177920000
+  },
+  "source": {
+    "kind": "plane-wave",
+    "wavelengthUm": 0.5,
+    "centerUm": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "direction": "+z",
+    "component": "Ez"
+  },
+  "materials": [
+    {
+      "id": "air",
+      "label": "Air",
+      "refractiveIndex": {
+        "n": 1,
+        "k": 0
+      },
+      "materialHash": "2653810c8f22d751"
+    },
+    {
+      "id": "target-dielectric",
+      "label": "Transparent target plane",
+      "refractiveIndex": {
+        "n": 1.5,
+        "k": 0
+      },
+      "materialHash": "fee8aa9aed270deb"
+    },
+    {
+      "id": "element-finite-transparent-block-30000-dielectric",
+      "label": "Transparent block 1",
+      "refractiveIndex": {
+        "n": 1.5,
+        "k": 0
+      },
+      "materialHash": "885cb9c0297dc58e"
+    },
+    {
+      "id": "element-finite-absorbing-block-40000-absorber",
+      "label": "Absorbing blocker 1",
+      "refractiveIndex": {
+        "n": 1.2,
+        "k": 0.02
+      },
+      "absorptionCoefficientPerM": 5000,
+      "materialHash": "3fee2e989dcfd0a2"
+    }
+  ],
+  "geometry": [
+    {
+      "id": "target-block",
+      "kind": "transparent-slab",
+      "label": "Transparent target plane",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 50000
+      },
+      "sizeUm": {
+        "x": 24,
+        "y": 18,
+        "z": 25
+      },
+      "materialId": "target-dielectric"
+    },
+    {
+      "id": "finite-transparent-block-30000",
+      "kind": "finite-transparent-block",
+      "label": "Transparent block 1",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 30000
+      },
+      "sizeUm": {
+        "x": 8,
+        "y": 8,
+        "z": 5
+      },
+      "materialId": "element-finite-transparent-block-30000-dielectric",
+      "diagnostic": "analytic-reference",
+      "sourceElementId": "finite-transparent-block-30000"
+    },
+    {
+      "id": "finite-absorbing-block-40000",
+      "kind": "finite-absorbing-block",
+      "label": "Absorbing blocker 1",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 40000
+      },
+      "sizeUm": {
+        "x": 8,
+        "y": 8,
+        "z": 100
+      },
+      "materialId": "element-finite-absorbing-block-40000-absorber",
+      "diagnostic": "analytic-reference",
+      "sourceElementId": "finite-absorbing-block-40000"
+    }
+  ],
+  "monitors": [
+    {
+      "id": "incident-flux",
+      "kind": "flux-plane",
+      "label": "Incident flux plane",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 49500
+      },
+      "sizeUm": {
+        "x": 24,
+        "y": 18,
+        "z": 0
+      },
+      "normal": "+z"
+    },
+    {
+      "id": "reflected-flux",
+      "kind": "flux-plane",
+      "label": "Reflected flux plane",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 49200
+      },
+      "sizeUm": {
+        "x": 24,
+        "y": 18,
+        "z": 0
+      },
+      "normal": "-z"
+    },
+    {
+      "id": "transmitted-flux",
+      "kind": "flux-plane",
+      "label": "Transmitted flux plane",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 50800
+      },
+      "sizeUm": {
+        "x": 24,
+        "y": 18,
+        "z": 0
+      },
+      "normal": "+z"
+    },
+    {
+      "id": "field-slice-xz",
+      "kind": "field-slice",
+      "label": "XZ field/intensity slice",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 32500
+      },
+      "sizeUm": {
+        "x": 24,
+        "y": 0,
+        "z": 65000
+      },
+      "normal": "+y",
+      "fields": [
+        "Ez",
+        "intensity"
+      ]
+    },
+    {
+      "id": "finite-transparent-block-30000-front-flux",
+      "kind": "flux-plane",
+      "label": "Transparent block 1 front flux",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 29992.5
+      },
+      "sizeUm": {
+        "x": 8,
+        "y": 8,
+        "z": 0
+      },
+      "normal": "+z"
+    },
+    {
+      "id": "finite-transparent-block-30000-back-flux",
+      "kind": "flux-plane",
+      "label": "Transparent block 1 back flux",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 30007.5
+      },
+      "sizeUm": {
+        "x": 8,
+        "y": 8,
+        "z": 0
+      },
+      "normal": "+z"
+    },
+    {
+      "id": "finite-absorbing-block-40000-front-flux",
+      "kind": "flux-plane",
+      "label": "Absorbing blocker 1 front flux",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 39850
+      },
+      "sizeUm": {
+        "x": 8,
+        "y": 8,
+        "z": 0
+      },
+      "normal": "+z"
+    },
+    {
+      "id": "finite-absorbing-block-40000-back-flux",
+      "kind": "flux-plane",
+      "label": "Absorbing blocker 1 back flux",
+      "centerUm": {
+        "x": 0,
+        "y": 0,
+        "z": 40150
+      },
+      "sizeUm": {
+        "x": 8,
+        "y": 8,
+        "z": 0
+      },
+      "normal": "+z"
+    }
+  ],
+  "boundaries": {
+    "pmlThicknessUm": 0.75,
+    "note": "PML boundary scaffold for optional external Meep execution."
+  },
+  "readiness": {
+    "status": "warning",
+    "supported": [
+      {
+        "id": "source",
+        "label": "500 nm coherent plane-wave source",
+        "evidence": "plane-wave source exported as Meep source scaffold"
+      },
+      {
+        "id": "circular-aperture-10000",
+        "label": "Circular aperture 1",
+        "evidence": "placement metadata export"
+      },
+      {
+        "id": "ideal-lens-20000",
+        "label": "Ideal thin lens 1",
+        "evidence": "placement metadata export"
+      },
+      {
+        "id": "finite-transparent-block-30000",
+        "label": "Transparent block 1",
+        "evidence": "finite surface geometry export with L8.3 validation warnings"
+      },
+      {
+        "id": "finite-absorbing-block-40000",
+        "label": "Absorbing blocker 1",
+        "evidence": "finite surface geometry export with L8.3 validation warnings"
+      },
+      {
+        "id": "target",
+        "label": "Transparent target plane",
+        "evidence": "transparent dielectric slab/block export with Fresnel/TMM comparison"
+      }
+    ],
+    "unsupported": [],
+    "warnings": [
+      {
+        "code": "fdtd.export.scalarElementPlacementOnly",
+        "message": "Circular aperture 1 is retained in the manifest as placement context but is not exported as a material FDTD geometry in L8.1.",
+        "elementId": "circular-aperture-10000"
+      },
+      {
+        "code": "fdtd.export.scalarElementPlacementOnly",
+        "message": "Ideal thin lens 1 is retained in the manifest as placement context but is not exported as a material FDTD geometry in L8.1.",
+        "elementId": "ideal-lens-20000"
+      },
+      {
+        "code": "fdtd.geometry.absorberDispersionUnverified",
+        "message": "Absorbing blocker 1 uses a simple lossy diagnostic material; dispersive material fitting and convergence evidence are required before production claims.",
+        "elementId": "finite-absorbing-block-40000"
+      },
+      {
+        "code": "fdtd.export.largeGrid",
+        "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+      }
+    ],
+    "estimatedCells": 388177920000,
+    "gridSpacingNm": 41.666666666666664,
+    "sceneHash": "2569f7e424c2366a"
+  },
+  "limitations": [
+    "External FDTD export/import only; the browser app does not execute FDTD.",
+    "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
+    "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
+    "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
+    "L8.4 aperture/blocker edge-diffraction validation is limited to long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker diagnostic scenes with scalar limiting-case references and convergence warnings.",
+    "L8.5 multi-element optical bench export/import composes supported finite geometry into deterministic external FDTD helper scenes with monitor definitions and receipts; it is not an in-browser FDTD solve.",
+    "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
+  ],
+  "manifestHash": "dcc211305c62b196"
+}

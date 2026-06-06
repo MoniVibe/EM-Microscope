@@ -171,11 +171,12 @@ describe("L6.6 Practical Study Workspace core", () => {
     const imported = parseStudyBundleJson(JSON.stringify(bundle));
 
     expect(study.type).toBe("l78PracticalStudy");
-    expect(bundle.appVersion).toContain("L8.4");
+    expect(bundle.appVersion).toContain("L8.5");
     expect(imported.study.resultHash).toBe(study.resultHash);
     expect(imported.manifest.resultHashes).toEqual([result.resultHash]);
     expect(imported.manifest.materialReceiptCount).toBe(1);
     expect(imported.manifest.capabilityBoundary).toContain("L8.4 long-slit/circular-pinhole/rectangular-aperture/opaque-blocker edge-diffraction validation dossiers");
+    expect(imported.manifest.capabilityBoundary).toContain("L8.5 multi-element optical bench scene graph/solver plan/scalar monitor stack/external FDTD chain export-import workflow");
     expect(imported.metricsCsv).toContain("visibility");
     expect(imported.profilesCsv).toContain("centerline");
     expect(studyMetricsCsv(study)).toContain("orderSpacingMm");

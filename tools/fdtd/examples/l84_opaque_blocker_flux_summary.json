@@ -2,7 +2,7 @@
   "schema": "emmicro.fdtd.fluxSummary.v1",
   "runId": "l84-fixture-opaque-blocker",
   "sourceScenarioHash": "b2f5d1d694898fb6",
-  "manifestHash": "ec4ecc80507426ef",
+  "manifestHash": "bc4e42a117624937",
   "incidentFlux": 1,
   "reflectedFlux": 0.0354,
   "transmittedFlux": 0.0519,
@@ -76,5 +76,5 @@
       "elementId": "l84-opaque-blocker"
     }
   ],
-  "fluxHash": "11f36d2919182280"
+  "fluxHash": "6c507b818f9ff379"
 }

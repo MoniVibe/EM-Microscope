@@ -13,9 +13,11 @@ import {
   createAbsorbingFdtdExampleBundle,
   createApertureValidationExampleBundles,
   createFdtdBenchmarkExampleBundles,
+  createOpticalBenchBundle,
   createSurfaceGeometryConvergencePack,
   createSurfaceGeometryExampleBundles,
   createTransparentFdtdExampleBundle,
+  defaultOpticalBenchScenario,
   fdtdBenchmarkManifestJson,
   fdtdBenchmarkReportJson,
   fdtdBenchmarkReportMarkdown,
@@ -31,6 +33,12 @@ import {
   fdtdValidationMetricsCsv,
   fdtdValidationReportJson,
   fdtdValidationReportMarkdown,
+  opticalBenchMetricsCsv,
+  opticalBenchMonitorStackCsv,
+  opticalBenchSceneJson,
+  opticalBenchSolverPlanJson,
+  opticalBenchValidationReportJson,
+  opticalBenchValidationReportMarkdown,
   surfaceGeometryFluxSummaryJson,
   surfaceGeometryMetricsCsv,
   surfaceGeometryReceiptJson,
@@ -49,14 +57,16 @@ const absorbing = createAbsorbingFdtdExampleBundle();
 const benchmarkExamples = createFdtdBenchmarkExampleBundles();
 const surfaceGeometryExamples = createSurfaceGeometryExampleBundles();
 const apertureExamples = createApertureValidationExampleBundles();
+const multiElementBench = createOpticalBenchBundle(defaultOpticalBenchScenario());
 
 await writeExample("README.md", [
-  "# L8.1/L8.2/L8.3/L8.4 FDTD Example Fixtures",
+  "# L8.1/L8.2/L8.3/L8.4/L8.5 FDTD Example Fixtures",
   "",
   "These files are deterministic diagnostic fixtures generated from `packages/core`.",
   "They are for import/export and convergence smoke testing only and are not measured lab results.",
   "L8.3 adds finite placed surface-geometry diagnostics for transparent blocks, absorbing blocks, reflective plates, aperture/blockers, and tilted interface wedges.",
   "L8.4 adds finite aperture/blocker edge-diffraction validation diagnostics for long slits, circular pinholes, rectangular apertures, and opaque blockers.",
+  "L8.5 adds a multi-element optical bench chain fixture with scene graph, solver plan, monitor stack, validation report, FDTD manifest/script, and bundled external evidence.",
   "",
   "Regenerate with:",
   "",
@@ -77,6 +87,7 @@ for (const [kind, example] of Object.entries(surfaceGeometryExamples)) {
 for (const [kind, example] of Object.entries(apertureExamples)) {
   await writeApertureBundle(`l84_${kind.replaceAll("-", "_")}`, example);
 }
+await writeMultiElementBenchBundle("l85_multi_element_bench", multiElementBench);
 
 async function writeBundle(prefix, example) {
   await writeExample(`${prefix}_scene.json`, fdtdManifestJson(example.manifest));
@@ -137,6 +148,20 @@ async function writeApertureBundle(prefix, example) {
   await writeExample(`${prefix}_validation_metrics.csv`, `${apertureMetricsCsv(example.validation)}\n`);
   await writeExample(`${prefix}_profile.csv`, `${apertureProfileCsv(example.validation)}\n`);
   await writeExample(`${prefix}_convergence.csv`, `${apertureConvergenceCsv(example.validation)}\n`);
+}
+
+async function writeMultiElementBenchBundle(prefix, bundle) {
+  await writeExample(`${prefix}_multielement_scene.json`, opticalBenchSceneJson(bundle.scene));
+  await writeExample(`${prefix}_solver_plan.json`, opticalBenchSolverPlanJson(bundle.solverPlan));
+  await writeExample(`${prefix}_monitor_stack.csv`, `${opticalBenchMonitorStackCsv(bundle.scalarPreview)}\n`);
+  await writeExample(`${prefix}_validation_report.json`, opticalBenchValidationReportJson(bundle.validationReport));
+  await writeExample(`${prefix}_validation_report.md`, `${opticalBenchValidationReportMarkdown(bundle.validationReport)}\n`);
+  await writeExample(`${prefix}_metrics.csv`, `${opticalBenchMetricsCsv(bundle.validationReport)}\n`);
+  await writeExample(`${prefix}_fdtd_scene_manifest.json`, fdtdManifestJson(bundle.fdtdBundle.manifest));
+  await writeExample(`${prefix}_meep.py`, fdtdMeepScriptText(bundle.fdtdBundle.script));
+  await writeExample(`${prefix}_run_receipt.json`, `${JSON.stringify(bundle.externalEvidence.receipt, null, 2)}\n`);
+  await writeExample(`${prefix}_flux_summary.json`, `${JSON.stringify(bundle.externalEvidence.flux, null, 2)}\n`);
+  await writeExample(`${prefix}_field_slice.csv`, `${bundle.externalEvidence.fieldSliceCsv}\n`);
 }
 
 async function writeExample(name, text) {

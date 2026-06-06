@@ -2,7 +2,7 @@
   "schema": "emmicro.fdtd.fluxSummary.v1",
   "runId": "l84-fixture-rectangular-aperture",
   "sourceScenarioHash": "690bcd0934d9aa12",
-  "manifestHash": "c0382146f92ba396",
+  "manifestHash": "80d7cf1849f3a70e",
   "incidentFlux": 1,
   "reflectedFlux": 0.019666666666666666,
   "transmittedFlux": 0.16216666666666665,
@@ -71,5 +71,5 @@
       "elementId": "l84-rectangular-aperture"
     }
   ],
-  "fluxHash": "7a1c0b1252dbcd87"
+  "fluxHash": "c36530ad7f443cc8"
 }

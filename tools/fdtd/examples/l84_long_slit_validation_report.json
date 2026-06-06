@@ -3,9 +3,9 @@
   "kind": "long-slit",
   "screenModel": "absorbing-screen",
   "sourceScenarioHash": "d96beb814449f702",
-  "manifestHash": "c1075ced58ef74a9",
-  "scriptHash": "622e04573dc8aaeb",
-  "sceneHash": "56061e498e031bd7",
+  "manifestHash": "33d117e7c5e980b1",
+  "scriptHash": "18ebd85d8771dbf9",
+  "sceneHash": "20016793069c92b3",
   "geometryHash": "1980ab03b3ad7ac1",
   "diagnostics": {
     "gridSpacingNm": 62.5,
@@ -685,5 +685,5 @@
       "elementId": "l84-long-slit"
     }
   ],
-  "reportHash": "92bc1d2f3a9c3ccc"
+  "reportHash": "869d8674c368da04"
 }

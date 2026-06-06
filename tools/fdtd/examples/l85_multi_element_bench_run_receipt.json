@@ -1,0 +1,25 @@
+{
+  "schema": "emmicro.fdtd.runReceipt.v1",
+  "runId": "l85-multi-element-fixture-588269a5",
+  "sourceScenarioHash": "2569f7e424c2366a",
+  "manifestHash": "dcc211305c62b196",
+  "scriptHash": "17d79f269458dc42",
+  "tool": {
+    "name": "example-fixture",
+    "version": "l85.deterministic.fixture",
+    "postprocessorVersion": "emmicro.fdtd.multiElement.fixture.v1"
+  },
+  "createdAtIso": "2026-06-06T00:00:00.000Z",
+  "settings": {
+    "resolution": 24,
+    "until": 260,
+    "pmlThicknessUm": 0.75
+  },
+  "warnings": [
+    {
+      "code": "opticalBench.external.fixture",
+      "message": "Bundled L8.5 multi-element evidence is deterministic fixture data for UI/report validation, not a browser-run FDTD solve."
+    }
+  ],
+  "receiptHash": "bcd790c2ac38d20d"
+}

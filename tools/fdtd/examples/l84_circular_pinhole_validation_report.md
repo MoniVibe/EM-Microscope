@@ -1,8 +1,8 @@
 # L8.4 Circular pinhole aperture Aperture Validation Report
 
-Scene hash: c9177c476aa276ff
-Manifest hash: 6da38901feba2cf8
-Script hash: d0c74c39562a4d61
+Scene hash: 4b5d69a020723f13
+Manifest hash: 4988876e01a19248
+Script hash: 91e497b3ad5863f1
 Geometry hash: 26b86a0994b5eee7
 Status: PASS
 

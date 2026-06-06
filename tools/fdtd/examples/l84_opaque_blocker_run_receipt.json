@@ -2,8 +2,8 @@
   "schema": "emmicro.fdtd.runReceipt.v1",
   "runId": "l84-fixture-opaque-blocker",
   "sourceScenarioHash": "b2f5d1d694898fb6",
-  "manifestHash": "ec4ecc80507426ef",
-  "scriptHash": "fe9ffd7f7f59210e",
+  "manifestHash": "bc4e42a117624937",
+  "scriptHash": "b1ea0c44476885fc",
   "tool": {
     "name": "example-fixture",
     "version": "l84-deterministic",
@@ -62,5 +62,5 @@
       "elementId": "l84-opaque-blocker"
     }
   ],
-  "receiptHash": "3e814174d82bdbc0"
+  "receiptHash": "2b3bf8b9af3607ca"
 }
