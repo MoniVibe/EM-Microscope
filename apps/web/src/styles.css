@@ -2923,6 +2923,28 @@ h2 {
   align-items: center;
 }
 
+.l85-snap-control {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #40506a;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.l85-snap-control select {
+  height: 28px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #263244;
+}
+
 .l85-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2945,7 +2967,7 @@ h2 {
 .l85-element-row {
   min-width: 900px;
   display: grid;
-  grid-template-columns: 54px minmax(170px, 1.1fr) 84px minmax(120px, 0.8fr) 132px minmax(250px, 1.25fr);
+  grid-template-columns: 54px minmax(170px, 1.1fr) 84px minmax(120px, 0.8fr) 132px minmax(340px, 1.45fr);
   gap: 8px;
   align-items: center;
   padding: 7px 8px;
@@ -2954,6 +2976,18 @@ h2 {
   background: #fbfdff;
   color: #516078;
   font-size: 12px;
+}
+
+.l85-element-row[role="button"] {
+  cursor: pointer;
+}
+
+.l85-element-row:focus-visible,
+.l85-selected-row {
+  outline: 2px solid #0b7788;
+  outline-offset: 2px;
+  border-color: #0b7788;
+  background: #eef9fb;
 }
 
 .l85-element-row input {
@@ -2989,10 +3023,107 @@ h2 {
 }
 
 .l85-row-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   min-height: 28px;
   border-radius: 6px;
   padding: 4px 8px;
   font-size: 11px;
+}
+
+.l85-inspector-panel {
+  align-self: start;
+}
+
+.l85-inspector {
+  display: grid;
+  gap: 10px;
+}
+
+.l85-inspector-summary {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 0.8fr) minmax(150px, 0.8fr);
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+}
+
+.l85-inspector-summary strong,
+.l85-inspector-summary span,
+.l85-inspector-summary em {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.l85-inspector-summary em {
+  font-style: normal;
+  color: #0b6574;
+  font-weight: 800;
+}
+
+.l85-inspector-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.l85-text-field {
+  display: grid;
+  gap: 5px;
+  color: #40506a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.l85-text-field input,
+.l85-text-field select {
+  min-width: 0;
+  height: 34px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  padding: 0 8px;
+  background: #ffffff;
+  color: #263244;
+}
+
+.l85-inspector-readout {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.l85-inspector-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.l85-inspector-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.l85-inspector-warnings {
+  max-height: 180px;
+  overflow: auto;
+}
+
+.l85-inspector-boundary {
+  padding: 8px;
+  border: 1px solid #b7c8d8;
+  border-radius: 6px;
+  background: #f2f8fb;
+  color: #40506a;
+  font-size: 12px;
 }
 
 .l85-cross-section {
@@ -3009,6 +3140,11 @@ h2 {
   background:
     linear-gradient(90deg, rgba(226, 232, 240, 0.86), transparent 7%, transparent 93%, rgba(226, 232, 240, 0.86)),
     repeating-linear-gradient(90deg, #f8fbfd 0, #f8fbfd 34px, #edf3f7 35px, #edf3f7 36px);
+}
+
+.l85-cross-section-domain:focus-visible {
+  outline: 2px solid #0b7788;
+  outline-offset: 2px;
 }
 
 .l85-cross-section-axis {
@@ -3034,6 +3170,23 @@ h2 {
   font-weight: 800;
   transform: translateX(-50%);
   box-shadow: 0 2px 8px rgba(21, 35, 52, 0.1);
+}
+
+.l85-cross-section-item[role="button"] {
+  cursor: grab;
+  touch-action: none;
+}
+
+.l85-cross-section-selected {
+  z-index: 5;
+  border-color: #0b6574;
+  outline: 2px solid #0b7788;
+  outline-offset: 2px;
+}
+
+.l85-cross-section-drag-preview {
+  opacity: 0.72;
+  box-shadow: 0 0 0 4px rgba(11, 119, 136, 0.15);
 }
 
 .l85-cross-section-item span {
@@ -3504,7 +3657,9 @@ h2 {
   .l85-grid,
   .fdtd-verification-controls,
   .surface-cross-section-legend,
-  .simulation-field-grid {
+  .simulation-field-grid,
+  .l85-inspector-grid,
+  .l85-inspector-readout {
     grid-template-columns: 1fr;
   }
 

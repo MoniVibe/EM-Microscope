@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type PointerEvent } from "react";
 import {
+  addOpticalBenchCustomMonitor,
   addSimulationBuilderElement,
   apertureConvergenceCsv,
   apertureFluxSummaryJson,
@@ -19,6 +20,8 @@ import {
   createFdtdBenchmarkExampleBundle,
   createFdtdBenchmarkPack,
   createFdtdBenchmarkScenario,
+  commitOpticalBenchHistory,
+  createOpticalBenchHistory,
   createSimulationBuilderElement,
   createSurfaceGeometryConvergencePack,
   createSurfaceGeometryElement,
@@ -28,6 +31,7 @@ import {
   createTransparentFdtdExampleScenario,
   defaultOpticalBenchScenario,
   defaultSimulationBuilderScenario,
+  deleteOpticalBenchCustomMonitor,
   deleteOpticalBenchElement,
   duplicateOpticalBenchElement,
   fdtdBenchmarkManifestJson,
@@ -45,18 +49,23 @@ import {
   fdtdValidationMetricsCsv,
   fdtdValidationReportJson,
   fdtdValidationReportMarkdown,
+  isOpticalBenchEditingBlocked,
   createOpticalBenchBundle,
   importFdtdRunArtifacts,
   importFdtdConvergenceBundleArtifacts,
   l80ReleaseTrail,
+  moveOpticalBenchElementInOrder,
+  nudgeOpticalBenchElement,
   opticalBenchMetricsCsv,
   opticalBenchMonitorStackCsv,
   opticalBenchSceneJson,
   opticalBenchSolverPlanJson,
   opticalBenchValidationReportJson,
   opticalBenchValidationReportMarkdown,
+  redoOpticalBenchHistory,
   runSimulationBuilderScenario,
   setOpticalBenchElementEnabled,
+  undoOpticalBenchHistory,
   simulationBuilderScenarioJson,
   simulationBuilderValidationMetricsCsv,
   simulationBuilderValidationReportJson,
@@ -66,7 +75,10 @@ import {
   surfaceGeometryValidationReportJson,
   surfaceGeometryValidationReportMarkdown,
   updateOpticalBenchElementZ,
+  updateOpticalBenchCustomMonitor,
+  updateOpticalBenchElementProperties,
   validateApertureImportedRun,
+  validateOpticalBenchEditing,
   validateFdtdImportedRunAgainstScenario,
   type ApertureConvergenceReport,
   type ApertureScreenModel,
@@ -78,11 +90,15 @@ import {
   type FdtdFieldSlice,
   type FdtdImportedRun,
   type FdtdValidationReport,
+  type OpticalBenchHistoryState,
   type OpticalBenchElement,
+  type OpticalBenchMonitor,
   type OpticalBenchMonitorSnapshot,
   type OpticalBenchSolverPlanRow,
+  type SolverWarning,
   type SurfaceGeometryExampleBundle,
   type SurfaceGeometryKind,
+  type SimulationBuilderCustomMonitor,
   type SimulationBuilderElement,
   type SimulationBuilderElementKind,
   type SimulationBuilderGrid,
@@ -91,7 +107,7 @@ import {
   type SimulationBuilderTarget,
   type SimulationBuilderTargetKind
 } from "@emmicro/core";
-import { FileDown, Plus, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Copy, Eye, EyeOff, FileDown, Plus, Redo2, Sparkles, Trash2, Undo2 } from "lucide-react";
 
 const stepLabels = [
   ["grid", "1 Grid"],
@@ -139,6 +155,13 @@ const l85BenchActions: Array<{ kind: SimulationBuilderElementKind; label: string
   { kind: "curved-material-lens", label: "Add curved lens scaffold" }
 ];
 
+type L85Selection = { kind: "element" | "monitor"; id: string };
+type L85CommitOptions = {
+  select?: L85Selection | null | ((previous: SimulationBuilderScenario, next: SimulationBuilderScenario) => L85Selection | null | undefined);
+  scalarDirty?: boolean;
+  externalDirty?: boolean;
+};
+
 function downloadText(filename: string, mime: string, text: string): void {
   const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -151,8 +174,16 @@ function downloadText(filename: string, mime: string, text: string): void {
   URL.revokeObjectURL(url);
 }
 
+function initialL85Selection(): L85Selection {
+  const firstElement = defaultOpticalBenchScenario().elements[0];
+  return { kind: "element", id: firstElement?.id ?? "source" };
+}
+
 export function SimulationBuilderPanel() {
   const [scenario, setScenario] = useState<SimulationBuilderScenario>(() => defaultOpticalBenchScenario());
+  const [selectedL85, setSelectedL85] = useState<L85Selection>(() => initialL85Selection());
+  const [l85SnapStepMm, setL85SnapStepMm] = useState(0.5);
+  const [l85History, setL85History] = useState<OpticalBenchHistoryState>(() => createOpticalBenchHistory(defaultOpticalBenchScenario()));
   const [hasComputed, setHasComputed] = useState(false);
   const [hasL85ScalarPreview, setHasL85ScalarPreview] = useState(true);
   const [hasL85ExternalEvidence, setHasL85ExternalEvidence] = useState(true);
@@ -187,6 +218,13 @@ export function SimulationBuilderPanel() {
     () => (importedFdtd ? validateFdtdImportedRunAgainstScenario(scenario, fdtdBundle, importedFdtd) : null),
     [fdtdBundle, importedFdtd, scenario]
   );
+  const l85Snap = useMemo(() => ({ enabled: l85SnapStepMm > 0, stepMm: l85SnapStepMm }), [l85SnapStepMm]);
+  const l85EditingWarnings = useMemo(() => validateOpticalBenchEditing(scenario), [scenario]);
+  const l85EditingBlocked = useMemo(() => isOpticalBenchEditingBlocked(l85EditingWarnings), [l85EditingWarnings]);
+  const selectedL85Element = selectedL85.kind === "element" ? scenario.elements.find((element) => element.id === selectedL85.id) ?? null : null;
+  const selectedL85SceneElement = selectedL85.kind === "element" ? l85Bundle.scene.elements.find((element) => element.id === selectedL85.id) ?? null : null;
+  const selectedL85Monitor = selectedL85.kind === "monitor" ? l85Bundle.scene.monitors.find((monitor) => monitor.id === selectedL85.id) ?? null : null;
+  const selectedL85CustomMonitor = selectedL85.kind === "monitor" ? (scenario.customMonitors ?? []).find((monitor) => monitor.id === selectedL85.id) ?? null : null;
   const zMin = Math.min(scenario.grid.zStartMm, ...result.axis.map((node) => node.zMm));
   const zMax = Math.max(scenario.observationPlaneZMm, scenario.grid.zEndMm, ...result.axis.map((node) => node.zMm));
 
@@ -221,8 +259,27 @@ export function SimulationBuilderPanel() {
     setScenario((current) => addSimulationBuilderElement(current, { ...createSurfaceGeometryElement(kind, nextZ), id: `l83-${kind}-${labelSuffix}`, label: `${surfaceGeometryDisplayName(kind)} ${labelSuffix}` }));
   }
 
+  function commitL85Edit(label: string, updater: (current: SimulationBuilderScenario) => SimulationBuilderScenario, options: L85CommitOptions = {}): void {
+    const current = scenario;
+    const next = updater(current);
+    if (JSON.stringify(next) === JSON.stringify(current)) return;
+    setScenario(next);
+    setL85History((history) => commitOpticalBenchHistory({ ...history, present: current }, next, label));
+    if (options.select !== undefined) {
+      const selection = typeof options.select === "function" ? options.select(current, next) : options.select;
+      if (selection) setSelectedL85(selection);
+    }
+    if (options.scalarDirty !== false) setHasL85ScalarPreview(false);
+    if (options.externalDirty !== false) setHasL85ExternalEvidence(false);
+    setSurfaceGeometryExample(null);
+    clearApertureEvidence();
+  }
+
   function resetL85Bench(): void {
-    setScenario(defaultOpticalBenchScenario());
+    const next = defaultOpticalBenchScenario();
+    setScenario(next);
+    setL85History(createOpticalBenchHistory(next));
+    setSelectedL85(initialL85Selection());
     setHasComputed(true);
     setHasL85ScalarPreview(true);
     setHasL85ExternalEvidence(true);
@@ -231,7 +288,7 @@ export function SimulationBuilderPanel() {
   }
 
   function addL85BenchElement(action: { kind: SimulationBuilderElementKind; label: string; overrides?: Partial<SimulationBuilderElement> }): void {
-    setScenario((current) => {
+    commitL85Edit("Add optical bench element", (current) => {
       const nextZ = Math.min(current.grid.zEndMm - 1, Math.max(current.source.zMm, current.target.zMm - 2, ...current.elements.map((element) => element.zMm)) + 5);
       const labelSuffix = current.elements.filter((element) => element.kind === action.kind).length + 1;
       const label = action.overrides?.label ? `${action.overrides.label} ${labelSuffix}` : `${elementButtonLabel(action.kind)} ${labelSuffix}`;
@@ -242,45 +299,177 @@ export function SimulationBuilderPanel() {
         label
       };
       return addSimulationBuilderElement(current, element);
+    }, {
+      select: (previous, next) => {
+        const added = next.elements.find((element) => !previous.elements.some((oldElement) => oldElement.id === element.id));
+        return added ? { kind: "element", id: added.id } : null;
+      },
+      scalarDirty: false
     });
-    setHasL85ScalarPreview(true);
-    setHasL85ExternalEvidence(false);
   }
 
   function duplicateL85Element(elementId: string): void {
-    setScenario((current) => duplicateOpticalBenchElement(current, elementId));
-    setHasL85ExternalEvidence(false);
+    commitL85Edit("Duplicate optical bench element", (current) => duplicateOpticalBenchElement(current, elementId), {
+      select: (previous, next) => {
+        const duplicate = next.elements.find((element) => !previous.elements.some((oldElement) => oldElement.id === element.id));
+        return duplicate ? { kind: "element", id: duplicate.id } : null;
+      }
+    });
   }
 
   function deleteL85Element(elementId: string): void {
-    setScenario((current) => deleteOpticalBenchElement(current, elementId));
-    setHasL85ExternalEvidence(false);
+    commitL85Edit("Delete optical bench element", (current) => deleteOpticalBenchElement(current, elementId), {
+      select: (_previous, next) => (next.elements[0] ? { kind: "element", id: next.elements[0].id } : null)
+    });
   }
 
   function toggleL85Element(element: OpticalBenchElement): void {
-    setScenario((current) => setOpticalBenchElementEnabled(current, element.id, !element.enabled));
-    setHasL85ExternalEvidence(false);
+    commitL85Edit(`${element.enabled ? "Disable" : "Enable"} optical bench element`, (current) => setOpticalBenchElementEnabled(current, element.id, !element.enabled), {
+      select: { kind: "element", id: element.id }
+    });
   }
 
   function updateL85ElementZ(elementId: string, value: number): void {
-    setScenario((current) => updateOpticalBenchElementZ(current, elementId, value));
-    setHasL85ExternalEvidence(false);
+    commitL85Edit("Move optical bench element", (current) => updateOpticalBenchElementZ(current, elementId, value), {
+      select: { kind: "element", id: elementId }
+    });
   }
 
   function addL85ObservationMonitor(): void {
-    setScenario((current) => ({
+    commitL85Edit("Move observation monitor", (current) => ({
       ...current,
       observationPlaneZMm: Math.min(current.grid.zEndMm, Math.max(current.observationPlaneZMm + 5, ...current.elements.map((element) => element.zMm + 2)))
-    }));
+    }), {
+      select: { kind: "monitor", id: "observation-plane" },
+      externalDirty: false
+    });
+  }
+
+  function updateL85ElementPatch(elementId: string, patch: Partial<SimulationBuilderElement>, label = "Edit optical bench element"): void {
+    commitL85Edit(label, (current) => updateOpticalBenchElementProperties(current, elementId, patch), {
+      select: { kind: "element", id: elementId }
+    });
+  }
+
+  function moveL85ElementOrder(elementId: string, direction: "earlier" | "later"): void {
+    commitL85Edit(`Move element ${direction}`, (current) => moveOpticalBenchElementInOrder(current, elementId, direction), {
+      select: { kind: "element", id: elementId }
+    });
+  }
+
+  function nudgeL85Selection(delta: { zMm?: number; xUm?: number }): void {
+    if (selectedL85.kind === "element") {
+      commitL85Edit("Nudge optical bench element", (current) => nudgeOpticalBenchElement(current, selectedL85.id, delta, l85Snap), {
+        select: selectedL85
+      });
+      return;
+    }
+    if (selectedL85.id === "observation-plane") {
+      commitL85Edit("Nudge observation monitor", (current) => ({
+        ...current,
+        observationPlaneZMm: clampNumber(current.observationPlaneZMm + (delta.zMm ?? 0), current.grid.zStartMm, current.grid.zEndMm)
+      }), {
+        select: selectedL85,
+        externalDirty: false
+      });
+      return;
+    }
+    if (selectedL85CustomMonitor) {
+      commitL85Edit("Nudge custom monitor", (current) => updateOpticalBenchCustomMonitor(current, selectedL85.id, {
+        zMm: clampNumber(selectedL85CustomMonitor.zMm + (delta.zMm ?? 0), current.grid.zStartMm, current.grid.zEndMm),
+        xUm: selectedL85CustomMonitor.xUm + (delta.xUm ?? 0)
+      }), {
+        select: selectedL85
+      });
+    }
+  }
+
+  function addL85MonitorAround(elementId: string, placement: "before" | "after"): void {
+    commitL85Edit(`Add monitor ${placement} element`, (current) => addOpticalBenchCustomMonitor(current, elementId, placement), {
+      select: (previous, next) => {
+        const added = (next.customMonitors ?? []).find((monitor) => !(previous.customMonitors ?? []).some((oldMonitor) => oldMonitor.id === monitor.id));
+        return added ? { kind: "monitor", id: added.id } : null;
+      }
+    });
+  }
+
+  function updateL85MonitorPatch(monitorId: string, patch: Partial<SimulationBuilderCustomMonitor>): void {
+    if (monitorId === "observation-plane") {
+      commitL85Edit("Edit observation monitor", (current) => ({
+        ...current,
+        observationPlaneZMm: patch.zMm ?? current.observationPlaneZMm
+      }), {
+        select: { kind: "monitor", id: monitorId },
+        externalDirty: false
+      });
+      return;
+    }
+    commitL85Edit("Edit custom monitor", (current) => updateOpticalBenchCustomMonitor(current, monitorId, patch), {
+      select: { kind: "monitor", id: monitorId }
+    });
+  }
+
+  function deleteL85Monitor(monitorId: string): void {
+    if (monitorId === "observation-plane") return;
+    commitL85Edit("Delete custom monitor", (current) => deleteOpticalBenchCustomMonitor(current, monitorId), {
+      select: { kind: "monitor", id: "observation-plane" }
+    });
+  }
+
+  function commitL85DiagramPosition(selection: L85Selection, position: { zMm: number; xUm?: number }): void {
+    if (selection.kind === "element") {
+      commitL85Edit("Drag optical bench element", (current) => updateOpticalBenchElementProperties(current, selection.id, {
+        zMm: snapOpticalBenchValue(position.zMm),
+        xUm: position.xUm
+      }), {
+        select: selection
+      });
+      return;
+    }
+    updateL85MonitorPatch(selection.id, { zMm: snapOpticalBenchValue(position.zMm), xUm: position.xUm });
+  }
+
+  function undoL85Edit(): void {
+    const next = undoOpticalBenchHistory({ ...l85History, present: scenario });
+    if (JSON.stringify(next.present) === JSON.stringify(scenario)) return;
+    setScenario(next.present);
+    setL85History(next);
+    setHasL85ScalarPreview(false);
+    setHasL85ExternalEvidence(false);
+  }
+
+  function redoL85Edit(): void {
+    const next = redoOpticalBenchHistory({ ...l85History, present: scenario });
+    if (JSON.stringify(next.present) === JSON.stringify(scenario)) return;
+    setScenario(next.present);
+    setL85History(next);
+    setHasL85ScalarPreview(false);
+    setHasL85ExternalEvidence(false);
+  }
+
+  function exportL85SelectedJson(): void {
+    if (selectedL85.kind === "element" && selectedL85Element) {
+      downloadText(`${selectedL85Element.id}.json`, "application/json", `${JSON.stringify(selectedL85Element, null, 2)}\n`);
+      return;
+    }
+    if (selectedL85.kind === "monitor" && selectedL85Monitor) {
+      downloadText(`${selectedL85Monitor.id}.json`, "application/json", `${JSON.stringify(selectedL85Monitor, null, 2)}\n`);
+    }
+  }
+
+  function snapOpticalBenchValue(valueMm: number): number {
+    return l85Snap.enabled ? Math.round(valueMm / l85Snap.stepMm) * l85Snap.stepMm : valueMm;
   }
 
   function exportL85Scene(): void {
+    if (l85EditingBlocked) return;
     downloadText("multielement_scene.json", "application/json", opticalBenchSceneJson(l85Bundle.scene));
     downloadText("solver_plan.json", "application/json", opticalBenchSolverPlanJson(l85Bundle.solverPlan));
     downloadText("monitor_stack.csv", "text/csv", `${opticalBenchMonitorStackCsv(l85Bundle.scalarPreview)}\n`);
   }
 
   function exportL85ExternalFdtdChain(): void {
+    if (l85EditingBlocked) return;
     downloadText("multielement_fdtd_scene_manifest.json", "application/json", fdtdManifestJson(l85Bundle.fdtdBundle.manifest));
     downloadText("multielement_meep.py", "text/x-python", fdtdMeepScriptText(l85Bundle.fdtdBundle.script));
     downloadText("multielement_fixture_receipt.json", "application/json", JSON.stringify(l85Bundle.externalEvidence.receipt, null, 2));
@@ -289,6 +478,7 @@ export function SimulationBuilderPanel() {
   }
 
   function exportL85ValidationReport(): void {
+    if (l85EditingBlocked) return;
     downloadText("multielement_validation_report.md", "text/markdown", `${opticalBenchValidationReportMarkdown(l85Bundle.validationReport)}\n`);
     downloadText("multielement_validation_report.json", "application/json", opticalBenchValidationReportJson(l85Bundle.validationReport));
     downloadText("multielement_metrics.csv", "text/csv", `${opticalBenchMetricsCsv(l85Bundle.validationReport)}\n`);
@@ -540,16 +730,16 @@ export function SimulationBuilderPanel() {
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L8.5 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L8.5.1 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L8.5 Multi-Element Optical Bench Propagation Chain</h2>
+        <h2>L8.5.1 Element Inspector + Direct Optical Bench Editing</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, external FDTD handoff evidence, and a validation report.
+          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, external FDTD handoff evidence, precise numeric edits, optional diagram drag, and a validation report.
           Browser FDTD, arbitrary 3D Maxwell material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, sensor-stack EM, digital twin behavior, and manufacturing
           certification are not implemented.
         </span>
@@ -564,7 +754,7 @@ export function SimulationBuilderPanel() {
         ))}
       </div>
 
-      <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide l85-bench" aria-label="L8.5 multi-element optical bench smoke preview">
+      <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide l85-bench" aria-label="L8.5.1 multi-element optical bench editor smoke preview">
         <div className="maxwell-section-heading">
           <h2>Multi-Element Optical Bench</h2>
           <strong>{l85Bundle.validationReport.computationStatus}</strong>
@@ -591,7 +781,24 @@ export function SimulationBuilderPanel() {
             <Plus size={15} />
             <span>Add monitor</span>
           </button>
-          <button type="button" onClick={() => setHasL85ScalarPreview(true)}>
+          <button type="button" onClick={undoL85Edit} disabled={l85History.past.length === 0}>
+            <Undo2 size={15} />
+            <span>Undo</span>
+          </button>
+          <button type="button" onClick={redoL85Edit} disabled={l85History.future.length === 0}>
+            <Redo2 size={15} />
+            <span>Redo</span>
+          </button>
+          <label className="l85-snap-control">
+            <span>Snap</span>
+            <select aria-label="L8.5 snap step" value={l85SnapStepMm} onChange={(event) => setL85SnapStepMm(Number(event.currentTarget.value))}>
+              <option value={0}>Off</option>
+              <option value={0.1}>0.1 mm</option>
+              <option value={0.5}>0.5 mm</option>
+              <option value={1}>1 mm</option>
+            </select>
+          </label>
+          <button type="button" onClick={() => setHasL85ScalarPreview(true)} disabled={l85EditingBlocked}>
             <Sparkles size={15} />
             <span>Run Scalar Preview</span>
           </button>
@@ -599,15 +806,15 @@ export function SimulationBuilderPanel() {
             <Sparkles size={15} />
             <span>Import Bundled Multi-Element Fixture</span>
           </button>
-          <button type="button" onClick={exportL85Scene}>
+          <button type="button" onClick={exportL85Scene} disabled={l85EditingBlocked}>
             <FileDown size={15} />
             <span>Export Multi-Element Scene</span>
           </button>
-          <button type="button" onClick={exportL85ExternalFdtdChain}>
+          <button type="button" onClick={exportL85ExternalFdtdChain} disabled={l85EditingBlocked}>
             <FileDown size={15} />
             <span>Export External FDTD Chain</span>
           </button>
-          <button type="button" onClick={exportL85ValidationReport}>
+          <button type="button" onClick={exportL85ValidationReport} disabled={l85EditingBlocked}>
             <FileDown size={15} />
             <span>Export Multi-Element Validation Report</span>
           </button>
@@ -629,20 +836,86 @@ export function SimulationBuilderPanel() {
                 <span>controls</span>
               </div>
               {l85Bundle.scene.elements.map((element, index) => (
-                <div className="l85-element-row" key={element.id}>
+                <div
+                  className={`l85-element-row ${selectedL85.kind === "element" && selectedL85.id === element.id ? "l85-selected-row" : ""}`}
+                  key={element.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Select ${element.label}`}
+                  aria-pressed={selectedL85.kind === "element" && selectedL85.id === element.id}
+                  onClick={() => setSelectedL85({ kind: "element", id: element.id })}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedL85({ kind: "element", id: element.id });
+                    }
+                  }}
+                >
                   <span>{index + 1}</span>
                   <strong>{element.label}</strong>
-                  <input aria-label={`${element.label} z position`} type="number" value={element.zMm} step={0.5} onChange={(event) => updateL85ElementZ(element.id, Number(event.currentTarget.value))} />
+                  <input
+                    aria-label={`${element.label} z position`}
+                    type="number"
+                    value={element.zMm}
+                    step={l85Snap.enabled ? l85Snap.stepMm : 0.1}
+                    onClick={(event) => event.stopPropagation()}
+                    onFocus={() => setSelectedL85({ kind: "element", id: element.id })}
+                    onChange={(event) => updateL85ElementZ(element.id, Number(event.currentTarget.value))}
+                  />
                   <span>{element.solverRoute}</span>
                   <em className={`simulation-capability simulation-capability-${element.status === "external-only" ? "scaffold-only" : element.status}`}>{element.status}</em>
-                  <span className="l85-row-actions">
-                    <button type="button" onClick={() => duplicateL85Element(element.id)}>Duplicate</button>
-                    <button type="button" onClick={() => toggleL85Element(element)}>{element.enabled ? "Disable" : "Enable"}</button>
-                    <button type="button" onClick={() => deleteL85Element(element.id)}>Delete</button>
+                  <span className="l85-row-actions" onClick={(event) => event.stopPropagation()}>
+                    <button type="button" onClick={() => duplicateL85Element(element.id)} title={`Duplicate ${element.label}`}>
+                      <Copy size={13} />
+                      <span>Duplicate</span>
+                    </button>
+                    <button type="button" onClick={() => toggleL85Element(element)} title={`${element.enabled ? "Disable" : "Enable"} ${element.label}`}>
+                      {element.enabled ? <EyeOff size={13} /> : <Eye size={13} />}
+                      <span>{element.enabled ? "Disable" : "Enable"}</span>
+                    </button>
+                    <button type="button" onClick={() => addL85MonitorAround(element.id, "after")} title={`Add monitor after ${element.label}`}>
+                      <Plus size={13} />
+                      <span>Monitor</span>
+                    </button>
+                    <button type="button" onClick={() => deleteL85Element(element.id)} title={`Delete ${element.label}`}>
+                      <Trash2 size={13} />
+                      <span>Delete</span>
+                    </button>
                   </span>
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="maxwell-data-table l85-wide l85-inspector-panel" aria-label="L8.5.1 element inspector direct editing smoke preview">
+            <div className="maxwell-section-heading">
+              <h2>Element Inspector</h2>
+              <strong>{selectedL85.kind === "element" ? selectedL85SceneElement?.solverRoute ?? "no element" : "monitor"}</strong>
+            </div>
+            <L85ElementInspector
+              selected={selectedL85}
+              element={selectedL85Element}
+              sceneElement={selectedL85SceneElement}
+              monitor={selectedL85Monitor}
+              customMonitor={selectedL85CustomMonitor}
+              warnings={l85EditingWarnings}
+              snapStepMm={l85Snap.enabled ? l85Snap.stepMm : 0.1}
+              canUndo={l85History.past.length > 0}
+              canRedo={l85History.future.length > 0}
+              onSelect={setSelectedL85}
+              onElementPatch={updateL85ElementPatch}
+              onMonitorPatch={updateL85MonitorPatch}
+              onNudge={nudgeL85Selection}
+              onMoveOrder={moveL85ElementOrder}
+              onDuplicate={duplicateL85Element}
+              onDelete={deleteL85Element}
+              onToggle={toggleL85Element}
+              onAddMonitor={addL85MonitorAround}
+              onDeleteMonitor={deleteL85Monitor}
+              onExportSelected={exportL85SelectedJson}
+              onUndo={undoL85Edit}
+              onRedo={redoL85Edit}
+            />
           </div>
 
           <div className="maxwell-data-table l85-wide" aria-label="L8.5 x-z cross-section smoke preview">
@@ -650,7 +923,14 @@ export function SimulationBuilderPanel() {
               <h2>X-Z Bench Cross-Section</h2>
               <strong>{l85Bundle.crossSection.length} items</strong>
             </div>
-            <L85BenchCrossSection bundle={l85Bundle} />
+            <L85BenchCrossSection
+              bundle={l85Bundle}
+              selected={selectedL85}
+              snapStepMm={l85Snap.enabled ? l85Snap.stepMm : 0.1}
+              onSelect={setSelectedL85}
+              onCommitPosition={commitL85DiagramPosition}
+              onKeyboardNudge={nudgeL85Selection}
+            />
           </div>
 
           <div className="maxwell-data-table" aria-label="L8.5 solver plan smoke preview">
@@ -699,15 +979,21 @@ export function SimulationBuilderPanel() {
           <div className="maxwell-data-table l85-wide" aria-label="L8.5 boundary warning smoke preview">
             <div className="maxwell-section-heading">
               <h2>Validation Warnings / Boundaries</h2>
-              <strong>{l85Bundle.validationReport.warnings.length}</strong>
+              <strong>{l85EditingBlocked ? "blocked" : `${l85EditingWarnings.length + l85Bundle.validationReport.warnings.length}`}</strong>
             </div>
             <div className="fdtd-warning-list">
-              {l85Bundle.validationReport.warnings.slice(0, 9).map((warning, index) => (
-                <span key={`${warning.code}:${warning.elementId ?? ""}:${index}`}>
+              {l85EditingWarnings.slice(0, 8).map((warning, index) => (
+                <span key={`edit:${warning.code}:${warning.elementId ?? ""}:${index}`}>
                   <strong>{warning.code}</strong> {warning.message}
                 </span>
               ))}
-              {l85Bundle.validationReport.warnings.length === 0 && <span>No L8.5 warnings for the current ordered scene.</span>}
+              {l85Bundle.validationReport.warnings.slice(0, 9).map((warning, index) => (
+                <span key={`report:${warning.code}:${warning.elementId ?? ""}:${index}`}>
+                  <strong>{warning.code}</strong> {warning.message}
+                </span>
+              ))}
+              {l85EditingWarnings.length + l85Bundle.validationReport.warnings.length === 0 && <span>No L8.5.1 warnings for the current ordered scene.</span>}
+              {l85EditingBlocked && <span><strong>export blocked</strong> Resolve overlap/domain/unsupported edit blockers before scalar preview or export.</span>}
               <span>
                 <strong>boundary</strong> No in-browser FDTD execution, arbitrary CAD/freeform geometry solve, general arbitrary 3D Maxwell, FEM/BEM/RCWA, production EM solver, digital twin, or
                 manufacturing certification is claimed.
@@ -1492,27 +1778,246 @@ export function SimulationBuilderPanel() {
   );
 }
 
-function L85BenchCrossSection(props: { bundle: ReturnType<typeof createOpticalBenchBundle> }) {
+function L85ElementInspector(props: {
+  selected: L85Selection;
+  element: SimulationBuilderElement | null;
+  sceneElement: OpticalBenchElement | null;
+  monitor: OpticalBenchMonitor | null;
+  customMonitor: SimulationBuilderCustomMonitor | null;
+  warnings: SolverWarning[];
+  snapStepMm: number;
+  canUndo: boolean;
+  canRedo: boolean;
+  onSelect: (selection: L85Selection) => void;
+  onElementPatch: (elementId: string, patch: Partial<SimulationBuilderElement>, label?: string) => void;
+  onMonitorPatch: (monitorId: string, patch: Partial<SimulationBuilderCustomMonitor>) => void;
+  onNudge: (delta: { zMm?: number; xUm?: number }) => void;
+  onMoveOrder: (elementId: string, direction: "earlier" | "later") => void;
+  onDuplicate: (elementId: string) => void;
+  onDelete: (elementId: string) => void;
+  onToggle: (element: OpticalBenchElement) => void;
+  onAddMonitor: (elementId: string, placement: "before" | "after") => void;
+  onDeleteMonitor: (monitorId: string) => void;
+  onExportSelected: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+}) {
+  if (props.selected.kind === "monitor") {
+    const monitor = props.monitor;
+    if (!monitor) return <div className="empty-state">Select an element or monitor to inspect editable properties.</div>;
+    const editable = monitor.id === "observation-plane" || props.customMonitor;
+    return (
+      <div className="l85-inspector">
+        <div className="l85-inspector-summary">
+          <strong>{monitor.label}</strong>
+          <span>{monitor.kind} monitor</span>
+          <em>{editable ? "editable" : "auto-generated"}</em>
+        </div>
+        <div className="l85-inspector-grid">
+          <L85NumberField label="z mm" value={monitor.zMm} step={props.snapStepMm} disabled={!editable} onChange={(value) => props.onMonitorPatch(monitor.id, { zMm: value })} />
+          <L85NumberField label="x um" value={monitor.xUm} step={0.25} disabled={!props.customMonitor} onChange={(value) => props.onMonitorPatch(monitor.id, { xUm: value })} />
+          <L85NumberField label="width um" value={monitor.widthUm} step={0.25} disabled={!props.customMonitor} onChange={(value) => props.onMonitorPatch(monitor.id, { widthUm: value })} />
+          <L85NumberField label="height um" value={monitor.heightUm} step={0.25} disabled={!props.customMonitor} onChange={(value) => props.onMonitorPatch(monitor.id, { heightUm: value })} />
+        </div>
+        <div className="l85-inspector-actions">
+          <button type="button" onClick={() => props.onNudge({ zMm: -props.snapStepMm })}><ArrowLeft size={14} /><span>Nudge -z</span></button>
+          <button type="button" onClick={() => props.onNudge({ zMm: props.snapStepMm })}><ArrowRight size={14} /><span>Nudge +z</span></button>
+          {props.customMonitor && <button type="button" onClick={() => props.onDeleteMonitor(monitor.id)}><Trash2 size={14} /><span>Delete monitor</span></button>}
+          <button type="button" onClick={props.onExportSelected}><FileDown size={14} /><span>Export JSON</span></button>
+        </div>
+        <div className="l85-inspector-boundary">Numeric monitor fields are authoritative. Diagram drag is an optional convenience and commits on drop.</div>
+      </div>
+    );
+  }
+
+  const element = props.element;
+  const sceneElement = props.sceneElement;
+  if (!element || !sceneElement) return <div className="empty-state">Select an element from the chain or x-z diagram to inspect editable properties.</div>;
+  const warnings = props.warnings.filter((warning) => warning.elementId === element.id);
+  const finiteMaterial = element.kind === "finite-transparent-block" || element.kind === "finite-absorbing-block" || element.kind === "finite-reflective-plate" || element.kind === "tilted-interface-wedge" || element.kind === "finite-aperture-blocker";
+  return (
+    <div className="l85-inspector">
+      <div className="l85-inspector-summary">
+        <strong>{element.label}</strong>
+        <span>{element.kind}</span>
+        <em>{sceneElement.solverRoute} / {sceneElement.status}</em>
+      </div>
+      <div className="l85-inspector-grid">
+        <label className="l85-text-field">
+          <span>Label</span>
+          <input aria-label="Selected element label" value={element.label} onChange={(event) => props.onElementPatch(element.id, { label: event.currentTarget.value }, "Rename optical bench element")} />
+        </label>
+        <L85NumberField label="z mm" value={element.zMm} step={props.snapStepMm} onChange={(value) => props.onElementPatch(element.id, { zMm: value }, "Move optical bench element")} />
+        <L85NumberField label="x um" value={element.xUm ?? 0} step={0.25} onChange={(value) => props.onElementPatch(element.id, { xUm: value }, "Move optical bench element x")} />
+        <L85NumberField label="y um" value={element.yUm ?? 0} step={0.25} onChange={(value) => props.onElementPatch(element.id, { yUm: value }, "Move optical bench element y")} />
+        <L85NumberField label="width um" value={element.widthUm ?? sceneElement.widthUm} step={0.25} onChange={(value) => props.onElementPatch(element.id, { widthUm: value }, "Resize optical bench element")} />
+        <L85NumberField label="height um" value={element.heightUm ?? sceneElement.heightUm} step={0.25} onChange={(value) => props.onElementPatch(element.id, { heightUm: value }, "Resize optical bench element")} />
+        <L85NumberField label="thickness um" value={element.thicknessUm ?? sceneElement.thicknessUm} step={0.25} onChange={(value) => props.onElementPatch(element.id, { thicknessUm: value }, "Edit element thickness")} />
+        {element.kind === "circular-aperture" && <L85NumberField label="diameter um" value={element.apertureDiameterUm ?? sceneElement.widthUm} step={0.1} onChange={(value) => props.onElementPatch(element.id, { apertureDiameterUm: value }, "Edit aperture diameter")} />}
+        {element.kind === "finite-aperture-blocker" && (
+          <>
+            <L85NumberField label="aperture width um" value={element.apertureWidthUm ?? sceneElement.widthUm} step={0.1} onChange={(value) => props.onElementPatch(element.id, { apertureWidthUm: value }, "Edit aperture width")} />
+            <L85NumberField label="aperture height um" value={element.apertureHeightUm ?? sceneElement.heightUm} step={0.1} onChange={(value) => props.onElementPatch(element.id, { apertureHeightUm: value }, "Edit aperture height")} />
+            <label className="l85-text-field">
+              <span>Screen model</span>
+              <select value={element.screenModel ?? "absorbing-screen"} onChange={(event) => props.onElementPatch(element.id, { screenModel: event.currentTarget.value as SimulationBuilderElement["screenModel"] }, "Edit screen model")}>
+                <option value="absorbing-screen">absorbing-screen</option>
+                <option value="ideal-reflective-screen">ideal-reflective-screen</option>
+                <option value="transparent-reference">transparent-reference</option>
+              </select>
+            </label>
+          </>
+        )}
+        {element.kind === "ideal-lens" && <L85NumberField label="focal length mm" value={element.focalLengthMm ?? 20} step={0.5} onChange={(value) => props.onElementPatch(element.id, { focalLengthMm: value }, "Edit focal length")} />}
+        {finiteMaterial && <L85NumberField label="material n" value={element.materialIndex ?? 1.5} step={0.01} onChange={(value) => props.onElementPatch(element.id, { materialIndex: value }, "Edit material index")} />}
+        {finiteMaterial && <L85NumberField label="k" value={element.extinctionCoefficient ?? 0} step={0.005} onChange={(value) => props.onElementPatch(element.id, { extinctionCoefficient: value }, "Edit extinction coefficient")} />}
+        {element.kind === "finite-absorbing-block" && <L85NumberField label="alpha 1/m" value={element.absorptionCoefficientPerM ?? 5000} step={250} onChange={(value) => props.onElementPatch(element.id, { absorptionCoefficientPerM: value }, "Edit absorption coefficient")} />}
+        {element.kind === "tilted-interface-wedge" && <L85NumberField label="tilt deg" value={element.orientationDeg ?? 0} step={0.5} onChange={(value) => props.onElementPatch(element.id, { orientationDeg: value }, "Edit wedge tilt")} />}
+      </div>
+      <div className="l85-inspector-readout">
+        <Stat label="Model" value={element.model} />
+        <Stat label="Material" value={element.materialLabel} />
+        <Stat label="Solver route" value={sceneElement.solverRoute} />
+        <Stat label="Validation" value={sceneElement.validationReference} />
+      </div>
+      <div className="l85-inspector-actions">
+        <button type="button" onClick={() => props.onNudge({ zMm: -props.snapStepMm })}><ArrowLeft size={14} /><span>Nudge -z</span></button>
+        <button type="button" onClick={() => props.onNudge({ zMm: props.snapStepMm })}><ArrowRight size={14} /><span>Nudge +z</span></button>
+        <button type="button" onClick={() => props.onNudge({ xUm: 0.25 })}><ArrowUp size={14} /><span>Nudge +x</span></button>
+        <button type="button" onClick={() => props.onNudge({ xUm: -0.25 })}><ArrowDown size={14} /><span>Nudge -x</span></button>
+        <button type="button" onClick={() => props.onMoveOrder(element.id, "earlier")}><ArrowLeft size={14} /><span>Move earlier</span></button>
+        <button type="button" onClick={() => props.onMoveOrder(element.id, "later")}><ArrowRight size={14} /><span>Move later</span></button>
+        <button type="button" onClick={() => props.onDuplicate(element.id)}><Copy size={14} /><span>Duplicate</span></button>
+        <button type="button" onClick={() => props.onToggle(sceneElement)}>{sceneElement.enabled ? <EyeOff size={14} /> : <Eye size={14} />}<span>{sceneElement.enabled ? "Disable" : "Enable"}</span></button>
+        <button type="button" onClick={() => props.onAddMonitor(element.id, "before")}><Plus size={14} /><span>Monitor before</span></button>
+        <button type="button" onClick={() => props.onAddMonitor(element.id, "after")}><Plus size={14} /><span>Monitor after</span></button>
+        <button type="button" onClick={props.onExportSelected}><FileDown size={14} /><span>Export JSON</span></button>
+        <button type="button" onClick={props.onUndo} disabled={!props.canUndo}><Undo2 size={14} /><span>Undo</span></button>
+        <button type="button" onClick={props.onRedo} disabled={!props.canRedo}><Redo2 size={14} /><span>Redo</span></button>
+        <button type="button" onClick={() => props.onDelete(element.id)}><Trash2 size={14} /><span>Delete</span></button>
+      </div>
+      <div className="fdtd-warning-list l85-inspector-warnings">
+        {warnings.length ? warnings.map((warning, index) => <span key={`${warning.code}:${index}`}><strong>{warning.code}</strong> {warning.message}</span>) : <span><strong>ok</strong> No edit warnings for the selected element.</span>}
+      </div>
+      <div className="l85-inspector-boundary">Numeric/text fields are the source of truth. Drag is optional; no arbitrary CAD, browser FDTD, arbitrary 3D Maxwell, FEM/BEM/RCWA, production solver, digital twin, or manufacturing certification is implied.</div>
+    </div>
+  );
+}
+
+function L85NumberField(props: { label: string; value: number; step: number; disabled?: boolean; onChange: (value: number) => void }) {
+  return (
+    <label className="l85-text-field">
+      <span>{props.label}</span>
+      <input aria-label={props.label} type="number" value={Number.isFinite(props.value) ? props.value : 0} step={props.step} disabled={props.disabled} onChange={(event) => props.onChange(Number(event.currentTarget.value))} />
+    </label>
+  );
+}
+
+function L85BenchCrossSection(props: {
+  bundle: ReturnType<typeof createOpticalBenchBundle>;
+  selected: L85Selection;
+  snapStepMm: number;
+  onSelect: (selection: L85Selection) => void;
+  onCommitPosition: (selection: L85Selection, position: { zMm: number; xUm?: number }) => void;
+  onKeyboardNudge: (delta: { zMm?: number; xUm?: number }) => void;
+}) {
   const scene = props.bundle.scene;
   const zMin = scene.grid.zStartMm;
   const zMax = scene.grid.zEndMm;
   const zRange = Math.max(1e-9, zMax - zMin);
   const xExtent = Math.max(scene.grid.domainWidthUm / 2, 1, ...props.bundle.crossSection.map((item) => Math.abs(item.xUm) + Math.max(0.1, item.widthUm) / 2));
+  const domainRef = useRef<HTMLDivElement | null>(null);
+  const [dragPreview, setDragPreview] = useState<{ selection: L85Selection; zMm: number; xUm: number } | null>(null);
+
+  function selectionForItem(item: ReturnType<typeof createOpticalBenchBundle>["crossSection"][number]): L85Selection | null {
+    if (item.kind === "element") return { kind: "element", id: item.id };
+    if (item.kind === "monitor") return { kind: "monitor", id: item.id };
+    return null;
+  }
+
+  function positionFromPointer(event: PointerEvent<HTMLDivElement>): { zMm: number; xUm: number } {
+    const rect = domainRef.current?.getBoundingClientRect();
+    if (!rect) return { zMm: zMin, xUm: 0 };
+    const xPercent = clampPercent(((event.clientX - rect.left) / Math.max(1, rect.width)) * 100);
+    const yPercent = clampPercent(((event.clientY - rect.top) / Math.max(1, rect.height)) * 100);
+    const rawZ = zMin + (xPercent / 100) * zRange;
+    const snappedZ = props.snapStepMm > 0 ? Math.round(rawZ / props.snapStepMm) * props.snapStepMm : rawZ;
+    return {
+      zMm: clampNumber(snappedZ, zMin, zMax),
+      xUm: clampNumber(((50 - yPercent) / 38) * xExtent, -xExtent, xExtent)
+    };
+  }
+
   return (
     <div className="l85-cross-section">
-      <div className="l85-cross-section-domain">
+      <div
+        className="l85-cross-section-domain"
+        ref={domainRef}
+        tabIndex={0}
+        aria-label="Interactive L8.5.1 x-z bench diagram"
+        onKeyDown={(event) => {
+          if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            props.onKeyboardNudge({ zMm: -props.snapStepMm });
+          } else if (event.key === "ArrowRight") {
+            event.preventDefault();
+            props.onKeyboardNudge({ zMm: props.snapStepMm });
+          } else if (event.key === "ArrowUp") {
+            event.preventDefault();
+            props.onKeyboardNudge({ xUm: 0.25 });
+          } else if (event.key === "ArrowDown") {
+            event.preventDefault();
+            props.onKeyboardNudge({ xUm: -0.25 });
+          }
+        }}
+      >
         <div className="l85-cross-section-axis" />
         {props.bundle.crossSection.map((item) => {
-          const left = ((item.zMm - zMin) / zRange) * 100;
+          const selection = selectionForItem(item);
+          const preview = dragPreview && dragPreview.selection.id === item.id && dragPreview.selection.kind === selection?.kind ? dragPreview : null;
+          const itemZ = preview?.zMm ?? item.zMm;
+          const itemX = preview?.xUm ?? item.xUm;
+          const left = ((itemZ - zMin) / zRange) * 100;
           const height = item.kind === "monitor" || item.kind === "source" || item.kind === "target" ? 86 : Math.max(10, (item.heightUm / Math.max(1e-9, xExtent * 2)) * 82);
-          const top = item.kind === "monitor" || item.kind === "source" || item.kind === "target" ? 7 : 50 - (item.xUm / Math.max(1e-9, xExtent)) * 38 - height / 2;
+          const top = item.kind === "monitor" || item.kind === "source" || item.kind === "target" ? 7 : 50 - (itemX / Math.max(1e-9, xExtent)) * 38 - height / 2;
           const width = item.kind === "monitor" || item.kind === "source" || item.kind === "target" ? 0.65 : Math.max(0.8, Math.min(10, ((Math.max(0.02, item.thicknessUm) / 1000) / zRange) * 100));
+          const selected = selection && props.selected.kind === selection.kind && props.selected.id === selection.id;
+          const interactive = Boolean(selection);
           return (
             <div
-              className={`l85-cross-section-item l85-cross-section-item-${item.kind} l85-cross-section-route-${item.solverRoute}`}
+              className={`l85-cross-section-item l85-cross-section-item-${item.kind} l85-cross-section-route-${item.solverRoute} ${selected ? "l85-cross-section-selected" : ""} ${preview ? "l85-cross-section-drag-preview" : ""}`}
               key={item.id}
+              role={interactive ? "button" : undefined}
+              tabIndex={interactive ? 0 : undefined}
               style={{ left: `${clampPercent(left)}%`, top: `${clampPercent(top)}%`, width: `${width}%`, height: `${clampPercent(height)}%` }}
               title={`${item.label}: z ${formatCompact(item.zMm)} mm, route ${item.solverRoute}`}
+              onClick={() => {
+                if (selection) props.onSelect(selection);
+              }}
+              onPointerDown={(event) => {
+                if (!selection) return;
+                event.preventDefault();
+                props.onSelect(selection);
+                event.currentTarget.setPointerCapture(event.pointerId);
+                setDragPreview({ selection, ...positionFromPointer(event) });
+              }}
+              onPointerMove={(event) => {
+                if (!dragPreview || !selection || dragPreview.selection.id !== item.id || dragPreview.selection.kind !== selection.kind) return;
+                setDragPreview({ selection, ...positionFromPointer(event) });
+              }}
+              onPointerUp={(event) => {
+                if (!dragPreview || !selection || dragPreview.selection.id !== item.id || dragPreview.selection.kind !== selection.kind) return;
+                const next = positionFromPointer(event);
+                setDragPreview(null);
+                props.onCommitPosition(selection, next);
+              }}
+              onKeyDown={(event) => {
+                if (!selection) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  props.onSelect(selection);
+                }
+              }}
             >
               <span>{l85CrossSectionLabel(item.type, item.kind)}</span>
             </div>
@@ -1843,6 +2348,11 @@ function elementSizeText(element: SimulationBuilderElement): string {
 function clampPercent(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(100, value));
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+  return Math.max(min, Math.min(max, value));
 }
 
 function targetForKind(kind: SimulationBuilderTargetKind, zMm: number): SimulationBuilderTarget {
