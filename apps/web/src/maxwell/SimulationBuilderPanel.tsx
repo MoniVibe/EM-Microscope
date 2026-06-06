@@ -1559,7 +1559,6 @@ export function SimulationBuilderPanel(
               bundle={l85Bundle}
               selected={selectedL85}
               snapStepMm={l85Snap.enabled ? l85Snap.stepMm : 0.1}
-              mode={xzGeometryMode}
               editableMonitorIds={editableL85MonitorIds}
               onSelect={setSelectedL85}
               onCommitPosition={commitL85DiagramPosition}
@@ -3664,7 +3663,6 @@ function L85BenchCrossSection(props: {
   bundle: ReturnType<typeof createOpticalBenchBundle>;
   selected: L85Selection;
   snapStepMm: number;
-  mode: XzGeometryMode;
   editableMonitorIds: ReadonlySet<string>;
   onSelect: (selection: L85Selection) => void;
   onCommitPosition: (selection: L85Selection, position: { zMm: number; xUm?: number }) => void;
@@ -3709,7 +3707,6 @@ function L85BenchCrossSection(props: {
             setDragPreview(null);
             return;
           }
-          if (props.mode !== "edit") return;
           if (event.key === "ArrowLeft") {
             event.preventDefault();
             props.onKeyboardNudge({ zMm: -props.snapStepMm });
@@ -3737,14 +3734,14 @@ function L85BenchCrossSection(props: {
           const width = item.kind === "monitor" || item.kind === "source" || item.kind === "target" ? 0.65 : Math.max(0.8, Math.min(10, ((Math.max(0.02, item.thicknessUm) / 1000) / zRange) * 100));
           const selected = selection && props.selected.kind === selection.kind && props.selected.id === selection.id;
           const interactive = Boolean(selection);
-          const draggable = interactive && props.mode === "edit";
+          const draggable = interactive;
           return (
             <div
               className={`l85-cross-section-item l85-cross-section-item-${item.kind} l85-cross-section-route-${item.solverRoute} ${draggable ? "l85-cross-section-draggable" : ""} ${interactive && !draggable ? "l85-cross-section-selectable" : ""} ${interactive ? "" : "l85-cross-section-readonly"} ${selected ? "l85-cross-section-selected" : ""} ${preview ? "l85-cross-section-drag-preview" : ""}`}
               key={item.id}
               role={interactive ? "button" : undefined}
               tabIndex={interactive ? 0 : undefined}
-              aria-label={interactive ? `${props.mode === "edit" ? "Drag" : "Select"} ${item.label}` : undefined}
+              aria-label={interactive ? `Drag ${item.label}` : undefined}
               style={{ left: `${clampPercent(left)}%`, top: `${clampPercent(top)}%`, width: `${width}%`, height: `${clampPercent(height)}%` }}
               title={`${item.label}: z ${formatCompact(item.zMm)} mm, route ${item.solverRoute}`}
               onClick={() => {

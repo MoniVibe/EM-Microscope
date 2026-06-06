@@ -677,6 +677,8 @@ describe("solver disclosure copy", () => {
     expect(simulationBuilder).toContain("L8.5.1 element inspector direct editing smoke preview");
     expect(simulationBuilder).toContain("Numeric/text fields are the source of truth");
     expect(simulationBuilder).toContain("Interactive L8.5.1 x-z bench diagram");
+    expect(simulationBuilder).toContain("aria-label={interactive ? `Drag ${item.label}`");
+    expect(simulationBuilder).toContain("const draggable = interactive;");
     expect(simulationBuilder).toContain("Order and z-position");
     expect(simulationBuilder).toContain("Finite shape and transverse placement");
     expect(simulationBuilder).toContain("Inspector fields are exact source of truth");
