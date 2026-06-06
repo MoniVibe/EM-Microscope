@@ -549,7 +549,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented|certified metrology report executable|lab accreditation workflow executable|hardware control implemented|AprilTag detector executable|ArUco detector executable/i);
   });
 
-  it("keeps the visible app shell focused on L9.1 2D FDTD validation with L8.9 external run ingestion and earlier diagnostics still reachable", () => {
+  it("keeps the visible app shell focused on L9.2 2D FDTD WebGPU acceleration with L9.1 validation, L8.9 external run ingestion, and earlier diagnostics still reachable", () => {
     const app = readFileSync(resolve(testDir, "App.tsx"), "utf8");
     const simulationBuilder = readFileSync(resolve(testDir, "maxwell/SimulationBuilderPanel.tsx"), "utf8");
     const fdtd2dSandbox = readFileSync(resolve(testDir, "maxwell/Fdtd2dSandboxPanel.tsx"), "utf8");
@@ -557,13 +557,14 @@ describe("solver disclosure copy", () => {
     const l88aSmoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l88a_browser_smoke_code.js"), "utf8");
     const l90Smoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l90_browser_smoke_code.js"), "utf8");
     const l91Smoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l91_browser_smoke_code.js"), "utf8");
+    const l92Smoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l92_browser_smoke_code.js"), "utf8");
     const maxwellReturn = app.indexOf("return <MaxwellOnlyApp />;");
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("L9.1 In-Browser 2D FDTD Validation + Stability Harness / L8.9 Real External FDTD Run Ingestion / Engineering Evidence Campaign");
+    expect(app).toContain("L9.2 WebGPU-Accelerated 2D FDTD Sandbox / L9.1 Validation + Stability Harness / L8.9 Real External FDTD Run Ingestion");
     expect(app).toContain("2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence");
-    expect(app).toContain("L9.1 bounded CPU typed-array 2D FDTD sandbox for TMz Ez/Hx/Hy with stability, validation, boundary, and convergence diagnostics");
+    expect(app).toContain("L9.2 bounded 2D TMz FDTD sandbox with CPU reference stepping, optional WebGPU acceleration, CPU/GPU parity checks, performance diagnostics");
     expect(app).toContain("L8.9 real external FDTD run ingestion and reproducibility reports");
     expect(app).toContain("L8.8 engineering evidence campaign");
     expect(app).toContain("L8.5.1 numeric editing and diagram drag");
@@ -573,9 +574,9 @@ describe("solver disclosure copy", () => {
     expect(app).toContain("<SimulationBuilderPanel");
     expect(app).toContain("<Fdtd2dSandboxPanel");
     expect(app).toContain("<MaxwellPanel />");
-    expect(simulationBuilder).toContain("L9.1 Simulation Builder + 2D Sandbox Handoff");
-    expect(simulationBuilder).toContain("bounded L9.1 2D FDTD sandbox handoff");
-    expect(simulationBuilder).toContain("The L9.1 sandbox is capped 2D TMz only with stability, validation, boundary, and convergence diagnostics");
+    expect(simulationBuilder).toContain("L9.2 Simulation Builder + 2D Sandbox Handoff");
+    expect(simulationBuilder).toContain("bounded L9.2 2D FDTD sandbox handoff");
+    expect(simulationBuilder).toContain("The L9.2 sandbox is capped 2D TMz only with CPU reference stepping, optional WebGPU acceleration, parity/performance diagnostics");
     expect(simulationBuilder).toContain("Export 2D Slice to Maxwell Sandbox");
     expect(simulationBuilder).toContain("fdtd2d_sandbox_scene.json");
     expect(simulationBuilder).toContain("fdtd2d_sandbox_handoff.json");
@@ -797,8 +798,16 @@ describe("solver disclosure copy", () => {
     expect(simulationBuilder).toContain("arbitrary 3D Maxwell");
     expect(simulationBuilder).toContain("FDTD/FEM/BEM/RCWA execution");
     expect(simulationBuilder).toContain("manufacturing certification");
-    expect(fdtd2dSandbox).toContain("L9.1 In-Browser 2D FDTD Maxwell Sandbox");
+    expect(fdtd2dSandbox).toContain("L9.2 In-Browser 2D FDTD Maxwell Sandbox");
     expect(fdtd2dSandbox).toContain("Grid Safety / Memory Budget");
+    expect(fdtd2dSandbox).toContain("Backend / WebGPU");
+    expect(fdtd2dSandbox).toContain("Execution backend");
+    expect(fdtd2dSandbox).toContain("CPU reference");
+    expect(fdtd2dSandbox).toContain("WebGPU accelerated");
+    expect(fdtd2dSandbox).toContain("Run CPU/GPU Parity Check");
+    expect(fdtd2dSandbox).toContain("Run Performance Benchmark");
+    expect(fdtd2dSandbox).toContain("Parity RMS Ez");
+    expect(fdtd2dSandbox).toContain("steps/sec");
     expect(fdtd2dSandbox).toContain("Validation + Stability");
     expect(fdtd2dSandbox).toContain("CFL factor");
     expect(fdtd2dSandbox).toContain("NaN / Infinity");
@@ -813,6 +822,10 @@ describe("solver disclosure copy", () => {
     expect(fdtd2dSandbox).toContain("Export Validation Report");
     expect(fdtd2dSandbox).toContain("fdtd2d_validation_report.md");
     expect(fdtd2dSandbox).toContain("fdtd2d_validation_report.json");
+    expect(fdtd2dSandbox).toContain("fdtd2d_backend_report.md");
+    expect(fdtd2dSandbox).toContain("fdtd2d_backend_report.json");
+    expect(fdtd2dSandbox).toContain("fdtd2d_parity.csv");
+    expect(fdtd2dSandbox).toContain("fdtd2d_performance.csv");
     expect(fdtd2dSandbox).toContain("fdtd2d_convergence.csv");
     expect(fdtd2dSandbox).toContain("fdtd2d_stability_report.json");
     expect(fdtd2dSandbox).toContain("fdtd2d_energy_trace.csv");
@@ -833,6 +846,8 @@ describe("solver disclosure copy", () => {
     expect(fdtdReadme).toContain("l90_browser_smoke_code.js");
     expect(fdtdReadme).toContain("L9.1 smoke artifacts");
     expect(fdtdReadme).toContain("l91_browser_smoke_code.js");
+    expect(fdtdReadme).toContain("L9.2 smoke artifacts");
+    expect(fdtdReadme).toContain("l92_browser_smoke_code.js");
     expect(l88aSmoke).toContain("l88a-two-view-labels-smoke.png");
     expect(l88aSmoke).toContain("l88a-axis-z-drag-smoke.png");
     expect(l88aSmoke).toContain("l88a-xz-edit-handles-smoke.png");
@@ -847,6 +862,11 @@ describe("solver disclosure copy", () => {
     expect(l91Smoke).toContain("l91-fresnel-absorber-reference-smoke.png");
     expect(l91Smoke).toContain("l91-grid-convergence-smoke.png");
     expect(l91Smoke).toContain("l91-validation-export-smoke.png");
+    expect(l92Smoke).toContain("l92-backend-selector-smoke.png");
+    expect(l92Smoke).toContain("l92-webgpu-status-smoke.png");
+    expect(l92Smoke).toContain("l92-cpu-gpu-parity-smoke.png");
+    expect(l92Smoke).toContain("l92-performance-benchmark-smoke.png");
+    expect(l92Smoke).toContain("l92-fallback-cpu-smoke.png");
     expect(simulationBuilder).not.toMatch(/full 3D Maxwell execution is implemented|browser FDTD execution is available|FDTD execution is available in the browser|digital twin certified|manufacturing certification available/i);
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);

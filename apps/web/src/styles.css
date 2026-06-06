@@ -3056,6 +3056,25 @@ h2 {
   gap: 8px;
 }
 
+.fdtd2d-backend-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.fdtd2d-backend-panel .simulation-field-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.fdtd2d-backend-panel .simulation-field-grid label {
+  grid-template-columns: minmax(120px, 0.8fr) minmax(180px, 1fr) minmax(44px, auto);
+}
+
+.fdtd2d-backend-panel .simulation-builder-note {
+  margin-top: 10px;
+}
+
 .fdtd2d-convergence-table {
   display: grid;
   gap: 4px;
@@ -4507,6 +4526,7 @@ button.l88-scenario-row.active {
   .fdtd2d-diagnostic-layout,
   .fdtd2d-diagnostic-stats,
   .fdtd2d-reference-grid,
+  .fdtd2d-backend-results,
   .fdtd2d-convergence-row,
   .l85-grid,
   .l86-layout,

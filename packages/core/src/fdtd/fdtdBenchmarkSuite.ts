@@ -621,7 +621,7 @@ export function fdtdBenchmarkPackReadme(manifest: FdtdBenchmarkManifest, sweepPl
   return [
     `# L8.2 ${benchmarkLabel(manifest.benchmarkKind)} FDTD Benchmark Pack`,
     "",
-    "This pack is for optional external FDTD verification. Run these Meep/FDTD jobs outside the browser; L9.1's separate in-browser 2D sandbox is diagnostic only.",
+    "This pack is for optional external FDTD verification. Run these Meep/FDTD jobs outside the browser; L9.2's separate in-browser 2D sandbox is diagnostic only, with optional WebGPU acceleration where supported.",
     "",
     "Files:",
     "- benchmark_manifest.json",

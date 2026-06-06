@@ -1,8 +1,8 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L9.1 In-Browser 2D FDTD Validation + Stability Harness plus the L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L9.2 WebGPU-Accelerated 2D FDTD Sandbox plus the L9.1 Validation + Stability Harness and L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L9.1 keeps the capped browser-native 2D TMz FDTD sandbox with Ez/Hx/Hy typed-array stepping, grid/object/step/monitor caps, fixtures, field/intensity/material views, Simulation Builder 2D slice handoff, and adds visible CFL/dt/grid stability diagnostics, NaN/Infinity guards, boundary proximity warnings, Fresnel/absorber/symmetry reference checks, bounded grid-convergence diagnostics, and exports for `fdtd2d_validation_report.md`, `fdtd2d_validation_report.json`, `fdtd2d_convergence.csv`, `fdtd2d_stability_report.json`, `fdtd2d_energy_trace.csv`, `fdtd2d_monitor_trace.csv`, plus the L9.0-compatible sandbox reports/traces. L8.9 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+Real Detector Bridge. L9.2 keeps the capped browser-native 2D TMz FDTD sandbox with CPU reference Ez/Hx/Hy typed-array stepping, optional WebGPU acceleration when browser/secure-context/adapter/device/memory guardrails permit it, grid/object/step/monitor caps, fixtures, field/intensity/material views, Simulation Builder 2D slice handoff, visible CFL/dt/grid stability diagnostics, NaN/Infinity guards, boundary proximity warnings, Fresnel/absorber/symmetry reference checks, bounded grid-convergence diagnostics, CPU/GPU parity checks, performance diagnostics, and exports for `fdtd2d_validation_report.md`, `fdtd2d_validation_report.json`, `fdtd2d_backend_report.md`, `fdtd2d_backend_report.json`, `fdtd2d_parity.csv`, `fdtd2d_performance.csv`, `fdtd2d_convergence.csv`, `fdtd2d_stability_report.json`, `fdtd2d_energy_trace.csv`, `fdtd2d_monitor_trace.csv`, plus the L9.0-compatible sandbox reports/traces. L8.9 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
 workflow, adds a real external-run pack/import/reproducibility path on top of L8.1-L8.8 FDTD evidence, keeps the engineer-facing golden evidence campaign over L8.1-L8.7 evidence, keeps the diagnostic robust-design advisor over the L8.6 process/tolerance variation runner, and keeps the L8.5.1 multi-element scene graph plus element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
 including numeric source-of-truth editing, optional diagram drag, non-drag nudge/order controls, snap settings, undo/redo, custom monitors, edit warnings,
 x-z bench cross-section, solver-plan routing, scalar multi-plane monitor snapshots, external FDTD chain fixture import,
@@ -51,14 +51,15 @@ required monitor ids, required files, and receipt hashes; compares R/T/A, energy
 residuals; promotes accepted imports to the Engineering Evidence Campaign evidence queue; and exports
 `reproducibility_report.md`, `reproducibility_report.json`, `real_run_metrics.csv`, and `real_run_warnings.json`.
 Meep/Python remain optional local user-machine tooling only; npm tests, GitHub Pages deploy jobs, and the L8.9 web runtime do not
-execute this external Meep/FDTD pack. L8.9 is still not the L9.1 in-browser sandbox, arbitrary 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution, production
+execute this external Meep/FDTD pack. L8.9 is still not the L9.2 in-browser sandbox, arbitrary 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution, production
 solver certification, digital twin behavior, lab accreditation, hardware control, or manufacturing certification.
-L9.1 is a bounded diagnostic 2D FDTD sandbox only: it runs one TMz polarization in the browser on small capped grids,
-supports simple source/object/monitor scenes, maps compatible Simulation Builder finite blocks into a 2D slice, and
-provides sanity fixtures for empty space, PEC-like reflection, a rough Fresnel dielectric interface, absorber
-attenuation, point-source symmetry, and qualitative slit spreading. L9.1 blocks unsafe CFL settings and reports
-stability, boundary, reference, and bounded convergence diagnostics. It is not full 3D Maxwell, not a production FDTD
-engine, not WebGPU acceleration, not a replacement for external Meep/FDTD, not FEM/BEM/RCWA, not arbitrary CAD/freeform
+L9.2 is a bounded diagnostic 2D FDTD sandbox only: it runs one TMz polarization in the browser on small capped grids,
+supports simple source/object/monitor scenes, maps compatible Simulation Builder finite blocks into a 2D slice, keeps
+CPU reference stepping as the validation baseline and fallback, and optionally uses WebGPU acceleration when supported.
+It provides sanity fixtures for empty space, PEC-like reflection, a rough Fresnel dielectric interface, absorber
+attenuation, point-source symmetry, qualitative slit spreading, CPU/GPU parity metrics, backend performance diagnostics,
+and stability, boundary, reference, and bounded convergence diagnostics. It is not full 3D Maxwell, not a production FDTD
+engine, not required WebGPU execution, not a replacement for external Meep/FDTD, not FEM/BEM/RCWA, not arbitrary CAD/freeform
 geometry, not hardware control, and not manufacturing or lab certification.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
@@ -179,18 +180,21 @@ certification system.
 
 ## Current Visible Mode
 
-- `L9.1 In-Browser 2D FDTD Validation + Stability Harness`: a top-level 2D diagnostic sandbox that runs TMz Ez/Hx/Hy typed arrays
-  in the browser with default 256 x 256 grids, warnings above 512 x 512, a hard 1024 x 1024 cell cap, object/step/
-  monitor-sample caps, reset/step/run/run-N controls, field/intensity/material overlays, source and monitor markers,
-  energy/monitor traces, sanity fixtures, CFL/dt/grid stability status, max-field and NaN/Infinity checks, boundary
-  proximity warnings, Fresnel/absorber/symmetry reference checks, bounded residual-vs-grid convergence diagnostics, and
-  exports named `fdtd2d_validation_report.md`, `fdtd2d_validation_report.json`, `fdtd2d_convergence.csv`,
+- `L9.2 WebGPU-Accelerated 2D FDTD Sandbox`: a top-level 2D diagnostic sandbox that runs TMz Ez/Hx/Hy with CPU reference
+  typed-array stepping by default and optional WebGPU acceleration when the browser, secure context, adapter, device, and
+  memory caps permit it. It keeps default 256 x 256 grids, warnings above 512 x 512, a hard 1024 x 1024 cell cap,
+  object/step/monitor-sample caps, reset/step/run/run-N controls, field/intensity/material overlays, source and monitor
+  markers, energy/monitor traces, sanity fixtures, CFL/dt/grid stability status, max-field and NaN/Infinity checks,
+  boundary proximity warnings, Fresnel/absorber/symmetry reference checks, bounded residual-vs-grid convergence
+  diagnostics, WebGPU availability/fallback reporting, CPU/GPU parity checks, and backend performance metrics. Exports are
+  named `fdtd2d_validation_report.md`, `fdtd2d_validation_report.json`, `fdtd2d_backend_report.md`,
+  `fdtd2d_backend_report.json`, `fdtd2d_parity.csv`, `fdtd2d_performance.csv`, `fdtd2d_convergence.csv`,
   `fdtd2d_stability_report.json`, `fdtd2d_energy_trace.csv`, and `fdtd2d_monitor_trace.csv`, plus the L9.0-compatible
   `fdtd2d_sandbox_report.md`, `fdtd2d_sandbox_report.json`, `field_snapshot.csv`, `monitor_trace.csv`, and
-  `energy_trace.csv`. It is a bounded 2D diagnostic only; production FDTD, full 3D Maxwell, WebGPU acceleration,
+  `energy_trace.csv`. It is a bounded 2D diagnostic only; production FDTD, full 3D Maxwell, required WebGPU execution,
   FEM/BEM/RCWA, arbitrary CAD/freeform geometry, and certified solver validation stay out of scope.
 
-- `L9.1 Simulation Builder + 2D Sandbox Handoff`: a top-level Simulation Builder workflow that
+- `L9.2 Simulation Builder + 2D Sandbox Handoff`: a top-level Simulation Builder workflow that
   follows `Grid -> Source -> Elements -> Target / Material -> Observation / Monitors -> Validate`. It lets users define domain
   units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
   of apertures, ideal lenses, planar material interfaces/slabs, mirrors, absorbers, and L8.3 finite transparent
@@ -202,7 +206,7 @@ certification system.
   chain preview snapshots, bundled external FDTD chain evidence, and exports named `multielement_scene.json`,
   `solver_plan.json`, `monitor_stack.csv`, `multielement_validation_report.md`,
   `multielement_validation_report.json`, and `multielement_metrics.csv`, plus `fdtd2d_sandbox_scene.json` and
-  `fdtd2d_sandbox_handoff.json` for compatible L9.1 2D slices. The optical-axis diagram and X-Z
+  `fdtd2d_sandbox_handoff.json` for compatible L9.2 2D slices. The optical-axis diagram and X-Z
   cross-section show the source, every placed element, finite dimensions, target, and observation plane with z
   positions and capability tags. L8.8a separates the interaction model: Optical Axis Placement handles order and
   z-position only, while X-Z Surface Geometry handles finite shape and transverse placement through Inspect/Edit
@@ -274,7 +278,7 @@ certification system.
   `aperture_convergence.csv` exports plus bundled `tools/fdtd/examples/l84_*` scene, manifest, script, receipt, flux,
   field-slice, profile, and convergence fixtures for long-slit, circular-pinhole, rectangular-aperture, and
   opaque-blocker diagnostics. Boundary: this is limited ordered optical-bench validation plus scalar preview,
-  L9.1 diagnostic 2D sandbox handoff, and external FDTD export/import and benchmark convergence evidence only, not production browser FDTD execution, arbitrary 3D
+  L9.2 diagnostic 2D sandbox handoff with optional WebGPU acceleration where supported, and external FDTD export/import and benchmark convergence evidence only, not production browser FDTD execution, arbitrary 3D
   material geometry, FEM/BEM/RCWA execution, real curved material lens solving, production metal aperture models,
   arbitrary CAD aperture-edge solving, sensor-stack EM, digital twin behavior, or manufacturing certification.
 

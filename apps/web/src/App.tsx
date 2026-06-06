@@ -270,13 +270,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L9.1 In-Browser 2D FDTD Validation + Stability Harness / L8.9 Real External FDTD Run Ingestion / Engineering Evidence Campaign</p>
+            <p>L9.2 WebGPU-Accelerated 2D FDTD Sandbox / L9.1 Validation + Stability Harness / L8.9 Real External FDTD Run Ingestion</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
           <span>2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence</span>
-          <strong>L9.1 bounded CPU typed-array 2D FDTD sandbox for TMz Ez/Hx/Hy with stability, validation, boundary, and convergence diagnostics, ordered grid/source/multi-element/target/monitor workflow, L8.9 real external FDTD run ingestion and reproducibility reports, L8.8 engineering evidence campaign, L8.5.1 numeric editing and diagram drag, L8.4 aperture validation, and existing diagnostic workbenches</strong>
+          <strong>L9.2 bounded 2D TMz FDTD sandbox with CPU reference stepping, optional WebGPU acceleration, CPU/GPU parity checks, performance diagnostics, stability/validation/boundary/convergence diagnostics, ordered grid/source/multi-element/target/monitor workflow, L8.9 real external FDTD run ingestion and reproducibility reports, L8.8 engineering evidence campaign, L8.5.1 numeric editing and diagram drag, L8.4 aperture validation, and existing diagnostic workbenches</strong>
         </div>
         <div className="top-actions simulation-mode-actions" aria-label="Top-level workflow mode">
           <button type="button" className={visibleMode === "builder" ? "active" : ""} onClick={() => setVisibleMode("builder")}>

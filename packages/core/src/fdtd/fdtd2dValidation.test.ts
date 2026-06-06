@@ -168,7 +168,7 @@ describe("L9.1 FDTD convergence diagnostics", () => {
     const report = createFdtd2dValidationHarnessReport({ scene, state, convergence });
     const markdown = fdtd2dValidationReportMarkdown(report);
 
-    expect(markdown).toContain("L9.1 2D FDTD Validation + Stability Harness Report");
+    expect(markdown).toContain("L9.2 2D FDTD Validation + Stability + Backend Harness Report");
     expect(markdown).toContain("CFL factor");
     expect(markdown).toContain("Reference Checks");
     expect(fdtd2dValidationReportJson(report)).toContain("emmicro.fdtd2d.validationHarnessReport.v1");
@@ -176,16 +176,17 @@ describe("L9.1 FDTD convergence diagnostics", () => {
   });
 });
 
-describe("L9.1 boundaries and regressions", () => {
-  it("does not claim production FDTD, 3D Maxwell, WebGPU, FEM/BEM/RCWA, or external Meep replacement", () => {
+describe("L9.2 boundaries and regressions", () => {
+  it("does not claim production FDTD, 3D Maxwell, always-available WebGPU, FEM/BEM/RCWA, or external Meep replacement", () => {
     const text = l91Fdtd2dBoundary.join(" ");
 
     expect(text).toContain("not full 3D Maxwell");
     expect(text).toContain("not production FDTD");
-    expect(text).toContain("WebGPU acceleration is not implemented");
+    expect(text).toContain("WebGPU acceleration is optional");
+    expect(text).toContain("reference validation baseline and fallback");
     expect(text).toContain("The L8.9 external Meep/FDTD path remains");
     expect(text).toContain("No FEM/BEM/RCWA execution");
-    expect(text).not.toMatch(/production FDTD is available|3D Maxwell is implemented|WebGPU acceleration is implemented|replacement for external Meep/i);
+    expect(text).not.toMatch(/production FDTD is available|3D Maxwell is implemented|WebGPU is always available|replacement for external Meep/i);
   });
 
   it("keeps Simulation Builder to sandbox handoff working", () => {
@@ -193,7 +194,7 @@ describe("L9.1 boundaries and regressions", () => {
     scenario = addSimulationBuilderElement(scenario, createSimulationBuilderElement("finite-transparent-block", 8, "Transparent block"));
     const handoff = simulationBuilderToFdtd2dSandbox(scenario);
 
-    expect(handoff.scene.label).toContain("L9.1 2D sandbox slice");
+    expect(handoff.scene.label).toContain("L9.2 2D sandbox slice");
     expect(handoff.mappedObjects.map((item) => item.kind)).toContain("dielectric-rectangle");
   });
 });

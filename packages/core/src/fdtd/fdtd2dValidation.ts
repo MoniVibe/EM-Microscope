@@ -8,7 +8,7 @@ import {
   estimateFdtd2dBudget,
   fdtd2dCflMarginalLimit,
   fdtd2dCflStabilityLimit,
-  l91Fdtd2dBoundary,
+  l92Fdtd2dBoundary,
   runFdtd2dScene,
   runFdtd2dValidationFixture,
   stableDtForFdtd2d,
@@ -22,6 +22,7 @@ import {
   type Fdtd2dState,
   type Fdtd2dValidationReport
 } from "./fdtd2dSandbox";
+import type { Fdtd2dBackendReport } from "./fdtd2dBackend";
 
 export type Fdtd2dStabilityStatus = "stable" | "marginal" | "unstable-blocked" | "diverged";
 export type Fdtd2dEnergyTrend = "not-run" | "flat" | "rising" | "falling";
@@ -117,6 +118,7 @@ export type Fdtd2dValidationHarnessReport = {
   boundaryDiagnostics: Fdtd2dBoundaryDiagnostics;
   validationSuite: Fdtd2dValidationSuite;
   convergence?: Fdtd2dConvergenceReport;
+  backend?: Fdtd2dBackendReport;
   status: SimulationBuilderValidationStatus;
   boundary: string[];
   reportHash: string;
@@ -353,22 +355,26 @@ export function createFdtd2dValidationHarnessReport(input: {
   state?: Fdtd2dState | null;
   validationSuite?: Fdtd2dValidationSuite;
   convergence?: Fdtd2dConvergenceReport;
+  backend?: Fdtd2dBackendReport;
 }): Fdtd2dValidationHarnessReport {
   const stability = createFdtd2dStabilityReport(input.state ?? input.scene);
   const boundaryDiagnostics = analyzeFdtd2dBoundaryDiagnostics(input.scene);
   const validationSuite = input.validationSuite ?? runFdtd2dValidationSuite(80);
   const statuses: SimulationBuilderValidationStatus[] = [stability.status === "diverged" || stability.status === "unstable-blocked" ? "fail" : stability.status === "marginal" ? "warning" : "pass", boundaryDiagnostics.status, validationSuite.status];
   if (input.convergence) statuses.push(input.convergence.status);
+  if (input.backend?.parity) statuses.push(input.backend.parity.status);
+  if (input.backend?.performance) statuses.push(input.backend.performance.status);
   const draft = {
     schema: "emmicro.fdtd2d.validationHarnessReport.v1" as const,
-    label: "L9.1 2D FDTD Validation + Stability Harness",
+    label: "L9.2 2D FDTD Validation + Stability + Backend Harness",
     sceneHash: input.scene.sceneHash,
     stability,
     boundaryDiagnostics,
     validationSuite,
     convergence: input.convergence,
+    backend: input.backend,
     status: combineStatuses(statuses),
-    boundary: [...l91Fdtd2dBoundary]
+    boundary: [...l92Fdtd2dBoundary]
   };
   return {
     ...draft,
@@ -386,7 +392,7 @@ export function fdtd2dValidationReportJson(report: Fdtd2dValidationHarnessReport
 
 export function fdtd2dValidationReportMarkdown(report: Fdtd2dValidationHarnessReport): string {
   return [
-    "# L9.1 2D FDTD Validation + Stability Harness Report",
+    "# L9.2 2D FDTD Validation + Stability + Backend Harness Report",
     "",
     `Scene hash: ${report.sceneHash}`,
     `Status: ${report.status.toUpperCase()}`,
@@ -414,6 +420,16 @@ export function fdtd2dValidationReportMarkdown(report: Fdtd2dValidationHarnessRe
     ...(report.convergence
       ? report.convergence.rows.map((row) => `- ${row.nx}x${row.ny}: residual=${formatNumber(row.residualFromPrevious)} energy=${formatNumber(row.finalEnergy)} monitor=${formatNumber(row.monitorRms)}`)
       : ["- not run"]),
+    "",
+    "## Backend / WebGPU",
+    ...(report.backend ? [
+      `- selected: ${report.backend.selectedBackend}`,
+      `- effective: ${report.backend.effectiveBackend}`,
+      `- WebGPU status: ${report.backend.availability.status}`,
+      `- fallback: ${report.backend.availability.fallbackToCpu ? "CPU reference" : "not active"}`,
+      `- parity: ${report.backend.parity?.status ?? "not run"}`,
+      `- performance: ${report.backend.performance ? `${formatNumber(report.backend.performance.stepsPerSecond)} steps/sec` : "not run"}`
+    ] : ["- not run"]),
     "",
     "## Boundary Diagnostics",
     ...(report.boundaryDiagnostics.warnings.length ? report.boundaryDiagnostics.warnings.map((warning) => `- ${warning.code}: ${warning.message}`) : ["- none"]),
@@ -543,7 +559,7 @@ function absorberTransmission(width: number, steps: number): { effectiveTransmis
   const scene = createFdtd2dScene({
     ...base,
     id: `l91-absorbing-width-${width}`,
-    label: `L9.1 absorbing slab width ${width} cells`,
+    label: `L9.2 absorbing slab width ${width} cells`,
     objects: base.objects.map((item) => item.id === "lossy-slab" ? { ...item, width } : item)
   });
   const result = runFdtd2dScene(scene, steps);

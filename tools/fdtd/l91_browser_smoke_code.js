@@ -13,12 +13,12 @@ async function smoke(page) {
   await page.setViewportSize({ width: 1500, height: 1120 });
   step("navigate");
   await page.goto(url, { waitUntil: "networkidle" });
-  await expectText("L9.1 In-Browser 2D FDTD Validation + Stability Harness");
+  await expectText("L9.2 WebGPU-Accelerated 2D FDTD Sandbox");
   await expectText("2D Maxwell Sandbox");
 
   step("open sandbox");
   await page.getByRole("button", { name: "2D Maxwell Sandbox" }).click();
-  await expectText("L9.1 In-Browser 2D FDTD Maxwell Sandbox");
+  await expectText("L9.2 In-Browser 2D FDTD Maxwell Sandbox");
   await expectText("Validation + Stability");
   await expectText("CFL factor");
   await expectText("dt s");
@@ -67,13 +67,13 @@ async function smoke(page) {
 
   step("builder handoff and regressions");
   await page.getByRole("button", { name: "Simulation Builder" }).click();
-  await expectText("L9.1 Simulation Builder + 2D Sandbox Handoff");
+  await expectText("L9.2 Simulation Builder + 2D Sandbox Handoff");
   await expectText("Export 2D Slice to Maxwell Sandbox");
   await expectText("L8.9 Real External FDTD Run Ingestion");
   await expectText("L8.8 Engineering Evidence Campaign");
   await page.getByRole("button", { name: "Export 2D Slice to Maxwell Sandbox" }).click();
-  await expectText("L9.1 In-Browser 2D FDTD Maxwell Sandbox");
-  await expectText("L9.1 2D sandbox slice");
+  await expectText("L9.2 In-Browser 2D FDTD Maxwell Sandbox");
+  await expectText("L9.2 2D sandbox slice");
 
   const unexpectedConsoleIssues = consoleIssues.filter((message) => !message.includes("Download the React DevTools"));
   const summary = {

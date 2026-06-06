@@ -181,7 +181,7 @@ export const l80SimulationBuilderBoundary = [
   "Transparent, reflective, and absorbing planar surface/slab cases are executable.",
   "Apertures and ideal lenses are placement-aware scalar/ideal elements in this builder, not material Maxwell geometry solves.",
   "No arbitrary 3D material geometry is executable in-app.",
-  "No production FDTD, FEM, BEM, RCWA, or WebGPU acceleration is performed in the browser; L9.1's separate 2D TMz sandbox is diagnostic only.",
+  "No production FDTD, FEM, BEM, RCWA, required WebGPU execution, or in-browser 3D FDTD is performed; L9.2's separate 2D TMz sandbox is diagnostic only with optional WebGPU acceleration where supported.",
   "No real curved material lens solve, finite-thickness metal aperture Maxwell solve, sensor-stack EM absorption, full inverse optimization, automatic final design approval, digital twin, certified validation, certified tolerancing, production EM solver certification, or manufacturing certification is claimed."
 ] as const;
 
