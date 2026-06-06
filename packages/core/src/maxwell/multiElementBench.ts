@@ -8,13 +8,6 @@ import {
   type SimulationBuilderElementKind,
   type SimulationBuilderScenario
 } from "./simulationBuilder";
-import { exportFdtdBundleFromSimulationBuilder, fdtdSceneHash } from "../fdtd/fdtdSceneExport";
-import {
-  fdtdFieldSliceToCsv,
-  makeFdtdFieldSlice,
-  makeFdtdFluxSummary,
-  makeFdtdRunReceipt
-} from "../fdtd/fdtdRunImport";
 import type { FdtdExportBundle, FdtdFieldSlice, FdtdFluxSummary, FdtdImportedRun, FdtdRunReceipt } from "../fdtd/fdtdTypes";
 
 export type OpticalBenchElementType =
@@ -189,16 +182,6 @@ export type OpticalBenchValidationReport = {
   reportHash: string;
 };
 
-export type OpticalBenchBundle = {
-  scene: OpticalBenchScene;
-  crossSection: OpticalBenchCrossSectionItem[];
-  solverPlan: OpticalBenchSolverPlanRow[];
-  scalarPreview: OpticalBenchScalarPreview;
-  fdtdBundle: FdtdExportBundle;
-  externalEvidence: OpticalBenchExternalEvidence;
-  validationReport: OpticalBenchValidationReport;
-};
-
 export const l85OpticalBenchBoundary = [
   "L8.5 is an ordered multi-element optical-bench workflow, not a general-purpose Maxwell solver.",
   "Scalar chain preview is limited to ideal plane elements: free-space propagation, apertures/slits, ideal thin lenses, and observation planes.",
@@ -293,7 +276,7 @@ export function updateOpticalBenchElementZ(scenario: SimulationBuilderScenario, 
 }
 
 export function createOpticalBenchScene(scenario: SimulationBuilderScenario = defaultOpticalBenchScenario()): OpticalBenchScene {
-  const sourceScenarioHash = fdtdSceneHash(scenario);
+  const sourceScenarioHash = opticalBenchSourceScenarioHash(scenario);
   const elements = orderedSimulationBuilderElements(scenario.elements).map((element) => toBenchElement(element));
   const monitors = autoOpticalBenchMonitors(scenario, elements);
   const target: OpticalBenchTarget = {
@@ -520,13 +503,13 @@ export function runOpticalBenchScalarPreview(scene: OpticalBenchScene): OpticalB
   return { ...draft, previewHash: fnv1a64(stableStringify(draft)) };
 }
 
-export function createOpticalBenchExternalEvidence(scene: OpticalBenchScene, fdtdBundle: FdtdExportBundle = exportFdtdBundleFromSimulationBuilder(scenarioFromBenchScene(scene))): OpticalBenchExternalEvidence {
+export function createOpticalBenchExternalEvidence(scene: OpticalBenchScene, fdtdBundle: FdtdExportBundle): OpticalBenchExternalEvidence {
   const finiteCount = scene.elements.filter((element) => element.solverRoute === "external-fdtd").length;
   const incidentFlux = 1;
   const reflectedFlux = finiteCount > 1 ? 0.08 : 0.035;
   const absorbedFlux = finiteCount > 1 ? 0.18 : 0.06;
   const transmittedFlux = Math.max(0, incidentFlux - reflectedFlux - absorbedFlux);
-  const receipt = makeFdtdRunReceipt({
+  const receipt = makeOpticalBenchFdtdRunReceipt({
     schema: "emmicro.fdtd.runReceipt.v1",
     runId: `l85-multi-element-fixture-${scene.sceneHash.slice(0, 8)}`,
     sourceScenarioHash: fdtdBundle.manifest.sourceScenarioHash,
@@ -550,7 +533,7 @@ export function createOpticalBenchExternalEvidence(scene: OpticalBenchScene, fdt
       }
     ]
   });
-  const flux = makeFdtdFluxSummary({
+  const flux = makeOpticalBenchFdtdFluxSummary({
     schema: "emmicro.fdtd.fluxSummary.v1",
     runId: receipt.runId,
     sourceScenarioHash: receipt.sourceScenarioHash,
@@ -569,7 +552,7 @@ export function createOpticalBenchExternalEvidence(scene: OpticalBenchScene, fdt
       .map((monitor, index) => ({ id: monitor.id, flux: Number((transmittedFlux * (1 - index * 0.03)).toPrecision(12)) })),
     warnings: receipt.warnings
   });
-  const fieldSlice = makeFdtdFieldSlice({
+  const fieldSlice = makeOpticalBenchFdtdFieldSlice({
     schema: "emmicro.fdtd.fieldSlice.v1",
     id: "l85-multi-element-field-slice-xz",
     sourceScenarioHash: receipt.sourceScenarioHash,
@@ -580,7 +563,7 @@ export function createOpticalBenchExternalEvidence(scene: OpticalBenchScene, fdt
     xCount: 13,
     zCount: 13
   });
-  const fieldSliceCsv = fdtdFieldSliceToCsv(fieldSlice);
+  const fieldSliceCsv = opticalBenchFieldSliceToCsv(fieldSlice);
   return {
     receipt,
     flux,
@@ -626,24 +609,6 @@ export function createOpticalBenchValidationReport(input: {
     ]
   };
   return { ...draft, reportHash: fnv1a64(stableStringify(reportForHash(draft))) };
-}
-
-export function createOpticalBenchBundle(scenario: SimulationBuilderScenario = defaultOpticalBenchScenario()): OpticalBenchBundle {
-  const scene = createOpticalBenchScene(scenario);
-  const solverPlan = createOpticalBenchSolverPlan(scene);
-  const scalarPreview = runOpticalBenchScalarPreview(scene);
-  const fdtdBundle = exportFdtdBundleFromSimulationBuilder(scenario);
-  const externalEvidence = createOpticalBenchExternalEvidence(scene, fdtdBundle);
-  const validationReport = createOpticalBenchValidationReport({ scene, solverPlan, scalarPreview, externalEvidence });
-  return {
-    scene,
-    crossSection: opticalBenchCrossSection(scene),
-    solverPlan,
-    scalarPreview,
-    fdtdBundle,
-    externalEvidence,
-    validationReport
-  };
 }
 
 export function validateOpticalBenchExternalEvidence(scene: OpticalBenchScene, evidence: OpticalBenchExternalEvidence | FdtdImportedRun): SolverWarning[] {
@@ -1149,6 +1114,70 @@ function deterministicFieldSliceSamples(scene: OpticalBenchScene): FdtdFieldSlic
   return samples;
 }
 
+function opticalBenchSourceScenarioHash(scenario: SimulationBuilderScenario): string {
+  return fnv1a64(
+    stableStringify({
+      schema: scenario.schema,
+      id: scenario.id,
+      grid: scenario.grid,
+      source: scenario.source,
+      elements: orderedSimulationBuilderElements(scenario.elements),
+      target: scenario.target,
+      observationPlaneZMm: scenario.observationPlaneZMm
+    })
+  );
+}
+
+function makeOpticalBenchFdtdRunReceipt(input: Omit<FdtdRunReceipt, "receiptHash">): FdtdRunReceipt {
+  const base = {
+    ...input,
+    warnings: [...input.warnings]
+  };
+  return {
+    ...base,
+    receiptHash: fnv1a64(stableStringify(base))
+  };
+}
+
+function makeOpticalBenchFdtdFluxSummary(input: Omit<FdtdFluxSummary, "fluxHash">): FdtdFluxSummary {
+  const base = {
+    ...input,
+    monitors: input.monitors.map((monitor) => ({ ...monitor })),
+    warnings: [...input.warnings]
+  };
+  return {
+    ...base,
+    fluxHash: fnv1a64(stableStringify(base))
+  };
+}
+
+function makeOpticalBenchFdtdFieldSlice(input: Omit<FdtdFieldSlice, "sliceHash" | "minIntensity" | "maxIntensity">): FdtdFieldSlice {
+  const samples = input.samples.map((sample) => ({ ...sample }));
+  const intensities = samples.map((sample) => sample.intensity);
+  const base = {
+    ...input,
+    samples,
+    minIntensity: intensities.length ? Math.min(...intensities) : 0,
+    maxIntensity: intensities.length ? Math.max(...intensities) : 0
+  };
+  return {
+    ...base,
+    sliceHash: fnv1a64(stableStringify(base))
+  };
+}
+
+function opticalBenchFieldSliceToCsv(slice: FdtdFieldSlice): string {
+  return [
+    "x_um,z_um,value,intensity",
+    ...slice.samples.map((sample) => [sample.xUm, sample.zUm, sample.value, sample.intensity].map(formatFdtdNumber).join(","))
+  ].join("\n");
+}
+
+function formatFdtdNumber(value: number): string {
+  if (!Number.isFinite(value)) return String(value);
+  return Number(value.toPrecision(12)).toString();
+}
+
 function normalizePower(field: number[], targetPower: number): number[] {
   const current = sum(field);
   if (current <= 0) return field;
@@ -1270,14 +1299,6 @@ function uniqueElementId(element: SimulationBuilderElement, existing: Simulation
   let index = 2;
   while (ids.has(`${element.id}-${index}`)) index += 1;
   return `${element.id}-${index}`;
-}
-
-function scenarioFromBenchScene(scene: OpticalBenchScene): SimulationBuilderScenario {
-  return {
-    ...defaultOpticalBenchScenario(),
-    id: scene.id,
-    label: scene.label
-  };
 }
 
 function reportForHash(report: Omit<OpticalBenchValidationReport, "reportHash">): unknown {

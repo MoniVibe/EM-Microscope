@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createApertureValidationExampleBundle } from "../fdtd/fdtdApertureValidation";
+import { createOpticalBenchBundle } from "../fdtd/fdtdMultiElementBench";
 import { createSurfaceGeometryExampleBundle } from "../fdtd/fdtdSurfaceGeometry";
 import { createFdtdBenchmarkExampleBundle } from "../fdtd/fdtdBenchmarkSuite";
 import {
   addOpticalBenchElement,
-  createOpticalBenchBundle,
   createOpticalBenchExternalEvidence,
   createOpticalBenchScene,
   createOpticalBenchSolverPlan,

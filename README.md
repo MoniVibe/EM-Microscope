@@ -1069,7 +1069,8 @@ L7.8.1 is maintenance-only. It keeps the L7.8 product behavior unchanged while c
 - `GitHub Actions`: the Pages workflow uses Node 24 explicitly with Node 24-compatible official actions where current
   releases exist.
 - `Bundle splitting`: Vite uses Rollup `manualChunks` to split React, icons, the Maxwell panel, explainability content,
-  and core domains into named chunks. The build no longer relies on raising `chunkSizeWarningLimit`.
+  and acyclic core chunks. Maxwell/FDTD stay in one chunk while shared scene/hash code stays in a base chunk, so the
+  production bundle avoids circular core imports without raising `chunkSizeWarningLimit`.
 - `Boundary`: no detector, physics, calibration, hardware, or UI feature behavior changes are part of this pass.
 
 Recommended next Maxwell steps:
