@@ -1,9 +1,9 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L8.6 Process / Tolerance Runner + Multi-Element Optical Bench Editing Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L8.7 Robust Design Advisor + Process / Tolerance Runner Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L8.6 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
-workflow, adds a diagnostic process/tolerance variation runner over the editable bench, and keeps the L8.5.1 multi-element scene graph plus element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
+Real Detector Bridge. L8.7 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+workflow, adds a diagnostic robust-design advisor over the L8.6 process/tolerance variation runner, and keeps the L8.5.1 multi-element scene graph plus element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
 including numeric source-of-truth editing, optional diagram drag, non-drag nudge/order controls, snap settings, undo/redo, custom monitors, edit warnings,
 x-z bench cross-section, solver-plan routing, scalar multi-plane monitor snapshots, external FDTD chain fixture import,
 scene/solver/monitor/report exports, tolerance sensitivity ranking, pass/fail thresholds, worst-case tables, tolerance report exports, external FDTD variation sweep manifest/summary receipts, and a milestone trail that states iteration count is not validation,
@@ -27,6 +27,11 @@ manufacturing certification.
 L8.6 tolerance/process variation is diagnostic only: it is not certified optical tolerancing, automatic redesign,
 inverse optimization, browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA, production EM solving, digital
 twin behavior, or manufacturing certification.
+L8.7 adds diagnostic robust-design guidance on top of that result: ranked recentering, tolerance tightening,
+tolerance relaxation, cost-weighted candidate comparison, explicit user-applied candidate actions, and external FDTD
+candidate sweep manifests/summary receipts. L8.7 is not certified optical tolerancing, automatic final design
+approval, full inverse design, browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA, production EM solving,
+digital twin behavior, or manufacturing certification.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
@@ -146,7 +151,7 @@ certification system.
 
 ## Current Visible Mode
 
-- `L8.6 Process / Tolerance Runner + Direct Optical Bench Editing`: a top-level Simulation Builder workflow that
+- `L8.7 Robust Design Advisor + Process / Tolerance Runner`: a top-level Simulation Builder workflow that
   follows `Grid -> Source -> Elements -> Target / Material -> Observation / Monitors -> Validate`. It lets users define domain
   units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
   of apertures, ideal lenses, planar material interfaces/slabs, mirrors, absorbers, and L8.3 finite transparent
@@ -169,6 +174,16 @@ certification system.
   `fdtd_variation_sweep_manifest.json` and `fdtd_variation_sweep_fixture_summary.json`. It is diagnostic process
   variation only, not certified tolerancing, auto redesign, inverse optimization, browser FDTD, arbitrary 3D Maxwell,
   FEM/BEM/RCWA, production EM solving, digital twin behavior, or manufacturing certification.
+
+  The L8.7 Robust Design Advisor consumes the current L8.6 tolerance result and generates ranked diagnostic actions:
+  nominal recentering candidates, tolerance tightening for sensitive variables, tolerance relaxation for
+  low-sensitivity variables, small robust-grid candidates, cost-weighted rankings, baseline-vs-candidate comparison,
+  tolerance-budget rows, explicit apply-candidate controls, and external FDTD candidate sweep receipts. It exports
+  `robust_design_report.md`, `robust_design_report.json`, `candidate_table.csv`, `recommendations.csv`,
+  `before_after_metrics.csv`, `tolerance_budget.csv`, and `fdtd_candidate_sweep_manifest.json`, plus a bundled
+  `candidate_sweep_summary_fixture.json` for UI/report validation. Candidate application is explicit and user-driven;
+  L8.7 does not auto-approve final designs, perform full inverse design, certify optical tolerances, or execute FDTD
+  in the browser.
 
   The executable material cases are deliberately limited and checkable:
   - transparent dielectric interface/slab: PlanarTmmBackend/Fresnel normal-incidence R/T/A validation, including the

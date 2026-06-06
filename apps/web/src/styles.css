@@ -3431,6 +3431,156 @@ h2 {
   background: #fff1f1;
 }
 
+.l87-robust-panel {
+  border-color: #b8c9d8;
+}
+
+.l87-action-row {
+  gap: 8px;
+}
+
+.l87-select-field,
+.l87-file-import {
+  min-width: 190px;
+  display: grid;
+  gap: 4px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.l87-select-field select,
+.l87-file-import input {
+  min-width: 0;
+  width: 100%;
+  height: 32px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  padding: 0 8px;
+  background: #ffffff;
+  color: #263244;
+  font-size: 12px;
+}
+
+.l87-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.l87-summary-grid.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.l87-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.l87-card {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  align-self: start;
+  padding: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fbfdff;
+}
+
+.l87-card h3 {
+  margin: 0;
+  color: #40506a;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.l87-wide-card {
+  grid-column: 1 / -1;
+}
+
+.l87-recommendation-table,
+.l87-candidate-table,
+.l87-budget-table {
+  display: grid;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.l87-recommendation-row,
+.l87-candidate-row,
+.l87-budget-row {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #516078;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.l87-recommendation-row {
+  grid-template-columns: minmax(180px, 1.1fr) minmax(260px, 1.4fr) minmax(120px, 0.55fr) minmax(92px, 0.45fr) minmax(80px, 0.4fr);
+}
+
+.l87-candidate-row {
+  grid-template-columns: minmax(190px, 1.2fr) minmax(110px, 0.6fr) minmax(82px, 0.45fr) minmax(82px, 0.45fr) minmax(82px, 0.45fr) minmax(72px, 0.35fr) minmax(150px, 0.75fr);
+}
+
+.l87-budget-row {
+  grid-template-columns: 42px minmax(190px, 1.2fr) minmax(80px, 0.42fr) minmax(78px, 0.38fr) minmax(92px, 0.45fr) minmax(82px, 0.42fr);
+}
+
+.l87-header {
+  background: #eef4f8;
+  color: #40506a;
+  font-weight: 750;
+}
+
+.l87-candidate-row button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 30px;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
+.l87-budget-row input[type="number"] {
+  min-width: 0;
+  width: 100%;
+  height: 32px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  padding: 0 8px;
+  background: #ffffff;
+  color: #263244;
+}
+
+.l87-recommendation-row strong,
+.l87-recommendation-row span,
+.l87-recommendation-row em,
+.l87-candidate-row strong,
+.l87-candidate-row span,
+.l87-budget-row strong,
+.l87-budget-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.l87-recommendation-row em {
+  color: #0b6574;
+  font-style: normal;
+  font-weight: 800;
+}
+
 .surface-cross-section {
   display: grid;
   gap: 8px;
@@ -3819,6 +3969,8 @@ h2 {
   .l85-grid,
   .l86-layout,
   .l86-summary-grid,
+  .l87-layout,
+  .l87-summary-grid,
   .fdtd-verification-controls,
   .surface-cross-section-legend,
   .simulation-field-grid,
@@ -3853,11 +4005,15 @@ h2 {
   .l86-variation-row,
   .l86-threshold-row,
   .l86-sensitivity-row,
-  .l86-run-row {
+  .l86-run-row,
+  .l87-recommendation-row,
+  .l87-candidate-row,
+  .l87-budget-row {
     grid-template-columns: 1fr;
   }
 
-  .l86-wide-card {
+  .l86-wide-card,
+  .l87-wide-card {
     grid-column: auto;
   }
 }
