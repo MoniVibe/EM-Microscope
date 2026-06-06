@@ -1,0 +1,14 @@
+{
+  "schema": "emmicro.l88.scenarioConvergenceSummary.v1",
+  "scenarioId": "long-slit",
+  "convergence": {
+    "scenarioId": "long-slit",
+    "label": "Long slit aperture",
+    "runCount": 5,
+    "trend": "decreasing",
+    "finalResidual": 0.0120373254896,
+    "finalEnergyBalanceError": 0.00541679647031,
+    "pmlSensitivity": null,
+    "status": "fail"
+  }
+}

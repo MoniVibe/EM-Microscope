@@ -1,0 +1,583 @@
+{
+  "schema": "emmicro.l88.goldenCampaignSummary.v1",
+  "campaignId": "l88-golden-evidence-campaign",
+  "manifestHash": "0ffb3d2c216b86e2",
+  "label": "L8.8 Golden Evidence Pack / External FDTD Acceptance Campaign",
+  "generatedAtIso": "2026-06-06T00:00:00.000Z",
+  "scenarios": [
+    {
+      "id": "transparent-slab",
+      "label": "Transparent slab",
+      "purpose": "Transparent air-glass-air material interaction",
+      "referenceModel": "planar-tmm-stack",
+      "referenceDescription": "Planar TMM slab R/T/A stabilizes as grid density increases.",
+      "evidenceType": "imported-fixture",
+      "status": "pass",
+      "residual": 0.00260358024691,
+      "convergenceStatus": "decreasing",
+      "pmlStatus": "pass",
+      "expected": {
+        "reflectance": 1.1267052346091418e-26,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "computed": {
+        "reflectance": 0.0007466666666666666,
+        "transmittance": 0.9991111111111111,
+        "absorbance": 0.00072
+      },
+      "receipts": {
+        "sceneHash": "b9e9d2c32c66a0a6",
+        "sourceScenarioHash": "b9e9d2c32c66a0a6",
+        "manifestHash": "6f7759a16a257a90",
+        "scriptHash": "5e07ed066a2e27c9",
+        "referenceHash": "c0d9f4ae6feebd90",
+        "summaryHash": "e0f37596b2a45898",
+        "resultHash": "e0f37596b2a45898"
+      },
+      "warnings": [
+        {
+          "code": "fdtd.benchmark.externalCostReview",
+          "message": "Sweep contains 36 external runs; review cost before launching an external solver."
+        }
+      ],
+      "unsupported": [],
+      "notes": [
+        "Benchmark hash b9e2e5c2ede7c342",
+        "Sweep hash f1f861e2ef70aced"
+      ]
+    },
+    {
+      "id": "absorbing-slab",
+      "label": "Absorbing slab",
+      "purpose": "Absorption and lossy thickness behavior",
+      "referenceModel": "beer-lambert",
+      "referenceDescription": "Beer-Lambert attenuation residual and energy balance stabilize as grid density increases.",
+      "evidenceType": "imported-fixture",
+      "status": "warning",
+      "residual": 0.00291666666667,
+      "convergenceStatus": "decreasing",
+      "pmlStatus": "pass",
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 0.6065306597126334,
+        "absorbance": 0.3934693402873666
+      },
+      "computed": {
+        "reflectance": 0.00112,
+        "transmittance": 0.6078639930459667,
+        "absorbance": 0.3933893402873666
+      },
+      "receipts": {
+        "sceneHash": "982f243c1082d38f",
+        "sourceScenarioHash": "982f243c1082d38f",
+        "manifestHash": "2fbdb1863c5086c2",
+        "scriptHash": "f0f52eb77325bbe1",
+        "referenceHash": "10b4b173f1075711",
+        "summaryHash": "6f34fec2824b203e",
+        "resultHash": "6f34fec2824b203e"
+      },
+      "warnings": [
+        {
+          "code": "fdtd.benchmark.externalCostReview",
+          "message": "Sweep contains 36 external runs; review cost before launching an external solver."
+        }
+      ],
+      "unsupported": [],
+      "notes": [
+        "Benchmark hash 52ccaa5123ac249e",
+        "Sweep hash a481c30f206c462e"
+      ]
+    },
+    {
+      "id": "reflective-plate",
+      "label": "Reflective plate",
+      "purpose": "Ideal mirror / high-reflection limit",
+      "referenceModel": "ideal-mirror",
+      "referenceDescription": "Ideal mirror reflectance stays near 1 while transmission stays near 0.",
+      "evidenceType": "imported-fixture",
+      "status": "pass",
+      "residual": 0.00223666666667,
+      "convergenceStatus": "decreasing",
+      "pmlStatus": "pass",
+      "expected": {
+        "reflectance": 1,
+        "transmittance": 0,
+        "absorbance": 0
+      },
+      "computed": {
+        "reflectance": 1,
+        "transmittance": 0,
+        "absorbance": 0.0007999999999999999
+      },
+      "receipts": {
+        "sceneHash": "9bea0bd00510266d",
+        "sourceScenarioHash": "9bea0bd00510266d",
+        "manifestHash": "5ae7e4fdaf3e9f05",
+        "scriptHash": "78484ba2c44f97ea",
+        "referenceHash": "98499069656035e7",
+        "summaryHash": "e74ac1703db9f22a",
+        "resultHash": "e74ac1703db9f22a"
+      },
+      "warnings": [
+        {
+          "code": "fdtd.benchmark.externalCostReview",
+          "message": "Sweep contains 36 external runs; review cost before launching an external solver."
+        }
+      ],
+      "unsupported": [],
+      "notes": [
+        "Benchmark hash c7e794c03d3043bd",
+        "Sweep hash ae88e36f6ee25693"
+      ]
+    },
+    {
+      "id": "long-slit",
+      "label": "Long slit aperture",
+      "purpose": "Scalar sinc-squared edge-diffraction limiting case",
+      "referenceModel": "single-slit-sinc2",
+      "referenceDescription": "Long-slit scalar limiting case: minima satisfy a sin(theta) = m lambda.",
+      "evidenceType": "imported-fixture",
+      "status": "pass",
+      "residual": 0.0045,
+      "convergenceStatus": "decreasing",
+      "pmlStatus": "pass",
+      "expected": {
+        "transmittance": 0.14285714285714285,
+        "absorbance": 0.843
+      },
+      "computed": {
+        "reflectance": 0.020142857142857143,
+        "transmittance": 0.13835714285714285,
+        "absorbance": 0.8415
+      },
+      "receipts": {
+        "sceneHash": "20016793069c92b3",
+        "sourceScenarioHash": "d96beb814449f702",
+        "manifestHash": "33d117e7c5e980b1",
+        "scriptHash": "18ebd85d8771dbf9",
+        "referenceHash": "0b0c42018e91a284",
+        "resultHash": "869d8674c368da04",
+        "summaryHash": "70f8f223f2f73a59"
+      },
+      "warnings": [
+        {
+          "code": "fdtd.geometry.monitorProximity",
+          "message": "Long-slit aperture has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+          "elementId": "l84-long-slit"
+        },
+        {
+          "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+          "message": "Long-slit aperture has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+          "elementId": "l84-long-slit"
+        },
+        {
+          "code": "fdtd.aperture.scalarLimit",
+          "message": "Long-slit aperture finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.",
+          "elementId": "l84-long-slit"
+        },
+        {
+          "code": "fdtd.aperture.scalarLimit",
+          "message": "Scalar diffraction reference is a limiting-case check for diagnostic comparison, not an exact finite FDTD screen solution.",
+          "elementId": "l84-long-slit"
+        },
+        {
+          "code": "fdtd.aperture.nearFieldFarField",
+          "message": "Near-field slices are not the same as far-field diffraction patterns; use far-field or downstream observation evidence with convergence.",
+          "elementId": "l84-long-slit"
+        },
+        {
+          "code": "fdtd.aperture.convergenceRequired",
+          "message": "Current aperture/blocker diagnostics require convergence sweep evidence before physical interpretation.",
+          "elementId": "l84-long-slit"
+        },
+        {
+          "code": "fdtd.aperture.monitorTooClose",
+          "message": "Flux monitor is within two wavelengths of aperture/blocker edges.",
+          "elementId": "l84-long-slit"
+        },
+        {
+          "code": "fdtd.aperture.edgeStaircasing",
+          "message": "Aperture edges are staircasing-sensitive at this grid density; increase resolution and compare residual trends.",
+          "elementId": "l84-long-slit"
+        }
+      ],
+      "unsupported": [],
+      "notes": [
+        "Classification PASS",
+        "Profile RMS 0.0120707"
+      ]
+    },
+    {
+      "id": "circular-pinhole",
+      "label": "Circular aperture",
+      "purpose": "Airy/Bessel first-ring limiting case",
+      "referenceModel": "airy-bessel",
+      "referenceDescription": "Circular aperture scalar limiting case: first dark ring is near 1.22 lambda z / D.",
+      "evidenceType": "imported-fixture",
+      "status": "pass",
+      "residual": 0.0063,
+      "convergenceStatus": "decreasing",
+      "pmlStatus": "pass",
+      "expected": {
+        "transmittance": 0.08726646259971647,
+        "absorbance": 0.8986788666522778
+      },
+      "computed": {
+        "reflectance": 0.02245467074800567,
+        "transmittance": 0.08096646259971647,
+        "absorbance": 0.8965788666522778
+      },
+      "receipts": {
+        "sceneHash": "4b5d69a020723f13",
+        "sourceScenarioHash": "c4f75c6515cf0057",
+        "manifestHash": "4988876e01a19248",
+        "scriptHash": "91e497b3ad5863f1",
+        "referenceHash": "c027771ff7993aef",
+        "resultHash": "52d09ddc61225611",
+        "summaryHash": "8018c3d6c9f8d134"
+      },
+      "warnings": [
+        {
+          "code": "fdtd.geometry.monitorProximity",
+          "message": "Circular pinhole aperture has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+          "elementId": "l84-circular-pinhole"
+        },
+        {
+          "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+          "message": "Circular pinhole aperture has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+          "elementId": "l84-circular-pinhole"
+        },
+        {
+          "code": "fdtd.aperture.scalarLimit",
+          "message": "Circular pinhole aperture finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.",
+          "elementId": "l84-circular-pinhole"
+        },
+        {
+          "code": "fdtd.aperture.scalarLimit",
+          "message": "Scalar diffraction reference is a limiting-case check for diagnostic comparison, not an exact finite FDTD screen solution.",
+          "elementId": "l84-circular-pinhole"
+        },
+        {
+          "code": "fdtd.aperture.nearFieldFarField",
+          "message": "Near-field slices are not the same as far-field diffraction patterns; use far-field or downstream observation evidence with convergence.",
+          "elementId": "l84-circular-pinhole"
+        },
+        {
+          "code": "fdtd.aperture.convergenceRequired",
+          "message": "Current aperture/blocker diagnostics require convergence sweep evidence before physical interpretation.",
+          "elementId": "l84-circular-pinhole"
+        },
+        {
+          "code": "fdtd.aperture.monitorTooClose",
+          "message": "Flux monitor is within two wavelengths of aperture/blocker edges.",
+          "elementId": "l84-circular-pinhole"
+        },
+        {
+          "code": "fdtd.aperture.edgeStaircasing",
+          "message": "Aperture edges are staircasing-sensitive at this grid density; increase resolution and compare residual trends.",
+          "elementId": "l84-circular-pinhole"
+        }
+      ],
+      "unsupported": [],
+      "notes": [
+        "Classification PASS",
+        "Profile RMS 0.0157083"
+      ]
+    },
+    {
+      "id": "multielement-chain",
+      "label": "Multi-element chain",
+      "purpose": "Ordered optical bench workflow, solver routing, monitor stack, and external evidence receipts",
+      "referenceModel": "stage-by-stage receipts",
+      "referenceDescription": "Ordered elements route scalar-capable stages to scalar preview and finite elements to external FDTD evidence receipts.",
+      "evidenceType": "computed/imported",
+      "status": "warning",
+      "residual": 0,
+      "convergenceStatus": "stage receipts",
+      "pmlStatus": "n/a",
+      "expected": {
+        "transmittance": 1,
+        "peakIntensity": 0.899786495
+      },
+      "computed": {
+        "reflectance": 0.08,
+        "transmittance": 0.74,
+        "absorbance": 0.18,
+        "peakIntensity": 0.899786495
+      },
+      "receipts": {
+        "sceneHash": "588269a545ca93a2",
+        "sourceScenarioHash": "2569f7e424c2366a",
+        "manifestHash": "dcc211305c62b196",
+        "scriptHash": "17d79f269458dc42",
+        "resultHash": "d58c421fe1e36261",
+        "summaryHash": "bcd790c2ac38d20d"
+      },
+      "warnings": [
+        {
+          "code": "opticalBench.scalar.externalBoundary",
+          "message": "Transparent block 1 is finite geometry; scalar preview stops at a placement/attenuation diagnostic and requires imported external FDTD evidence.",
+          "elementId": "finite-transparent-block-30000"
+        },
+        {
+          "code": "opticalBench.scalar.externalBoundary",
+          "message": "Absorbing blocker 1 is finite geometry; scalar preview stops at a placement/attenuation diagnostic and requires imported external FDTD evidence.",
+          "elementId": "finite-absorbing-block-40000"
+        },
+        {
+          "code": "opticalBench.external.fixture",
+          "message": "Bundled L8.5 multi-element evidence is deterministic fixture data for UI/report validation, not a browser-run FDTD solve."
+        }
+      ],
+      "unsupported": [],
+      "notes": [
+        "Solver rows 5",
+        "Monitor snapshots 9"
+      ]
+    },
+    {
+      "id": "robust-candidate",
+      "label": "Robust candidate before/after",
+      "purpose": "L8.6 process variation plus L8.7 robust-advisor candidate improvement",
+      "referenceModel": "L8.7 before/after tolerance metrics",
+      "referenceDescription": "Best robust candidate is compared against the deterministic-grid baseline pass rate, expected score, and worst-case score.",
+      "evidenceType": "computed",
+      "status": "pass",
+      "residual": 0,
+      "convergenceStatus": "tolerance-grid comparison",
+      "pmlStatus": "n/a",
+      "expected": {
+        "passRate": 0,
+        "worstCaseScore": 50,
+        "expectedScore": 50
+      },
+      "computed": {
+        "passRate": 0,
+        "worstCaseScore": 50,
+        "expectedScore": 50
+      },
+      "receipts": {
+        "sceneHash": "588269a545ca93a2",
+        "referenceHash": "bd2caa3320dde47d",
+        "resultHash": "c460d926afd0b8ab",
+        "summaryHash": "003a785060fa1160"
+      },
+      "warnings": [
+        {
+          "code": "opticalBench.scalar.externalBoundary",
+          "message": "Transparent block 1 is finite geometry; scalar preview stops at a placement/attenuation diagnostic and requires imported external FDTD evidence.",
+          "elementId": "finite-transparent-block-30000"
+        },
+        {
+          "code": "opticalBench.scalar.externalBoundary",
+          "message": "Absorbing blocker 1 is finite geometry; scalar preview stops at a placement/attenuation diagnostic and requires imported external FDTD evidence.",
+          "elementId": "finite-absorbing-block-40000"
+        },
+        {
+          "code": "opticalBench.external.fixture",
+          "message": "Bundled L8.5 multi-element evidence is deterministic fixture data for UI/report validation, not a browser-run FDTD solve."
+        }
+      ],
+      "unsupported": [],
+      "notes": [
+        "Best candidate Balanced robust-grid candidate",
+        "Remaining failure Circular aperture 1 x decenter +/-5 um"
+      ]
+    }
+  ],
+  "convergence": [
+    {
+      "scenarioId": "transparent-slab",
+      "label": "Transparent slab",
+      "runCount": 36,
+      "trend": "decreasing",
+      "finalResidual": 0.00260358024691,
+      "finalEnergyBalanceError": 0.00407777777778,
+      "pmlSensitivity": 0.00342111111111,
+      "status": "pass"
+    },
+    {
+      "scenarioId": "absorbing-slab",
+      "label": "Absorbing slab",
+      "runCount": 36,
+      "trend": "decreasing",
+      "finalResidual": 0.00291666666667,
+      "finalEnergyBalanceError": 0.0116333333333,
+      "pmlSensitivity": 0.00275,
+      "status": "warning"
+    },
+    {
+      "scenarioId": "reflective-plate",
+      "label": "Reflective plate",
+      "runCount": 36,
+      "trend": "decreasing",
+      "finalResidual": 0.00223666666667,
+      "finalEnergyBalanceError": 0.00502,
+      "pmlSensitivity": 0.00359,
+      "status": "pass"
+    },
+    {
+      "scenarioId": "long-slit",
+      "label": "Long slit aperture",
+      "runCount": 5,
+      "trend": "decreasing",
+      "finalResidual": 0.0120373254896,
+      "finalEnergyBalanceError": 0.00541679647031,
+      "pmlSensitivity": null,
+      "status": "fail"
+    },
+    {
+      "scenarioId": "circular-pinhole",
+      "label": "Circular aperture",
+      "runCount": 5,
+      "trend": "decreasing",
+      "finalResidual": 0.0173872479294,
+      "finalEnergyBalanceError": 0.00782426156822,
+      "pmlSensitivity": null,
+      "status": "fail"
+    }
+  ],
+  "toleranceSummary": {
+    "label": "L8.8 golden campaign L8.6 tolerance variation",
+    "reportHash": "c65b0f6facea2221",
+    "variationHash": "bd2caa3320dde47d",
+    "passRate": 0,
+    "worstCaseStatus": "warning",
+    "failingCaseCount": 0,
+    "topSensitivity": "Ideal thin lens 1 z shift +/-0.05 mm",
+    "sweepManifestHash": "d70bc83a148dcd4f",
+    "sweepSummaryHash": "f4c9c61e598df19e"
+  },
+  "robustSummary": {
+    "label": "L8.8 golden campaign L8.7 robust candidate review",
+    "reportHash": "003a785060fa1160",
+    "baselinePassRate": 0,
+    "candidatePassRate": 0,
+    "passRateDelta": 0,
+    "worstCaseImprovement": 0,
+    "expectedImprovement": 0,
+    "bestCandidateLabel": "Balanced robust-grid candidate",
+    "candidateHash": "c460d926afd0b8ab",
+    "sweepManifestHash": "6f6eb57055ac04df",
+    "sweepSummaryHash": "e72e590e9c042e8e",
+    "remainingFailureDriver": "Circular aperture 1 x decenter +/-5 um"
+  },
+  "capabilityTruthTable": [
+    {
+      "id": "engineering-evidence-campaign",
+      "label": "Engineering Evidence Campaign",
+      "status": "executable",
+      "evidence": "L8.8 campaign manifest, golden summary, scenario table, convergence review, tolerance/robust summaries, and dossier exports."
+    },
+    {
+      "id": "golden-scenario-validation-dossier",
+      "label": "Golden scenario validation dossier",
+      "status": "executable",
+      "evidence": "Deterministic transparent, absorbing, reflective, aperture, multi-element, and robust candidate scenarios are bundled."
+    },
+    {
+      "id": "external-fdtd-import",
+      "label": "External FDTD evidence import",
+      "status": "external-only",
+      "evidence": "Manifest/script/hash receipts and imported field/flux/convergence summaries are accepted; browser does not execute FDTD."
+    },
+    {
+      "id": "planar-tmm-reference",
+      "label": "Planar TMM/Fresnel references",
+      "status": "executable",
+      "evidence": "Transparent slab/interface and mirror/absorber references reuse existing L8.0/L8.2 analytic/TMM paths."
+    },
+    {
+      "id": "aperture-scalar-reference",
+      "label": "Aperture scalar limiting references",
+      "status": "executable",
+      "evidence": "L8.4 long-slit and circular-pinhole scalar references and convergence diagnostics are included."
+    },
+    {
+      "id": "l86-tolerance-evidence",
+      "label": "L8.6 tolerance evidence",
+      "status": "executable",
+      "evidence": "Deterministic-grid tolerance report and FDTD variation sweep fixture hashes are preserved."
+    },
+    {
+      "id": "l87-robust-evidence",
+      "label": "L8.7 robust before/after evidence",
+      "status": "executable",
+      "evidence": "Best candidate before/after metrics and external candidate sweep receipt hashes are preserved."
+    },
+    {
+      "id": "external-fdtd-backend",
+      "label": "ExternalFdtdBackend",
+      "status": "scaffold-only",
+      "evidence": "Registered/export/import scaffold only; no in-browser solver execution."
+    },
+    {
+      "id": "certified-validation",
+      "label": "Certified validation",
+      "status": "not-implemented",
+      "evidence": "L8.8 is an evidence dossier, not V&V certification."
+    },
+    {
+      "id": "production-em-solver-certification",
+      "label": "Production EM solver certification",
+      "status": "not-implemented",
+      "evidence": "No production Maxwell solver, certified tolerancing, FEM/BEM/RCWA, or manufacturing certification is claimed."
+    }
+  ],
+  "unsupportedItems": [
+    {
+      "id": "browser-fdtd",
+      "label": "In-browser FDTD execution",
+      "status": "not-implemented",
+      "reason": "The web app exports/imports external evidence only."
+    },
+    {
+      "id": "arbitrary-3d-maxwell",
+      "label": "Arbitrary 3D Maxwell/CAD solve",
+      "status": "not-implemented",
+      "reason": "Current 3D work is schema/export/import scaffolding and diagnostics, not a full 3D solver."
+    },
+    {
+      "id": "fem-bem-rcwa",
+      "label": "FEM/BEM/RCWA execution",
+      "status": "not-implemented",
+      "reason": "No FEM, BEM, or RCWA backend is shipped."
+    },
+    {
+      "id": "certified-tolerancing",
+      "label": "Certified optical tolerancing",
+      "status": "not-implemented",
+      "reason": "L8.6/L8.7/L8.8 are diagnostic engineering aids only."
+    },
+    {
+      "id": "automatic-final-design-approval",
+      "label": "Automatic final design approval",
+      "status": "not-implemented",
+      "reason": "Robust candidates require explicit user application and review."
+    },
+    {
+      "id": "digital-twin",
+      "label": "Digital twin / manufacturing certification",
+      "status": "unsupported",
+      "reason": "No measured hardware loop, manufacturing line, or certified metrology process is implemented."
+    }
+  ],
+  "boundary": [
+    "L8.8 is an engineer-facing evidence/reporting campaign over existing L8.x scenes, references, convergence summaries, tolerance results, and robust-advisor receipts.",
+    "Golden campaign fixtures are deterministic diagnostic evidence and import contracts; external FDTD execution remains optional and outside the browser.",
+    "Iteration count is not validation. This dossier reports runnable evidence, references, residuals, convergence behavior, and limitations.",
+    "The campaign is not certified validation, certified tolerancing, automatic final design approval, in-browser FDTD, arbitrary 3D Maxwell/CAD execution, FEM/BEM/RCWA, production EM solving, digital twin behavior, or manufacturing certification."
+  ],
+  "dossierExports": [
+    "engineering_evidence_dossier.md",
+    "engineering_evidence_dossier.json",
+    "scenario_summary.csv",
+    "convergence_summary.csv",
+    "tolerance_summary.csv",
+    "robust_candidate_summary.csv",
+    "capability_truth_table.csv",
+    "unsupported_items.csv"
+  ],
+  "summaryHash": "03344b532989bb09"
+}

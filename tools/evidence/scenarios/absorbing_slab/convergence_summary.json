@@ -1,0 +1,14 @@
+{
+  "schema": "emmicro.l88.scenarioConvergenceSummary.v1",
+  "scenarioId": "absorbing-slab",
+  "convergence": {
+    "scenarioId": "absorbing-slab",
+    "label": "Absorbing slab",
+    "runCount": 36,
+    "trend": "decreasing",
+    "finalResidual": 0.00291666666667,
+    "finalEnergyBalanceError": 0.0116333333333,
+    "pmlSensitivity": 0.00275,
+    "status": "warning"
+  }
+}

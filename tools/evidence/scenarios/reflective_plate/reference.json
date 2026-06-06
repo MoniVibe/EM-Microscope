@@ -1,0 +1,17 @@
+{
+  "schema": "emmicro.l88.scenarioReference.v1",
+  "scenarioId": "reflective-plate",
+  "referenceModel": "ideal-mirror",
+  "referenceDescription": "Ideal mirror reflectance stays near 1 while transmission stays near 0.",
+  "expected": {
+    "reflectance": 1,
+    "transmittance": 0,
+    "absorbance": 0
+  },
+  "thresholds": {
+    "passResidual": 0.03,
+    "warningResidual": 0.08,
+    "pmlWarning": 0.015,
+    "pmlFail": 0.05
+  }
+}

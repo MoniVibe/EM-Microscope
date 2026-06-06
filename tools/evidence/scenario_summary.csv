@@ -1,0 +1,8 @@
+scenario_id,label,reference_model,status,residual,convergence_status,pml_status,evidence_type,scene_hash,manifest_hash,script_hash,result_hash
+transparent-slab,Transparent slab,planar-tmm-stack,pass,0.00260358024691,decreasing,pass,imported-fixture,b9e9d2c32c66a0a6,6f7759a16a257a90,5e07ed066a2e27c9,e0f37596b2a45898
+absorbing-slab,Absorbing slab,beer-lambert,warning,0.00291666666667,decreasing,pass,imported-fixture,982f243c1082d38f,2fbdb1863c5086c2,f0f52eb77325bbe1,6f34fec2824b203e
+reflective-plate,Reflective plate,ideal-mirror,pass,0.00223666666667,decreasing,pass,imported-fixture,9bea0bd00510266d,5ae7e4fdaf3e9f05,78484ba2c44f97ea,e74ac1703db9f22a
+long-slit,Long slit aperture,single-slit-sinc2,pass,0.0045,decreasing,pass,imported-fixture,20016793069c92b3,33d117e7c5e980b1,18ebd85d8771dbf9,869d8674c368da04
+circular-pinhole,Circular aperture,airy-bessel,pass,0.0063,decreasing,pass,imported-fixture,4b5d69a020723f13,4988876e01a19248,91e497b3ad5863f1,52d09ddc61225611
+multielement-chain,Multi-element chain,stage-by-stage receipts,warning,0,stage receipts,n/a,computed/imported,588269a545ca93a2,dcc211305c62b196,17d79f269458dc42,d58c421fe1e36261
+robust-candidate,Robust candidate before/after,L8.7 before/after tolerance metrics,pass,0,tolerance-grid comparison,n/a,computed,588269a545ca93a2,,,c460d926afd0b8ab

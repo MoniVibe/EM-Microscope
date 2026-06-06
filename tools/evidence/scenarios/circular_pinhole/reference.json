@@ -1,0 +1,16 @@
+{
+  "schema": "emmicro.l88.scenarioReference.v1",
+  "scenarioId": "circular-pinhole",
+  "referenceModel": "airy-bessel",
+  "referenceDescription": "Circular aperture scalar limiting case: first dark ring is near 1.22 lambda z / D.",
+  "expected": {
+    "transmittance": 0.08726646259971647,
+    "absorbance": 0.8986788666522778
+  },
+  "thresholds": {
+    "passResidual": 0.03,
+    "warningResidual": 0.08,
+    "pmlWarning": 0.015,
+    "pmlFail": 0.05
+  }
+}

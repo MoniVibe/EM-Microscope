@@ -1,0 +1,21 @@
+{
+  "schema": "emmicro.l88.scenarioScene.v1",
+  "scenarioId": "long-slit",
+  "label": "Long slit aperture",
+  "purpose": "Scalar sinc-squared edge-diffraction limiting case",
+  "evidenceType": "imported-fixture",
+  "receipts": {
+    "sceneHash": "20016793069c92b3",
+    "sourceScenarioHash": "d96beb814449f702",
+    "manifestHash": "33d117e7c5e980b1",
+    "scriptHash": "18ebd85d8771dbf9",
+    "referenceHash": "0b0c42018e91a284",
+    "resultHash": "869d8674c368da04",
+    "summaryHash": "70f8f223f2f73a59"
+  },
+  "notes": [
+    "Classification PASS",
+    "Profile RMS 0.0120707"
+  ],
+  "unsupported": []
+}

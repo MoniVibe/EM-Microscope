@@ -25,6 +25,8 @@ import {
   createSimulationBuilderElement,
   createExampleToleranceFdtdSweepSummary,
   createExampleRobustFdtdCandidateSweepSummary,
+  createEngineeringEvidenceCampaignBundle,
+  createEngineeringEvidenceCampaignManifest,
   createSurfaceGeometryConvergencePack,
   createSurfaceGeometryElement,
   createRobustFdtdCandidateSweepManifest,
@@ -56,6 +58,15 @@ import {
   fdtdValidationMetricsCsv,
   fdtdValidationReportJson,
   fdtdValidationReportMarkdown,
+  engineeringEvidenceCampaignManifestJson,
+  engineeringEvidenceCapabilityTruthTableCsv,
+  engineeringEvidenceConvergenceSummaryCsv,
+  engineeringEvidenceDossierJson,
+  engineeringEvidenceDossierMarkdown,
+  engineeringEvidenceRobustCandidateSummaryCsv,
+  engineeringEvidenceScenarioSummaryCsv,
+  engineeringEvidenceToleranceSummaryCsv,
+  engineeringEvidenceUnsupportedItemsCsv,
   isOpticalBenchEditingBlocked,
   createOpticalBenchBundle,
   importFdtdRunArtifacts,
@@ -98,6 +109,9 @@ import {
   validateApertureImportedRun,
   validateOpticalBenchEditing,
   validateFdtdImportedRunAgainstScenario,
+  goldenEvidenceCampaignSummaryJson,
+  parseEngineeringEvidenceCampaignManifest,
+  parseGoldenEvidenceCampaignSummary,
   parseRobustFdtdCandidateSweepSummary,
   parseToleranceFdtdSweepSummary,
   toleranceFailingCasesCsv,
@@ -109,14 +123,18 @@ import {
   toleranceSensitivityCsv,
   validateToleranceFdtdSweepSummary,
   validateRobustFdtdCandidateSweepSummary,
+  validateEngineeringEvidenceCampaign,
   type ApertureConvergenceReport,
   type ApertureScreenModel,
   type ApertureValidationExampleBundle,
   type ApertureValidationKind,
+  type EngineeringEvidenceCampaignManifest,
+  type EngineeringEvidenceScenarioId,
   type ApertureValidationReport,
   type FdtdBenchmarkKind,
   type FdtdConvergenceSummary,
   type FdtdFieldSlice,
+  type GoldenEvidenceCampaignSummary,
   type FdtdImportedRun,
   type FdtdValidationReport,
   type OpticalBenchHistoryState,
@@ -269,6 +287,9 @@ export function SimulationBuilderPanel() {
   const [l87Permissions, setL87Permissions] = useState<RobustDesignVariablePermission[]>([]);
   const [l87FdtdSummary, setL87FdtdSummary] = useState<RobustFdtdCandidateSweepSummary | null>(null);
   const [l87FdtdImportError, setL87FdtdImportError] = useState<string | null>(null);
+  const [l88Manifest, setL88Manifest] = useState<EngineeringEvidenceCampaignManifest>(() => createEngineeringEvidenceCampaignManifest());
+  const [l88Summary, setL88Summary] = useState<GoldenEvidenceCampaignSummary | null>(null);
+  const [l88ImportError, setL88ImportError] = useState<string | null>(null);
   const [importedFdtd, setImportedFdtd] = useState<FdtdImportedRun | null>(null);
   const [fdtdImportError, setFdtdImportError] = useState<string | null>(null);
   const [benchmarkKind, setBenchmarkKind] = useState<FdtdBenchmarkKind>("transparent-interface");
@@ -345,6 +366,7 @@ export function SimulationBuilderPanel() {
   );
   const l87FdtdManifest = useMemo(() => createRobustFdtdCandidateSweepManifest(l87Report, 8), [l87Report]);
   const l87FdtdWarnings = useMemo(() => (l87FdtdSummary ? validateRobustFdtdCandidateSweepSummary(l87FdtdManifest, l87FdtdSummary) : []), [l87FdtdManifest, l87FdtdSummary]);
+  const l88Warnings = useMemo(() => (l88Summary ? validateEngineeringEvidenceCampaign(l88Manifest, l88Summary) : []), [l88Manifest, l88Summary]);
   const zMin = Math.min(scenario.grid.zStartMm, ...result.axis.map((node) => node.zMm));
   const zMax = Math.max(scenario.observationPlaneZMm, scenario.grid.zEndMm, ...result.axis.map((node) => node.zMm));
 
@@ -769,6 +791,47 @@ export function SimulationBuilderPanel() {
     }
   }
 
+  function loadL88BundledCampaign(): void {
+    const bundle = createEngineeringEvidenceCampaignBundle();
+    setL88Manifest(bundle.manifest);
+    setL88Summary(bundle.summary);
+    setL88ImportError(null);
+  }
+
+  function exportL88EngineerReviewDossier(): void {
+    const bundle = l88Summary ? { manifest: l88Manifest, summary: l88Summary } : createEngineeringEvidenceCampaignBundle();
+    downloadText("campaign_manifest.json", "application/json", engineeringEvidenceCampaignManifestJson(bundle.manifest));
+    downloadText("golden_campaign_summary.json", "application/json", goldenEvidenceCampaignSummaryJson(bundle.summary));
+    downloadText("engineering_evidence_dossier.md", "text/markdown", `${engineeringEvidenceDossierMarkdown(bundle.summary)}\n`);
+    downloadText("engineering_evidence_dossier.json", "application/json", engineeringEvidenceDossierJson(bundle.summary));
+    downloadText("scenario_summary.csv", "text/csv", `${engineeringEvidenceScenarioSummaryCsv(bundle.summary)}\n`);
+    downloadText("convergence_summary.csv", "text/csv", `${engineeringEvidenceConvergenceSummaryCsv(bundle.summary)}\n`);
+    downloadText("tolerance_summary.csv", "text/csv", `${engineeringEvidenceToleranceSummaryCsv(bundle.summary)}\n`);
+    downloadText("robust_candidate_summary.csv", "text/csv", `${engineeringEvidenceRobustCandidateSummaryCsv(bundle.summary)}\n`);
+    downloadText("capability_truth_table.csv", "text/csv", `${engineeringEvidenceCapabilityTruthTableCsv(bundle.summary)}\n`);
+    downloadText("unsupported_items.csv", "text/csv", `${engineeringEvidenceUnsupportedItemsCsv(bundle.summary)}\n`);
+  }
+
+  async function handleL88CampaignFiles(files: FileList | null): Promise<void> {
+    if (!files || files.length === 0) return;
+    try {
+      let nextManifest: EngineeringEvidenceCampaignManifest | null = null;
+      let nextSummary: GoldenEvidenceCampaignSummary | null = null;
+      const entries = await Promise.all(Array.from(files).map(async (file) => ({ name: file.name.toLowerCase(), text: await file.text() })));
+      for (const entry of entries) {
+        const parsed = JSON.parse(entry.text) as { schema?: string };
+        if (parsed.schema === "emmicro.l88.evidenceCampaignManifest.v1") nextManifest = parseEngineeringEvidenceCampaignManifest(entry.text);
+        if (parsed.schema === "emmicro.l88.goldenCampaignSummary.v1") nextSummary = parseGoldenEvidenceCampaignSummary(entry.text);
+      }
+      if (!nextManifest && !nextSummary) throw new Error("Import campaign_manifest.json and/or golden_campaign_summary.json.");
+      setL88Manifest(nextManifest ?? l88Manifest);
+      setL88Summary(nextSummary ?? l88Summary);
+      setL88ImportError(null);
+    } catch (error) {
+      setL88ImportError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   function exportScenario(): void {
     downloadText("simulation_builder_scenario.json", "application/json", simulationBuilderScenarioJson(scenario));
   }
@@ -1015,17 +1078,17 @@ export function SimulationBuilderPanel() {
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L8.7 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L8.8 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L8.7 Robust Design Advisor + Process / Tolerance Runner</h2>
+        <h2>L8.8 Engineering Evidence Campaign + Robust Design Advisor</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, diagnostic process/tolerance variation studies, robust-design recommendations, external FDTD handoff evidence, precise numeric edits, optional diagram drag, and a validation report.
-          Browser FDTD, arbitrary 3D Maxwell material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
+          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, external FDTD handoff evidence, precise numeric edits, optional diagram drag, and a validation report.
+          Browser FDTD, arbitrary 3D Maxwell material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
           certification are not implemented.
         </span>
       </div>
@@ -1326,6 +1389,15 @@ export function SimulationBuilderPanel() {
             onExportFdtdSweep={exportL87FdtdCandidateSweepPack}
             onImportBundledFdtdSummary={importL87BundledFdtdSummary}
             onImportFdtdSummaryFiles={handleL87FdtdSummaryFiles}
+          />
+          <L88EngineeringEvidenceCampaignPanel
+            manifest={l88Manifest}
+            summary={l88Summary}
+            warnings={l88Warnings}
+            importError={l88ImportError}
+            onLoadBundled={loadL88BundledCampaign}
+            onExportDossier={exportL88EngineerReviewDossier}
+            onImportFiles={handleL88CampaignFiles}
           />
         </div>
       </div>
@@ -2504,6 +2576,185 @@ function L87RobustDesignAdvisorPanel(props: {
   );
 }
 
+function L88EngineeringEvidenceCampaignPanel(props: {
+  manifest: EngineeringEvidenceCampaignManifest;
+  summary: GoldenEvidenceCampaignSummary | null;
+  warnings: SolverWarning[];
+  importError: string | null;
+  onLoadBundled: () => void;
+  onExportDossier: () => void;
+  onImportFiles: (files: FileList | null) => void | Promise<void>;
+}) {
+  const [selectedScenarioId, setSelectedScenarioId] = useState<EngineeringEvidenceScenarioId>("transparent-slab");
+  const summary = props.summary;
+  const selected = summary?.scenarios.find((scenario) => scenario.id === selectedScenarioId) ?? summary?.scenarios[0] ?? null;
+  const scenarioCount = summary?.scenarios.length ?? props.manifest.scenarioIds.length;
+  return (
+    <div className="maxwell-data-table l85-wide l88-evidence-panel" aria-label="L8.8 engineering evidence campaign smoke preview">
+      <div className="maxwell-section-heading">
+        <h2>L8.8 Engineering Evidence Campaign</h2>
+        <strong>{summary ? `${scenarioCount} scenarios` : "not loaded"}</strong>
+      </div>
+      <div className="l2-disclosure">
+        <strong>Golden Evidence Pack / External FDTD Acceptance Campaign.</strong>
+        <span>
+          Engineer-facing dossier only: curated scenes, references, residuals, convergence/PML status, L8.6 tolerance evidence, L8.7 robust before/after metrics, and limitations.
+          Not certified validation, in-browser FDTD, arbitrary 3D Maxwell, FEM/BEM/RCWA, digital twin, or manufacturing certification.
+        </span>
+      </div>
+
+      <div className="maxwell-layer-actions simulation-builder-actions l88-action-row">
+        <button type="button" onClick={props.onLoadBundled}>
+          <Sparkles size={15} />
+          <span>Load Bundled Golden Campaign</span>
+        </button>
+        <button type="button" onClick={props.onExportDossier}>
+          <FileDown size={15} />
+          <span>Generate Engineer Review Dossier</span>
+        </button>
+        <label className="l87-file-import">
+          <span>Import campaign JSON</span>
+          <input aria-label="Import L8.8 evidence campaign JSON" type="file" accept="application/json,.json" multiple onChange={(event) => void props.onImportFiles(event.currentTarget.files)} />
+        </label>
+      </div>
+
+      {props.importError && (
+        <div className="fdtd-warning-list">
+          <span><strong>campaign import</strong> {props.importError}</span>
+        </div>
+      )}
+      {props.warnings.length > 0 && (
+        <div className="fdtd-warning-list">
+          {props.warnings.slice(0, 6).map((warning, index) => <span key={`${warning.code}:${index}`}><strong>{warning.code}</strong> {warning.message}</span>)}
+        </div>
+      )}
+
+      <div className="l88-summary-grid">
+        <Stat label="Campaign hash" value={props.manifest.manifestHash.slice(0, 10)} />
+        <Stat label="Status" value={summary ? `${summary.scenarios.filter((scenario) => scenario.status === "pass").length} pass / ${summary.scenarios.filter((scenario) => scenario.status === "warning").length} warn` : "load campaign"} />
+        <Stat label="Truth rows" value={String(summary?.capabilityTruthTable.length ?? 0)} />
+        <Stat label="Unsupported" value={String(summary?.unsupportedItems.length ?? 0)} />
+      </div>
+
+      <div className="l88-layout">
+        <div className="l88-card l88-wide-card" aria-label="L8.8 golden scenarios table smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Golden Scenarios</h3>
+            <strong>{summary ? "loaded" : "load bundled"}</strong>
+          </div>
+          <div className="l88-scenario-table">
+            <div className="l88-scenario-row l88-header">
+              <span>Scenario</span>
+              <span>Reference</span>
+              <span>Status</span>
+              <span>Residual</span>
+              <span>Convergence</span>
+              <span>Evidence</span>
+            </div>
+            {(summary?.scenarios ?? []).map((scenario) => (
+              <button className={`l88-scenario-row ${scenario.id === selected?.id ? "active" : ""}`} key={scenario.id} type="button" onClick={() => setSelectedScenarioId(scenario.id)}>
+                <span>{scenario.label}</span>
+                <span>{scenario.referenceModel}</span>
+                <strong>{scenario.status.toUpperCase()}</strong>
+                <span>{formatCompact(scenario.residual)}</span>
+                <span>{scenario.convergenceStatus}</span>
+                <span>{scenario.evidenceType}</span>
+              </button>
+            ))}
+            {!summary && <p className="simulation-builder-note">Load the bundled golden campaign or import campaign_manifest.json and golden_campaign_summary.json.</p>}
+          </div>
+        </div>
+
+        <div className="l88-card l88-wide-card" aria-label="L8.8 scenario detail smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>{selected?.label ?? "Scenario Detail"}</h3>
+            <strong>{selected?.status ?? "n/a"}</strong>
+          </div>
+          {selected ? (
+            <div className="l88-detail-grid">
+              <Stat label="Purpose" value={selected.purpose} />
+              <Stat label="Reference" value={selected.referenceDescription} />
+              <Stat label="Expected R/T/A" value={`${fmtOptional(selected.expected.reflectance)} / ${fmtOptional(selected.expected.transmittance)} / ${fmtOptional(selected.expected.absorbance)}`} />
+              <Stat label="Computed R/T/A" value={`${fmtOptional(selected.computed.reflectance)} / ${fmtOptional(selected.computed.transmittance)} / ${fmtOptional(selected.computed.absorbance)}`} />
+              <Stat label="Scene hash" value={selected.receipts.sceneHash ? selected.receipts.sceneHash.slice(0, 12) : "n/a"} />
+              <Stat label="Manifest/script" value={`${selected.receipts.manifestHash?.slice(0, 8) ?? "n/a"} / ${selected.receipts.scriptHash?.slice(0, 8) ?? "n/a"}`} />
+              <Stat label="Result hash" value={(selected.receipts.resultHash ?? selected.receipts.summaryHash ?? "n/a").slice(0, 12)} />
+              <Stat label="Warnings" value={String(selected.warnings.length)} />
+            </div>
+          ) : (
+            <p className="simulation-builder-note">No L8.8 scenario selected.</p>
+          )}
+        </div>
+
+        <div className="l88-card" aria-label="L8.8 convergence review smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Convergence Review</h3>
+            <strong>{summary?.convergence.length ?? 0} rows</strong>
+          </div>
+          <div className="l88-compact-list">
+            {(summary?.convergence ?? []).slice(0, 6).map((row) => (
+              <div key={row.scenarioId}>
+                <strong>{row.label}</strong>
+                <span>{row.trend} / residual {formatCompact(row.finalResidual)} / PML {row.pmlSensitivity === null ? "n/a" : formatCompact(row.pmlSensitivity)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="l88-card" aria-label="L8.8 robust before after smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Tolerance + Robust Improvement</h3>
+            <strong>{summary ? "ready" : "n/a"}</strong>
+          </div>
+          {summary ? (
+            <div className="l88-detail-grid compact">
+              <Stat label="L8.6 pass rate" value={pct(summary.toleranceSummary.passRate)} />
+              <Stat label="Top sensitivity" value={summary.toleranceSummary.topSensitivity} />
+              <Stat label="Best candidate" value={summary.robustSummary.bestCandidateLabel} />
+              <Stat label="Before / after" value={`${pct(summary.robustSummary.baselinePassRate)} -> ${pct(summary.robustSummary.candidatePassRate)}`} />
+              <Stat label="Worst-case improvement" value={formatCompact(summary.robustSummary.worstCaseImprovement)} />
+              <Stat label="Remaining driver" value={summary.robustSummary.remainingFailureDriver} />
+            </div>
+          ) : (
+            <p className="simulation-builder-note">Load the campaign to review L8.6 and L8.7 evidence.</p>
+          )}
+        </div>
+
+        <div className="l88-card l88-wide-card" aria-label="L8.8 capability truth table smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Capability Truth Table</h3>
+            <strong>{summary?.capabilityTruthTable.length ?? 0} rows</strong>
+          </div>
+          <div className="l88-truth-table">
+            {(summary?.capabilityTruthTable ?? []).slice(0, 10).map((row) => (
+              <div key={row.id}>
+                <strong>{row.label}</strong>
+                <span>{row.status}</span>
+                <small>{row.evidence}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="l88-card" aria-label="L8.8 engineer dossier export smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Final Dossier</h3>
+            <strong>{summary ? summary.summaryHash.slice(0, 10) : "pending"}</strong>
+          </div>
+          <div className="l88-compact-list">
+            {(summary?.dossierExports ?? props.manifest.requiredArtifacts).slice(0, 10).map((name) => (
+              <div key={name}>
+                <strong>{name}</strong>
+                <span>engineer review artifact</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function L85ElementInspector(props: {
   selected: L85Selection;
   element: SimulationBuilderElement | null;
@@ -3161,6 +3412,10 @@ function formatCompact(value: number): string {
   if (value === 0) return "0";
   if (Math.abs(value) >= 100000 || Math.abs(value) < 0.001) return value.toExponential(3);
   return value.toPrecision(4);
+}
+
+function fmtOptional(value: number | undefined): string {
+  return typeof value === "number" && Number.isFinite(value) ? formatCompact(value) : "n/a";
 }
 
 function pct(value: number): string {

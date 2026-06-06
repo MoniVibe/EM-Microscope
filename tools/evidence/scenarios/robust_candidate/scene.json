@@ -1,0 +1,18 @@
+{
+  "schema": "emmicro.l88.scenarioScene.v1",
+  "scenarioId": "robust-candidate",
+  "label": "Robust candidate before/after",
+  "purpose": "L8.6 process variation plus L8.7 robust-advisor candidate improvement",
+  "evidenceType": "computed",
+  "receipts": {
+    "sceneHash": "588269a545ca93a2",
+    "referenceHash": "bd2caa3320dde47d",
+    "resultHash": "c460d926afd0b8ab",
+    "summaryHash": "003a785060fa1160"
+  },
+  "notes": [
+    "Best candidate Balanced robust-grid candidate",
+    "Remaining failure Circular aperture 1 x decenter +/-5 um"
+  ],
+  "unsupported": []
+}

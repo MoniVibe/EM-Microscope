@@ -1,0 +1,64 @@
+{
+  "schema": "emmicro.l88.importedResultSummary.v1",
+  "scenarioId": "circular-pinhole",
+  "status": "pass",
+  "computed": {
+    "reflectance": 0.02245467074800567,
+    "transmittance": 0.08096646259971647,
+    "absorbance": 0.8965788666522778
+  },
+  "residual": 0.0063,
+  "convergenceStatus": "decreasing",
+  "pmlStatus": "pass",
+  "warnings": [
+    {
+      "code": "fdtd.geometry.monitorProximity",
+      "message": "Circular pinhole aperture has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+      "elementId": "l84-circular-pinhole"
+    },
+    {
+      "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+      "message": "Circular pinhole aperture has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+      "elementId": "l84-circular-pinhole"
+    },
+    {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Circular pinhole aperture finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.",
+      "elementId": "l84-circular-pinhole"
+    },
+    {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Scalar diffraction reference is a limiting-case check for diagnostic comparison, not an exact finite FDTD screen solution.",
+      "elementId": "l84-circular-pinhole"
+    },
+    {
+      "code": "fdtd.aperture.nearFieldFarField",
+      "message": "Near-field slices are not the same as far-field diffraction patterns; use far-field or downstream observation evidence with convergence.",
+      "elementId": "l84-circular-pinhole"
+    },
+    {
+      "code": "fdtd.aperture.convergenceRequired",
+      "message": "Current aperture/blocker diagnostics require convergence sweep evidence before physical interpretation.",
+      "elementId": "l84-circular-pinhole"
+    },
+    {
+      "code": "fdtd.aperture.monitorTooClose",
+      "message": "Flux monitor is within two wavelengths of aperture/blocker edges.",
+      "elementId": "l84-circular-pinhole"
+    },
+    {
+      "code": "fdtd.aperture.edgeStaircasing",
+      "message": "Aperture edges are staircasing-sensitive at this grid density; increase resolution and compare residual trends.",
+      "elementId": "l84-circular-pinhole"
+    }
+  ],
+  "receipts": {
+    "sceneHash": "4b5d69a020723f13",
+    "sourceScenarioHash": "c4f75c6515cf0057",
+    "manifestHash": "4988876e01a19248",
+    "scriptHash": "91e497b3ad5863f1",
+    "referenceHash": "c027771ff7993aef",
+    "resultHash": "52d09ddc61225611",
+    "summaryHash": "8018c3d6c9f8d134"
+  }
+}

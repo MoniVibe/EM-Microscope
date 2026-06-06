@@ -1,0 +1,6 @@
+scenario_id,label,run_count,trend,final_residual,final_energy_balance_error,pml_sensitivity,status
+transparent-slab,Transparent slab,36,decreasing,0.00260358024691,0.00407777777778,0.00342111111111,pass
+absorbing-slab,Absorbing slab,36,decreasing,0.00291666666667,0.0116333333333,0.00275,warning
+reflective-plate,Reflective plate,36,decreasing,0.00223666666667,0.00502,0.00359,pass
+long-slit,Long slit aperture,5,decreasing,0.0120373254896,0.00541679647031,,fail
+circular-pinhole,Circular aperture,5,decreasing,0.0173872479294,0.00782426156822,,fail

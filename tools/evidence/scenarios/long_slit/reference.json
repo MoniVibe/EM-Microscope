@@ -1,0 +1,16 @@
+{
+  "schema": "emmicro.l88.scenarioReference.v1",
+  "scenarioId": "long-slit",
+  "referenceModel": "single-slit-sinc2",
+  "referenceDescription": "Long-slit scalar limiting case: minima satisfy a sin(theta) = m lambda.",
+  "expected": {
+    "transmittance": 0.14285714285714285,
+    "absorbance": 0.843
+  },
+  "thresholds": {
+    "passResidual": 0.03,
+    "warningResidual": 0.08,
+    "pmlWarning": 0.015,
+    "pmlFail": 0.05
+  }
+}

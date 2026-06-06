@@ -1,9 +1,9 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L8.7 Robust Design Advisor + Process / Tolerance Runner Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L8.8 Engineering Evidence Campaign + Robust Design Advisor Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L8.7 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
-workflow, adds a diagnostic robust-design advisor over the L8.6 process/tolerance variation runner, and keeps the L8.5.1 multi-element scene graph plus element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
+Real Detector Bridge. L8.8 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+workflow, adds an engineer-facing golden evidence campaign over L8.1-L8.7 evidence, keeps the diagnostic robust-design advisor over the L8.6 process/tolerance variation runner, and keeps the L8.5.1 multi-element scene graph plus element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
 including numeric source-of-truth editing, optional diagram drag, non-drag nudge/order controls, snap settings, undo/redo, custom monitors, edit warnings,
 x-z bench cross-section, solver-plan routing, scalar multi-plane monitor snapshots, external FDTD chain fixture import,
 scene/solver/monitor/report exports, tolerance sensitivity ranking, pass/fail thresholds, worst-case tables, tolerance report exports, external FDTD variation sweep manifest/summary receipts, and a milestone trail that states iteration count is not validation,
@@ -31,6 +31,13 @@ L8.7 adds diagnostic robust-design guidance on top of that result: ranked recent
 tolerance relaxation, cost-weighted candidate comparison, explicit user-applied candidate actions, and external FDTD
 candidate sweep manifests/summary receipts. L8.7 is not certified optical tolerancing, automatic final design
 approval, full inverse design, browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA, production EM solving,
+digital twin behavior, or manufacturing certification.
+L8.8 adds a Golden Evidence Pack / External FDTD Acceptance Campaign on top of the existing stack: curated
+transparent slab, absorbing slab, reflective plate, long-slit, circular-pinhole, multi-element chain, and robust
+candidate scenarios; analytic/TMM/scalar references; expected-vs-imported/computed residuals; convergence/PML
+summaries; L8.6 tolerance evidence; L8.7 robust before/after metrics; capability truth tables; reproducibility hashes;
+and one-click Markdown/JSON/CSV engineer dossier exports. L8.8 is evidence/reporting only, not certified validation,
+certified tolerancing, production EM solver certification, browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA,
 digital twin behavior, or manufacturing certification.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
@@ -151,7 +158,7 @@ certification system.
 
 ## Current Visible Mode
 
-- `L8.7 Robust Design Advisor + Process / Tolerance Runner`: a top-level Simulation Builder workflow that
+- `L8.8 Engineering Evidence Campaign + Robust Design Advisor`: a top-level Simulation Builder workflow that
   follows `Grid -> Source -> Elements -> Target / Material -> Observation / Monitors -> Validate`. It lets users define domain
   units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
   of apertures, ideal lenses, planar material interfaces/slabs, mirrors, absorbers, and L8.3 finite transparent
@@ -165,6 +172,17 @@ certification system.
   `multielement_validation_report.json`, and `multielement_metrics.csv`. The optical-axis diagram and X-Z
   cross-section show the source, every placed element, finite dimensions, target, and observation plane with z
   positions and capability tags.
+
+  The L8.8 Engineering Evidence Campaign loads/imports a bundled golden campaign and exports an engineer-facing
+  dossier. The campaign table covers transparent slab, absorbing slab, reflective plate, long-slit, circular-pinhole,
+  multi-element chain, and robust-candidate scenarios. Each row keeps the reference model, residual, convergence/PML
+  status, evidence type, scene/script/result hashes, warnings, and unsupported notes. The dossier exports
+  `engineering_evidence_dossier.md`, `engineering_evidence_dossier.json`, `scenario_summary.csv`,
+  `convergence_summary.csv`, `tolerance_summary.csv`, `robust_candidate_summary.csv`,
+  `capability_truth_table.csv`, and `unsupported_items.csv`. It explicitly includes: "Iteration count is not
+  validation. This dossier reports runnable evidence, references, residuals, convergence behavior, and limitations."
+  The bundled files live under `tools/evidence/`, with optional external-run scaffolding; npm tests/build and browser
+  runtime do not require Meep or Python.
 
   The L8.6 process/tolerance runner attaches source, element, material, geometry, and monitor variation specs to that
   current editable scene, then runs one-at-a-time, bounded deterministic-grid, or seeded deterministic diagnostic

@@ -1,0 +1,20 @@
+{
+  "schema": "emmicro.l88.scenarioScene.v1",
+  "scenarioId": "multielement-chain",
+  "label": "Multi-element chain",
+  "purpose": "Ordered optical bench workflow, solver routing, monitor stack, and external evidence receipts",
+  "evidenceType": "computed/imported",
+  "receipts": {
+    "sceneHash": "588269a545ca93a2",
+    "sourceScenarioHash": "2569f7e424c2366a",
+    "manifestHash": "dcc211305c62b196",
+    "scriptHash": "17d79f269458dc42",
+    "resultHash": "d58c421fe1e36261",
+    "summaryHash": "bcd790c2ac38d20d"
+  },
+  "notes": [
+    "Solver rows 5",
+    "Monitor snapshots 9"
+  ],
+  "unsupported": []
+}

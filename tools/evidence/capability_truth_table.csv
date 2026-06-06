@@ -1,0 +1,11 @@
+capability_id,label,status,evidence
+engineering-evidence-campaign,Engineering Evidence Campaign,executable,"L8.8 campaign manifest, golden summary, scenario table, convergence review, tolerance/robust summaries, and dossier exports."
+golden-scenario-validation-dossier,Golden scenario validation dossier,executable,"Deterministic transparent, absorbing, reflective, aperture, multi-element, and robust candidate scenarios are bundled."
+external-fdtd-import,External FDTD evidence import,external-only,Manifest/script/hash receipts and imported field/flux/convergence summaries are accepted; browser does not execute FDTD.
+planar-tmm-reference,Planar TMM/Fresnel references,executable,Transparent slab/interface and mirror/absorber references reuse existing L8.0/L8.2 analytic/TMM paths.
+aperture-scalar-reference,Aperture scalar limiting references,executable,L8.4 long-slit and circular-pinhole scalar references and convergence diagnostics are included.
+l86-tolerance-evidence,L8.6 tolerance evidence,executable,Deterministic-grid tolerance report and FDTD variation sweep fixture hashes are preserved.
+l87-robust-evidence,L8.7 robust before/after evidence,executable,Best candidate before/after metrics and external candidate sweep receipt hashes are preserved.
+external-fdtd-backend,ExternalFdtdBackend,scaffold-only,Registered/export/import scaffold only; no in-browser solver execution.
+certified-validation,Certified validation,not-implemented,"L8.8 is an evidence dossier, not V&V certification."
+production-em-solver-certification,Production EM solver certification,not-implemented,"No production Maxwell solver, certified tolerancing, FEM/BEM/RCWA, or manufacturing certification is claimed."

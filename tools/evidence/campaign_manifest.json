@@ -1,0 +1,39 @@
+{
+  "schema": "emmicro.l88.evidenceCampaignManifest.v1",
+  "id": "l88-golden-evidence-campaign",
+  "label": "L8.8 Golden Evidence Pack / External FDTD Acceptance Campaign",
+  "version": "L8.8",
+  "scenarioIds": [
+    "transparent-slab",
+    "absorbing-slab",
+    "reflective-plate",
+    "long-slit",
+    "circular-pinhole",
+    "multielement-chain",
+    "robust-candidate"
+  ],
+  "requiredArtifacts": [
+    "campaign_manifest.json",
+    "golden_campaign_summary.json",
+    "engineering_evidence_dossier.md",
+    "scenario_summary.csv",
+    "convergence_summary.csv",
+    "tolerance_summary.csv",
+    "robust_candidate_summary.csv",
+    "capability_truth_table.csv",
+    "unsupported_items.csv"
+  ],
+  "thresholds": {
+    "passResidual": 0.03,
+    "warningResidual": 0.08,
+    "pmlWarning": 0.015,
+    "pmlFail": 0.05
+  },
+  "boundary": [
+    "L8.8 is an engineer-facing evidence/reporting campaign over existing L8.x scenes, references, convergence summaries, tolerance results, and robust-advisor receipts.",
+    "Golden campaign fixtures are deterministic diagnostic evidence and import contracts; external FDTD execution remains optional and outside the browser.",
+    "Iteration count is not validation. This dossier reports runnable evidence, references, residuals, convergence behavior, and limitations.",
+    "The campaign is not certified validation, certified tolerancing, automatic final design approval, in-browser FDTD, arbitrary 3D Maxwell/CAD execution, FEM/BEM/RCWA, production EM solving, digital twin behavior, or manufacturing certification."
+  ],
+  "manifestHash": "0ffb3d2c216b86e2"
+}

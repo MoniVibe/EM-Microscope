@@ -1,0 +1,21 @@
+{
+  "schema": "emmicro.l88.scenarioScene.v1",
+  "scenarioId": "absorbing-slab",
+  "label": "Absorbing slab",
+  "purpose": "Absorption and lossy thickness behavior",
+  "evidenceType": "imported-fixture",
+  "receipts": {
+    "sceneHash": "982f243c1082d38f",
+    "sourceScenarioHash": "982f243c1082d38f",
+    "manifestHash": "2fbdb1863c5086c2",
+    "scriptHash": "f0f52eb77325bbe1",
+    "referenceHash": "10b4b173f1075711",
+    "summaryHash": "6f34fec2824b203e",
+    "resultHash": "6f34fec2824b203e"
+  },
+  "notes": [
+    "Benchmark hash 52ccaa5123ac249e",
+    "Sweep hash a481c30f206c462e"
+  ],
+  "unsupported": []
+}

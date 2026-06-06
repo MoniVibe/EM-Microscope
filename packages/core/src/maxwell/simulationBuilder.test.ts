@@ -159,19 +159,25 @@ describe("workflow clarity boundaries", () => {
     expect(l80SimulationBuilderBoundary.join(" ")).toContain("No arbitrary 3D material geometry is executable in-app");
   });
 
-  it("states L8.6 process variation is diagnostic and not certified tolerancing or auto redesign", () => {
+  it("states L8.6-L8.8 evidence workflows are diagnostic and not certified validation, tolerancing, or auto redesign", () => {
     const boundary = l80SimulationBuilderBoundary.join(" ");
     const result = runSimulationBuilderScenario(defaultSimulationBuilderScenario());
 
     expect(boundary).toContain("L8.6 process/tolerance variation");
     expect(boundary).toContain("L8.7 robust design recommendations");
+    expect(boundary).toContain("L8.8 engineering evidence campaign");
+    expect(boundary).toContain("not certified validation");
     expect(boundary).toContain("not certified tolerancing or auto redesign");
     expect(result.capabilitySummary.find((capability) => capability.id === "process-tolerance-variation-runner")?.status).toBe("executable");
     expect(result.capabilitySummary.find((capability) => capability.id === "external-fdtd-variation-sweep")?.status).toBe("executable");
     expect(result.capabilitySummary.find((capability) => capability.id === "robust-design-advisor")?.status).toBe("executable");
     expect(result.capabilitySummary.find((capability) => capability.id === "robust-candidate-comparison")?.status).toBe("executable");
     expect(result.capabilitySummary.find((capability) => capability.id === "external-fdtd-candidate-sweep")?.status).toBe("executable");
+    expect(result.capabilitySummary.find((capability) => capability.id === "engineering-evidence-campaign")?.status).toBe("executable");
+    expect(result.capabilitySummary.find((capability) => capability.id === "golden-scenario-validation-dossier")?.status).toBe("executable");
     expect(result.capabilitySummary.find((capability) => capability.id === "certified-optical-tolerancing")?.status).toBe("not-implemented");
+    expect(result.capabilitySummary.find((capability) => capability.id === "certified-validation")?.status).toBe("not-implemented");
+    expect(result.capabilitySummary.find((capability) => capability.id === "production-em-solver-certification")?.status).toBe("not-implemented");
     expect(result.capabilitySummary.find((capability) => capability.id === "auto-redesign-inverse-optimization")?.status).toBe("not-implemented");
     expect(result.capabilitySummary.find((capability) => capability.id === "automatic-final-design-approval")?.status).toBe("not-implemented");
     expect(result.capabilitySummary.find((capability) => capability.id === "full-inverse-design")?.status).toBe("not-implemented");

@@ -171,17 +171,18 @@ export type SimulationBuilderValidationInput = {
 };
 
 export const l80SimulationBuilderBoundary = [
-  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, and L8.7 robust-design guidance only.",
+  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, L8.7 robust-design guidance, and L8.8 engineering evidence dossier reporting only.",
   "L8.5.1 element inspector editing changes placement, dimensions, material metadata, custom monitors, and workflow state only; it does not add new physics.",
   "L8.6 process/tolerance variation runs deterministic one-at-a-time, grid, seeded sample, and external FDTD sweep receipt workflows over the current editable scene; it is not certified tolerancing or auto redesign.",
   "L8.7 robust design recommendations compare recentering, tolerance-budget, and candidate-grid actions over existing L8.6 evidence; they are not automatic final design approval or full inverse design.",
+  "L8.8 engineering evidence campaign bundles curated scenarios, analytic/TMM/scalar references, convergence/PML summaries, tolerance evidence, robust before/after metrics, and exportable receipts; it is not certified validation or production EM solver certification.",
   "L8.5 scalar chain preview is limited to ideal plane elements and observation planes.",
   "L8.5 finite geometry routes to external FDTD export/import evidence with receipts; the browser does not execute FDTD.",
   "Transparent, reflective, and absorbing planar surface/slab cases are executable.",
   "Apertures and ideal lenses are placement-aware scalar/ideal elements in this builder, not material Maxwell geometry solves.",
   "No arbitrary 3D material geometry is executable in-app.",
   "No FDTD/FEM/BEM/RCWA execution is performed in the browser.",
-  "No real curved material lens solve, finite-thickness metal aperture Maxwell solve, sensor-stack EM absorption, full inverse optimization, automatic final design approval, digital twin, certified tolerancing, or manufacturing certification is claimed."
+  "No real curved material lens solve, finite-thickness metal aperture Maxwell solve, sensor-stack EM absorption, full inverse optimization, automatic final design approval, digital twin, certified validation, certified tolerancing, production EM solver certification, or manufacturing certification is claimed."
 ] as const;
 
 export const l80ReleaseTrail = [
@@ -203,7 +204,8 @@ export const l80ReleaseTrail = [
   { milestone: "L8.5", label: "Multi-element optical bench propagation chain", runnable: "ordered multi-element scene graph, solver plan, scalar monitor stack, and external FDTD chain fixture" },
   { milestone: "L8.5.1", label: "Element inspector + direct editing", runnable: "numeric source-of-truth editing, optional diagram drag, custom monitors, warnings, and undo/redo" },
   { milestone: "L8.6", label: "Process / tolerance variation runner", runnable: "deterministic tolerance studies, sensitivity ranking, pass/fail tables, and external FDTD sweep receipts" },
-  { milestone: "L8.7", label: "Robust Design Advisor", runnable: "ranked design actions, candidate comparison, tolerance budget, and external FDTD candidate sweep receipts" }
+  { milestone: "L8.7", label: "Robust Design Advisor", runnable: "ranked design actions, candidate comparison, tolerance budget, and external FDTD candidate sweep receipts" },
+  { milestone: "L8.8", label: "Engineering Evidence Campaign", runnable: "golden scenario dossier, convergence review, tolerance/robust summaries, and capability truth table exports" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -680,6 +682,18 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       evidence: "L8.7 exports robust candidate sweep manifests and imports external summary receipts for supported finite-geometry candidates; the browser does not execute FDTD"
     },
     {
+      id: "engineering-evidence-campaign",
+      label: "Engineering Evidence Campaign",
+      status: "executable" as const,
+      evidence: "L8.8 loads/imports curated golden evidence campaigns with scenario references, residuals, convergence/PML review, tolerance summary, robust before/after metrics, hashes, and dossier exports"
+    },
+    {
+      id: "golden-scenario-validation-dossier",
+      label: "Golden scenario validation dossier",
+      status: "executable" as const,
+      evidence: "L8.8 exports engineer-facing Markdown/JSON/CSV evidence dossiers over transparent, absorbing, reflective, aperture, multi-element, and robust-candidate fixtures"
+    },
+    {
       id: "sequential-simulation-builder",
       label: "Sequential Simulation Builder",
       status: "executable" as const,
@@ -780,6 +794,18 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       label: "Certified optical tolerancing",
       status: "not-implemented" as const,
       evidence: "L8.6 is diagnostic process variation only; it is not certified optical tolerancing or manufacturing qualification"
+    },
+    {
+      id: "certified-validation",
+      label: "Certified validation",
+      status: "not-implemented" as const,
+      evidence: "L8.8 is an engineer-facing evidence dossier and credibility review scaffold; it is not accredited, certified, or standards-body validation"
+    },
+    {
+      id: "production-em-solver-certification",
+      label: "Production EM solver certification",
+      status: "not-implemented" as const,
+      evidence: "L8.8 preserves evidence and limitation receipts but does not certify the browser app, external Meep runs, or any production EM solver workflow"
     },
     {
       id: "auto-redesign-inverse-optimization",
