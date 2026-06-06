@@ -271,13 +271,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L9.4 Solver Router / Method Selection Matrix / L9.3 In-Browser 1D RCWA Preview / L9.2 WebGPU-Accelerated 2D FDTD Sandbox</p>
+            <p>L9.5 Solver Router Evidence Auto-Pack / L9.4 Method Selection Matrix / L9.3 In-Browser 1D RCWA Preview / L9.2 WebGPU-Accelerated 2D FDTD Sandbox</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>Solver Router + RCWA Preview + 2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence</span>
-          <strong>L9.4 deterministic solver router recommends PlanarTmmBackend, scalar propagation, bounded 1D RCWA preview, bounded 2D FDTD CPU/WebGPU diagnostics, external FDTD evidence, or unsupported/scaffold with reasons, assumptions, limitations, validation, actions, matrix, and exports; L9.3 bounded 1D periodic RCWA preview remains available; L9.2 bounded 2D TMz FDTD sandbox remains diagnostic with optional WebGPU acceleration</strong>
+          <span>Evidence Auto-Pack + Solver Router + RCWA Preview + 2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence</span>
+          <strong>L9.5 deterministic evidence auto-pack turns each L9.4 solver recommendation into route-specific evidence tasks, artifacts, validation plans, exports, and campaign promotion metadata; L9.4 method selection, L9.3 bounded 1D periodic RCWA preview, and L9.2 bounded 2D TMz FDTD diagnostics remain available without claiming automatic correctness proof or solver certification</strong>
         </div>
         <div className="top-actions simulation-mode-actions" aria-label="Top-level workflow mode">
           <button type="button" className={visibleMode === "builder" ? "active" : ""} onClick={() => setVisibleMode("builder")}>

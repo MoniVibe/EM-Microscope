@@ -69,6 +69,7 @@ export * from "./maxwell/rcwaPreview";
 export * from "./maxwell/robustDesignAdvisor";
 export * from "./maxwell/solverBackend";
 export * from "./maxwell/solverRegistry";
+export * from "./maxwell/solverEvidence";
 export * from "./maxwell/solverRouter";
 export * from "./maxwell/simulationBuilder";
 export * from "./metrics/resolutionTargetMetrics";

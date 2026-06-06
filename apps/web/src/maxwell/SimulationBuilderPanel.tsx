@@ -78,6 +78,7 @@ import {
   l80ReleaseTrail,
   classifySimulationBuilderScenario,
   createSolverRouteExampleScene,
+  createSolverEvidenceTask,
   methodSelectionMatrix,
   metricLabel,
   moveOpticalBenchElementInOrder,
@@ -106,7 +107,10 @@ import {
   solverRouteMatrixCsv,
   solverRouteReportJson,
   solverRouteReportMarkdown,
+  solverEvidenceBundleFiles,
+  solverEvidencePromotionJson,
   simulationBuilderToFdtd2dSandbox,
+  promoteSolverEvidenceTaskToCampaign,
   unsupportedItemsCsv,
   undoOpticalBenchHistory,
   simulationBuilderScenarioJson,
@@ -196,6 +200,9 @@ import {
   type SolverRouteAction,
   type SolverRouteDecision,
   type SolverRouteExampleId,
+  type SolverEvidenceAction,
+  type SolverEvidenceCampaignPromotion,
+  type SolverEvidenceTask,
   type ToleranceAnalysisReport,
   type ToleranceFdtdSweepManifest,
   type ToleranceFdtdSweepSummary,
@@ -336,6 +343,8 @@ export function SimulationBuilderPanel(
   const [selectedL85, setSelectedL85] = useState<L85Selection>(() => initialL85Selection());
   const [l94RoutePreset, setL94RoutePreset] = useState<L94RoutePreset>("current");
   const [l94SelectedMatrixFeature, setL94SelectedMatrixFeature] = useState<MethodMatrixFeatureId>("periodic-1d-grating");
+  const [l95GeneratedTask, setL95GeneratedTask] = useState<SolverEvidenceTask | null>(null);
+  const [l95Promotion, setL95Promotion] = useState<SolverEvidenceCampaignPromotion | null>(null);
   const [l85SnapStepMm, setL85SnapStepMm] = useState(0.5);
   const [xzGeometryMode, setXzGeometryMode] = useState<XzGeometryMode>("inspect");
   const [l85History, setL85History] = useState<OpticalBenchHistoryState>(() => createOpticalBenchHistory(defaultOpticalBenchScenario()));
@@ -375,6 +384,9 @@ export function SimulationBuilderPanel(
   const l94CurrentScene = useMemo(() => classifySimulationBuilderScenario(scenario), [scenario]);
   const l94RouteScene = useMemo(() => (l94RoutePreset === "current" ? l94CurrentScene : createSolverRouteExampleScene(l94RoutePreset)), [l94CurrentScene, l94RoutePreset]);
   const l94RouteDecision = useMemo(() => routeSolverScene(l94RouteScene), [l94RouteScene]);
+  const l95EvidenceTask = useMemo(() => createSolverEvidenceTask(l94RouteScene, l94RouteDecision), [l94RouteDecision, l94RouteScene]);
+  const activeL95GeneratedTask = l95GeneratedTask?.taskHash === l95EvidenceTask.taskHash ? l95GeneratedTask : null;
+  const activeL95Promotion = l95Promotion?.taskHash === l95EvidenceTask.taskHash ? l95Promotion : null;
   const l94MethodMatrix = useMemo(() => methodSelectionMatrix(), []);
   const l85Bundle = useMemo(() => createOpticalBenchBundle(scenario), [scenario]);
   const fdtdBundle = useMemo(() => exportFdtdBundleFromSimulationBuilder(scenario), [scenario]);
@@ -773,6 +785,52 @@ export function SimulationBuilderPanel(
     downloadText("solver_route_matrix.csv", "text/csv", `${solverRouteMatrixCsv(l94MethodMatrix)}\n`);
     downloadText("unsupported_items.csv", "text/csv", `${unsupportedItemsCsv(l94RouteDecision)}\n`);
     downloadText("validation_plan.csv", "text/csv", `${validationPlanCsv(l94RouteDecision)}\n`);
+  }
+
+  function exportL95EvidenceBundle(task = l95EvidenceTask): void {
+    setL95GeneratedTask(task);
+    for (const file of solverEvidenceBundleFiles(task)) {
+      downloadText(file.filename, file.mime, file.content);
+    }
+  }
+
+  function promoteL95EvidenceTask(): void {
+    const promotion = promoteSolverEvidenceTaskToCampaign(l95EvidenceTask);
+    setL95Promotion(promotion);
+    setL95GeneratedTask(l95EvidenceTask);
+    loadL88BundledCampaign();
+    downloadText("solver_evidence_promotion.json", "application/json", solverEvidencePromotionJson(promotion));
+  }
+
+  function handleL95EvidenceAction(action: SolverEvidenceAction): void {
+    if (!action.enabled) return;
+    if (action.id === "generate-evidence-pack" || action.id === "export-evidence-bundle") {
+      exportL95EvidenceBundle();
+      return;
+    }
+    if (action.id === "run-available-in-browser-checks") {
+      if (l95EvidenceTask.routeId === "rcwa-1d-preview") props.onOpenRcwaPreview?.();
+      else if (l95EvidenceTask.routeId === "fdtd-2d-cpu" || l95EvidenceTask.routeId === "fdtd-2d-webgpu") exportL90SandboxSlice();
+      else props.onOpenDiagnosticWorkbenches?.();
+      return;
+    }
+    if (action.id === "generate-external-run-pack" || action.id === "open-run-instructions") {
+      exportL89RunPack();
+      exportL95EvidenceBundle();
+      return;
+    }
+    if (action.id === "import-results" || action.id === "validate-receipts") {
+      loadL89Fixture("transparent-slab");
+      setL94RoutePreset("external");
+      return;
+    }
+    if (action.id === "add-to-engineering-evidence-campaign" || action.id === "promote-to-engineering-evidence-campaign") {
+      promoteL95EvidenceTask();
+      return;
+    }
+    if (action.id === "show-unsupported-gap-report") {
+      exportL95EvidenceBundle();
+    }
   }
 
   function handleL94RouteAction(action: SolverRouteAction): void {
@@ -1345,17 +1403,17 @@ export function SimulationBuilderPanel(
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L9.4 Simulation Builder solver router">
+    <section className="wave-panel simulation-builder-panel" aria-label="L9.5 Simulation Builder solver evidence router">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L9.4 Simulation Builder + Solver Router + 2D Sandbox Handoff</h2>
+        <h2>L9.5 Simulation Builder + Solver Evidence Auto-Pack + 2D Sandbox Handoff</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, L9.4 solver recommendation, scalar multi-plane preview, a bounded L9.2 2D FDTD sandbox handoff exporting fdtd2d_sandbox_scene.json and fdtd2d_sandbox_handoff.json, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, real external FDTD run ingestion and reproducibility reports, precise numeric edits, optional diagram drag, and a validation report.
-          The L9.4 router is method selection and route evidence only, not automatic correctness proof. The L9.2 sandbox is capped 2D TMz only with CPU reference stepping, optional WebGPU acceleration, parity/performance diagnostics, and stability, validation, boundary, and convergence diagnostics. Arbitrary 3D Maxwell material geometry/CAD solving, production FDTD, required WebGPU execution, FDTD/FEM/BEM/RCWA execution beyond the bounded 1D RCWA preview and bounded 2D sandbox, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
+          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, L9.5 evidence task generation, L9.4 solver recommendation, scalar multi-plane preview, a bounded L9.2 2D FDTD sandbox handoff exporting fdtd2d_sandbox_scene.json and fdtd2d_sandbox_handoff.json, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, real external FDTD run ingestion and reproducibility reports, precise numeric edits, optional diagram drag, and a validation report.
+          The L9.5 evidence auto-pack generates route evidence tasks only, not automatic correctness proof. The L9.4 router is method selection only. The L9.2 sandbox is capped 2D TMz only with CPU reference stepping, optional WebGPU acceleration, parity/performance diagnostics, and stability, validation, boundary, and convergence diagnostics. Arbitrary 3D Maxwell material geometry/CAD solving, production FDTD, required WebGPU execution, FDTD/FEM/BEM/RCWA execution beyond the bounded 1D RCWA preview and bounded 2D sandbox, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
           certification are not implemented.
         </span>
       </div>
@@ -1371,12 +1429,16 @@ export function SimulationBuilderPanel(
 
       <L94SolverRouterPanel
         decision={l94RouteDecision}
+        evidenceTask={l95EvidenceTask}
+        generatedTask={activeL95GeneratedTask}
+        promotion={activeL95Promotion}
         matrixRows={l94MethodMatrix}
         preset={l94RoutePreset}
         selectedFeature={l94SelectedMatrixFeature}
         onPreset={setL94RoutePreset}
         onSelectedFeature={setL94SelectedMatrixFeature}
         onAction={handleL94RouteAction}
+        onEvidenceAction={handleL95EvidenceAction}
       />
 
       <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide l85-bench" aria-label="L8.5.1 multi-element optical bench editor smoke preview">
@@ -2648,21 +2710,25 @@ export function SimulationBuilderPanel(
 
 function L94SolverRouterPanel(props: {
   decision: SolverRouteDecision;
+  evidenceTask: SolverEvidenceTask;
+  generatedTask: SolverEvidenceTask | null;
+  promotion: SolverEvidenceCampaignPromotion | null;
   matrixRows: MethodMatrixRow[];
   preset: L94RoutePreset;
   selectedFeature: MethodMatrixFeatureId;
   onPreset: (preset: L94RoutePreset) => void;
   onSelectedFeature: (feature: MethodMatrixFeatureId) => void;
   onAction: (action: SolverRouteAction) => void;
+  onEvidenceAction: (action: SolverEvidenceAction) => void;
 }) {
   const selectedRow = props.matrixRows.find((row) => row.featureId === props.selectedFeature) ?? props.matrixRows[0];
   const recommendedAlternative = props.decision.alternatives.find((alternative) => alternative.solverId === props.decision.recommendedSolver);
   const rejectedCount = props.decision.alternatives.filter((alternative) => alternative.status === "rejected" || alternative.status === "unsupported").length;
 
   return (
-    <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide l94-router-panel" aria-label="L9.4 solver recommendation panel smoke preview">
+    <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide l94-router-panel" aria-label="L9.5 solver evidence autopack panel smoke preview">
       <div className="maxwell-section-heading">
-        <h2>L9.4 Solver Router / Method Selection Matrix</h2>
+        <h2>L9.5 Solver Router Evidence Auto-Pack / L9.4 Method Selection Matrix</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${props.decision.status === "unsupported" ? "fail" : props.decision.status === "ready" ? "pass" : "warning"}`}>
           {props.decision.status}
         </strong>
@@ -2670,7 +2736,7 @@ function L94SolverRouterPanel(props: {
       <div className="l2-disclosure">
         <strong>Solver Recommendation</strong>
         <span>
-          Deterministic method recommendation only: it selects an appropriate lane, explains accepted/rejected solvers, lists assumptions and validation, and exports a route report. It is not automatic correctness proof, arbitrary 3D Maxwell, FEM/BEM, production RCWA/FDTD certification, an external solver replacement, digital twin behavior, or manufacturing certification.
+          Deterministic method recommendation plus L9.5 evidence task generation: it selects an appropriate lane, explains accepted/rejected solvers, lists assumptions and validation, generates the next evidence pack, and exports route/task reports. It is not automatic correctness proof, certified solver selection, arbitrary 3D Maxwell, FEM/BEM, production RCWA/FDTD certification, an external solver replacement, digital twin behavior, or manufacturing certification.
         </span>
       </div>
 
@@ -2707,6 +2773,48 @@ function L94SolverRouterPanel(props: {
             {props.decision.limitations.slice(0, 4).map((limitation) => (
               <span key={limitation}><strong>limit</strong> {limitation}</span>
             ))}
+          </div>
+        </div>
+
+        <div className="l94-route-card l95-evidence-card" aria-label="L9.5 evidence pack auto-pack">
+          <div className="maxwell-section-heading">
+            <h2>Evidence Pack</h2>
+            <strong>{props.evidenceTask.label}</strong>
+          </div>
+          <div className="maxwell-study-list">
+            <Stat label="Task type" value={props.evidenceTask.taskType} />
+            <Stat label="Task hash" value={props.evidenceTask.taskHash.slice(0, 10)} />
+            <Stat label="Scene hash" value={props.evidenceTask.sceneHash.slice(0, 10)} />
+            <Stat label="Generated" value={props.generatedTask ? "yes" : "ready"} />
+            <Stat label="Campaign" value={props.promotion?.status ?? "not promoted"} />
+          </div>
+          <div className="fdtd-warning-list l94-route-reasons">
+            {props.evidenceTask.why.slice(0, 4).map((reason) => (
+              <span key={reason}><strong>why</strong> {reason}</span>
+            ))}
+            {props.evidenceTask.warnings.slice(0, 3).map((warning) => (
+              <span key={warning}><strong>warning</strong> {warning}</span>
+            ))}
+            {props.promotion && <span><strong>promotion</strong> task {props.promotion.taskHash.slice(0, 10)} preserved for {props.promotion.campaignTarget}</span>}
+          </div>
+          <div className="maxwell-layer-actions simulation-builder-actions l94-action-list l95-action-list">
+            {props.evidenceTask.actions.map((action) => (
+              <button type="button" key={action.id} disabled={!action.enabled} title={action.reason} onClick={() => props.onEvidenceAction(action)}>
+                <FileDown size={14} />
+                <span>{action.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="l94-export-list l95-artifact-list" aria-label="L9.5 evidence artifact filenames">
+            {props.evidenceTask.generatedArtifacts.slice(0, 10).map((artifact) => (
+              <span key={artifact.filename}>{artifact.filename}</span>
+            ))}
+          </div>
+          <div className="l94-export-list l95-export-list" aria-label="L9.5 evidence export filenames">
+            <span>solver_evidence_task.md</span>
+            <span>solver_evidence_task.json</span>
+            <span>solver_evidence_artifacts.csv</span>
+            <span>solver_evidence_validation_plan.csv</span>
           </div>
         </div>
 
@@ -2814,7 +2922,7 @@ function L94SolverRouterPanel(props: {
             ) : (
               <span><strong>unsupported</strong> No unsupported item detected for this route decision.</span>
             )}
-            <span><strong>boundary</strong> L9.4 recommends methods and preserves limitation evidence; it does not certify solver correctness or execute unsupported/scaffold routes.</span>
+            <span><strong>boundary</strong> L9.5 generates evidence tasks from L9.4 recommendations; it does not certify solver correctness or execute unsupported/scaffold routes.</span>
             {recommendedAlternative && <span><strong>selected lane</strong> {recommendedAlternative.label}: {recommendedAlternative.reasons[0]}</span>}
           </div>
         </div>

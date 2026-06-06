@@ -171,9 +171,9 @@ export type SimulationBuilderValidationInput = {
 };
 
 export const l80SimulationBuilderBoundary = [
-  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, L8.7 robust-design guidance, L8.8 engineering evidence dossier reporting, and L9.4 solver-router method selection only.",
-  "L9.4 Solver Router / Method Selection Matrix recommends PlanarTmmBackend, scalar propagation, bounded 1D RCWA preview, bounded 2D FDTD CPU/WebGPU diagnostics, external FDTD evidence, or unsupported/scaffold routes with reasons, assumptions, limitations, validation checks, route actions, and report exports.",
-  "L9.4 is not automatic solver correctness proof, certified solver selection, arbitrary 3D Maxwell execution, FEM/BEM implementation, production RCWA/FDTD certification, external solver replacement, digital twin behavior, or manufacturing certification.",
+  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, L8.7 robust-design guidance, L8.8 engineering evidence dossier reporting, L9.4 solver-router method selection, and L9.5 solver-router evidence task auto-pack only.",
+  "L9.5 Solver Router Evidence Auto-Pack turns L9.4 route decisions for PlanarTmmBackend, scalar propagation, bounded 1D RCWA preview, bounded 2D FDTD CPU/WebGPU diagnostics, external FDTD evidence, or unsupported/scaffold routes into deterministic evidence tasks, artifact lists, validation plans, exports, and campaign-promotion metadata.",
+  "L9.5 is not automatic solver correctness proof, certified solver selection, arbitrary 3D Maxwell execution, FEM/BEM implementation, production RCWA/FDTD certification, external solver replacement, digital twin behavior, or manufacturing certification.",
   "L8.5.1 element inspector editing changes placement, dimensions, material metadata, custom monitors, and workflow state only; it does not add new physics.",
   "L8.6 process/tolerance variation runs deterministic one-at-a-time, grid, seeded sample, and external FDTD sweep receipt workflows over the current editable scene; it is not certified tolerancing or auto redesign.",
   "L8.7 robust design recommendations compare recentering, tolerance-budget, and candidate-grid actions over existing L8.6 evidence; they are not automatic final design approval or full inverse design.",
@@ -208,7 +208,8 @@ export const l80ReleaseTrail = [
   { milestone: "L8.6", label: "Process / tolerance variation runner", runnable: "deterministic tolerance studies, sensitivity ranking, pass/fail tables, and external FDTD sweep receipts" },
   { milestone: "L8.7", label: "Robust Design Advisor", runnable: "ranked design actions, candidate comparison, tolerance budget, and external FDTD candidate sweep receipts" },
   { milestone: "L8.8", label: "Engineering Evidence Campaign", runnable: "golden scenario dossier, convergence review, tolerance/robust summaries, and capability truth table exports" },
-  { milestone: "L9.4", label: "Solver Router / Method Selection Matrix", runnable: "scene classification, recommended solver, alternatives, route actions, method matrix, and route report exports" }
+  { milestone: "L9.4", label: "Solver Router / Method Selection Matrix", runnable: "scene classification, recommended solver, alternatives, route actions, method matrix, and route report exports" },
+  { milestone: "L9.5", label: "Solver Router Evidence Auto-Pack", runnable: "deterministic evidence task generation, route-specific artifacts, promotion metadata, and evidence exports" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -649,10 +650,22 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       evidence: "L9.4 exports solver_route_report.md, solver_route_report.json, solver_route_matrix.csv, unsupported_items.csv, and validation_plan.csv without claiming automatic correctness"
     },
     {
+      id: "solver-evidence-autopack",
+      label: "Solver evidence auto-pack",
+      status: "executable" as const,
+      evidence: "L9.5 generates deterministic TMM, scalar, RCWA, 2D FDTD, external FDTD, and unsupported gap evidence task packs with hashes, artifacts, inputs, validation plans, and exports"
+    },
+    {
+      id: "solver-evidence-campaign-promotion",
+      label: "Solver evidence campaign promotion",
+      status: "executable" as const,
+      evidence: "L9.5 promotes task, route, scene hashes, warnings, and limitations to Engineering Evidence Campaign handoff metadata"
+    },
+    {
       id: "automatic-certified-solver-selection",
       label: "Automatic certified solver selection",
       status: "not-implemented" as const,
-      evidence: "L9.4 recommends a method and lists validation needs; it does not prove correctness or certify solver selection"
+      evidence: "L9.5 packages evidence tasks from a recommended method and lists validation needs; it does not prove correctness or certify solver selection"
     },
     {
       id: "fem-bem-route",
