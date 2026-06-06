@@ -3075,6 +3075,121 @@ h2 {
   margin-top: 10px;
 }
 
+.rcwa-panel {
+  min-width: 0;
+}
+
+.rcwa-layout {
+  margin-top: 10px;
+}
+
+.rcwa-field-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.rcwa-field-grid label {
+  grid-template-columns: minmax(150px, 0.8fr) minmax(220px, 1fr) minmax(44px, auto);
+}
+
+.rcwa-actions {
+  margin-top: 10px;
+  gap: 8px;
+}
+
+.rcwa-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  margin-bottom: 12px;
+}
+
+.rcwa-order-diagram {
+  position: relative;
+  height: 54px;
+  margin: 8px 0 12px;
+  overflow: hidden;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, transparent 49.8%, #89a2bf 50%, transparent 50.2%),
+    linear-gradient(180deg, #f8fbff, #edf3f8);
+}
+
+.rcwa-order-diagram span {
+  position: absolute;
+  top: 12px;
+  transform: translateX(-50%);
+  min-width: 24px;
+  padding: 4px 6px;
+  border: 1px solid #b7c7da;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #263244;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  text-align: center;
+}
+
+.rcwa-table-wrap {
+  overflow: auto;
+  border: 1px solid #d6dee8;
+  border-radius: 6px;
+}
+
+.rcwa-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.rcwa-table th,
+.rcwa-table td {
+  padding: 8px 9px;
+  border-bottom: 1px solid #e1e8f0;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.rcwa-table th {
+  color: #40506a;
+  background: #f5f8fb;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.rcwa-mini-table {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.rcwa-mini-table div {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #d6dee8;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 12px;
+}
+
+.rcwa-mini-table span,
+.rcwa-mini-table strong,
+.rcwa-mini-table em {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rcwa-mini-table strong {
+  color: #263244;
+}
+
+.rcwa-mini-table em {
+  color: #66758a;
+  font-style: normal;
+}
+
 .fdtd2d-convergence-table {
   display: grid;
   gap: 4px;

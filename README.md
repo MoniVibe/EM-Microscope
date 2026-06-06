@@ -1,8 +1,8 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L9.2 WebGPU-Accelerated 2D FDTD Sandbox plus the L9.1 Validation + Stability Harness and L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L9.3 In-Browser 1D RCWA Preview Solver plus the L9.2 WebGPU-Accelerated 2D FDTD Sandbox, L9.1 Validation + Stability Harness, and L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L9.2 keeps the capped browser-native 2D TMz FDTD sandbox with CPU reference Ez/Hx/Hy typed-array stepping, optional WebGPU acceleration when browser/secure-context/adapter/device/memory guardrails permit it, grid/object/step/monitor caps, fixtures, field/intensity/material views, Simulation Builder 2D slice handoff, visible CFL/dt/grid stability diagnostics, NaN/Infinity guards, boundary proximity warnings, Fresnel/absorber/symmetry reference checks, bounded grid-convergence diagnostics, CPU/GPU parity checks, performance diagnostics, and exports for `fdtd2d_validation_report.md`, `fdtd2d_validation_report.json`, `fdtd2d_backend_report.md`, `fdtd2d_backend_report.json`, `fdtd2d_parity.csv`, `fdtd2d_performance.csv`, `fdtd2d_convergence.csv`, `fdtd2d_stability_report.json`, `fdtd2d_energy_trace.csv`, `fdtd2d_monitor_trace.csv`, plus the L9.0-compatible sandbox reports/traces. L8.9 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+Real Detector Bridge. L9.3 adds a bounded browser-native 1D periodic RCWA/Fourier-modal preview lane for simple binary rectangular gratings and patterned single layers. It computes reflected/transmitted diffraction order tables, order angles and propagating/evanescent/near-cutoff status, R/T/A totals, energy-balance checks, harmonic convergence sweeps, no-pattern consistency against the existing planar TMM backend, and exports for `rcwa_report.md`, `rcwa_report.json`, `rcwa_orders.csv`, `rcwa_convergence.csv`, and `rcwa_tmm_consistency.csv`. L9.2 keeps the capped browser-native 2D TMz FDTD sandbox with CPU reference Ez/Hx/Hy typed-array stepping, optional WebGPU acceleration when browser/secure-context/adapter/device/memory guardrails permit it, grid/object/step/monitor caps, fixtures, field/intensity/material views, Simulation Builder 2D slice handoff, visible CFL/dt/grid stability diagnostics, NaN/Infinity guards, boundary proximity warnings, Fresnel/absorber/symmetry reference checks, bounded grid-convergence diagnostics, CPU/GPU parity checks, performance diagnostics, and exports for `fdtd2d_validation_report.md`, `fdtd2d_validation_report.json`, `fdtd2d_backend_report.md`, `fdtd2d_backend_report.json`, `fdtd2d_parity.csv`, `fdtd2d_performance.csv`, `fdtd2d_convergence.csv`, `fdtd2d_stability_report.json`, `fdtd2d_energy_trace.csv`, `fdtd2d_monitor_trace.csv`, plus the L9.0-compatible sandbox reports/traces. L8.9 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
 workflow, adds a real external-run pack/import/reproducibility path on top of L8.1-L8.8 FDTD evidence, keeps the engineer-facing golden evidence campaign over L8.1-L8.7 evidence, keeps the diagnostic robust-design advisor over the L8.6 process/tolerance variation runner, and keeps the L8.5.1 multi-element scene graph plus element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
 including numeric source-of-truth editing, optional diagram drag, non-drag nudge/order controls, snap settings, undo/redo, custom monitors, edit warnings,
 x-z bench cross-section, solver-plan routing, scalar multi-plane monitor snapshots, external FDTD chain fixture import,
@@ -61,6 +61,7 @@ attenuation, point-source symmetry, qualitative slit spreading, CPU/GPU parity m
 and stability, boundary, reference, and bounded convergence diagnostics. It is not full 3D Maxwell, not a production FDTD
 engine, not required WebGPU execution, not a replacement for external Meep/FDTD, not FEM/BEM/RCWA, not arbitrary CAD/freeform
 geometry, not hardware control, and not manufacturing or lab certification.
+L9.3 is a bounded diagnostic 1D periodic RCWA preview only: it handles simple binary rectangular gratings and patterned single layers under plane-wave incidence, reports diffraction orders and convergence diagnostics, and uses the planar TMM backend as a no-pattern consistency bridge. It is not arbitrary 2D-periodic RCWA, not anisotropic/conical RCWA, not slanted/curved/freeform grating CAD solving, not production RCWA certification, not arbitrary 3D Maxwell, not FEM/BEM, not a replacement for external solvers, not digital twin behavior, and not manufacturing certification.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
@@ -179,6 +180,17 @@ simulator, adjoint optimizer, topology optimizer, digital twin, certified calibr
 certification system.
 
 ## Current Visible Mode
+
+- `L9.3 In-Browser 1D RCWA Preview Solver`: a top-level bounded periodic-structure workbench for a simple
+  superstrate -> binary rectangular grating layer -> substrate structure. It accepts wavelength, period, duty cycle,
+  grating depth, incidence angle, TE/TM polarization, superstrate/grating/background/substrate material choices from
+  the existing material catalog, and a capped harmonic count. It reports reflected/transmitted diffraction order
+  efficiencies, order angles, propagating/evanescent/near-cutoff status, total R/T/A, R+T+A, energy-balance error,
+  harmonic convergence rows, and no-pattern residuals against the existing `PlanarTmmBackend`. Exports are named
+  `rcwa_report.md`, `rcwa_report.json`, `rcwa_orders.csv`, `rcwa_convergence.csv`, and
+  `rcwa_tmm_consistency.csv`. It is a bounded 1D periodic diagnostic preview only; arbitrary 2D-periodic RCWA,
+  anisotropic/conical RCWA, slanted/curved/freeform gratings, production RCWA certification, arbitrary 3D Maxwell,
+  FEM/BEM, external-solver replacement, digital twins, and manufacturing certification stay out of scope.
 
 - `L9.2 WebGPU-Accelerated 2D FDTD Sandbox`: a top-level 2D diagnostic sandbox that runs TMz Ez/Hx/Hy with CPU reference
   typed-array stepping by default and optional WebGPU acceleration when the browser, secure context, adapter, device, and

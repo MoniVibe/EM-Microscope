@@ -549,31 +549,52 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented|certified metrology report executable|lab accreditation workflow executable|hardware control implemented|AprilTag detector executable|ArUco detector executable/i);
   });
 
-  it("keeps the visible app shell focused on L9.2 2D FDTD WebGPU acceleration with L9.1 validation, L8.9 external run ingestion, and earlier diagnostics still reachable", () => {
+  it("keeps the visible app shell focused on L9.3 RCWA preview with L9.2 FDTD, L8.9 external run ingestion, and earlier diagnostics still reachable", () => {
     const app = readFileSync(resolve(testDir, "App.tsx"), "utf8");
     const simulationBuilder = readFileSync(resolve(testDir, "maxwell/SimulationBuilderPanel.tsx"), "utf8");
     const fdtd2dSandbox = readFileSync(resolve(testDir, "maxwell/Fdtd2dSandboxPanel.tsx"), "utf8");
+    const rcwaPanel = readFileSync(resolve(testDir, "maxwell/RcwaPreviewPanel.tsx"), "utf8");
     const fdtdReadme = readFileSync(resolve(testDir, "../../../tools/fdtd/README.md"), "utf8");
     const l88aSmoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l88a_browser_smoke_code.js"), "utf8");
     const l90Smoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l90_browser_smoke_code.js"), "utf8");
     const l91Smoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l91_browser_smoke_code.js"), "utf8");
     const l92Smoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l92_browser_smoke_code.js"), "utf8");
+    const l93Smoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l93_browser_smoke_code.js"), "utf8");
     const maxwellReturn = app.indexOf("return <MaxwellOnlyApp />;");
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("L9.2 WebGPU-Accelerated 2D FDTD Sandbox / L9.1 Validation + Stability Harness / L8.9 Real External FDTD Run Ingestion");
-    expect(app).toContain("2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence");
+    expect(app).toContain("L9.3 In-Browser 1D RCWA Preview / L9.2 WebGPU-Accelerated 2D FDTD Sandbox / L8.9 Real External FDTD Run Ingestion");
+    expect(app).toContain("RCWA Preview + 2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence");
+    expect(app).toContain("L9.3 bounded 1D periodic RCWA preview for binary gratings with diffraction orders, R/T/A, harmonic convergence, TMM consistency, and exports");
     expect(app).toContain("L9.2 bounded 2D TMz FDTD sandbox with CPU reference stepping, optional WebGPU acceleration, CPU/GPU parity checks, performance diagnostics");
     expect(app).toContain("L8.9 real external FDTD run ingestion and reproducibility reports");
     expect(app).toContain("L8.8 engineering evidence campaign");
     expect(app).toContain("L8.5.1 numeric editing and diagram drag");
     expect(app).toContain("L8.4 aperture validation");
     expect(app).toContain("2D Maxwell Sandbox");
+    expect(app).toContain("RCWA Preview");
     expect(app).toContain("Diagnostic Workbenches");
     expect(app).toContain("<SimulationBuilderPanel");
     expect(app).toContain("<Fdtd2dSandboxPanel");
+    expect(app).toContain("<RcwaPreviewPanel />");
     expect(app).toContain("<MaxwellPanel />");
+    expect(rcwaPanel).toContain("L9.3 In-Browser 1D RCWA Preview Solver");
+    expect(rcwaPanel).toContain("Bounded 1D periodic solver preview only");
+    expect(rcwaPanel).toContain("binary rectangular grating");
+    expect(rcwaPanel).toContain("Run RCWA");
+    expect(rcwaPanel).toContain("Run Harmonic Convergence");
+    expect(rcwaPanel).toContain("Run No-Pattern TMM Check");
+    expect(rcwaPanel).toContain("propagating/evanescent/near-cutoff");
+    expect(rcwaPanel).toContain("rcwa_report.md");
+    expect(rcwaPanel).toContain("rcwa_report.json");
+    expect(rcwaPanel).toContain("rcwa_orders.csv");
+    expect(rcwaPanel).toContain("rcwa_convergence.csv");
+    expect(rcwaPanel).toContain("rcwa_tmm_consistency.csv");
+    expect(rcwaPanel).toContain("not arbitrary 2D-periodic RCWA");
+    expect(rcwaPanel).toContain("not production RCWA certification");
+    expect(rcwaPanel).toContain("not arbitrary 3D Maxwell");
+    expect(rcwaPanel).toContain("not FEM/BEM");
     expect(simulationBuilder).toContain("L9.2 Simulation Builder + 2D Sandbox Handoff");
     expect(simulationBuilder).toContain("bounded L9.2 2D FDTD sandbox handoff");
     expect(simulationBuilder).toContain("The L9.2 sandbox is capped 2D TMz only with CPU reference stepping, optional WebGPU acceleration, parity/performance diagnostics");
@@ -848,6 +869,8 @@ describe("solver disclosure copy", () => {
     expect(fdtdReadme).toContain("l91_browser_smoke_code.js");
     expect(fdtdReadme).toContain("L9.2 smoke artifacts");
     expect(fdtdReadme).toContain("l92_browser_smoke_code.js");
+    expect(fdtdReadme).toContain("L9.3 smoke artifacts");
+    expect(fdtdReadme).toContain("l93_browser_smoke_code.js");
     expect(l88aSmoke).toContain("l88a-two-view-labels-smoke.png");
     expect(l88aSmoke).toContain("l88a-axis-z-drag-smoke.png");
     expect(l88aSmoke).toContain("l88a-xz-edit-handles-smoke.png");
@@ -867,6 +890,11 @@ describe("solver disclosure copy", () => {
     expect(l92Smoke).toContain("l92-cpu-gpu-parity-smoke.png");
     expect(l92Smoke).toContain("l92-performance-benchmark-smoke.png");
     expect(l92Smoke).toContain("l92-fallback-cpu-smoke.png");
+    expect(l93Smoke).toContain("l93-rcwa-default-grating-smoke.png");
+    expect(l93Smoke).toContain("l93-rcwa-order-table-smoke.png");
+    expect(l93Smoke).toContain("l93-rcwa-convergence-smoke.png");
+    expect(l93Smoke).toContain("l93-rcwa-tmm-consistency-smoke.png");
+    expect(l93Smoke).toContain("l93-rcwa-export-smoke.png");
     expect(simulationBuilder).not.toMatch(/full 3D Maxwell execution is implemented|browser FDTD execution is available|FDTD execution is available in the browser|digital twin certified|manufacturing certification available/i);
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);

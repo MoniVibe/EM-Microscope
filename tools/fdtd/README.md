@@ -1,6 +1,6 @@
-# EMMicro L8.1-L8.9 External FDTD Helpers + L9.2 2D Sandbox WebGPU Smoke
+# EMMicro L8.1-L8.9 External FDTD Helpers + L9.3 RCWA / L9.2 2D Sandbox Smoke
 
-These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, the L8.8a two-view interaction hardening smoke flow, the L8.9 `Real External FDTD Run Ingestion` workflow, L9.0 browser smoke for the capped 2D FDTD sandbox, L9.1 browser smoke for validation/stability/convergence diagnostics, and L9.2 browser smoke for optional WebGPU acceleration/fallback, CPU/GPU parity, and performance diagnostics.
+These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, the L8.8a two-view interaction hardening smoke flow, the L8.9 `Real External FDTD Run Ingestion` workflow, L9.0 browser smoke for the capped 2D FDTD sandbox, L9.1 browser smoke for validation/stability/convergence diagnostics, L9.2 browser smoke for optional WebGPU acceleration/fallback, CPU/GPU parity, and performance diagnostics, and L9.3 browser smoke for the bounded 1D RCWA preview solver.
 
 Scope:
 - The web app exports an EMMicro FDTD scene manifest and a deterministic Meep-style Python helper script.
@@ -19,12 +19,14 @@ Scope:
 - L9.0 sandbox smoke covers the in-browser diagnostic 2D TMz sandbox, grid caps, field/intensity/material views, Simulation Builder 2D slice handoff, and exports named `fdtd2d_sandbox_report.md`, `fdtd2d_sandbox_report.json`, `field_snapshot.csv`, `monitor_trace.csv`, and `energy_trace.csv`.
 - L9.1 sandbox smoke covers CFL/dt/grid stability, unsafe-CFL blocking, NaN/Infinity guard copy, validation fixtures, Fresnel/absorber/symmetry reference checks, bounded grid convergence, boundary diagnostics, Simulation Builder 2D slice handoff, and exports named `fdtd2d_validation_report.md`, `fdtd2d_validation_report.json`, `fdtd2d_convergence.csv`, `fdtd2d_energy_trace.csv`, `fdtd2d_monitor_trace.csv`, and `fdtd2d_stability_report.json`.
 - L9.2 sandbox smoke covers CPU reference backend selection, optional WebGPU availability/fallback, CPU/GPU parity checks, performance benchmark metrics, backend report exports, and the same L9.1 validation fixture/regression surface.
+- L9.3 RCWA smoke covers the bounded in-browser 1D periodic binary-grating preview solver, order table, R/T/A totals, energy-balance diagnostics, harmonic convergence, TMM no-pattern consistency, RCWA exports, and L9.2/L8.9/L8.8 regression visibility.
 
 Not scope:
 - No production browser FDTD execution; L9.2 is capped diagnostic 2D TMz only.
 - No required WebGPU; optional WebGPU acceleration falls back to CPU when unavailable or failed.
+- No arbitrary 2D-periodic RCWA, production RCWA certification, anisotropic/conical RCWA, or slanted/curved/freeform grating CAD solving; L9.3 is bounded 1D periodic preview only.
 - No arbitrary 3D CAD Maxwell solve.
-- No FEM/BEM/RCWA execution.
+- No production FEM/BEM/RCWA execution.
 - No browser finite-geometry Maxwell solve or arbitrary material geometry solver.
 - No production metal aperture model or arbitrary CAD aperture-edge solver.
 - No production solver validation, digital twin, sensor-stack EM, or manufacturing certification.
@@ -144,6 +146,14 @@ L9.2 smoke artifacts include:
 - `l92-cpu-gpu-parity-smoke.png`
 - `l92-performance-benchmark-smoke.png`
 - `l92-fallback-cpu-smoke.png`
+
+L9.3 smoke artifacts include:
+
+- `l93-rcwa-default-grating-smoke.png`
+- `l93-rcwa-order-table-smoke.png`
+- `l93-rcwa-convergence-smoke.png`
+- `l93-rcwa-tmm-consistency-smoke.png`
+- `l93-rcwa-export-smoke.png`
 
 L8.9 fixture manifest:
 
@@ -285,4 +295,13 @@ Playwright CLI smoke helper for L9.2 optional WebGPU acceleration and CPU fallba
 ```powershell
 npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
 npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l92_browser_smoke_code.js
+```
+
+`l93_browser_smoke_code.js`
+
+Playwright CLI smoke helper for L9.3 bounded 1D RCWA preview: default binary grating, diffraction order table, R/T/A totals, harmonic convergence, no-pattern TMM consistency, RCWA export filenames, and L9.2/L8.9/L8.8 regression visibility:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
+npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l93_browser_smoke_code.js
 ```

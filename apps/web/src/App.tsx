@@ -108,6 +108,7 @@ import { residualMapToPngDataUrl } from "./measurement/ResidualView";
 import { RoiPanel } from "./measurement/RoiPanel";
 import { Fdtd2dSandboxPanel } from "./maxwell/Fdtd2dSandboxPanel";
 import { MaxwellPanel } from "./maxwell/MaxwellPanel";
+import { RcwaPreviewPanel } from "./maxwell/RcwaPreviewPanel";
 import { SimulationBuilderPanel } from "./maxwell/SimulationBuilderPanel";
 import { MtfPanel } from "./metrics/MtfPanel";
 import { ResolutionTargetPanel } from "./metrics/ResolutionTargetPanel";
@@ -260,7 +261,7 @@ function downloadText(filename: string, mime: string, text: string): void {
 }
 
 function MaxwellOnlyApp() {
-  const [visibleMode, setVisibleMode] = useState<"builder" | "sandbox" | "diagnostics">("builder");
+  const [visibleMode, setVisibleMode] = useState<"builder" | "sandbox" | "rcwa" | "diagnostics">("builder");
   const [fdtd2dScene, setFdtd2dScene] = useState<Fdtd2dScene>(() => createFdtd2dScene());
 
   return (
@@ -270,13 +271,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L9.2 WebGPU-Accelerated 2D FDTD Sandbox / L9.1 Validation + Stability Harness / L8.9 Real External FDTD Run Ingestion</p>
+            <p>L9.3 In-Browser 1D RCWA Preview / L9.2 WebGPU-Accelerated 2D FDTD Sandbox / L8.9 Real External FDTD Run Ingestion</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence</span>
-          <strong>L9.2 bounded 2D TMz FDTD sandbox with CPU reference stepping, optional WebGPU acceleration, CPU/GPU parity checks, performance diagnostics, stability/validation/boundary/convergence diagnostics, ordered grid/source/multi-element/target/monitor workflow, L8.9 real external FDTD run ingestion and reproducibility reports, L8.8 engineering evidence campaign, L8.5.1 numeric editing and diagram drag, L8.4 aperture validation, and existing diagnostic workbenches</strong>
+          <span>RCWA Preview + 2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence</span>
+          <strong>L9.3 bounded 1D periodic RCWA preview for binary gratings with diffraction orders, R/T/A, harmonic convergence, TMM consistency, and exports; L9.2 bounded 2D TMz FDTD sandbox with CPU reference stepping, optional WebGPU acceleration, CPU/GPU parity checks, performance diagnostics, ordered grid/source/multi-element/target/monitor workflow, L8.9 real external FDTD run ingestion and reproducibility reports, L8.8 engineering evidence campaign, L8.5.1 numeric editing and diagram drag, L8.4 aperture validation, and existing diagnostic workbenches</strong>
         </div>
         <div className="top-actions simulation-mode-actions" aria-label="Top-level workflow mode">
           <button type="button" className={visibleMode === "builder" ? "active" : ""} onClick={() => setVisibleMode("builder")}>
@@ -284,6 +285,9 @@ function MaxwellOnlyApp() {
           </button>
           <button type="button" className={visibleMode === "sandbox" ? "active" : ""} onClick={() => setVisibleMode("sandbox")}>
             2D Maxwell Sandbox
+          </button>
+          <button type="button" className={visibleMode === "rcwa" ? "active" : ""} onClick={() => setVisibleMode("rcwa")}>
+            RCWA Preview
           </button>
           <button type="button" className={visibleMode === "diagnostics" ? "active" : ""} onClick={() => setVisibleMode("diagnostics")}>
             Diagnostic Workbenches
@@ -302,6 +306,7 @@ function MaxwellOnlyApp() {
             />
           )}
           {visibleMode === "sandbox" && <Fdtd2dSandboxPanel scene={fdtd2dScene} onSceneChange={setFdtd2dScene} />}
+          {visibleMode === "rcwa" && <RcwaPreviewPanel />}
           {visibleMode === "diagnostics" && <MaxwellPanel />}
         </div>
       </main>
