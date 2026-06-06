@@ -1,10 +1,11 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L8.5 Multi-Element Optical Bench Propagation Chain Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L8.5.1 Element Inspector + Multi-Element Optical Bench Editing Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L8.5 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
-workflow and adds a multi-element scene graph for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
-including z-order controls, x-z bench cross-section, solver-plan routing, scalar multi-plane monitor snapshots, external FDTD chain fixture import,
+Real Detector Bridge. L8.5.1 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+workflow and adds a multi-element scene graph plus an element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
+including numeric source-of-truth editing, optional diagram drag, non-drag nudge/order controls, snap settings, undo/redo, custom monitors, edit warnings,
+x-z bench cross-section, solver-plan routing, scalar multi-plane monitor snapshots, external FDTD chain fixture import,
 scene/solver/monitor/report exports, and a milestone trail that states iteration count is not validation,
 then includes the L8.1 external FDTD scene manifest export, deterministic Meep helper script export, importable run receipt/flux
 summary/field-slice CSV evidence, field-map preview, R/T/A energy-balance comparison against the L8.0 analytic/TMM
@@ -142,13 +143,15 @@ certification system.
 
 ## Current Visible Mode
 
-- `L8.5 Multi-Element Optical Bench Propagation Chain`: a top-level Simulation Builder workflow that
+- `L8.5.1 Element Inspector + Direct Optical Bench Editing`: a top-level Simulation Builder workflow that
   follows `Grid -> Source -> Elements -> Target / Material -> Observation / Monitors -> Validate`. It lets users define domain
   units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
   of apertures, ideal lenses, planar material interfaces/slabs, mirrors, absorbers, and L8.3 finite transparent
-  blocks, absorbing blocks, ideal reflective plates, aperture/blockers, and tilted interface wedges. L8.5 adds
-  multi-element add/duplicate/delete/enable/disable/z-position controls, automatic source/after-element/before-after
-  finite-geometry/target/observation monitors, an all-element X-Z cross-section, a solver-plan table, scalar
+  blocks, absorbing blocks, ideal reflective plates, aperture/blockers, and tilted interface wedges. L8.5.1 adds
+  synchronized element-list / X-Z diagram selection, an Element Inspector, numeric editing for placement/size/material fields,
+  optional pointer drag that commits on drop, non-drag nudge/order buttons, keyboard nudges, snap controls, undo/redo,
+  custom monitors before/after selected elements, add/duplicate/delete/enable/disable/z-position controls,
+  automatic source/after-element/before-after finite-geometry/target/observation monitors, an all-element X-Z cross-section, a solver-plan table, scalar
   chain preview snapshots, bundled external FDTD chain evidence, and exports named `multielement_scene.json`,
   `solver_plan.json`, `monitor_stack.csv`, `multielement_validation_report.md`,
   `multielement_validation_report.json`, and `multielement_metrics.csv`. The optical-axis diagram and X-Z

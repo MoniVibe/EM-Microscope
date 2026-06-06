@@ -26,6 +26,8 @@ export type SimulationBuilderElementKind =
   | "finite-metal-aperture";
 export type SimulationBuilderTargetKind = "transparent-dielectric" | "mirror" | "absorbing-slab";
 export type SimulationBuilderValidationStatus = "pass" | "warning" | "fail";
+export type SimulationBuilderCustomMonitorKind = "field" | "flux" | "observation";
+export type SimulationBuilderCustomMonitorSolverRoute = "scalar-chain" | "external-fdtd";
 
 export type SimulationBuilderGrid = {
   units: "mm" | "um" | "nm";
@@ -73,6 +75,19 @@ export type SimulationBuilderElement = {
   validation: string;
 };
 
+export type SimulationBuilderCustomMonitor = {
+  id: string;
+  label: string;
+  kind: SimulationBuilderCustomMonitorKind;
+  zMm: number;
+  xUm: number;
+  yUm: number;
+  widthUm: number;
+  heightUm: number;
+  sourceElementId?: string;
+  solverRoute: SimulationBuilderCustomMonitorSolverRoute;
+};
+
 export type SimulationBuilderTarget = {
   kind: SimulationBuilderTargetKind;
   label: string;
@@ -91,6 +106,7 @@ export type SimulationBuilderScenario = {
   grid: SimulationBuilderGrid;
   source: SimulationBuilderSource;
   elements: SimulationBuilderElement[];
+  customMonitors?: SimulationBuilderCustomMonitor[];
   target: SimulationBuilderTarget;
   observationPlaneZMm: number;
   boundary: string[];
@@ -156,6 +172,7 @@ export type SimulationBuilderValidationInput = {
 
 export const l80SimulationBuilderBoundary = [
   "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration only.",
+  "L8.5.1 element inspector editing changes placement, dimensions, material metadata, custom monitors, and workflow state only; it does not add new physics.",
   "L8.5 scalar chain preview is limited to ideal plane elements and observation planes.",
   "L8.5 finite geometry routes to external FDTD export/import evidence with receipts; the browser does not execute FDTD.",
   "Transparent, reflective, and absorbing planar surface/slab cases are executable.",
@@ -181,7 +198,8 @@ export const l80ReleaseTrail = [
   { milestone: "L8.2", label: "FDTD benchmark convergence suite", runnable: "sweep-plan export plus imported convergence/PML diagnostics" },
   { milestone: "L8.3", label: "Finite surface geometry starter set", runnable: "placed transparent/absorbing/reflective/aperture/wedge external FDTD fixtures" },
   { milestone: "L8.4", label: "Aperture/blocker edge-diffraction validation", runnable: "long-slit/circular/rectangular/blocker scalar reference and external FDTD fixture diagnostics" },
-  { milestone: "L8.5", label: "Multi-element optical bench propagation chain", runnable: "ordered multi-element scene graph, solver plan, scalar monitor stack, and external FDTD chain fixture" }
+  { milestone: "L8.5", label: "Multi-element optical bench propagation chain", runnable: "ordered multi-element scene graph, solver plan, scalar monitor stack, and external FDTD chain fixture" },
+  { milestone: "L8.5.1", label: "Element inspector + direct editing", runnable: "numeric source-of-truth editing, optional diagram drag, custom monitors, warnings, and undo/redo" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -211,6 +229,7 @@ export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
       createSimulationBuilderElement("circular-aperture", 10, "Circular aperture"),
       createSimulationBuilderElement("material-slab", 20, "Planar glass slab")
     ],
+    customMonitors: [],
     target: {
       kind: "transparent-dielectric",
       label: "Air to glass transparent dielectric interface",
@@ -268,6 +287,10 @@ export function addSimulationBuilderElement(scenario: SimulationBuilderScenario,
 
 export function orderedSimulationBuilderElements(elements: SimulationBuilderElement[]): SimulationBuilderElement[] {
   return [...elements].sort((a, b) => (a.zMm === b.zMm ? a.id.localeCompare(b.id) : a.zMm - b.zMm));
+}
+
+export function orderedSimulationBuilderCustomMonitors(monitors: SimulationBuilderCustomMonitor[] = []): SimulationBuilderCustomMonitor[] {
+  return [...monitors].sort((a, b) => (a.zMm === b.zMm ? a.id.localeCompare(b.id) : a.zMm - b.zMm));
 }
 
 export function validateSimulationBuilderScenario(input: SimulationBuilderValidationInput): { valid: boolean; errors: string[]; warnings: SolverWarning[] } {
@@ -602,7 +625,13 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       id: "multi-element-optical-bench-chain",
       label: "Multi-element optical bench chain",
       status: "executable" as const,
-      evidence: "L8.5 ordered source/elements/target/monitor scene graph, solver plan, scalar preview, external FDTD handoff, and validation report exports"
+      evidence: "L8.5.1 ordered source/elements/target/monitor scene graph, element inspector editing, solver plan, scalar preview, external FDTD handoff, and validation report exports"
+    },
+    {
+      id: "element-inspector-direct-editing",
+      label: "Element inspector direct editing",
+      status: "executable" as const,
+      evidence: "L8.5.1 synchronized list/diagram selection, numeric source-of-truth property edits, optional drag commit, snap/nudge controls, custom monitors, edit warnings, and undo/redo"
     },
     {
       id: "scalar-multi-plane-preview",

@@ -266,13 +266,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L8.5 Multi-Element Bench / L8.4 Aperture Validation / L7.8 Detector Round Trip</p>
+            <p>L8.5.1 Element Inspector + Multi-Element Bench / L8.4 Aperture Validation / L7.8 Detector Round Trip</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>Simulation Builder + Multi-Element FDTD Evidence</span>
-          <strong>ordered grid/source/multi-element/target/monitor workflow, L8.5 scalar chain preview and external FDTD chain fixtures, L8.4 aperture validation, L8.3 finite surface geometry export/import fixtures, L8.2 benchmark sweeps, and existing L7.8 detector round-trip diagnostics</strong>
+          <span>Simulation Builder + Element Inspector + Multi-Element FDTD Evidence</span>
+          <strong>ordered grid/source/multi-element/target/monitor workflow, L8.5.1 numeric editing, optional diagram drag, undo/edit warnings, L8.5 scalar chain preview and external FDTD chain fixtures, L8.4 aperture validation, L8.3 finite surface geometry export/import fixtures, L8.2 benchmark sweeps, and existing L7.8 detector round-trip diagnostics</strong>
         </div>
         <div className="top-actions simulation-mode-actions" aria-label="Top-level workflow mode">
           <button type="button" className={visibleMode === "builder" ? "active" : ""} onClick={() => setVisibleMode("builder")}>

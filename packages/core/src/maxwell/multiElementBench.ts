@@ -3,6 +3,8 @@ import type { SolverWarning } from "../solvers/Solver";
 import {
   defaultSimulationBuilderScenario,
   orderedSimulationBuilderElements,
+  orderedSimulationBuilderCustomMonitors,
+  type SimulationBuilderCustomMonitor,
   type SimulationBuilderCapabilityStatus,
   type SimulationBuilderElement,
   type SimulationBuilderElementKind,
@@ -222,6 +224,7 @@ export function defaultOpticalBenchScenario(): SimulationBuilderScenario {
       zMm: 50,
       thicknessUm: 25
     },
+    customMonitors: [],
     observationPlaneZMm: 60,
     boundary: [...l85OpticalBenchBoundary]
   };
@@ -873,7 +876,24 @@ function autoOpticalBenchMonitors(scenario: SimulationBuilderScenario, elements:
       warningCodes: []
     }
   );
+  monitors.push(...orderedSimulationBuilderCustomMonitors(scenario.customMonitors ?? []).map((monitor) => customMonitorToOpticalBenchMonitor(monitor)));
   return monitors.sort((a, b) => (a.zMm === b.zMm ? a.id.localeCompare(b.id) : a.zMm - b.zMm));
+}
+
+function customMonitorToOpticalBenchMonitor(monitor: SimulationBuilderCustomMonitor): OpticalBenchMonitor {
+  return {
+    id: monitor.id,
+    label: monitor.label,
+    kind: monitor.kind,
+    zMm: monitor.zMm,
+    xUm: monitor.xUm,
+    yUm: monitor.yUm,
+    widthUm: monitor.widthUm,
+    heightUm: monitor.heightUm,
+    sourceElementId: monitor.sourceElementId,
+    solverRoute: monitor.solverRoute,
+    warningCodes: ["opticalBench.customMonitor"]
+  };
 }
 
 function sourceMonitorForScenario(scenario: SimulationBuilderScenario): OpticalBenchMonitor {
@@ -1115,6 +1135,7 @@ function deterministicFieldSliceSamples(scene: OpticalBenchScene): FdtdFieldSlic
 }
 
 function opticalBenchSourceScenarioHash(scenario: SimulationBuilderScenario): string {
+  const customMonitors = orderedSimulationBuilderCustomMonitors(scenario.customMonitors ?? []);
   return fnv1a64(
     stableStringify({
       schema: scenario.schema,
@@ -1122,6 +1143,7 @@ function opticalBenchSourceScenarioHash(scenario: SimulationBuilderScenario): st
       grid: scenario.grid,
       source: scenario.source,
       elements: orderedSimulationBuilderElements(scenario.elements),
+      ...(customMonitors.length > 0 ? { customMonitors } : {}),
       target: scenario.target,
       observationPlaneZMm: scenario.observationPlaneZMm
     })

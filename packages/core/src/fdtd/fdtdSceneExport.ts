@@ -2,6 +2,7 @@ import { fnv1a64, stableStringify } from "../scene/hashScene";
 import type { SolverWarning } from "../solvers/Solver";
 import {
   orderedSimulationBuilderElements,
+  orderedSimulationBuilderCustomMonitors,
   runSimulationBuilderScenario,
   type SimulationBuilderElement,
   type SimulationBuilderScenario
@@ -27,6 +28,7 @@ export const l81FdtdBoundary = [
 ] as const;
 
 export function fdtdSceneHash(scenario: SimulationBuilderScenario): string {
+  const customMonitors = orderedSimulationBuilderCustomMonitors(scenario.customMonitors ?? []);
   return fnv1a64(
     stableStringify({
       schema: scenario.schema,
@@ -34,6 +36,7 @@ export function fdtdSceneHash(scenario: SimulationBuilderScenario): string {
       grid: scenario.grid,
       source: scenario.source,
       elements: orderedSimulationBuilderElements(scenario.elements),
+      ...(customMonitors.length > 0 ? { customMonitors } : {}),
       target: scenario.target,
       observationPlaneZMm: scenario.observationPlaneZMm
     })
@@ -338,6 +341,17 @@ function fdtdMonitorsForScenario(scenario: SimulationBuilderScenario): FdtdMonit
         normal: "+z"
       }
     );
+  }
+  for (const monitor of orderedSimulationBuilderCustomMonitors(scenario.customMonitors ?? [])) {
+    monitors.push({
+      id: monitor.id,
+      kind: monitor.kind === "flux" ? "flux-plane" : "field-slice",
+      label: monitor.label,
+      centerUm: { x: monitor.xUm, y: monitor.yUm, z: monitor.zMm * 1000 },
+      sizeUm: { x: monitor.widthUm, y: monitor.kind === "flux" ? monitor.heightUm : 0, z: 0 },
+      normal: monitor.kind === "flux" ? "+z" : "+y",
+      fields: monitor.kind === "flux" ? undefined : ["Ez", "intensity"]
+    });
   }
   return monitors;
 }
