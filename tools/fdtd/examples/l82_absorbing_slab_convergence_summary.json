@@ -2,8 +2,8 @@
   "schema": "emmicro.fdtd.convergenceSummary.v1",
   "benchmarkKind": "absorbing-slab",
   "sourceScenarioHash": "982f243c1082d38f",
-  "benchmarkHash": "7e15ae4f7922fee4",
-  "sweepHash": "7a90d3e8854f6a95",
+  "benchmarkHash": "af103979d652915d",
+  "sweepHash": "a59ceda2dd68ec40",
   "reference": {
     "benchmarkKind": "absorbing-slab",
     "referenceModel": "beer-lambert",
@@ -1192,5 +1192,5 @@
       "message": "PML sensitivity exceeds the warning threshold; treat this benchmark as configuration-sensitive."
     }
   ],
-  "summaryHash": "e982ab944ad4929f"
+  "summaryHash": "1c5763069a465a3a"
 }

@@ -2766,6 +2766,14 @@ h2 {
   align-items: center;
 }
 
+.surface-geometry-palette {
+  margin-top: 10px;
+}
+
+.surface-geometry-actions {
+  gap: 8px;
+}
+
 .fdtd-action-row {
   gap: 8px;
 }
@@ -2857,6 +2865,123 @@ h2 {
   align-items: end;
 }
 
+.surface-cross-section {
+  display: grid;
+  gap: 8px;
+}
+
+.surface-cross-section-domain {
+  position: relative;
+  min-height: 210px;
+  overflow: hidden;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(226, 232, 240, 0.86), transparent 8%, transparent 92%, rgba(226, 232, 240, 0.86)),
+    repeating-linear-gradient(90deg, #f8fbfd 0, #f8fbfd 36px, #f1f5f9 37px, #f1f5f9 38px);
+}
+
+.surface-cross-section-axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: #92a2b8;
+}
+
+.surface-cross-section-pml,
+.surface-cross-section-source,
+.surface-cross-section-observation {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  border: 1px solid #c8d1dd;
+  border-radius: 999px;
+  padding: 3px 7px;
+  background: #ffffff;
+  color: #40506a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.surface-cross-section-pml-start {
+  left: 8px;
+}
+
+.surface-cross-section-pml-end {
+  right: 8px;
+}
+
+.surface-cross-section-source,
+.surface-cross-section-observation {
+  top: auto;
+  bottom: 8px;
+  transform: translateX(-50%);
+}
+
+.surface-cross-section-source {
+  border-color: #b6d1c0;
+  background: #f4fbf6;
+}
+
+.surface-cross-section-observation {
+  border-color: #b9c8df;
+  background: #f5f8fc;
+}
+
+.surface-cross-section-object {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  min-height: 18px;
+  border: 1px solid #7b8ca3;
+  border-radius: 4px;
+  color: #102033;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(21, 35, 52, 0.12);
+}
+
+.surface-cross-section-object-finite-transparent-block {
+  background: rgba(91, 141, 185, 0.42);
+}
+
+.surface-cross-section-object-finite-absorbing-block {
+  background: rgba(175, 116, 69, 0.58);
+}
+
+.surface-cross-section-object-finite-reflective-plate {
+  background: rgba(217, 226, 236, 0.86);
+}
+
+.surface-cross-section-object-finite-aperture-blocker {
+  background: rgba(87, 96, 111, 0.64);
+  color: #ffffff;
+}
+
+.surface-cross-section-object-tilted-interface-wedge {
+  background: rgba(70, 151, 132, 0.5);
+}
+
+.surface-cross-section-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  color: #516078;
+  font-size: 11px;
+}
+
+.surface-cross-section-legend span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .fdtd-sweep-table,
 .fdtd-run-table {
   display: grid;
@@ -2910,7 +3035,7 @@ h2 {
 .simulation-elements-row {
   min-width: 760px;
   display: grid;
-  grid-template-columns: 54px minmax(160px, 1.2fr) 74px minmax(120px, 0.8fr) minmax(150px, 1fr) 128px;
+  grid-template-columns: 54px minmax(160px, 1.15fr) minmax(112px, 0.75fr) minmax(142px, 0.95fr) minmax(150px, 1fr) 128px;
   gap: 8px;
   align-items: center;
   padding: 7px 8px;
@@ -3126,6 +3251,7 @@ h2 {
   .simulation-builder-footer,
   .fdtd-grid,
   .fdtd-verification-controls,
+  .surface-cross-section-legend,
   .simulation-field-grid {
     grid-template-columns: 1fr;
   }

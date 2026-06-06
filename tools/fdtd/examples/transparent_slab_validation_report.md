@@ -1,8 +1,8 @@
 # L8.1 External FDTD Field Import Validation
 
 Scenario hash: dc8f68ca2eb20de5
-Manifest hash: 3e49f5e56ed836c9
-Script hash: a131de2b6ba8e109
+Manifest hash: 10b72314c5d2f8be
+Script hash: 98c64d354cf7292b
 Target kind: transparent-dielectric
 Status: PASS
 

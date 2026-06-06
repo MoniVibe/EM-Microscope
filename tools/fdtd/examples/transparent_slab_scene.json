@@ -182,7 +182,8 @@
     "External FDTD export/import only; the browser app does not execute FDTD.",
     "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
     "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
+    "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
     "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
   ],
-  "manifestHash": "3e49f5e56ed836c9"
+  "manifestHash": "10b72314c5d2f8be"
 }

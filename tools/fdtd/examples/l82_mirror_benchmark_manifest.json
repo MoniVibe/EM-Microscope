@@ -4,7 +4,7 @@
   "label": "L8.2 Ideal mirror convergence benchmark",
   "benchmarkKind": "mirror",
   "sourceScenarioHash": "9bea0bd00510266d",
-  "baseManifestHash": "6df229171dfe7327",
+  "baseManifestHash": "4dbfba9a38c1acb4",
   "baseManifest": {
     "schema": "emmicro.fdtd.sceneManifest.v1",
     "id": "l81-fdtd-l82-mirror-fdtd-benchmark",
@@ -193,9 +193,10 @@
       "External FDTD export/import only; the browser app does not execute FDTD.",
       "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
       "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
+      "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
       "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
     ],
-    "manifestHash": "6df229171dfe7327"
+    "manifestHash": "4dbfba9a38c1acb4"
   },
   "reference": {
     "benchmarkKind": "mirror",
@@ -224,5 +225,5 @@
     "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
   ],
   "warnings": [],
-  "benchmarkHash": "71dbf34340b3712f"
+  "benchmarkHash": "08730c8a3ad7fc70"
 }

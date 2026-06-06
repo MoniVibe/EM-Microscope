@@ -9,7 +9,15 @@ import type { SolverWarning } from "../solvers/Solver";
 
 export type FdtdExportStatus = "ready" | "warning" | "blocked";
 export type FdtdSourceKind = "plane-wave" | "point-source";
-export type FdtdGeometryKind = "transparent-slab" | "absorbing-slab" | "mirror-scaffold";
+export type FdtdGeometryKind =
+  | "transparent-slab"
+  | "absorbing-slab"
+  | "mirror-scaffold"
+  | "finite-transparent-block"
+  | "finite-absorbing-block"
+  | "finite-reflective-plate"
+  | "finite-aperture-blocker"
+  | "tilted-interface-wedge";
 export type FdtdMonitorKind = "flux-plane" | "field-slice";
 
 export type FdtdExportReadiness = {
@@ -37,6 +45,9 @@ export type FdtdGeometry = {
   centerUm: { x: number; y: number; z: number };
   sizeUm: { x: number; y: number; z: number };
   materialId: string;
+  rotationDeg?: number;
+  apertureUm?: { width: number; height: number };
+  diagnostic?: "analytic-reference" | "edge-field" | "ideal-reflector" | "snell-fresnel";
   sourceElementId?: string;
 };
 

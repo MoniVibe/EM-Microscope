@@ -2,9 +2,9 @@
 
 Status: PASS
 Reference model: fresnel-normal-incidence
-Benchmark hash: dbb9371e47724b4e
-Sweep hash: c53b7cf77a1056d4
-Summary hash: e67796ca9b4b2a7a
+Benchmark hash: c100346f14168785
+Sweep hash: ed84da8acda4950e
+Summary hash: 54ffaeba26a81cd1
 
 ## Reference
 

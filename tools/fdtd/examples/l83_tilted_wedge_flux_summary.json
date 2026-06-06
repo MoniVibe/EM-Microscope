@@ -1,0 +1,49 @@
+{
+  "schema": "emmicro.fdtd.fluxSummary.v1",
+  "runId": "l83-example-tilted-wedge",
+  "sourceScenarioHash": "25afdd13c6357779",
+  "manifestHash": "cfd4b992c5469472",
+  "incidentFlux": 1,
+  "reflectedFlux": 0.04240000000000001,
+  "transmittedFlux": 0.948,
+  "absorbedFlux": 0.009600000000000053,
+  "reflectance": 0.04240000000000001,
+  "transmittance": 0.948,
+  "absorbance": 0.009600000000000053,
+  "energyBalance": 1,
+  "monitors": [
+    {
+      "id": "incident-flux",
+      "flux": 1
+    },
+    {
+      "id": "reflected-flux",
+      "flux": 0.04240000000000001
+    },
+    {
+      "id": "transmitted-flux",
+      "flux": 0.948
+    },
+    {
+      "id": "absorbed-estimate",
+      "flux": 0.009600000000000053
+    }
+  ],
+  "warnings": [
+    {
+      "code": "fdtd.geometry.staircasingSensitive",
+      "message": "Tilted transparent interface/wedge has tilted finite surfaces; staircasing/subpixel-smoothing sensitivity must be checked by convergence sweep.",
+      "elementId": "l83-tilted-wedge"
+    },
+    {
+      "code": "fdtd.export.largeGrid",
+      "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+    },
+    {
+      "code": "fdtd.surfaceGeometry.tiltedConvergenceRequired",
+      "message": "Tilted/wedge surfaces need resolution and PML convergence evidence before interpreting direction residuals.",
+      "elementId": "l83-tilted-wedge"
+    }
+  ],
+  "fluxHash": "895bf953aae681e1"
+}

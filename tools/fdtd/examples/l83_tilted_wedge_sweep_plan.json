@@ -1,0 +1,242 @@
+{
+  "schema": "emmicro.fdtd.sweepPlan.v1",
+  "benchmarkHash": "f91bcd2483a866dd",
+  "sourceScenarioHash": "25afdd13c6357779",
+  "baseManifestHash": "cfd4b992c5469472",
+  "settings": {
+    "resolutionPointsPerWavelength": [
+      10,
+      15,
+      20,
+      30
+    ],
+    "pmlThicknessUm": [
+      0.5,
+      1,
+      1.5
+    ],
+    "paddingWavelengths": [
+      1,
+      2,
+      3
+    ],
+    "monitorOffsetWavelengths": [
+      1.5
+    ],
+    "runUntil": 240,
+    "maxRunCount": 18
+  },
+  "requestedRunCount": 36,
+  "runCount": 18,
+  "budget": {
+    "maxRunCount": 18,
+    "truncated": true
+  },
+  "runs": [
+    {
+      "runId": "l82-transparent-slab-r10-pml0p5-pad1-m1p5",
+      "index": 0,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 31104000000,
+      "scriptHash": "e4c284faee0ccbdd"
+    },
+    {
+      "runId": "l82-transparent-slab-r10-pml0p5-pad2-m1p5",
+      "index": 1,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 33408000000,
+      "scriptHash": "940a03369237f5f6"
+    },
+    {
+      "runId": "l82-transparent-slab-r10-pml0p5-pad3-m1p5",
+      "index": 2,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 35712000000,
+      "scriptHash": "92b7f199dffa1c4b"
+    },
+    {
+      "runId": "l82-transparent-slab-r10-pml1-pad1-m1p5",
+      "index": 3,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 31104000000,
+      "scriptHash": "9bca80c3d9792a92"
+    },
+    {
+      "runId": "l82-transparent-slab-r10-pml1-pad2-m1p5",
+      "index": 4,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 33408000000,
+      "scriptHash": "0f3d7908595688a3"
+    },
+    {
+      "runId": "l82-transparent-slab-r10-pml1-pad3-m1p5",
+      "index": 5,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 35712000000,
+      "scriptHash": "9a617e3a7fb7e094"
+    },
+    {
+      "runId": "l82-transparent-slab-r10-pml1p5-pad1-m1p5",
+      "index": 6,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 31104000000,
+      "scriptHash": "8f30b2cc4bd2e083"
+    },
+    {
+      "runId": "l82-transparent-slab-r10-pml1p5-pad2-m1p5",
+      "index": 7,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 33408000000,
+      "scriptHash": "a3ab3028dc89b38c"
+    },
+    {
+      "runId": "l82-transparent-slab-r10-pml1p5-pad3-m1p5",
+      "index": 8,
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 35712000000,
+      "scriptHash": "b150da3c32b711a1"
+    },
+    {
+      "runId": "l82-transparent-slab-r15-pml0p5-pad1-m1p5",
+      "index": 9,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 104976000000,
+      "scriptHash": "10412a07392a2266"
+    },
+    {
+      "runId": "l82-transparent-slab-r15-pml0p5-pad2-m1p5",
+      "index": 10,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 112752000000,
+      "scriptHash": "7ea1c27e4759ed7c"
+    },
+    {
+      "runId": "l82-transparent-slab-r15-pml0p5-pad3-m1p5",
+      "index": 11,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 120528000000,
+      "scriptHash": "6c783882e6df354b"
+    },
+    {
+      "runId": "l82-transparent-slab-r15-pml1-pad1-m1p5",
+      "index": 12,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 104976000000,
+      "scriptHash": "64a8012d95d4e7e8"
+    },
+    {
+      "runId": "l82-transparent-slab-r15-pml1-pad2-m1p5",
+      "index": 13,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 112752000000,
+      "scriptHash": "bec50e720c4d544f"
+    },
+    {
+      "runId": "l82-transparent-slab-r15-pml1-pad3-m1p5",
+      "index": 14,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 120528000000,
+      "scriptHash": "eba7e23f95c8fe7e"
+    },
+    {
+      "runId": "l82-transparent-slab-r15-pml1p5-pad1-m1p5",
+      "index": 15,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 104976000000,
+      "scriptHash": "f2ab1cefbc8c4133"
+    },
+    {
+      "runId": "l82-transparent-slab-r15-pml1p5-pad2-m1p5",
+      "index": 16,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 112752000000,
+      "scriptHash": "6b27893e64dc72f6"
+    },
+    {
+      "runId": "l82-transparent-slab-r15-pml1p5-pad3-m1p5",
+      "index": 17,
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "runUntil": 240,
+      "estimatedCells": 120528000000,
+      "scriptHash": "17b447c637e220d5"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "fdtd.benchmark.sweepTruncated",
+      "message": "Sweep requested 36 runs and was truncated to 18."
+    }
+  ],
+  "sweepHash": "722e1253873224ba"
+}

@@ -2,7 +2,7 @@
   "schema": "emmicro.fdtd.fluxSummary.v1",
   "runId": "l81-example-absorbing-slab",
   "sourceScenarioHash": "b1a3c346ded7d3c4",
-  "manifestHash": "97456226b4de4a72",
+  "manifestHash": "c88fd7e92470af27",
   "incidentFlux": 1,
   "reflectedFlux": 0,
   "transmittedFlux": 0.6065306597126334,
@@ -26,5 +26,5 @@
     }
   ],
   "warnings": [],
-  "fluxHash": "b8c5d7f6e4b7baa8"
+  "fluxHash": "9eaf21a6a728a8bf"
 }

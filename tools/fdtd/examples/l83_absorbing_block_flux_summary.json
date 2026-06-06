@@ -1,0 +1,44 @@
+{
+  "schema": "emmicro.fdtd.fluxSummary.v1",
+  "runId": "l83-example-absorbing-block",
+  "sourceScenarioHash": "1773357db69b79b3",
+  "manifestHash": "5d06db76b4244ab1",
+  "incidentFlux": 1,
+  "reflectedFlux": 0.0008,
+  "transmittedFlux": 0.6025306597126334,
+  "absorbedFlux": 0.39666934028736656,
+  "reflectance": 0.0008,
+  "transmittance": 0.6025306597126334,
+  "absorbance": 0.39666934028736656,
+  "energyBalance": 1,
+  "monitors": [
+    {
+      "id": "incident-flux",
+      "flux": 1
+    },
+    {
+      "id": "reflected-flux",
+      "flux": 0.0008
+    },
+    {
+      "id": "transmitted-flux",
+      "flux": 0.6025306597126334
+    },
+    {
+      "id": "absorbed-estimate",
+      "flux": 0.39666934028736656
+    }
+  ],
+  "warnings": [
+    {
+      "code": "fdtd.geometry.absorberDispersionUnverified",
+      "message": "Finite absorbing block uses a simple lossy diagnostic material; dispersive material fitting and convergence evidence are required before production claims.",
+      "elementId": "l83-absorbing-block"
+    },
+    {
+      "code": "fdtd.export.largeGrid",
+      "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+    }
+  ],
+  "fluxHash": "88ccf4feb5d8d2d0"
+}

@@ -1,0 +1,49 @@
+{
+  "schema": "emmicro.fdtd.fluxSummary.v1",
+  "runId": "l83-example-reflective-plate",
+  "sourceScenarioHash": "a110586a3ad019e0",
+  "manifestHash": "16e42a25843a8094",
+  "incidentFlux": 1,
+  "reflectedFlux": 0.996,
+  "transmittedFlux": 0.002,
+  "absorbedFlux": 0.002,
+  "reflectance": 0.996,
+  "transmittance": 0.002,
+  "absorbance": 0.002,
+  "energyBalance": 1,
+  "monitors": [
+    {
+      "id": "incident-flux",
+      "flux": 1
+    },
+    {
+      "id": "reflected-flux",
+      "flux": 0.996
+    },
+    {
+      "id": "transmitted-flux",
+      "flux": 0.002
+    },
+    {
+      "id": "absorbed-estimate",
+      "flux": 0.002
+    }
+  ],
+  "warnings": [
+    {
+      "code": "fdtd.geometry.monitorProximity",
+      "message": "Finite ideal reflective plate has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+      "elementId": "l83-reflective-plate"
+    },
+    {
+      "code": "fdtd.geometry.idealReflector",
+      "message": "Finite ideal reflective plate is an ideal reflector diagnostic, not a real finite-thickness metal optics model.",
+      "elementId": "l83-reflective-plate"
+    },
+    {
+      "code": "fdtd.export.largeGrid",
+      "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+    }
+  ],
+  "fluxHash": "bfad368ea36a9f27"
+}

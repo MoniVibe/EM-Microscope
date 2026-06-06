@@ -7,6 +7,10 @@ import {
   createFdtdBenchmarkPack,
   createFdtdBenchmarkScenario,
   createSimulationBuilderElement,
+  createSurfaceGeometryConvergencePack,
+  createSurfaceGeometryElement,
+  createSurfaceGeometryExampleBundle,
+  createSurfaceGeometryScene,
   createTransparentFdtdExampleBundle,
   createTransparentFdtdExampleScenario,
   defaultSimulationBuilderScenario,
@@ -33,12 +37,19 @@ import {
   simulationBuilderValidationMetricsCsv,
   simulationBuilderValidationReportJson,
   simulationBuilderValidationReportMarkdown,
+  surfaceGeometryMetricsCsv,
+  surfaceGeometrySceneJson,
+  surfaceGeometryValidationReportJson,
+  surfaceGeometryValidationReportMarkdown,
   validateFdtdImportedRunAgainstScenario,
   type FdtdBenchmarkKind,
   type FdtdConvergenceSummary,
   type FdtdFieldSlice,
   type FdtdImportedRun,
   type FdtdValidationReport,
+  type SurfaceGeometryExampleBundle,
+  type SurfaceGeometryKind,
+  type SimulationBuilderElement,
   type SimulationBuilderElementKind,
   type SimulationBuilderGrid,
   type SimulationBuilderScenario,
@@ -67,6 +78,14 @@ const elementActions: Array<{ kind: SimulationBuilderElementKind; label: string 
   { kind: "curved-material-lens", label: "Add curved glass lens" }
 ];
 
+const surfaceGeometryActions: Array<{ kind: SurfaceGeometryKind; label: string }> = [
+  { kind: "transparent-block", label: "Add Transparent Block" },
+  { kind: "absorbing-block", label: "Add Absorbing Block" },
+  { kind: "reflective-plate", label: "Add Reflective Plate" },
+  { kind: "aperture-blocker", label: "Add Aperture/Blocker" },
+  { kind: "tilted-wedge", label: "Add Tilted Wedge" }
+];
+
 function downloadText(filename: string, mime: string, text: string): void {
   const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -88,9 +107,13 @@ export function SimulationBuilderPanel() {
   const [hasGeneratedBenchmarkPlan, setHasGeneratedBenchmarkPlan] = useState(true);
   const [fdtdConvergence, setFdtdConvergence] = useState<FdtdConvergenceSummary | null>(null);
   const [fdtdConvergenceError, setFdtdConvergenceError] = useState<string | null>(null);
+  const [surfaceGeometryKind, setSurfaceGeometryKind] = useState<SurfaceGeometryKind>("transparent-block");
+  const [surfaceGeometryExample, setSurfaceGeometryExample] = useState<SurfaceGeometryExampleBundle | null>(null);
   const result = useMemo(() => runSimulationBuilderScenario(scenario), [scenario]);
   const fdtdBundle = useMemo(() => exportFdtdBundleFromSimulationBuilder(scenario), [scenario]);
   const fdtdBenchmarkPack = useMemo(() => createFdtdBenchmarkPack({ benchmarkKind, scenario }), [benchmarkKind, scenario]);
+  const surfaceGeometryScene = useMemo(() => surfaceGeometryExample?.scene ?? createSurfaceGeometryScene(scenario), [scenario, surfaceGeometryExample]);
+  const surfaceGeometryConvergencePack = useMemo(() => createSurfaceGeometryConvergencePack(surfaceGeometryScene.kind), [surfaceGeometryScene.kind]);
   const fdtdValidation = useMemo<FdtdValidationReport | null>(
     () => (importedFdtd ? validateFdtdImportedRunAgainstScenario(scenario, fdtdBundle, importedFdtd) : null),
     [fdtdBundle, importedFdtd, scenario]
@@ -118,6 +141,15 @@ export function SimulationBuilderPanel() {
     const nextZ = Math.min(scenario.observationPlaneZMm - 1, Math.max(...scenario.elements.map((element) => element.zMm), scenario.source.zMm) + 3);
     const labelSuffix = scenario.elements.filter((element) => element.kind === kind).length + 1;
     setScenario((current) => addSimulationBuilderElement(current, createSimulationBuilderElement(kind, nextZ, `${elementButtonLabel(kind)} ${labelSuffix}`)));
+    setSurfaceGeometryExample(null);
+  }
+
+  function addSurfaceGeometry(kind: SurfaceGeometryKind): void {
+    const nextZ = Math.min(scenario.observationPlaneZMm - 1, Math.max(...scenario.elements.map((element) => element.zMm), scenario.source.zMm) + 3);
+    const labelSuffix = scenario.elements.filter((element) => isSurfaceGeometryElementKind(element.kind)).length + 1;
+    setSurfaceGeometryKind(kind);
+    setSurfaceGeometryExample(null);
+    setScenario((current) => addSimulationBuilderElement(current, { ...createSurfaceGeometryElement(kind, nextZ), id: `l83-${kind}-${labelSuffix}`, label: `${surfaceGeometryDisplayName(kind)} ${labelSuffix}` }));
   }
 
   function exportScenario(): void {
@@ -149,6 +181,28 @@ export function SimulationBuilderPanel() {
     downloadText("fdtd_validation_report.md", "text/markdown", fdtdValidationReportMarkdown(fdtdValidation));
     downloadText("fdtd_validation_report.json", "application/json", fdtdValidationReportJson(fdtdValidation));
     downloadText("fdtd_validation_metrics.csv", "text/csv", fdtdValidationMetricsCsv(fdtdValidation));
+  }
+
+  function exportSurfaceGeometryScene(): void {
+    downloadText("surface_geometry_scene.json", "application/json", surfaceGeometrySceneJson(surfaceGeometryScene));
+    downloadText("surface_geometry_meep.py", "text/x-python", surfaceGeometryScene.bundle.script.python);
+  }
+
+  function exportSurfaceGeometryReport(): void {
+    if (!surfaceGeometryExample) return;
+    downloadText("surface_geometry_validation_report.md", "text/markdown", `${surfaceGeometryValidationReportMarkdown(surfaceGeometryExample.validation)}\n`);
+    downloadText("surface_geometry_validation_report.json", "application/json", surfaceGeometryValidationReportJson(surfaceGeometryExample.validation));
+    downloadText("surface_geometry_metrics.csv", "text/csv", `${surfaceGeometryMetricsCsv(surfaceGeometryExample.validation)}\n`);
+  }
+
+  function loadSurfaceGeometryFixture(kind: SurfaceGeometryKind): void {
+    const example = createSurfaceGeometryExampleBundle(kind);
+    setSurfaceGeometryKind(kind);
+    setSurfaceGeometryExample(example);
+    setScenario(example.scene.scenario);
+    setImportedFdtd(example.imported);
+    setFdtdImportError(null);
+    setHasComputed(true);
   }
 
   function selectBenchmarkKind(kind: FdtdBenchmarkKind): void {
@@ -255,18 +309,18 @@ export function SimulationBuilderPanel() {
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L8.2 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L8.3 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L8.2 Sequential Optical Bench + External FDTD Benchmark Convergence</h2>
+        <h2>L8.3 Surface Geometry Interaction + External FDTD Benchmark Convergence</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, ordered z-axis elements, target/material surface, compute path, validation report, L8.1 field-map import evidence, and L8.2 benchmark convergence diagnostics. In-app
-          execution remains limited to transparent, reflective, and absorbing planar surface/slab checks only; arbitrary 3D Maxwell material geometry, browser FDTD/FEM/BEM/RCWA execution, real curved
-          material lens solving, sensor-stack EM, digital twin behavior, and manufacturing certification are not implemented.
+          Define grid density, source, ordered z-axis elements, finite surface geometry, target/material surface, compute path, validation report, L8.1 field-map import evidence, L8.2 benchmark convergence
+          diagnostics, and L8.3 placed transparent/absorbing/reflective/aperture/wedge external FDTD fixtures. Browser FDTD, arbitrary 3D Maxwell material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution,
+          real curved material lens solving, sensor-stack EM, digital twin behavior, and manufacturing certification are not implemented.
         </span>
       </div>
 
@@ -351,12 +405,24 @@ export function SimulationBuilderPanel() {
               </button>
             ))}
           </div>
+          <div className="l2-disclosure surface-geometry-palette" aria-label="L8.3 surface geometry palette smoke preview">
+            <strong>Surface Geometry Elements</strong>
+            <span>Finite transparent, absorbing, reflective, aperture/blocker, and tilted/wedge geometry can be placed, exported to external FDTD helper scripts, and validated through imported fixture evidence.</span>
+          </div>
+          <div className="maxwell-layer-actions simulation-builder-actions surface-geometry-actions">
+            {surfaceGeometryActions.map((action) => (
+              <button type="button" key={action.kind} onClick={() => addSurfaceGeometry(action.kind)}>
+                <Plus size={15} />
+                <span>{action.label}</span>
+              </button>
+            ))}
+          </div>
           <div className="simulation-elements-table" aria-label="L8.0 ordered element list smoke preview">
             <div className="simulation-elements-row simulation-elements-header">
               <span>Order</span>
               <span>Element</span>
-              <span>z mm</span>
-              <span>Size / thickness</span>
+              <span>x / z</span>
+              <span>Size W/H/T</span>
               <span>Model</span>
               <span>Status</span>
             </div>
@@ -364,8 +430,8 @@ export function SimulationBuilderPanel() {
               <div className="simulation-elements-row" key={element.id}>
                 <span>{index + 1}</span>
                 <strong>{element.label}</strong>
-                <span>{formatCompact(element.zMm)}</span>
-                <span>{element.apertureDiameterUm ? `${element.apertureDiameterUm} um` : element.thicknessUm ? `${element.thicknessUm} um` : element.focalLengthMm ? `f=${element.focalLengthMm} mm` : "-"}</span>
+                <span>{elementPositionText(element)}</span>
+                <span>{elementSizeText(element)}</span>
                 <span>{element.model}</span>
                 <em className={`simulation-capability simulation-capability-${element.status}`}>{element.status}</em>
               </div>
@@ -391,6 +457,14 @@ export function SimulationBuilderPanel() {
               );
             })}
           </div>
+        </div>
+
+        <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide" aria-label="L8.3 x-z cross-section geometry smoke preview">
+          <div className="maxwell-section-heading">
+            <h2>X-Z Surface Geometry Cross-Section</h2>
+            <strong>{scenario.elements.filter((element) => isSurfaceGeometryElementKind(element.kind)).length} finite</strong>
+          </div>
+          <SurfaceGeometryCrossSection scenario={scenario} zMin={zMin} zMax={zMax} />
         </div>
 
         <div className="maxwell-workspace-panel simulation-builder-card" aria-label="L8.0 target material step">
@@ -457,6 +531,138 @@ export function SimulationBuilderPanel() {
             <Bar label="A" value={result.validation.computed.absorbance} />
           </div>
           <p className="simulation-builder-note">{result.validation.analyticReference}</p>
+        </div>
+
+        <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide" aria-label="L8.3 Surface Geometry Interaction Starter Set">
+          <div className="maxwell-section-heading">
+            <h2>L8.3 Surface Geometry Interaction Starter Set</h2>
+            <strong>{surfaceGeometryExample?.validation.classification ?? "fixture ready"}</strong>
+          </div>
+          <div className="l2-disclosure">
+            <strong>Finite placed geometry with external FDTD evidence.</strong>
+            <span>
+              Place transparent, absorbing, reflective, aperture/blocker, and tilted/wedge surfaces; export deterministic FDTD geometry/scripts; import bundled or external field/flux evidence; and review
+              energy, reference, monitor, PML, staircasing, and convergence warnings. This remains external export/import only, not browser-native arbitrary 3D Maxwell.
+            </span>
+          </div>
+          <div className="simulation-field-grid fdtd-verification-controls">
+            <label>
+              <span>Geometry fixture</span>
+              <select aria-label="Surface geometry fixture" value={surfaceGeometryKind} onChange={(event) => setSurfaceGeometryKind(event.currentTarget.value as SurfaceGeometryKind)}>
+                <option value="transparent-block">transparent block</option>
+                <option value="absorbing-block">absorbing block</option>
+                <option value="reflective-plate">reflective plate</option>
+                <option value="aperture-blocker">aperture/blocker</option>
+                <option value="tilted-wedge">tilted wedge</option>
+              </select>
+            </label>
+            <button type="button" onClick={() => loadSurfaceGeometryFixture("transparent-block")}>
+              <Sparkles size={15} />
+              <span>Load Transparent Block Fixture</span>
+            </button>
+            <button type="button" onClick={() => loadSurfaceGeometryFixture("absorbing-block")}>
+              <Sparkles size={15} />
+              <span>Load Absorbing Block Fixture</span>
+            </button>
+            <button type="button" onClick={() => loadSurfaceGeometryFixture("reflective-plate")}>
+              <Sparkles size={15} />
+              <span>Load Reflective Plate Fixture</span>
+            </button>
+            <button type="button" onClick={() => loadSurfaceGeometryFixture("aperture-blocker")}>
+              <Sparkles size={15} />
+              <span>Load Aperture Blocker Fixture</span>
+            </button>
+            <button type="button" onClick={() => loadSurfaceGeometryFixture("tilted-wedge")}>
+              <Sparkles size={15} />
+              <span>Load Wedge Fixture</span>
+            </button>
+            <button type="button" onClick={exportSurfaceGeometryScene}>
+              <FileDown size={15} />
+              <span>Export Surface Geometry Scene</span>
+            </button>
+            <button type="button" disabled={!surfaceGeometryExample} onClick={exportSurfaceGeometryReport}>
+              <FileDown size={15} />
+              <span>Export Surface Geometry Report</span>
+            </button>
+          </div>
+          <div className="fdtd-grid">
+            <div className="maxwell-data-table" aria-label="L8.3 transparent block field smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Finite Geometry Scene</h2>
+                <strong>{surfaceGeometryDisplayName(surfaceGeometryScene.kind)}</strong>
+              </div>
+              <div className="maxwell-study-list">
+                <Stat label="Scene hash" value={surfaceGeometryScene.sceneHash.slice(0, 10)} />
+                <Stat label="Manifest hash" value={surfaceGeometryScene.bundle.manifest.manifestHash.slice(0, 10)} />
+                <Stat label="Script hash" value={surfaceGeometryScene.bundle.script.scriptHash.slice(0, 10)} />
+                <Stat label="Geometry ids" value={surfaceGeometryScene.geometryIds.join(", ") || "none"} />
+                <Stat label="Reference" value={surfaceGeometryScene.reference.model} />
+                <Stat label="Sweep hook" value={`${surfaceGeometryConvergencePack.sweepPlan.runCount} runs`} />
+              </div>
+            </div>
+
+            <div className="maxwell-data-table" aria-label="L8.3 absorbing block field smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Field Slice Around Geometry</h2>
+                <strong>{surfaceGeometryExample ? `${surfaceGeometryExample.fieldSlice.xCount} x ${surfaceGeometryExample.fieldSlice.zCount}` : "no fixture"}</strong>
+              </div>
+              {surfaceGeometryExample ? <FdtdFieldSlicePreview slice={surfaceGeometryExample.fieldSlice} /> : <div className="empty-state">Load a surface geometry fixture to display an imported X-Z field/intensity slice.</div>}
+            </div>
+
+            <div className="maxwell-data-table" aria-label="L8.3 reflective plate smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Flux / Reference Validation</h2>
+                <strong>{surfaceGeometryExample?.validation.status ?? "pending"}</strong>
+              </div>
+              <div className="maxwell-study-list">
+                <Stat label="Classification" value={surfaceGeometryExample?.validation.classification ?? "n/a"} />
+                <Stat label="Imported R/T/A" value={surfaceGeometryExample ? `${pct(surfaceGeometryExample.validation.imported.reflectance)} / ${pct(surfaceGeometryExample.validation.imported.transmittance)} / ${pct(surfaceGeometryExample.validation.imported.absorbance)}` : "n/a"} />
+                <Stat label="Reference R/T/A" value={`${pct(surfaceGeometryScene.reference.expected.reflectance)} / ${pct(surfaceGeometryScene.reference.expected.transmittance)} / ${pct(surfaceGeometryScene.reference.expected.absorbance)}`} />
+                <Stat label="Energy balance" value={surfaceGeometryExample ? `${formatCompact(surfaceGeometryExample.validation.energyBalance)} (${formatCompact(surfaceGeometryExample.validation.residuals.energyBalance)} residual)` : "n/a"} />
+                <Stat label="Report hash" value={surfaceGeometryExample?.validation.reportHash.slice(0, 10) ?? "n/a"} />
+              </div>
+            </div>
+
+            <div className="maxwell-data-table" aria-label="L8.3 aperture blocker diagnostic smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Monitor / Export Receipt</h2>
+                <strong>{surfaceGeometryScene.monitorIds.length} monitors</strong>
+              </div>
+              <div className="fdtd-sweep-table">
+                <div className="fdtd-sweep-row fdtd-sweep-header">
+                  <span>monitor</span>
+                  <span>z um</span>
+                  <span>normal</span>
+                  <span>type</span>
+                  <span>hash</span>
+                </div>
+                {surfaceGeometryScene.bundle.manifest.monitors.slice(0, 6).map((monitor) => (
+                  <div className="fdtd-sweep-row" key={monitor.id}>
+                    <span>{monitor.id}</span>
+                    <span>{formatCompact(monitor.centerUm.z)}</span>
+                    <span>{monitor.normal}</span>
+                    <span>{monitor.kind}</span>
+                    <span>{surfaceGeometryScene.sceneHash.slice(0, 6)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="maxwell-data-table fdtd-wide" aria-label="L8.3 wedge warning smoke preview">
+              <div className="maxwell-section-heading">
+                <h2>Finite Geometry Warnings</h2>
+                <strong>{surfaceGeometryScene.warnings.length}</strong>
+              </div>
+              <div className="fdtd-warning-list">
+                {surfaceGeometryScene.warnings.map((warning, index) => (
+                  <span key={`${warning.code}:${warning.elementId ?? ""}:${index}`}>
+                    <strong>{warning.code}</strong> {warning.message}
+                  </span>
+                ))}
+                {surfaceGeometryScene.warnings.length === 0 && <span>No finite-geometry warnings for the current fixture setup.</span>}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide" aria-label="L8.2 External FDTD / Field Maps">
@@ -757,6 +963,60 @@ export function SimulationBuilderPanel() {
   );
 }
 
+function SurfaceGeometryCrossSection(props: { scenario: SimulationBuilderScenario; zMin: number; zMax: number }) {
+  const finiteElements = props.scenario.elements.filter((element) => isSurfaceGeometryElementKind(element.kind));
+  const zRange = Math.max(1e-9, props.zMax - props.zMin);
+  const xExtent = Math.max(
+    props.scenario.grid.domainWidthUm / 2,
+    1,
+    ...finiteElements.map((element) => Math.abs(element.xUm ?? 0) + Math.max(0.1, element.widthUm ?? 1) / 2)
+  );
+  const sourceLeft = ((props.scenario.source.zMm - props.zMin) / zRange) * 100;
+  const observationLeft = ((props.scenario.observationPlaneZMm - props.zMin) / zRange) * 100;
+  return (
+    <div className="surface-cross-section">
+      <div className="surface-cross-section-domain">
+        <span className="surface-cross-section-pml surface-cross-section-pml-start">PML</span>
+        <span className="surface-cross-section-pml surface-cross-section-pml-end">PML</span>
+        <div className="surface-cross-section-axis" />
+        <div className="surface-cross-section-source" style={{ left: `${clampPercent(sourceLeft)}%` }}>
+          source
+        </div>
+        <div className="surface-cross-section-observation" style={{ left: `${clampPercent(observationLeft)}%` }}>
+          monitor
+        </div>
+        {finiteElements.map((element) => {
+          const widthPercent = Math.max(1.2, ((Math.max(0.05, element.thicknessUm ?? 1) / 1000) / zRange) * 100);
+          const left = ((element.zMm - props.zMin) / zRange) * 100 - widthPercent / 2;
+          const heightPercent = Math.max(8, (Math.max(0.05, element.widthUm ?? 1) / (xExtent * 2)) * 78);
+          const top = 50 - ((element.xUm ?? 0) / Math.max(1e-9, xExtent)) * 38 - heightPercent / 2;
+          return (
+            <div
+              className={`surface-cross-section-object surface-cross-section-object-${element.kind}`}
+              key={element.id}
+              style={{
+                left: `${clampPercent(left)}%`,
+                width: `${Math.min(32, widthPercent)}%`,
+                top: `${clampPercent(top)}%`,
+                height: `${Math.min(82, heightPercent)}%`,
+                transform: element.orientationDeg ? `rotate(${element.orientationDeg}deg)` : undefined
+              }}
+              title={`${element.label}: x ${formatCompact(element.xUm ?? 0)} um, z ${formatCompact(element.zMm)} mm, ${elementSizeText(element)}`}
+            >
+              <span>{surfaceElementShortLabel(element.kind)}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="surface-cross-section-legend">
+        <span>z {formatCompact(props.scenario.grid.zStartMm)}-{formatCompact(props.scenario.grid.zEndMm)} mm</span>
+        <span>x span {formatCompact(xExtent * 2)} um</span>
+        <span>{finiteElements.length ? "finite extents shown" : "add or load a finite surface fixture"}</span>
+      </div>
+    </div>
+  );
+}
+
 function NumberField(props: { label: string; value: number; unit?: string; min?: number; step?: number; onChange: (value: number) => void }) {
   return (
     <label>
@@ -865,6 +1125,50 @@ function FdtdConvergenceRunsTable(props: { summary: FdtdConvergenceSummary }) {
   );
 }
 
+function isSurfaceGeometryElementKind(kind: SimulationBuilderElementKind): boolean {
+  return kind === "finite-transparent-block" || kind === "finite-absorbing-block" || kind === "finite-reflective-plate" || kind === "finite-aperture-blocker" || kind === "tilted-interface-wedge";
+}
+
+function surfaceGeometryDisplayName(kind: SurfaceGeometryKind): string {
+  if (kind === "transparent-block") return "transparent finite block";
+  if (kind === "absorbing-block") return "absorbing finite block";
+  if (kind === "reflective-plate") return "ideal reflective plate";
+  if (kind === "aperture-blocker") return "aperture/blocker";
+  return "tilted interface/wedge";
+}
+
+function surfaceElementShortLabel(kind: SimulationBuilderElementKind): string {
+  if (kind === "finite-transparent-block") return "T";
+  if (kind === "finite-absorbing-block") return "A";
+  if (kind === "finite-reflective-plate") return "R";
+  if (kind === "finite-aperture-blocker") return "MASK";
+  if (kind === "tilted-interface-wedge") return "W";
+  return "E";
+}
+
+function elementPositionText(element: SimulationBuilderElement): string {
+  if (isSurfaceGeometryElementKind(element.kind)) return `x ${formatCompact(element.xUm ?? 0)} um / z ${formatCompact(element.zMm)} mm`;
+  return `z ${formatCompact(element.zMm)} mm`;
+}
+
+function elementSizeText(element: SimulationBuilderElement): string {
+  if (isSurfaceGeometryElementKind(element.kind)) {
+    const base = `${formatCompact(element.widthUm ?? 0)} / ${formatCompact(element.heightUm ?? 0)} / ${formatCompact(element.thicknessUm ?? 0)} um`;
+    if (element.kind === "finite-aperture-blocker") return `${base}; aperture ${formatCompact(element.apertureWidthUm ?? 0)} x ${formatCompact(element.apertureHeightUm ?? 0)} um`;
+    if (element.kind === "tilted-interface-wedge") return `${base}; ${formatCompact(element.orientationDeg ?? 0)} deg`;
+    return base;
+  }
+  if (element.apertureDiameterUm) return `${element.apertureDiameterUm} um`;
+  if (element.thicknessUm) return `${element.thicknessUm} um`;
+  if (element.focalLengthMm) return `f=${element.focalLengthMm} mm`;
+  return "-";
+}
+
+function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, value));
+}
+
 function targetForKind(kind: SimulationBuilderTargetKind, zMm: number): SimulationBuilderTarget {
   if (kind === "mirror") {
     return {
@@ -909,6 +1213,11 @@ function elementButtonLabel(kind: SimulationBuilderElementKind): string {
   if (kind === "material-slab") return "Material slab";
   if (kind === "mirror-surface") return "Mirror";
   if (kind === "absorbing-slab") return "Absorber";
+  if (kind === "finite-transparent-block") return "Transparent block";
+  if (kind === "finite-absorbing-block") return "Absorbing block";
+  if (kind === "finite-reflective-plate") return "Reflective plate";
+  if (kind === "finite-aperture-blocker") return "Aperture blocker";
+  if (kind === "tilted-interface-wedge") return "Tilted wedge";
   if (kind === "curved-material-lens") return "Curved lens";
   return "Unsupported element";
 }

@@ -1,0 +1,20 @@
+{
+  "benchmarkKind": "absorbing-slab",
+  "referenceModel": "beer-lambert",
+  "expected": {
+    "reflectance": 0,
+    "transmittance": 1,
+    "absorbance": 0
+  },
+  "invariant": "Beer-Lambert attenuation residual and energy balance stabilize as grid density increases.",
+  "thresholds": {
+    "referenceResidualPass": 0.02,
+    "referenceResidualWarning": 0.06,
+    "energyBalancePass": 0.01,
+    "energyBalanceWarning": 0.03,
+    "pmlSensitivityWarning": 0.015,
+    "pmlSensitivityFail": 0.05,
+    "fieldDeltaWarning": 0.08
+  },
+  "referenceHash": "9173a65eeafd1273"
+}

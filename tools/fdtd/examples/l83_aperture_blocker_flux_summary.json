@@ -1,0 +1,54 @@
+{
+  "schema": "emmicro.fdtd.fluxSummary.v1",
+  "runId": "l83-example-aperture-blocker",
+  "sourceScenarioHash": "97fd288cdfbf1c8c",
+  "manifestHash": "d91477717e995069",
+  "incidentFlux": 1,
+  "reflectedFlux": 0.0036,
+  "transmittedFlux": 0.222,
+  "absorbedFlux": 0.7744,
+  "reflectance": 0.0036,
+  "transmittance": 0.222,
+  "absorbance": 0.7744,
+  "energyBalance": 1,
+  "monitors": [
+    {
+      "id": "incident-flux",
+      "flux": 1
+    },
+    {
+      "id": "reflected-flux",
+      "flux": 0.0036
+    },
+    {
+      "id": "transmitted-flux",
+      "flux": 0.222
+    },
+    {
+      "id": "absorbed-estimate",
+      "flux": 0.7744
+    }
+  ],
+  "warnings": [
+    {
+      "code": "fdtd.geometry.monitorProximity",
+      "message": "Finite aperture/blocker has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+      "elementId": "l83-aperture-blocker"
+    },
+    {
+      "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+      "message": "Finite aperture/blocker has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+      "elementId": "l83-aperture-blocker"
+    },
+    {
+      "code": "fdtd.export.largeGrid",
+      "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+    },
+    {
+      "code": "fdtd.surfaceGeometry.noClosedFormAperture",
+      "message": "Finite aperture/blocker edge fields are diagnostic and need convergence evidence.",
+      "elementId": "l83-aperture-blocker"
+    }
+  ],
+  "fluxHash": "172c05c157e70392"
+}

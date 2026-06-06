@@ -1,0 +1,80 @@
+{
+  "schema": "emmicro.fdtd.surfaceGeometryValidationReport.v1",
+  "kind": "transparent-block",
+  "sourceScenarioHash": "19fb44b37e9129fb",
+  "manifestHash": "e5e493ebc9761bac",
+  "scriptHash": "eda157d0ed9f8729",
+  "sceneHash": "b850b90bd9e630ad",
+  "geometryHash": "4e2d6e660c3bdf6d",
+  "grid": {
+    "gridSpacingNm": 41.666666666666664,
+    "pointsPerWavelength": 12,
+    "estimatedCells": 49766400000
+  },
+  "pmlThicknessUm": 0.75,
+  "monitorPositions": [
+    {
+      "id": "incident-flux",
+      "zUm": 21500,
+      "normal": "+z"
+    },
+    {
+      "id": "reflected-flux",
+      "zUm": 21200,
+      "normal": "-z"
+    },
+    {
+      "id": "transmitted-flux",
+      "zUm": 22800,
+      "normal": "+z"
+    },
+    {
+      "id": "field-slice-xz",
+      "zUm": 12500,
+      "normal": "+y"
+    },
+    {
+      "id": "l83-transparent-block-front-flux",
+      "zUm": 9994,
+      "normal": "+z"
+    },
+    {
+      "id": "l83-transparent-block-back-flux",
+      "zUm": 10006,
+      "normal": "+z"
+    }
+  ],
+  "reference": {
+    "kind": "transparent-block",
+    "model": "planar-tmm-broad-block",
+    "expected": {
+      "reflectance": 1.707471613888199e-28,
+      "transmittance": 1,
+      "absorbance": 0
+    },
+    "invariant": "Broad finite dielectric block trends toward planar TMM/Fresnel R/T/A as transverse dimensions exceed the beam and convergence improves.",
+    "referenceHash": "e209e824e0c8df67"
+  },
+  "imported": {
+    "reflectance": 0.0008,
+    "transmittance": 0.996,
+    "absorbance": 0.0031999999999999806
+  },
+  "residuals": {
+    "reflectance": 0.0008,
+    "transmittance": 0.0040000000000000036,
+    "absorbance": 0.0031999999999999806,
+    "energyBalance": 0,
+    "referenceResidual": 0.0040000000000000036
+  },
+  "energyBalance": 1,
+  "status": "pass",
+  "classification": "PASS",
+  "warnings": [
+    {
+      "code": "fdtd.export.largeGrid",
+      "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+    }
+  ],
+  "reportHash": "1afd632ccae879e1"
+}

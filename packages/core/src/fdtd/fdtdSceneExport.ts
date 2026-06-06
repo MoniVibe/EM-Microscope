@@ -20,6 +20,7 @@ export const l81FdtdBoundary = [
   "External FDTD export/import only; the browser app does not execute FDTD.",
   "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
   "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
+  "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
   "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
 ] as const;
 
@@ -65,7 +66,8 @@ export function validateFdtdExportReadiness(scenario: SimulationBuilderScenario)
         elementId: element.id
       });
     }
-    supported.push({ id: element.id, label: element.label, evidence: element.kind === "absorbing-slab" || element.kind === "material-slab" ? "block/slab geometry export" : "placement metadata export" });
+    warnings.push(...finiteGeometryWarnings(element, scenario, gridSpacingNm));
+    supported.push({ id: element.id, label: element.label, evidence: finiteElementKind(element) ? "finite surface geometry export with L8.3 validation warnings" : element.kind === "absorbing-slab" || element.kind === "material-slab" ? "block/slab geometry export" : "placement metadata export" });
   }
 
   if (scenario.target.kind === "transparent-dielectric") {
@@ -164,7 +166,7 @@ export function exportMeepScriptForFdtdManifest(manifest: FdtdSceneManifest): Fd
     "}",
     "",
     "geometry = [",
-    ...manifest.geometry.map((geometry) => `    mp.Block(center=mp.Vector3(${formatNumber(geometry.centerUm.x)}, ${formatNumber(geometry.centerUm.y)}, ${formatNumber(geometry.centerUm.z)}), size=mp.Vector3(${formatNumber(geometry.sizeUm.x)}, ${formatNumber(geometry.sizeUm.y)}, ${formatNumber(geometry.sizeUm.z)}), material=materials[${quote(geometry.materialId)}]),  # ${geometry.kind}`),
+    ...manifest.geometry.flatMap((geometry) => fdtdGeometryPythonLines(geometry)),
     "]",
     "",
     "sources = [",
@@ -228,13 +230,26 @@ function fdtdMaterialsForScenario(scenario: SimulationBuilderScenario): FdtdMate
   } else {
     materials.push(material("mirror-placeholder", target.label, 8, 6));
   }
+  for (const element of orderedSimulationBuilderElements(scenario.elements)) {
+    if (element.kind === "finite-transparent-block" || element.kind === "tilted-interface-wedge") {
+      pushUniqueMaterial(materials, material(`element-${element.id}-dielectric`, element.label, element.materialIndex ?? 1.5, 0));
+    } else if (element.kind === "finite-absorbing-block") {
+      const n = element.materialIndex ?? 1.2;
+      const k = element.extinctionCoefficient ?? ((element.absorptionCoefficientPerM ?? 5000) * scenario.source.wavelengthNm * 1e-9) / (4 * Math.PI);
+      pushUniqueMaterial(materials, material(`element-${element.id}-absorber`, element.label, n, k, element.absorptionCoefficientPerM ?? 5000));
+    } else if (element.kind === "finite-reflective-plate") {
+      pushUniqueMaterial(materials, material(`element-${element.id}-ideal-reflector`, element.label, 1e6, 0));
+    } else if (element.kind === "finite-aperture-blocker") {
+      pushUniqueMaterial(materials, material(`element-${element.id}-blocker`, element.label, 1.1, 0.05, 25000));
+    }
+  }
   return materials;
 }
 
 function fdtdGeometryForScenario(scenario: SimulationBuilderScenario): FdtdGeometry[] {
   const target = scenario.target;
   const thicknessUm = target.kind === "transparent-dielectric" ? Math.max(1, target.thicknessUm || 100) : Math.max(1, target.thicknessUm || 100);
-  return [
+  const geometries: FdtdGeometry[] = [
     {
       id: "target-block",
       kind: target.kind === "absorbing-slab" ? "absorbing-slab" : target.kind === "mirror" ? "mirror-scaffold" : "transparent-slab",
@@ -244,6 +259,11 @@ function fdtdGeometryForScenario(scenario: SimulationBuilderScenario): FdtdGeome
       materialId: target.kind === "absorbing-slab" ? "target-absorber" : target.kind === "mirror" ? "mirror-placeholder" : "target-dielectric"
     }
   ];
+  for (const element of orderedSimulationBuilderElements(scenario.elements)) {
+    const geometry = fdtdGeometryForFiniteElement(element);
+    if (geometry) geometries.push(geometry);
+  }
+  return geometries;
 }
 
 function fdtdMonitorsForScenario(scenario: SimulationBuilderScenario): FdtdMonitor[] {
@@ -252,7 +272,7 @@ function fdtdMonitorsForScenario(scenario: SimulationBuilderScenario): FdtdMonit
   const targetZUm = scenario.target.zMm * 1000;
   const sourceZUm = scenario.source.zMm * 1000;
   const observationZUm = scenario.observationPlaneZMm * 1000;
-  return [
+  const monitors: FdtdMonitor[] = [
     {
       id: "incident-flux",
       kind: "flux-plane",
@@ -287,6 +307,31 @@ function fdtdMonitorsForScenario(scenario: SimulationBuilderScenario): FdtdMonit
       fields: ["Ez", "intensity"]
     }
   ];
+  for (const element of orderedSimulationBuilderElements(scenario.elements)) {
+    if (!finiteElementKind(element)) continue;
+    const centerZ = element.zMm * 1000;
+    const thickness = Math.max(0.1, element.thicknessUm ?? 1);
+    const offset = Math.max(scenario.source.wavelengthNm / 1000, thickness);
+    monitors.push(
+      {
+        id: `${element.id}-front-flux`,
+        kind: "flux-plane",
+        label: `${element.label} front flux`,
+        centerUm: { x: element.xUm ?? 0, y: element.yUm ?? 0, z: centerZ - thickness / 2 - offset },
+        sizeUm: { x: element.widthUm ?? width, y: element.heightUm ?? height, z: 0 },
+        normal: "+z"
+      },
+      {
+        id: `${element.id}-back-flux`,
+        kind: "flux-plane",
+        label: `${element.label} back flux`,
+        centerUm: { x: element.xUm ?? 0, y: element.yUm ?? 0, z: centerZ + thickness / 2 + offset },
+        sizeUm: { x: element.widthUm ?? width, y: element.heightUm ?? height, z: 0 },
+        normal: "+z"
+      }
+    );
+  }
+  return monitors;
 }
 
 function material(id: string, label: string, n: number, k: number, absorptionCoefficientPerM?: number): FdtdMaterial {
@@ -300,6 +345,190 @@ function material(id: string, label: string, n: number, k: number, absorptionCoe
     ...base,
     materialHash: fnv1a64(stableStringify(base))
   };
+}
+
+function pushUniqueMaterial(materials: FdtdMaterial[], next: FdtdMaterial): void {
+  if (!materials.some((materialItem) => materialItem.id === next.id)) materials.push(next);
+}
+
+function finiteElementKind(element: SimulationBuilderElement): boolean {
+  return element.kind === "finite-transparent-block" || element.kind === "finite-absorbing-block" || element.kind === "finite-reflective-plate" || element.kind === "finite-aperture-blocker" || element.kind === "tilted-interface-wedge";
+}
+
+function fdtdGeometryForFiniteElement(element: SimulationBuilderElement): FdtdGeometry | null {
+  const centerUm = { x: element.xUm ?? 0, y: element.yUm ?? 0, z: element.zMm * 1000 };
+  const sizeUm = {
+    x: Math.max(0.05, element.widthUm ?? 1),
+    y: Math.max(0.05, element.heightUm ?? element.widthUm ?? 1),
+    z: Math.max(0.05, element.thicknessUm ?? 1)
+  };
+  if (element.kind === "finite-transparent-block") {
+    return {
+      id: element.id,
+      kind: "finite-transparent-block",
+      label: element.label,
+      centerUm,
+      sizeUm,
+      materialId: `element-${element.id}-dielectric`,
+      diagnostic: "analytic-reference",
+      sourceElementId: element.id
+    };
+  }
+  if (element.kind === "finite-absorbing-block") {
+    return {
+      id: element.id,
+      kind: "finite-absorbing-block",
+      label: element.label,
+      centerUm,
+      sizeUm,
+      materialId: `element-${element.id}-absorber`,
+      diagnostic: "analytic-reference",
+      sourceElementId: element.id
+    };
+  }
+  if (element.kind === "finite-reflective-plate") {
+    return {
+      id: element.id,
+      kind: "finite-reflective-plate",
+      label: element.label,
+      centerUm,
+      sizeUm,
+      materialId: `element-${element.id}-ideal-reflector`,
+      diagnostic: "ideal-reflector",
+      sourceElementId: element.id
+    };
+  }
+  if (element.kind === "finite-aperture-blocker") {
+    return {
+      id: element.id,
+      kind: "finite-aperture-blocker",
+      label: element.label,
+      centerUm,
+      sizeUm,
+      materialId: `element-${element.id}-blocker`,
+      apertureUm: {
+        width: Math.max(0.01, Math.min(element.apertureWidthUm ?? sizeUm.x * 0.4, sizeUm.x)),
+        height: Math.max(0.01, Math.min(element.apertureHeightUm ?? sizeUm.y * 0.4, sizeUm.y))
+      },
+      diagnostic: "edge-field",
+      sourceElementId: element.id
+    };
+  }
+  if (element.kind === "tilted-interface-wedge") {
+    return {
+      id: element.id,
+      kind: "tilted-interface-wedge",
+      label: element.label,
+      centerUm,
+      sizeUm,
+      materialId: `element-${element.id}-dielectric`,
+      rotationDeg: element.orientationDeg ?? 12,
+      diagnostic: "snell-fresnel",
+      sourceElementId: element.id
+    };
+  }
+  return null;
+}
+
+function finiteGeometryWarnings(element: SimulationBuilderElement, scenario: SimulationBuilderScenario, gridSpacingNm: number): SolverWarning[] {
+  if (!finiteElementKind(element)) return [];
+  const warnings: SolverWarning[] = [];
+  const minDimensionUm = Math.min(Math.max(0, element.widthUm ?? 0), Math.max(0, element.heightUm ?? 0), Math.max(0, element.thicknessUm ?? 0));
+  const cellsAcross = minDimensionUm / Math.max(1e-9, gridSpacingNm / 1000);
+  if (cellsAcross < 6) {
+    warnings.push({
+      code: "fdtd.geometry.underResolved",
+      message: `${element.label} is only ${cellsAcross.toPrecision(3)} cells across in its smallest dimension; increase resolution or dimensions before trusting geometry-edge fields.`,
+      elementId: element.id
+    });
+  }
+  const zCenterUm = element.zMm * 1000;
+  const halfThicknessUm = Math.max(0, element.thicknessUm ?? 0) / 2;
+  const distanceToStart = zCenterUm - halfThicknessUm - scenario.grid.zStartMm * 1000;
+  const distanceToEnd = scenario.grid.zEndMm * 1000 - (zCenterUm + halfThicknessUm);
+  const wavelengthUm = scenario.source.wavelengthNm / 1000;
+  const pmlUm = Math.max(0.5, wavelengthUm * 1.5);
+  const monitorOffsetUm = Math.max(wavelengthUm, Math.max(0, element.thicknessUm ?? 0));
+  if (Math.min(distanceToStart, distanceToEnd) < pmlUm + wavelengthUm) {
+    warnings.push({
+      code: "fdtd.geometry.pmlProximity",
+      message: `${element.label} is close to the domain/PML boundary; keep finite objects at least one wavelength plus PML thickness from boundaries.`,
+      elementId: element.id
+    });
+  }
+  if (monitorOffsetUm < 2 * wavelengthUm) {
+    warnings.push({
+      code: "fdtd.geometry.monitorProximity",
+      message: `${element.label} has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.`,
+      elementId: element.id
+    });
+  }
+  if (element.kind === "finite-absorbing-block") {
+    warnings.push({
+      code: "fdtd.geometry.absorberDispersionUnverified",
+      message: `${element.label} uses a simple lossy diagnostic material; dispersive material fitting and convergence evidence are required before production claims.`,
+      elementId: element.id
+    });
+  }
+  if (element.kind === "finite-reflective-plate") {
+    warnings.push({
+      code: "fdtd.geometry.idealReflector",
+      message: `${element.label} is an ideal reflector diagnostic, not a real finite-thickness metal optics model.`,
+      elementId: element.id
+    });
+  }
+  if (element.kind === "finite-aperture-blocker") {
+    warnings.push({
+      code: "fdtd.geometry.edgeFieldConvergenceRequired",
+      message: `${element.label} has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.`,
+      elementId: element.id
+    });
+  }
+  if (element.kind === "tilted-interface-wedge") {
+    warnings.push({
+      code: "fdtd.geometry.staircasingSensitive",
+      message: `${element.label} has tilted finite surfaces; staircasing/subpixel-smoothing sensitivity must be checked by convergence sweep.`,
+      elementId: element.id
+    });
+  }
+  return warnings;
+}
+
+function fdtdGeometryPythonLines(geometry: FdtdGeometry): string[] {
+  if (geometry.kind === "finite-aperture-blocker" && geometry.apertureUm) return apertureBlockerPythonLines(geometry);
+  const materialExpr = geometry.kind === "finite-reflective-plate" ? "mp.metal" : `materials[${quote(geometry.materialId)}]`;
+  const rotation = geometry.rotationDeg ?? 0;
+  const orientationArgs = rotation === 0
+    ? ""
+    : `, e1=mp.Vector3(${formatNumber(Math.cos(degToRad(rotation)))}, 0, ${formatNumber(Math.sin(degToRad(rotation)))}), e2=mp.Vector3(0, 1, 0), e3=mp.Vector3(${formatNumber(-Math.sin(degToRad(rotation)))}, 0, ${formatNumber(Math.cos(degToRad(rotation)))})`;
+  return [
+    `    mp.Block(center=mp.Vector3(${formatNumber(geometry.centerUm.x)}, ${formatNumber(geometry.centerUm.y)}, ${formatNumber(geometry.centerUm.z)}), size=mp.Vector3(${formatNumber(geometry.sizeUm.x)}, ${formatNumber(geometry.sizeUm.y)}, ${formatNumber(geometry.sizeUm.z)}), material=${materialExpr}${orientationArgs}),  # ${geometry.kind}`
+  ];
+}
+
+function apertureBlockerPythonLines(geometry: FdtdGeometry): string[] {
+  const aperture = geometry.apertureUm ?? { width: geometry.sizeUm.x * 0.4, height: geometry.sizeUm.y * 0.4 };
+  const sideWidth = Math.max(0, (geometry.sizeUm.x - aperture.width) / 2);
+  const topHeight = Math.max(0, (geometry.sizeUm.y - aperture.height) / 2);
+  const materialExpr = `materials[${quote(geometry.materialId)}]`;
+  const lines = [`    # ${geometry.kind}: four absorbing/reflective blocker blocks around a rectangular aperture`];
+  if (sideWidth > 0) {
+    lines.push(
+      `    mp.Block(center=mp.Vector3(${formatNumber(geometry.centerUm.x - (aperture.width + sideWidth) / 2)}, ${formatNumber(geometry.centerUm.y)}, ${formatNumber(geometry.centerUm.z)}), size=mp.Vector3(${formatNumber(sideWidth)}, ${formatNumber(geometry.sizeUm.y)}, ${formatNumber(geometry.sizeUm.z)}), material=${materialExpr}),`,
+      `    mp.Block(center=mp.Vector3(${formatNumber(geometry.centerUm.x + (aperture.width + sideWidth) / 2)}, ${formatNumber(geometry.centerUm.y)}, ${formatNumber(geometry.centerUm.z)}), size=mp.Vector3(${formatNumber(sideWidth)}, ${formatNumber(geometry.sizeUm.y)}, ${formatNumber(geometry.sizeUm.z)}), material=${materialExpr}),`
+    );
+  }
+  if (topHeight > 0) {
+    lines.push(
+      `    mp.Block(center=mp.Vector3(${formatNumber(geometry.centerUm.x)}, ${formatNumber(geometry.centerUm.y - (aperture.height + topHeight) / 2)}, ${formatNumber(geometry.centerUm.z)}), size=mp.Vector3(${formatNumber(aperture.width)}, ${formatNumber(topHeight)}, ${formatNumber(geometry.sizeUm.z)}), material=${materialExpr}),`,
+      `    mp.Block(center=mp.Vector3(${formatNumber(geometry.centerUm.x)}, ${formatNumber(geometry.centerUm.y + (aperture.height + topHeight) / 2)}, ${formatNumber(geometry.centerUm.z)}), size=mp.Vector3(${formatNumber(aperture.width)}, ${formatNumber(topHeight)}, ${formatNumber(geometry.sizeUm.z)}), material=${materialExpr}),`
+    );
+  }
+  return lines;
+}
+
+function degToRad(value: number): number {
+  return (value * Math.PI) / 180;
 }
 
 function meepResolution(manifest: FdtdSceneManifest): number {

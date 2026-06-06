@@ -1,0 +1,5 @@
+metric,reference,imported,residual,status,classification
+reflectance,1.707471613888199e-28,0.0008,0.0008,pass,PASS
+transmittance,1,0.996,0.0040000000000000036,pass,PASS
+absorbance,0,0.0031999999999999806,0.0031999999999999806,pass,PASS
+energy_balance,1,1,0,pass,PASS

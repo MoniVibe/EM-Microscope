@@ -1,0 +1,30 @@
+{
+  "schema": "emmicro.fdtd.runReceipt.v1",
+  "runId": "l83-example-absorbing-block",
+  "sourceScenarioHash": "1773357db69b79b3",
+  "manifestHash": "5d06db76b4244ab1",
+  "scriptHash": "7e762146add0bf54",
+  "tool": {
+    "name": "example-fixture",
+    "version": "emmicro.l83.fixture",
+    "postprocessorVersion": "emmicro.fdtd.surfaceGeometry.fixture.v1"
+  },
+  "createdAtIso": "2026-06-06T00:00:00.000Z",
+  "settings": {
+    "resolution": 24,
+    "until": 240,
+    "pmlThicknessUm": 0.75
+  },
+  "warnings": [
+    {
+      "code": "fdtd.geometry.absorberDispersionUnverified",
+      "message": "Finite absorbing block uses a simple lossy diagnostic material; dispersive material fitting and convergence evidence are required before production claims.",
+      "elementId": "l83-absorbing-block"
+    },
+    {
+      "code": "fdtd.export.largeGrid",
+      "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
+    }
+  ],
+  "receiptHash": "981cfabf909a6b34"
+}

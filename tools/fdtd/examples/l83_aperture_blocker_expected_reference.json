@@ -1,0 +1,20 @@
+{
+  "benchmarkKind": "empty-space",
+  "referenceModel": "flux-conservation",
+  "expected": {
+    "reflectance": 0,
+    "transmittance": 1,
+    "absorbance": 0
+  },
+  "invariant": "R stays near 0, T stays near 1, and R+T+A stays near 1 as resolution/PML/padding vary.",
+  "thresholds": {
+    "referenceResidualPass": 0.02,
+    "referenceResidualWarning": 0.06,
+    "energyBalancePass": 0.01,
+    "energyBalanceWarning": 0.03,
+    "pmlSensitivityWarning": 0.015,
+    "pmlSensitivityFail": 0.05,
+    "fieldDeltaWarning": 0.08
+  },
+  "referenceHash": "44c9029626856d30"
+}
