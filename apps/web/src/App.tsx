@@ -271,13 +271,13 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L9.3 In-Browser 1D RCWA Preview / L9.2 WebGPU-Accelerated 2D FDTD Sandbox / L8.9 Real External FDTD Run Ingestion</p>
+            <p>L9.4 Solver Router / Method Selection Matrix / L9.3 In-Browser 1D RCWA Preview / L9.2 WebGPU-Accelerated 2D FDTD Sandbox</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>RCWA Preview + 2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence</span>
-          <strong>L9.3 bounded 1D periodic RCWA preview for binary gratings with diffraction orders, R/T/A, harmonic convergence, TMM consistency, and exports; L9.2 bounded 2D TMz FDTD sandbox with CPU reference stepping, optional WebGPU acceleration, CPU/GPU parity checks, performance diagnostics, ordered grid/source/multi-element/target/monitor workflow, L8.9 real external FDTD run ingestion and reproducibility reports, L8.8 engineering evidence campaign, L8.5.1 numeric editing and diagram drag, L8.4 aperture validation, and existing diagnostic workbenches</strong>
+          <span>Solver Router + RCWA Preview + 2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence</span>
+          <strong>L9.4 deterministic solver router recommends PlanarTmmBackend, scalar propagation, bounded 1D RCWA preview, bounded 2D FDTD CPU/WebGPU diagnostics, external FDTD evidence, or unsupported/scaffold with reasons, assumptions, limitations, validation, actions, matrix, and exports; L9.3 bounded 1D periodic RCWA preview remains available; L9.2 bounded 2D TMz FDTD sandbox remains diagnostic with optional WebGPU acceleration</strong>
         </div>
         <div className="top-actions simulation-mode-actions" aria-label="Top-level workflow mode">
           <button type="button" className={visibleMode === "builder" ? "active" : ""} onClick={() => setVisibleMode("builder")}>
@@ -299,6 +299,8 @@ function MaxwellOnlyApp() {
         <div className="maxwell-only-main">
           {visibleMode === "builder" && (
             <SimulationBuilderPanel
+              onOpenRcwaPreview={() => setVisibleMode("rcwa")}
+              onOpenDiagnosticWorkbenches={() => setVisibleMode("diagnostics")}
               onExportSandboxScene={(scene) => {
                 setFdtd2dScene(scene);
                 setVisibleMode("sandbox");

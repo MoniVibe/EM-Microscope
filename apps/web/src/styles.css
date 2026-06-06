@@ -3285,6 +3285,218 @@ h2 {
   margin-bottom: 12px;
 }
 
+.l94-router-panel {
+  margin-bottom: 12px;
+}
+
+.l94-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.l94-preset-row button,
+.l94-action-list button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.l94-preset-row button.active {
+  border-color: #0b7788;
+  background: #e8f7f8;
+  color: #0b4f5b;
+}
+
+.l94-router-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.l94-route-card {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #ccd6e2;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.l94-route-primary,
+.l94-method-matrix-card {
+  grid-column: 1 / -1;
+}
+
+.l94-route-reasons span,
+.l94-alternative-row,
+.l94-compact-list > div,
+.l94-export-list span,
+.l94-selected-matrix-detail > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.l94-alternative-list,
+.l94-compact-list,
+.l94-export-list,
+.l94-selected-matrix-detail {
+  display: grid;
+  gap: 6px;
+}
+
+.l94-alternative-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) 108px minmax(0, 1.4fr);
+  gap: 8px;
+  align-items: center;
+  padding: 7px 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #4a5870;
+  font-size: 12px;
+}
+
+.l94-alternative-row em,
+.l94-compact-list span,
+.l94-selected-matrix-detail em {
+  justify-self: start;
+  min-width: 0;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #eef4f8;
+  color: #40506a;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.l94-alt-recommended em,
+.l94-cell-best {
+  background: #e9f6ec;
+  color: #286140;
+}
+
+.l94-alt-possible em,
+.l94-cell-possible {
+  background: #eef4ff;
+  color: #2d4f8b;
+}
+
+.l94-alt-diagnostic em,
+.l94-cell-diagnostic,
+.l94-cell-overkill {
+  background: #fff5df;
+  color: #7d581a;
+}
+
+.l94-alt-external-only em,
+.l94-cell-external-only,
+.l94-cell-scaffold {
+  background: #f2edf8;
+  color: #674182;
+}
+
+.l94-alt-rejected em,
+.l94-alt-unsupported em,
+.l94-cell-not-valid,
+.l94-cell-unsupported {
+  background: #fff0ed;
+  color: #8b3a2d;
+}
+
+.l94-compact-list > div,
+.l94-selected-matrix-detail > div {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.85fr) 124px minmax(0, 1.4fr);
+  gap: 8px;
+  align-items: start;
+  padding: 7px 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #4a5870;
+  font-size: 12px;
+}
+
+.l94-compact-list small {
+  color: #66758a;
+}
+
+.l94-action-list {
+  gap: 8px;
+}
+
+.l94-export-list {
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+}
+
+.l94-export-list span {
+  padding: 6px 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #40506a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.l94-matrix-table {
+  display: grid;
+  gap: 5px;
+  overflow-x: auto;
+}
+
+.l94-matrix-row {
+  min-width: 900px;
+  display: grid;
+  grid-template-columns: minmax(170px, 1.2fr) repeat(6, minmax(92px, 0.7fr));
+  gap: 6px;
+  align-items: center;
+  padding: 7px 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #40506a;
+  text-align: left;
+  font-size: 12px;
+}
+
+button.l94-matrix-row {
+  width: 100%;
+}
+
+button.l94-matrix-row.active,
+button.l94-matrix-row:focus-visible {
+  outline: 2px solid #0b7788;
+  outline-offset: 2px;
+  border-color: #0b7788;
+  background: #eef9fb;
+}
+
+.l94-matrix-header {
+  background: #eef4f8;
+  color: #40506a;
+  font-weight: 800;
+}
+
+.l94-matrix-cell {
+  min-width: 0;
+  border-radius: 999px;
+  padding: 3px 6px;
+  text-align: center;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
 .l85-action-row {
   gap: 8px;
   align-items: center;
@@ -4657,6 +4869,11 @@ button.l88-scenario-row.active {
   .fdtd-verification-controls,
   .surface-cross-section-legend,
   .simulation-field-grid,
+  .l94-router-grid,
+  .l94-alternative-row,
+  .l94-compact-list > div,
+  .l94-selected-matrix-detail > div,
+  .l94-export-list,
   .l85-inspector-grid,
   .l85-inspector-readout {
     grid-template-columns: 1fr;

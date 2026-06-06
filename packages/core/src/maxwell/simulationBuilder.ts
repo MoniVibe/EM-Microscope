@@ -171,7 +171,9 @@ export type SimulationBuilderValidationInput = {
 };
 
 export const l80SimulationBuilderBoundary = [
-  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, L8.7 robust-design guidance, and L8.8 engineering evidence dossier reporting only.",
+  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, L8.7 robust-design guidance, L8.8 engineering evidence dossier reporting, and L9.4 solver-router method selection only.",
+  "L9.4 Solver Router / Method Selection Matrix recommends PlanarTmmBackend, scalar propagation, bounded 1D RCWA preview, bounded 2D FDTD CPU/WebGPU diagnostics, external FDTD evidence, or unsupported/scaffold routes with reasons, assumptions, limitations, validation checks, route actions, and report exports.",
+  "L9.4 is not automatic solver correctness proof, certified solver selection, arbitrary 3D Maxwell execution, FEM/BEM implementation, production RCWA/FDTD certification, external solver replacement, digital twin behavior, or manufacturing certification.",
   "L8.5.1 element inspector editing changes placement, dimensions, material metadata, custom monitors, and workflow state only; it does not add new physics.",
   "L8.6 process/tolerance variation runs deterministic one-at-a-time, grid, seeded sample, and external FDTD sweep receipt workflows over the current editable scene; it is not certified tolerancing or auto redesign.",
   "L8.7 robust design recommendations compare recentering, tolerance-budget, and candidate-grid actions over existing L8.6 evidence; they are not automatic final design approval or full inverse design.",
@@ -181,7 +183,7 @@ export const l80SimulationBuilderBoundary = [
   "Transparent, reflective, and absorbing planar surface/slab cases are executable.",
   "Apertures and ideal lenses are placement-aware scalar/ideal elements in this builder, not material Maxwell geometry solves.",
   "No arbitrary 3D material geometry is executable in-app.",
-  "No production FDTD, FEM, BEM, RCWA, required WebGPU execution, or in-browser 3D FDTD is performed; L9.2's separate 2D TMz sandbox is diagnostic only with optional WebGPU acceleration where supported.",
+  "No production FDTD, FEM, BEM, RCWA, required WebGPU execution, certified automatic solver selection, or in-browser 3D FDTD is performed; L9.2's separate 2D TMz sandbox is diagnostic only with optional WebGPU acceleration where supported, and L9.3's RCWA lane is a bounded 1D periodic preview only.",
   "No real curved material lens solve, finite-thickness metal aperture Maxwell solve, sensor-stack EM absorption, full inverse optimization, automatic final design approval, digital twin, certified validation, certified tolerancing, production EM solver certification, or manufacturing certification is claimed."
 ] as const;
 
@@ -205,7 +207,8 @@ export const l80ReleaseTrail = [
   { milestone: "L8.5.1", label: "Element inspector + direct editing", runnable: "numeric source-of-truth editing, optional diagram drag, custom monitors, warnings, and undo/redo" },
   { milestone: "L8.6", label: "Process / tolerance variation runner", runnable: "deterministic tolerance studies, sensitivity ranking, pass/fail tables, and external FDTD sweep receipts" },
   { milestone: "L8.7", label: "Robust Design Advisor", runnable: "ranked design actions, candidate comparison, tolerance budget, and external FDTD candidate sweep receipts" },
-  { milestone: "L8.8", label: "Engineering Evidence Campaign", runnable: "golden scenario dossier, convergence review, tolerance/robust summaries, and capability truth table exports" }
+  { milestone: "L8.8", label: "Engineering Evidence Campaign", runnable: "golden scenario dossier, convergence review, tolerance/robust summaries, and capability truth table exports" },
+  { milestone: "L9.4", label: "Solver Router / Method Selection Matrix", runnable: "scene classification, recommended solver, alternatives, route actions, method matrix, and route report exports" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -632,6 +635,30 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       label: "Multi-element optical bench chain",
       status: "executable" as const,
       evidence: "L8.5.1 ordered source/elements/target/monitor scene graph, element inspector editing, solver plan, scalar preview, external FDTD handoff, and validation report exports"
+    },
+    {
+      id: "solver-router-method-selection",
+      label: "Solver Router / Method Selection Matrix",
+      status: "executable" as const,
+      evidence: "L9.4 classifies planar, scalar, 1D periodic RCWA, bounded 2D FDTD, external FDTD, and unsupported/scaffold scene patterns with deterministic recommendations, alternatives, reasons, assumptions, validation checks, route actions, and report exports"
+    },
+    {
+      id: "solver-route-report-export",
+      label: "Solver route report export",
+      status: "executable" as const,
+      evidence: "L9.4 exports solver_route_report.md, solver_route_report.json, solver_route_matrix.csv, unsupported_items.csv, and validation_plan.csv without claiming automatic correctness"
+    },
+    {
+      id: "automatic-certified-solver-selection",
+      label: "Automatic certified solver selection",
+      status: "not-implemented" as const,
+      evidence: "L9.4 recommends a method and lists validation needs; it does not prove correctness or certify solver selection"
+    },
+    {
+      id: "fem-bem-route",
+      label: "FEM/BEM route",
+      status: "not-implemented" as const,
+      evidence: "FEM/BEM are explicit non-goals; no FEM/BEM implementation or route execution is available"
     },
     {
       id: "element-inspector-direct-editing",
