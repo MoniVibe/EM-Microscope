@@ -174,7 +174,7 @@ describe("L8.6 boundaries and regressions", () => {
 
     expect(report).toContain("not certified optical tolerancing");
     expect(report).toContain("No automatic redesign");
-    expect(report).toContain("browser does not execute FDTD");
+    expect(report).toContain("production FDTD execution stays outside the browser");
     expect(report).toContain("arbitrary 3D Maxwell");
     expect(report).toContain("FEM/BEM/RCWA");
   });

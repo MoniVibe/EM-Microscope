@@ -189,7 +189,7 @@ export const l85OpticalBenchBoundary = [
   "Scalar chain preview is limited to ideal plane elements: free-space propagation, apertures/slits, ideal thin lenses, and observation planes.",
   "Finite transparent blocks, absorbing blocks, reflective plates, aperture/blocker screens, and tilted wedges route to external FDTD export/import evidence.",
   "Imported external FDTD field/flux maps require receipts and scene/script hashes before they are reported as evidence.",
-  "No in-browser FDTD execution, arbitrary CAD/freeform geometry solve, general arbitrary 3D Maxwell, FEM/BEM/RCWA, production metal optics model, curved material lens solve, conformal multilayer curved coating solver, sensor-stack EM, digital twin calibration, hardware control, or manufacturing certification is implemented."
+  "No production in-browser FDTD execution, arbitrary CAD/freeform geometry solve, general arbitrary 3D Maxwell, FEM/BEM/RCWA, production metal optics model, curved material lens solve, conformal multilayer curved coating solver, sensor-stack EM, digital twin calibration, hardware control, or manufacturing certification is implemented; L9.0's separate 2D TMz sandbox is diagnostic only."
 ] as const;
 
 export function defaultOpticalBenchScenario(): SimulationBuilderScenario {

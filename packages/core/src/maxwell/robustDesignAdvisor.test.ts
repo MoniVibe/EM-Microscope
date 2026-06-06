@@ -198,7 +198,7 @@ describe("L8.7 boundaries and regressions", () => {
     expect(markdown).toContain("not certified optical tolerancing");
     expect(markdown).toContain("No automatic final design approval");
     expect(markdown).toContain("full inverse design");
-    expect(markdown).toContain("browser does not execute FDTD");
+    expect(markdown).toContain("production FDTD execution stays outside the browser");
     expect(markdown).toContain("arbitrary 3D Maxwell");
     expect(markdown).toContain("FEM/BEM/RCWA");
   });

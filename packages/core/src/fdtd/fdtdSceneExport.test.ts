@@ -47,7 +47,7 @@ describe("L8.1 external FDTD scene export", () => {
     const text = l81FdtdBoundary.join(" ");
 
     expect(text).toContain("External FDTD export/import only");
-    expect(text).toContain("browser app does not execute FDTD");
+    expect(text).toContain("does not execute production FDTD in the browser");
     expect(text).toContain("No arbitrary 3D CAD geometry");
     expect(text).toContain("FEM/BEM/RCWA");
     expect(text).not.toMatch(/browser FDTD execution is available|full arbitrary 3D Maxwell solve|FEM execution available|digital twin certified/i);

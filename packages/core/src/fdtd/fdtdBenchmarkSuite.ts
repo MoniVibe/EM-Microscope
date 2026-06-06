@@ -161,7 +161,7 @@ export type FdtdConvergenceImportInput = {
 };
 
 export const l82FdtdBenchmarkBoundary = [
-  "External FDTD benchmark/convergence support only; the browser app does not execute FDTD.",
+  "External FDTD benchmark/convergence support only; this benchmark workflow does not execute production FDTD in the browser.",
   "Benchmark packs export deterministic manifests, sweep plans, and Meep helper scripts for optional external execution.",
   "Imported convergence summaries are evidence from external runs or deterministic fixtures, not in-browser Maxwell solves.",
   "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
@@ -621,7 +621,7 @@ export function fdtdBenchmarkPackReadme(manifest: FdtdBenchmarkManifest, sweepPl
   return [
     `# L8.2 ${benchmarkLabel(manifest.benchmarkKind)} FDTD Benchmark Pack`,
     "",
-    "This pack is for optional external FDTD verification. The EMMicro browser app does not execute FDTD.",
+    "This pack is for optional external FDTD verification. Run these Meep/FDTD jobs outside the browser; L9.0's separate in-browser 2D sandbox is diagnostic only.",
     "",
     "Files:",
     "- benchmark_manifest.json",

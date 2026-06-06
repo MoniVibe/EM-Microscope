@@ -1,8 +1,8 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L9.0 In-Browser 2D FDTD Maxwell Sandbox plus the L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L8.9 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+Real Detector Bridge. L9.0 adds a capped browser-native 2D TMz FDTD sandbox with Ez/Hx/Hy typed-array stepping, grid/object/step/monitor caps, fixtures, field/intensity/material views, Simulation Builder 2D slice handoff, and exports for `fdtd2d_sandbox_report.md`, `fdtd2d_sandbox_report.json`, `field_snapshot.csv`, `monitor_trace.csv`, and `energy_trace.csv`. L8.9 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
 workflow, adds a real external-run pack/import/reproducibility path on top of L8.1-L8.8 FDTD evidence, keeps the engineer-facing golden evidence campaign over L8.1-L8.7 evidence, keeps the diagnostic robust-design advisor over the L8.6 process/tolerance variation runner, and keeps the L8.5.1 multi-element scene graph plus element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
 including numeric source-of-truth editing, optional diagram drag, non-drag nudge/order controls, snap settings, undo/redo, custom monitors, edit warnings,
 x-z bench cross-section, solver-plan routing, scalar multi-plane monitor snapshots, external FDTD chain fixture import,
@@ -22,22 +22,22 @@ and monitor-distance warnings, field-slice/profile previews, residual-vs-resolut
 aperture validation dossiers. L8.5 composes those pieces into an ordered bench workflow: ideal plane elements run in
 the scalar preview path, finite transparent/absorbing/reflective/aperture/wedge geometry routes to external FDTD
 export/import evidence, scaffold-only/unsupported elements stay visible in the solver plan, and the boundary remains
-explicit that this is not browser FDTD, arbitrary 3D Maxwell/FEM/BEM/RCWA, production metal optics, digital twin, or
+explicit that this is not production browser FDTD, arbitrary 3D Maxwell/FEM/BEM/RCWA, production metal optics, digital twin, or
 manufacturing certification.
 L8.6 tolerance/process variation is diagnostic only: it is not certified optical tolerancing, automatic redesign,
-inverse optimization, browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA, production EM solving, digital
+inverse optimization, production browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA, production EM solving, digital
 twin behavior, or manufacturing certification.
 L8.7 adds diagnostic robust-design guidance on top of that result: ranked recentering, tolerance tightening,
 tolerance relaxation, cost-weighted candidate comparison, explicit user-applied candidate actions, and external FDTD
 candidate sweep manifests/summary receipts. L8.7 is not certified optical tolerancing, automatic final design
-approval, full inverse design, browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA, production EM solving,
+approval, full inverse design, production browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA, production EM solving,
 digital twin behavior, or manufacturing certification.
 L8.8 adds a Golden Evidence Pack / External FDTD Acceptance Campaign on top of the existing stack: curated
 transparent slab, absorbing slab, reflective plate, long-slit, circular-pinhole, multi-element chain, and robust
 candidate scenarios; analytic/TMM/scalar references; expected-vs-imported/computed residuals; convergence/PML
 summaries; L8.6 tolerance evidence; L8.7 robust before/after metrics; capability truth tables; reproducibility hashes;
 and one-click Markdown/JSON/CSV engineer dossier exports. L8.8 is evidence/reporting only, not certified validation,
-certified tolerancing, production EM solver certification, browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA,
+certified tolerancing, production EM solver certification, production browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA,
 digital twin behavior, or manufacturing certification.
 L8.8a hardens the two-view editor contract: Optical Axis Placement is order and z-position only, X-Z Surface Geometry
 is finite shape and transverse placement, Inspect/Edit Geometry modes prevent accidental drag, pointer previews commit
@@ -50,9 +50,15 @@ metadata, `energy_balance.json`, and `postprocess_log.json`; validates scene/scr
 required monitor ids, required files, and receipt hashes; compares R/T/A, energy balance, field-slice RMS, and reference
 residuals; promotes accepted imports to the Engineering Evidence Campaign evidence queue; and exports
 `reproducibility_report.md`, `reproducibility_report.json`, `real_run_metrics.csv`, and `real_run_warnings.json`.
-Meep/Python remain optional local user-machine tooling only; npm tests, the browser runtime, and GitHub Pages do not
-execute FDTD. L8.9 is still not in-browser FDTD, arbitrary 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution, production
+Meep/Python remain optional local user-machine tooling only; npm tests, GitHub Pages deploy jobs, and the L8.9 web runtime do not
+execute this external Meep/FDTD pack. L8.9 is still not the L9.0 in-browser sandbox, arbitrary 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution, production
 solver certification, digital twin behavior, lab accreditation, hardware control, or manufacturing certification.
+L9.0 is a bounded diagnostic 2D FDTD sandbox only: it runs one TMz polarization in the browser on small capped grids,
+supports simple source/object/monitor scenes, maps compatible Simulation Builder finite blocks into a 2D slice, and
+provides sanity fixtures for empty space, PEC-like reflection, a rough Fresnel dielectric interface, absorber
+attenuation, and qualitative slit spreading. It is not full 3D Maxwell, not a production FDTD engine, not a replacement
+for external Meep/FDTD, not FEM/BEM/RCWA, not arbitrary CAD/freeform geometry, not hardware control, and not
+manufacturing or lab certification.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
@@ -172,7 +178,15 @@ certification system.
 
 ## Current Visible Mode
 
-- `L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign`: a top-level Simulation Builder workflow that
+- `L9.0 In-Browser 2D FDTD Maxwell Sandbox`: a top-level 2D diagnostic sandbox that runs TMz Ez/Hx/Hy typed arrays
+  in the browser with default 256 x 256 grids, warnings above 512 x 512, a hard 1024 x 1024 cell cap, object/step/
+  monitor-sample caps, reset/step/run/run-N controls, field/intensity/material overlays, source and monitor markers,
+  energy/monitor traces, sanity fixtures, and exports named `fdtd2d_sandbox_report.md`,
+  `fdtd2d_sandbox_report.json`, `field_snapshot.csv`, `monitor_trace.csv`, and `energy_trace.csv`. It is a bounded
+  2D diagnostic only; production FDTD, full 3D Maxwell, FEM/BEM/RCWA, arbitrary CAD/freeform geometry, and certified
+  solver validation stay out of scope.
+
+- `L9.0 Simulation Builder + 2D Sandbox Handoff`: a top-level Simulation Builder workflow that
   follows `Grid -> Source -> Elements -> Target / Material -> Observation / Monitors -> Validate`. It lets users define domain
   units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
   of apertures, ideal lenses, planar material interfaces/slabs, mirrors, absorbers, and L8.3 finite transparent
@@ -183,7 +197,8 @@ certification system.
   automatic source/after-element/before-after finite-geometry/target/observation monitors, an all-element X-Z cross-section, a solver-plan table, scalar
   chain preview snapshots, bundled external FDTD chain evidence, and exports named `multielement_scene.json`,
   `solver_plan.json`, `monitor_stack.csv`, `multielement_validation_report.md`,
-  `multielement_validation_report.json`, and `multielement_metrics.csv`. The optical-axis diagram and X-Z
+  `multielement_validation_report.json`, and `multielement_metrics.csv`, plus `fdtd2d_sandbox_scene.json` and
+  `fdtd2d_sandbox_handoff.json` for compatible L9.0 2D slices. The optical-axis diagram and X-Z
   cross-section show the source, every placed element, finite dimensions, target, and observation plane with z
   positions and capability tags. L8.8a separates the interaction model: Optical Axis Placement handles order and
   z-position only, while X-Z Surface Geometry handles finite shape and transverse placement through Inspect/Edit
@@ -201,8 +216,8 @@ certification system.
   The bundled files live under `tools/evidence/`, with optional external-run scaffolding; npm tests/build and browser
   runtime do not require Meep or Python.
 
-  The L8.9 Real External FDTD Run Ingestion workbench makes the external path real-user runnable without moving FDTD
-  into the browser. It exports a named run pack, imports a full `real_run_bundle.json` or individual
+  The L8.9 Real External FDTD Run Ingestion workbench makes the external production path real-user runnable without
+  moving Meep/Python into the browser. It exports a named run pack, imports a full `real_run_bundle.json` or individual
   `run_receipt.json`, `flux_summary.json`, `field_slice_xz.csv`, `energy_balance.json`, and `postprocess_log.json`
   artifacts, validates scene/script/material/monitor/run-config hashes and required monitor/file coverage, shows
   field/intensity previews plus imported monitor positions and R/T/A energy-balance deltas, compares against the
@@ -217,7 +232,7 @@ certification system.
   `tolerance_report.md`, `tolerance_report.json`, `tolerance_run_table.csv`, `tolerance_sensitivity.csv`, and
   `failing_cases.csv`, and exports/imports external FDTD variation sweep evidence via
   `fdtd_variation_sweep_manifest.json` and `fdtd_variation_sweep_fixture_summary.json`. It is diagnostic process
-  variation only, not certified tolerancing, auto redesign, inverse optimization, browser FDTD, arbitrary 3D Maxwell,
+  variation only, not certified tolerancing, auto redesign, inverse optimization, production browser FDTD, arbitrary 3D Maxwell,
   FEM/BEM/RCWA, production EM solving, digital twin behavior, or manufacturing certification.
 
   The L8.7 Robust Design Advisor consumes the current L8.6 tolerance result and generates ranked diagnostic actions:
@@ -254,8 +269,8 @@ certification system.
   `aperture_validation_report.json`, `aperture_metrics.csv`, `aperture_profile.csv`, and
   `aperture_convergence.csv` exports plus bundled `tools/fdtd/examples/l84_*` scene, manifest, script, receipt, flux,
   field-slice, profile, and convergence fixtures for long-slit, circular-pinhole, rectangular-aperture, and
-  opaque-blocker diagnostics. Boundary: this is limited ordered optical-bench validation plus scalar preview and
-  external FDTD export/import and benchmark convergence evidence only, not browser FDTD execution, arbitrary 3D
+  opaque-blocker diagnostics. Boundary: this is limited ordered optical-bench validation plus scalar preview,
+  L9.0 diagnostic 2D sandbox handoff, and external FDTD export/import and benchmark convergence evidence only, not production browser FDTD execution, arbitrary 3D
   material geometry, FEM/BEM/RCWA execution, real curved material lens solving, production metal aperture models,
   arbitrary CAD aperture-edge solving, sensor-stack EM, digital twin behavior, or manufacturing certification.
 

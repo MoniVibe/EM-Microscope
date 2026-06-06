@@ -212,8 +212,8 @@ export const l86ToleranceBoundary = [
   "L8.6 is deterministic diagnostic process/tolerance variation analysis over the editable L8.5.1 optical bench.",
   "One-at-a-time, grid, and seeded sample runs perturb existing source, placement, dimension, material metadata, and monitor variables only.",
   "Sensitivity, pass/fail, worst-case, and pass-rate outputs are diagnostic engineering aids, not certified optical tolerancing.",
-  "External FDTD variation sweeps are exported/imported as manifests and receipts only; the browser does not execute FDTD.",
-  "No automatic redesign, inverse optimization, certified Monte Carlo tolerance analysis, in-browser FDTD, arbitrary 3D Maxwell/CAD solve, FEM/BEM/RCWA execution, production EM solver, digital twin, or manufacturing certification is implemented."
+  "External FDTD variation sweeps are exported/imported as manifests and receipts only; production FDTD execution stays outside the browser.",
+  "No automatic redesign, inverse optimization, certified Monte Carlo tolerance analysis, production in-browser FDTD, arbitrary 3D Maxwell/CAD solve, FEM/BEM/RCWA execution, production EM solver, digital twin, or manufacturing certification is implemented."
 ] as const;
 
 export const defaultToleranceMetrics: ToleranceMetricKey[] = ["peakIntensity", "centroidShiftAbsUm", "transmittedFlux", "energyBalanceError"];
@@ -409,7 +409,7 @@ export function createToleranceFdtdSweepManifest(scenario: SimulationBuilderScen
     caseCount: sweepCases.length,
     cases: sweepCases,
     boundary: [
-      "External FDTD sweep export/import only; the browser app does not execute FDTD.",
+      "External FDTD sweep export/import only; production FDTD execution stays external.",
       "Each run case preserves scene, variation, manifest, and script hashes for receipt comparison.",
       "Imported summaries are diagnostic evidence, not certified tolerance or production solver validation."
     ]

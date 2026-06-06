@@ -40,7 +40,7 @@ describe("L8.2 FDTD benchmark suite generation", () => {
       expect(pack.scripts).toHaveLength(pack.sweepPlan.runCount);
       expect(fdtdBenchmarkManifestJson(pack.benchmarkManifest)).toContain("emmicro.fdtd.benchmarkManifest.v1");
       expect(fdtdSweepPlanJson(pack.sweepPlan)).toContain("emmicro.fdtd.sweepPlan.v1");
-      expect(pack.readme).toContain("browser app does not execute FDTD");
+      expect(pack.readme).toContain("Run these Meep/FDTD jobs outside the browser");
     }
   });
 
@@ -150,7 +150,7 @@ describe("L8.2 FDTD verification boundaries and regressions", () => {
     const text = l82FdtdBenchmarkBoundary.join(" ");
 
     expect(text).toContain("External FDTD benchmark/convergence support only");
-    expect(text).toContain("browser app does not execute FDTD");
+    expect(text).toContain("does not execute production FDTD in the browser");
     expect(text).toContain("No arbitrary 3D CAD geometry");
     expect(text).toContain("FEM/BEM/RCWA");
     expect(text).not.toMatch(/browser FDTD execution is available|general arbitrary 3D Maxwell solver|production solver validation is certified/i);
@@ -187,6 +187,6 @@ describe("L8.2 FDTD verification boundaries and regressions", () => {
     const bundle = exportFdtdBundleFromSimulationBuilder(scenario);
 
     expect(bundle.manifest.limitations.join(" ")).toContain("External FDTD export/import only");
-    expect(bundle.manifest.limitations.join(" ")).toContain("browser app does not execute FDTD");
+    expect(bundle.manifest.limitations.join(" ")).toContain("does not execute production FDTD in the browser");
   });
 });

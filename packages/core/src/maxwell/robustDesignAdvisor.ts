@@ -184,7 +184,7 @@ export const l87RobustDesignBoundary = [
   "L8.7 turns L8.6 tolerance/sensitivity results into deterministic diagnostic robust-design guidance.",
   "Recommendations may suggest recentering, tolerance tightening, tolerance relaxation, or a small robust-grid candidate comparison, but nothing is auto-applied without explicit user action.",
   "Cost-weighted rankings are engineering heuristics over existing scalar/external evidence receipts, not certified optical tolerancing.",
-  "External FDTD candidate sweeps are exported/imported as manifests and summaries only; the browser does not execute FDTD.",
+  "External FDTD candidate sweeps are exported/imported as manifests and summaries only; production FDTD execution stays outside the browser.",
   "No automatic final design approval, full inverse design, in-browser FDTD, arbitrary 3D Maxwell/CAD solve, FEM/BEM/RCWA execution, production EM solver, digital twin, or manufacturing certification is implemented."
 ] as const;
 
@@ -273,7 +273,7 @@ export function createRobustFdtdCandidateSweepManifest(report: RobustDesignAdvis
     candidateCount: candidates.length,
     candidates,
     boundary: [
-      "External FDTD candidate sweep export/import only; the browser app does not execute FDTD.",
+      "External FDTD candidate sweep export/import only; production FDTD execution stays external.",
       "Candidate hashes and underlying L8.6 tolerance sweep hashes are preserved for receipt comparison.",
       "Imported summaries are diagnostic evidence, not certified robust design approval."
     ]

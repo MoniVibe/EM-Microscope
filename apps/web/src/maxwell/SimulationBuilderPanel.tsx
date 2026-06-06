@@ -99,6 +99,7 @@ import {
   runRobustDesignAdvisor,
   runToleranceAnalysis,
   setOpticalBenchElementEnabled,
+  simulationBuilderToFdtd2dSandbox,
   undoOpticalBenchHistory,
   simulationBuilderScenarioJson,
   simulationBuilderValidationMetricsCsv,
@@ -151,6 +152,7 @@ import {
   type FdtdBenchmarkKind,
   type FdtdConvergenceSummary,
   type FdtdFieldSlice,
+  type Fdtd2dScene,
   type GoldenEvidenceCampaignSummary,
   type FdtdImportedRun,
   type FdtdValidationReport,
@@ -298,7 +300,7 @@ function initialL85Selection(): L85Selection {
   return { kind: "element", id: firstElement?.id ?? "source" };
 }
 
-export function SimulationBuilderPanel() {
+export function SimulationBuilderPanel(props: { onExportSandboxScene?: (scene: Fdtd2dScene) => void } = {}) {
   const [scenario, setScenario] = useState<SimulationBuilderScenario>(() => defaultOpticalBenchScenario());
   const [selectedL85, setSelectedL85] = useState<L85Selection>(() => initialL85Selection());
   const [l85SnapStepMm, setL85SnapStepMm] = useState(0.5);
@@ -339,6 +341,7 @@ export function SimulationBuilderPanel() {
   const result = useMemo(() => runSimulationBuilderScenario(scenario), [scenario]);
   const l85Bundle = useMemo(() => createOpticalBenchBundle(scenario), [scenario]);
   const fdtdBundle = useMemo(() => exportFdtdBundleFromSimulationBuilder(scenario), [scenario]);
+  const fdtd2dHandoff = useMemo(() => simulationBuilderToFdtd2dSandbox(scenario), [scenario]);
   const l89RunPack = useMemo(() => createRealExternalRunPack(scenario), [scenario]);
   const fdtdBenchmarkPack = useMemo(() => createFdtdBenchmarkPack({ benchmarkKind, scenario }), [benchmarkKind, scenario]);
   const surfaceGeometryScene = useMemo(() => surfaceGeometryExample?.scene ?? createSurfaceGeometryScene(scenario), [scenario, surfaceGeometryExample]);
@@ -719,6 +722,12 @@ export function SimulationBuilderPanel() {
     downloadText("multielement_fixture_receipt.json", "application/json", JSON.stringify(l85Bundle.externalEvidence.receipt, null, 2));
     downloadText("multielement_fixture_flux_summary.json", "application/json", JSON.stringify(l85Bundle.externalEvidence.flux, null, 2));
     downloadText("multielement_fixture_field_slice_xz.csv", "text/csv", `${l85Bundle.externalEvidence.fieldSliceCsv}\n`);
+  }
+
+  function exportL90SandboxSlice(): void {
+    downloadText("fdtd2d_sandbox_scene.json", "application/json", `${JSON.stringify(fdtd2dHandoff.scene, null, 2)}\n`);
+    downloadText("fdtd2d_sandbox_handoff.json", "application/json", `${JSON.stringify(fdtd2dHandoff, null, 2)}\n`);
+    props.onExportSandboxScene?.(fdtd2dHandoff.scene);
   }
 
   function exportL85ValidationReport(): void {
@@ -1259,17 +1268,17 @@ export function SimulationBuilderPanel() {
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L8.9 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L9.0 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign</h2>
+        <h2>L9.0 Simulation Builder + 2D Sandbox Handoff</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, real external FDTD run ingestion and reproducibility reports, precise numeric edits, optional diagram drag, and a validation report.
-          Browser FDTD, arbitrary 3D Maxwell material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
+          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, a bounded L9.0 2D FDTD sandbox handoff exporting fdtd2d_sandbox_scene.json and fdtd2d_sandbox_handoff.json, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, real external FDTD run ingestion and reproducibility reports, precise numeric edits, optional diagram drag, and a validation report.
+          The L9.0 sandbox is capped 2D TMz only. Arbitrary 3D Maxwell material geometry/CAD solving, production FDTD, FDTD/FEM/BEM/RCWA execution beyond the bounded 2D sandbox, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
           certification are not implemented.
         </span>
       </div>
@@ -1342,6 +1351,10 @@ export function SimulationBuilderPanel() {
           <button type="button" onClick={exportL85ExternalFdtdChain} disabled={l85EditingBlocked}>
             <FileDown size={15} />
             <span>Export External FDTD Chain</span>
+          </button>
+          <button type="button" onClick={exportL90SandboxSlice}>
+            <FileDown size={15} />
+            <span>Export 2D Slice to Maxwell Sandbox</span>
           </button>
           <button type="button" onClick={exportL85ValidationReport} disabled={l85EditingBlocked}>
             <FileDown size={15} />
@@ -1529,7 +1542,7 @@ export function SimulationBuilderPanel() {
               {l85EditingWarnings.length + l85Bundle.validationReport.warnings.length === 0 && <span>No L8.5.1 warnings for the current ordered scene.</span>}
               {l85EditingBlocked && <span><strong>export blocked</strong> Resolve overlap/domain/unsupported edit blockers before scalar preview or export.</span>}
               <span>
-                <strong>boundary</strong> No in-browser FDTD execution, arbitrary CAD/freeform geometry solve, general arbitrary 3D Maxwell, FEM/BEM/RCWA, production EM solver, digital twin, or
+                <strong>boundary</strong> No production in-browser FDTD execution, arbitrary CAD/freeform geometry solve, general arbitrary 3D Maxwell, FEM/BEM/RCWA, production EM solver, digital twin, or
                 manufacturing certification is claimed.
               </span>
             </div>
@@ -1944,7 +1957,7 @@ export function SimulationBuilderPanel() {
             <strong>Aperture / Blocker Validation</strong>
             <span>
               Long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker external FDTD evidence can be compared against scalar limiting references: single-slit-sinc2, airy-bessel,
-              rectangular-sinc2, and blocked power / shadow flux diagnostics. Browser FDTD execution, production metal aperture models, arbitrary CAD aperture solving, FEM/BEM/RCWA, sensor-stack EM,
+              rectangular-sinc2, and blocked power / shadow flux diagnostics. Production browser FDTD execution, production metal aperture models, arbitrary CAD aperture solving, FEM/BEM/RCWA, sensor-stack EM,
               digital twins, and manufacturing certification are not implemented.
             </span>
           </div>
@@ -2088,7 +2101,7 @@ export function SimulationBuilderPanel() {
           <div className="l2-disclosure">
             <strong>External FDTD export/import only.</strong>
             <span>
-              Export a manifest and deterministic Meep helper script, then import external run receipt, flux summary, and field-slice CSV evidence. The browser app does not execute FDTD;
+              Export a manifest and deterministic Meep helper script, then import external run receipt, flux summary, and field-slice CSV evidence. Production FDTD execution stays external;
               arbitrary 3D CAD geometry, curved material lens solving, finite-thickness metal aperture Maxwell solving, FEM/BEM/RCWA, sensor-stack EM, digital twin behavior, and manufacturing
               certification are not implemented.
             </span>
@@ -2369,7 +2382,7 @@ export function SimulationBuilderPanel() {
               <strong>Benchmark convergence evidence, not new in-browser physics.</strong>
               <span>
                 Generate bounded external FDTD benchmark packs, import convergence summaries, compare against flux conservation, Fresnel/TMM, Beer-Lambert, or mirror references, and flag residual,
-                energy-balance, trend, and PML sensitivity issues. Browser FDTD execution, arbitrary 3D Maxwell/CAD solving, FEM/BEM/RCWA, curved material lens solving, and production solver
+                energy-balance, trend, and PML sensitivity issues. Production browser FDTD execution, arbitrary 3D Maxwell/CAD solving, FEM/BEM/RCWA, curved material lens solving, and production solver
                 validation are not implemented.
               </span>
             </div>
@@ -2756,7 +2769,7 @@ function L86ToleranceRunnerPanel(props: {
             {props.fdtdSummary && <span><strong>summary</strong> {props.fdtdSummary.summaryHash.slice(0, 12)} imported with {props.fdtdSummary.results.filter((row) => row.status === "pass").length} passing rows.</span>}
             {props.fdtdWarnings.map((warning, index) => <span key={`${warning.code}:${index}`}><strong>{warning.code}</strong> {warning.message}</span>)}
             {props.fdtdImportError && <span><strong>import error</strong> {props.fdtdImportError}</span>}
-            {!props.fdtdSummary && <span><strong>boundary</strong> Export/import only. The browser does not execute FDTD or certify tolerance sweeps.</span>}
+            {!props.fdtdSummary && <span><strong>boundary</strong> Export/import only. Production FDTD execution stays external and does not certify tolerance sweeps.</span>}
           </div>
         </div>
       </div>
@@ -2938,7 +2951,7 @@ function L87RobustDesignAdvisorPanel(props: {
             {props.fdtdSummary && <span><strong>summary</strong> {props.fdtdSummary.summaryHash.slice(0, 12)} imported with {props.fdtdSummary.results.filter((row) => row.status === "pass").length} passing candidates.</span>}
             {props.fdtdWarnings.map((warning, index) => <span key={`${warning.code}:${index}`}><strong>{warning.code}</strong> {warning.message}</span>)}
             {props.fdtdImportError && <span><strong>import error</strong> {props.fdtdImportError}</span>}
-            {!props.fdtdSummary && <span><strong>boundary</strong> Export/import only. The browser does not execute FDTD or approve a final robust design.</span>}
+            {!props.fdtdSummary && <span><strong>boundary</strong> Export/import only. Production FDTD execution stays external and does not approve a final robust design.</span>}
           </div>
         </div>
       </div>

@@ -173,8 +173,8 @@ describe("multi-element external FDTD handoff and validation report", () => {
     const monitorCsv = opticalBenchMonitorStackCsv(bundle.scalarPreview);
     const metricsCsv = opticalBenchMetricsCsv(bundle.validationReport);
 
-    expect(markdown).toContain("No in-browser FDTD execution");
-    expect(markdown).toContain("No in-browser FDTD execution");
+    expect(markdown).toContain("No production in-browser FDTD execution");
+    expect(markdown).toContain("No production in-browser FDTD execution");
     expect(markdown).not.toMatch(/arbitrary 3D Maxwell solved|browser FDTD execution is available|FEM execution is available|digital twin certified|manufacturing certification available/i);
     expect(json.schema).toBe("emmicro.opticalBench.validationReport.v1");
     expect(monitorCsv).toContain("monitor_id,label,z_mm");
@@ -197,7 +197,7 @@ describe("L8.5 boundaries and regressions", () => {
     const bundle = createOpticalBenchBundle(defaultOpticalBenchScenario());
     const boundary = bundle.scene.boundary.join(" ");
 
-    expect(boundary).toContain("No in-browser FDTD execution");
+    expect(boundary).toContain("No production in-browser FDTD execution");
     expect(boundary).toContain("general arbitrary 3D Maxwell");
     expect(boundary).toContain("FEM/BEM/RCWA");
     expect(boundary).not.toMatch(/FDTD execution is available|arbitrary 3D Maxwell solved|production EM solver|digital twin certified/i);

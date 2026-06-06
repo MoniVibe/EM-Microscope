@@ -131,7 +131,7 @@ export const apertureScreenModels: ApertureScreenModel[] = ["absorbing-screen", 
 
 export const l84ApertureValidationBoundary = [
   "Limited aperture/blocker edge-diffraction diagnostics only: long slit, circular pinhole, rectangular aperture, and opaque blocker.",
-  "External FDTD export/import evidence only; the browser app does not execute FDTD or arbitrary 3D Maxwell.",
+  "External FDTD export/import evidence only; this aperture workflow does not execute production FDTD or arbitrary 3D Maxwell in the browser.",
   "Scalar sinc/Airy references are limiting-case checks, not exact finite-screen FDTD truth.",
   "Finite screen size, screen thickness, staircasing, PML placement, monitor placement, and near-field/far-field interpretation require convergence review.",
   "Ideal reflective screens are diagnostics only, not production metal aperture models.",

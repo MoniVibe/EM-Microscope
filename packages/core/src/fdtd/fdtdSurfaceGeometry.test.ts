@@ -269,7 +269,7 @@ describe("L8.3 boundary and regressions", () => {
     const text = l83SurfaceGeometryBoundary.join(" ");
 
     expect(text).toContain("External FDTD export/import only");
-    expect(text).toContain("browser app does not execute FDTD");
+    expect(text).toContain("does not execute production FDTD");
     expect(text).toContain("No arbitrary CAD import");
     expect(text).toContain("FEM/BEM/RCWA");
     expect(text).toContain("manufacturing certification");

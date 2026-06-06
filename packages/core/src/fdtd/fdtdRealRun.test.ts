@@ -36,7 +36,7 @@ describe("L8.9 real external FDTD run ingestion", () => {
     expect(pack.monitorHash).toHaveLength(16);
     expect(pack.runConfig.requiredMonitorIds).toContain("incident-flux");
     expect(pack.runConfig.outputFiles).toContain("postprocess_log.json");
-    expect(pack.files.find((file) => file.path === "README.md")?.text).toContain("The web app does not execute FDTD");
+    expect(pack.files.find((file) => file.path === "README.md")?.text).toContain("executed outside the web app");
     expect(pack.files.find((file) => file.path === "postprocess.py")?.text).toContain("Replace the synthetic readers below with real Meep output readers");
   });
 
@@ -108,7 +108,7 @@ describe("L8.9 real external FDTD run ingestion", () => {
 
     expect(report.schema).toBe("emmicro.fdtd.realRunReproducibilityReport.v1");
     expect(markdown).toContain("L8.9 Real External FDTD Run Reproducibility Report");
-    expect(markdown).toContain("No in-browser FDTD");
+    expect(markdown).toContain("No production in-browser FDTD");
     expect(markdown).toContain("arbitrary 3D Maxwell/CAD execution");
     expect(metrics).toContain("field_slice_rms_delta");
     expect(warnings).toContain("emmicro.fdtd.realRunWarnings.v1");

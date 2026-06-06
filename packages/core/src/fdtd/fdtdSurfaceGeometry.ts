@@ -88,7 +88,7 @@ export const surfaceGeometryKinds: SurfaceGeometryKind[] = ["transparent-block",
 
 export const l83SurfaceGeometryBoundary = [
   "Limited finite surface-geometry diagnostics only: placed transparent block, absorbing block, ideal reflective plate, aperture/blocker, and tilted wedge/interface.",
-  "External FDTD export/import only; the browser app does not execute FDTD or arbitrary 3D Maxwell.",
+  "External FDTD export/import only; this finite-geometry workflow does not execute production FDTD or arbitrary 3D Maxwell in the browser.",
   "Field maps, flux summaries, and validation reports are imported evidence or deterministic fixtures, not in-browser Maxwell solves.",
   "Ideal reflector and aperture/blocker modes are diagnostic and require convergence evidence before physical interpretation.",
   "No arbitrary CAD import, freeform curved material lens solve, conformal multilayer curved coating solve, production metal optics model, FEM/BEM/RCWA execution, sensor-stack EM, digital twin, or manufacturing certification is claimed."

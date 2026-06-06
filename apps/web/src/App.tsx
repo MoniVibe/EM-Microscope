@@ -80,7 +80,9 @@ import {
   type SourceElement,
   type SweepDefinition,
   type SweepResult,
-  type TestTarget2D
+  type TestTarget2D,
+  createFdtd2dScene,
+  type Fdtd2dScene
 } from "@emmicro/core";
 import {
   Aperture,
@@ -104,6 +106,7 @@ import { FitPanel } from "./measurement/FitPanel";
 import { ImageImportPanel } from "./measurement/ImageImportPanel";
 import { residualMapToPngDataUrl } from "./measurement/ResidualView";
 import { RoiPanel } from "./measurement/RoiPanel";
+import { Fdtd2dSandboxPanel } from "./maxwell/Fdtd2dSandboxPanel";
 import { MaxwellPanel } from "./maxwell/MaxwellPanel";
 import { SimulationBuilderPanel } from "./maxwell/SimulationBuilderPanel";
 import { MtfPanel } from "./metrics/MtfPanel";
@@ -257,7 +260,8 @@ function downloadText(filename: string, mime: string, text: string): void {
 }
 
 function MaxwellOnlyApp() {
-  const [visibleMode, setVisibleMode] = useState<"builder" | "diagnostics">("builder");
+  const [visibleMode, setVisibleMode] = useState<"builder" | "sandbox" | "diagnostics">("builder");
+  const [fdtd2dScene, setFdtd2dScene] = useState<Fdtd2dScene>(() => createFdtd2dScene());
 
   return (
     <div className="app-shell maxwell-only-shell">
@@ -266,17 +270,20 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign / L8.4 Aperture Validation / L7.8 Detector Round Trip</p>
+            <p>L9.0 In-Browser 2D FDTD Maxwell Sandbox / L8.9 Real External FDTD Run Ingestion / Engineering Evidence Campaign</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>Simulation Builder + Engineering Evidence Dossier + Multi-Element FDTD Evidence</span>
-          <strong>ordered grid/source/multi-element/target/monitor workflow, L8.9 real external FDTD run ingestion and reproducibility reports, L8.8 engineering evidence campaign, L8.7 robust design advisor, L8.6 process/tolerance variation runner, L8.5.1 numeric editing, optional diagram drag, undo/edit warnings, L8.5 scalar chain preview and external FDTD chain fixtures, L8.4 aperture validation, L8.3 finite surface geometry export/import fixtures, L8.2 benchmark sweeps, and existing L7.8 detector round-trip diagnostics</strong>
+          <span>2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence</span>
+          <strong>L9.0 bounded CPU typed-array 2D FDTD sandbox for TMz Ez/Hx/Hy, ordered grid/source/multi-element/target/monitor workflow, L8.9 real external FDTD run ingestion and reproducibility reports, L8.8 engineering evidence campaign, L8.5.1 numeric editing and diagram drag, L8.4 aperture validation, and existing diagnostic workbenches</strong>
         </div>
         <div className="top-actions simulation-mode-actions" aria-label="Top-level workflow mode">
           <button type="button" className={visibleMode === "builder" ? "active" : ""} onClick={() => setVisibleMode("builder")}>
             Simulation Builder
+          </button>
+          <button type="button" className={visibleMode === "sandbox" ? "active" : ""} onClick={() => setVisibleMode("sandbox")}>
+            2D Maxwell Sandbox
           </button>
           <button type="button" className={visibleMode === "diagnostics" ? "active" : ""} onClick={() => setVisibleMode("diagnostics")}>
             Diagnostic Workbenches
@@ -286,7 +293,16 @@ function MaxwellOnlyApp() {
 
       <main className="maxwell-only-workspace" aria-label="Maxwell simulator">
         <div className="maxwell-only-main">
-          {visibleMode === "builder" ? <SimulationBuilderPanel /> : <MaxwellPanel />}
+          {visibleMode === "builder" && (
+            <SimulationBuilderPanel
+              onExportSandboxScene={(scene) => {
+                setFdtd2dScene(scene);
+                setVisibleMode("sandbox");
+              }}
+            />
+          )}
+          {visibleMode === "sandbox" && <Fdtd2dSandboxPanel scene={fdtd2dScene} onSceneChange={setFdtd2dScene} />}
+          {visibleMode === "diagnostics" && <MaxwellPanel />}
         </div>
       </main>
     </div>

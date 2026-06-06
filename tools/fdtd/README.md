@@ -1,6 +1,6 @@
-# EMMicro L8.1/L8.2/L8.3/L8.4/L8.5/L8.5.1/L8.6/L8.7/L8.8/L8.8a/L8.9 External FDTD Helpers
+# EMMicro L8.1-L8.9 External FDTD Helpers + L9.0 2D Sandbox Smoke
 
-These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, the L8.8a two-view interaction hardening smoke flow, and the L8.9 `Real External FDTD Run Ingestion` workflow.
+These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, the L8.8a two-view interaction hardening smoke flow, the L8.9 `Real External FDTD Run Ingestion` workflow, and L9.0 browser smoke for the capped 2D FDTD sandbox.
 
 Scope:
 - The web app exports an EMMicro FDTD scene manifest and a deterministic Meep-style Python helper script.
@@ -16,9 +16,10 @@ Scope:
 - L8.8 engineering-evidence packs add curated transparent/absorbing/reflective/aperture/multi-element/robust scenarios, analytic/TMM/scalar references, convergence/PML summaries, L8.6 tolerance evidence, L8.7 robust before/after evidence, capability truth tables, unsupported-item tables, and engineer-facing Markdown/JSON/CSV dossiers under `tools/evidence/`.
 - L8.8a two-view interaction hardening adds explicit Optical Axis Placement vs X-Z Surface Geometry roles, Inspect/Edit Geometry mode, z-only axis drag, finite geometry body/handle edits, warning visuals, and source-of-truth inspector copy.
 - L8.9 real-run packs add `scene_manifest.json`, `meep_scene.py`, `expected_reference.json`, `run_config.json`, `material_receipts.json`, `monitor_receipts.json`, `README.md`, `reproduce.sh`, `reproduce.ps1`, `postprocess.py`, and `requirements-meep.txt` exports; import `real_run_bundle.json` or individual receipt/flux/field/energy/postprocess artifacts; validate hashes and required monitors/files; compare R/T/A, energy balance, and field-slice residuals; promote accepted evidence; and export reproducibility reports.
+- L9.0 sandbox smoke covers the in-browser diagnostic 2D TMz sandbox, grid caps, field/intensity/material views, Simulation Builder 2D slice handoff, and exports named `fdtd2d_sandbox_report.md`, `fdtd2d_sandbox_report.json`, `field_snapshot.csv`, `monitor_trace.csv`, and `energy_trace.csv`.
 
 Not scope:
-- No browser FDTD execution.
+- No production browser FDTD execution; L9.0 is capped diagnostic 2D TMz only.
 - No arbitrary 3D CAD Maxwell solve.
 - No FEM/BEM/RCWA execution.
 - No browser finite-geometry Maxwell solve or arbitrary material geometry solver.
@@ -116,6 +117,14 @@ L8.9 smoke artifacts include:
 - `l89-real-run-fixture-smoke.png`
 - `l89-hash-mismatch-smoke.png`
 - `l89-repro-report-smoke.png`
+
+L9.0 smoke artifacts include:
+
+- `l90-fdtd-sandbox-grid-smoke.png`
+- `l90-fdtd-source-field-smoke.png`
+- `l90-fdtd-material-scatter-smoke.png`
+- `l90-fdtd-monitor-trace-smoke.png`
+- `l90-builder-to-sandbox-smoke.png`
 
 L8.9 fixture manifest:
 
@@ -230,4 +239,13 @@ Playwright CLI smoke helper for L8.9 real external run ingestion: pack controls,
 ```powershell
 npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
 npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l89_browser_smoke_code.js
+```
+
+`l90_browser_smoke_code.js`
+
+Playwright CLI smoke helper for L9.0 in-browser 2D FDTD sandbox: grid budget controls, reset/step/run-N flow, field/intensity/material views, monitor traces, Simulation Builder 2D slice handoff, and L9.0 export filenames:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
+npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l90_browser_smoke_code.js
 ```

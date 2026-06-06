@@ -532,12 +532,12 @@ export function createEngineeringEvidenceCapabilityTruthTable(): EngineeringEvid
   return [
     { id: "engineering-evidence-campaign", label: "Engineering Evidence Campaign", status: "executable", evidence: "L8.8 campaign manifest, golden summary, scenario table, convergence review, tolerance/robust summaries, and dossier exports." },
     { id: "golden-scenario-validation-dossier", label: "Golden scenario validation dossier", status: "executable", evidence: "Deterministic transparent, absorbing, reflective, aperture, multi-element, and robust candidate scenarios are bundled." },
-    { id: "external-fdtd-import", label: "External FDTD evidence import", status: "external-only", evidence: "Manifest/script/hash receipts and imported field/flux/convergence summaries are accepted; browser does not execute FDTD." },
+    { id: "external-fdtd-import", label: "External FDTD evidence import", status: "external-only", evidence: "Manifest/script/hash receipts and imported field/flux/convergence summaries are accepted; production FDTD execution stays external." },
     { id: "planar-tmm-reference", label: "Planar TMM/Fresnel references", status: "executable", evidence: "Transparent slab/interface and mirror/absorber references reuse existing L8.0/L8.2 analytic/TMM paths." },
     { id: "aperture-scalar-reference", label: "Aperture scalar limiting references", status: "executable", evidence: "L8.4 long-slit and circular-pinhole scalar references and convergence diagnostics are included." },
     { id: "l86-tolerance-evidence", label: "L8.6 tolerance evidence", status: "executable", evidence: "Deterministic-grid tolerance report and FDTD variation sweep fixture hashes are preserved." },
     { id: "l87-robust-evidence", label: "L8.7 robust before/after evidence", status: "executable", evidence: "Best candidate before/after metrics and external candidate sweep receipt hashes are preserved." },
-    { id: "external-fdtd-backend", label: "ExternalFdtdBackend", status: "scaffold-only", evidence: "Registered/export/import scaffold only; no in-browser solver execution." },
+    { id: "external-fdtd-backend", label: "ExternalFdtdBackend", status: "scaffold-only", evidence: "Registered/export/import scaffold only; no in-browser production solver execution." },
     { id: "certified-validation", label: "Certified validation", status: "not-implemented", evidence: "L8.8 is an evidence dossier, not V&V certification." },
     { id: "production-em-solver-certification", label: "Production EM solver certification", status: "not-implemented", evidence: "No production Maxwell solver, certified tolerancing, FEM/BEM/RCWA, or manufacturing certification is claimed." }
   ];
@@ -545,7 +545,7 @@ export function createEngineeringEvidenceCapabilityTruthTable(): EngineeringEvid
 
 export function createEngineeringEvidenceUnsupportedItems(): EngineeringEvidenceUnsupportedItem[] {
   return [
-    { id: "browser-fdtd", label: "In-browser FDTD execution", status: "not-implemented", reason: "The web app exports/imports external evidence only." },
+    { id: "production-browser-fdtd", label: "Production in-browser FDTD execution", status: "not-implemented", reason: "L9.0 adds only a capped diagnostic 2D TMz sandbox; production FDTD remains external." },
     { id: "arbitrary-3d-maxwell", label: "Arbitrary 3D Maxwell/CAD solve", status: "not-implemented", reason: "Current 3D work is schema/export/import scaffolding and diagnostics, not a full 3D solver." },
     { id: "fem-bem-rcwa", label: "FEM/BEM/RCWA execution", status: "not-implemented", reason: "No FEM, BEM, or RCWA backend is shipped." },
     { id: "certified-tolerancing", label: "Certified optical tolerancing", status: "not-implemented", reason: "L8.6/L8.7/L8.8 are diagnostic engineering aids only." },

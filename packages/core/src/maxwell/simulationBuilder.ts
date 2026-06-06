@@ -177,11 +177,11 @@ export const l80SimulationBuilderBoundary = [
   "L8.7 robust design recommendations compare recentering, tolerance-budget, and candidate-grid actions over existing L8.6 evidence; they are not automatic final design approval or full inverse design.",
   "L8.8 engineering evidence campaign bundles curated scenarios, analytic/TMM/scalar references, convergence/PML summaries, tolerance evidence, robust before/after metrics, and exportable receipts; it is not certified validation or production EM solver certification.",
   "L8.5 scalar chain preview is limited to ideal plane elements and observation planes.",
-  "L8.5 finite geometry routes to external FDTD export/import evidence with receipts; the browser does not execute FDTD.",
+  "L8.5 finite geometry routes to external FDTD export/import evidence with receipts; production Meep/FDTD execution stays outside the browser.",
   "Transparent, reflective, and absorbing planar surface/slab cases are executable.",
   "Apertures and ideal lenses are placement-aware scalar/ideal elements in this builder, not material Maxwell geometry solves.",
   "No arbitrary 3D material geometry is executable in-app.",
-  "No FDTD/FEM/BEM/RCWA execution is performed in the browser.",
+  "No production FDTD, FEM, BEM, or RCWA execution is performed in the browser; L9.0's separate 2D TMz sandbox is diagnostic only.",
   "No real curved material lens solve, finite-thickness metal aperture Maxwell solve, sensor-stack EM absorption, full inverse optimization, automatic final design approval, digital twin, certified validation, certified tolerancing, production EM solver certification, or manufacturing certification is claimed."
 ] as const;
 
@@ -679,7 +679,7 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       id: "external-fdtd-candidate-sweep",
       label: "External FDTD candidate sweep export/import",
       status: "executable" as const,
-      evidence: "L8.7 exports robust candidate sweep manifests and imports external summary receipts for supported finite-geometry candidates; the browser does not execute FDTD"
+      evidence: "L8.7 exports robust candidate sweep manifests and imports external summary receipts for supported finite-geometry candidates; production FDTD execution stays external"
     },
     {
       id: "engineering-evidence-campaign",
