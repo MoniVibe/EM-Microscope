@@ -24,8 +24,10 @@ import {
   createOpticalBenchHistory,
   createSimulationBuilderElement,
   createExampleToleranceFdtdSweepSummary,
+  createExampleRobustFdtdCandidateSweepSummary,
   createSurfaceGeometryConvergencePack,
   createSurfaceGeometryElement,
+  createRobustFdtdCandidateSweepManifest,
   createToleranceFdtdSweepManifest,
   createSurfaceGeometryExampleBundle,
   createSurfaceGeometryScene,
@@ -69,7 +71,16 @@ import {
   opticalBenchValidationReportJson,
   opticalBenchValidationReportMarkdown,
   redoOpticalBenchHistory,
+  robustBeforeAfterMetricsCsv,
+  robustCandidateTableCsv,
+  robustDesignReportJson,
+  robustDesignReportMarkdown,
+  robustFdtdCandidateSweepManifestJson,
+  robustFdtdCandidateSweepSummaryJson,
+  robustRecommendationsCsv,
+  robustToleranceBudgetCsv,
   runSimulationBuilderScenario,
+  runRobustDesignAdvisor,
   runToleranceAnalysis,
   setOpticalBenchElementEnabled,
   undoOpticalBenchHistory,
@@ -87,6 +98,7 @@ import {
   validateApertureImportedRun,
   validateOpticalBenchEditing,
   validateFdtdImportedRunAgainstScenario,
+  parseRobustFdtdCandidateSweepSummary,
   parseToleranceFdtdSweepSummary,
   toleranceFailingCasesCsv,
   toleranceFdtdSweepManifestJson,
@@ -96,6 +108,7 @@ import {
   toleranceRunTableCsv,
   toleranceSensitivityCsv,
   validateToleranceFdtdSweepSummary,
+  validateRobustFdtdCandidateSweepSummary,
   type ApertureConvergenceReport,
   type ApertureScreenModel,
   type ApertureValidationExampleBundle,
@@ -111,6 +124,12 @@ import {
   type OpticalBenchMonitor,
   type OpticalBenchMonitorSnapshot,
   type OpticalBenchSolverPlanRow,
+  type RobustDesignAdvisorReport,
+  type RobustDesignCandidate,
+  type RobustDesignRankingMode,
+  type RobustDesignVariablePermission,
+  type RobustFdtdCandidateSweepManifest,
+  type RobustFdtdCandidateSweepSummary,
   type SolverWarning,
   type SurfaceGeometryExampleBundle,
   type SurfaceGeometryKind,
@@ -246,6 +265,10 @@ export function SimulationBuilderPanel() {
   const [l86Thresholds, setL86Thresholds] = useState<ToleranceThreshold[]>(() => defaultToleranceThresholds());
   const [l86FdtdSummary, setL86FdtdSummary] = useState<ToleranceFdtdSweepSummary | null>(null);
   const [l86FdtdImportError, setL86FdtdImportError] = useState<string | null>(null);
+  const [l87RankingMode, setL87RankingMode] = useState<RobustDesignRankingMode>("weighted");
+  const [l87Permissions, setL87Permissions] = useState<RobustDesignVariablePermission[]>([]);
+  const [l87FdtdSummary, setL87FdtdSummary] = useState<RobustFdtdCandidateSweepSummary | null>(null);
+  const [l87FdtdImportError, setL87FdtdImportError] = useState<string | null>(null);
   const [importedFdtd, setImportedFdtd] = useState<FdtdImportedRun | null>(null);
   const [fdtdImportError, setFdtdImportError] = useState<string | null>(null);
   const [benchmarkKind, setBenchmarkKind] = useState<FdtdBenchmarkKind>("transparent-interface");
@@ -308,6 +331,20 @@ export function SimulationBuilderPanel() {
     [l86Thresholds, l86Variations, scenario]
   );
   const l86FdtdWarnings = useMemo(() => (l86FdtdSummary ? validateToleranceFdtdSweepSummary(l86SweepManifest, l86FdtdSummary) : []), [l86FdtdSummary, l86SweepManifest]);
+  const l87Report = useMemo(
+    () => runRobustDesignAdvisor(scenario, {
+      baselineReport: l86Report,
+      variations: l86Variations,
+      thresholds: l86Thresholds,
+      rankingMode: l87RankingMode,
+      permissions: l87Permissions,
+      gridMaxRuns: 8,
+      candidateLimit: 6
+    }),
+    [l86Report, l86Thresholds, l86Variations, l87Permissions, l87RankingMode, scenario]
+  );
+  const l87FdtdManifest = useMemo(() => createRobustFdtdCandidateSweepManifest(l87Report, 8), [l87Report]);
+  const l87FdtdWarnings = useMemo(() => (l87FdtdSummary ? validateRobustFdtdCandidateSweepSummary(l87FdtdManifest, l87FdtdSummary) : []), [l87FdtdManifest, l87FdtdSummary]);
   const zMin = Math.min(scenario.grid.zStartMm, ...result.axis.map((node) => node.zMm));
   const zMax = Math.max(scenario.observationPlaneZMm, scenario.grid.zEndMm, ...result.axis.map((node) => node.zMm));
 
@@ -367,6 +404,9 @@ export function SimulationBuilderPanel() {
     setL86Thresholds(defaultToleranceThresholds());
     setL86FdtdSummary(null);
     setL86FdtdImportError(null);
+    setL87Permissions([]);
+    setL87FdtdSummary(null);
+    setL87FdtdImportError(null);
     setHasComputed(true);
     setHasL85ScalarPreview(true);
     setHasL85ExternalEvidence(true);
@@ -576,6 +616,9 @@ export function SimulationBuilderPanel() {
     setL86Thresholds(defaultToleranceThresholds());
     setL86FdtdSummary(null);
     setL86FdtdImportError(null);
+    setL87Permissions([]);
+    setL87FdtdSummary(null);
+    setL87FdtdImportError(null);
   }
 
   function updateL86VariationDelta(specId: string, delta: number): void {
@@ -663,6 +706,66 @@ export function SimulationBuilderPanel() {
       setL86FdtdImportError(null);
     } catch (error) {
       setL86FdtdImportError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  function updateL87Permission(specId: string, patch: Partial<RobustDesignVariablePermission>): void {
+    setL87Permissions((current) => {
+      const existing = current.find((permission) => permission.specId === specId);
+      if (existing) return current.map((permission) => permission.specId === specId ? { ...permission, ...patch } : permission);
+      return [...current, { specId, ...patch }];
+    });
+    setL87FdtdSummary(null);
+  }
+
+  function resetL87Permissions(): void {
+    setL87Permissions([]);
+    setL87FdtdSummary(null);
+    setL87FdtdImportError(null);
+  }
+
+  function applyL87Candidate(candidate: RobustDesignCandidate): void {
+    commitL85Edit(`Apply ${candidate.label}`, () => candidate.scenario, {
+      select: selectedL85,
+      scalarDirty: true,
+      externalDirty: true
+    });
+    setL86Variations(candidate.variations);
+    setL86Thresholds(candidate.thresholds);
+    setL86FdtdSummary(null);
+    setL86FdtdImportError(null);
+    setL87FdtdSummary(null);
+    setL87FdtdImportError(null);
+  }
+
+  function exportL87RobustDesignReport(): void {
+    downloadText("robust_design_report.md", "text/markdown", `${robustDesignReportMarkdown(l87Report, l87FdtdSummary)}\n`);
+    downloadText("robust_design_report.json", "application/json", robustDesignReportJson(l87Report));
+    downloadText("candidate_table.csv", "text/csv", `${robustCandidateTableCsv(l87Report)}\n`);
+    downloadText("recommendations.csv", "text/csv", `${robustRecommendationsCsv(l87Report)}\n`);
+    downloadText("before_after_metrics.csv", "text/csv", `${robustBeforeAfterMetricsCsv(l87Report)}\n`);
+    downloadText("tolerance_budget.csv", "text/csv", `${robustToleranceBudgetCsv(l87Report)}\n`);
+  }
+
+  function exportL87FdtdCandidateSweepPack(): void {
+    const summary = createExampleRobustFdtdCandidateSweepSummary(l87FdtdManifest);
+    downloadText("fdtd_candidate_sweep_manifest.json", "application/json", robustFdtdCandidateSweepManifestJson(l87FdtdManifest));
+    downloadText("candidate_sweep_summary_fixture.json", "application/json", robustFdtdCandidateSweepSummaryJson(summary));
+  }
+
+  function importL87BundledFdtdSummary(): void {
+    setL87FdtdSummary(createExampleRobustFdtdCandidateSweepSummary(l87FdtdManifest));
+    setL87FdtdImportError(null);
+  }
+
+  async function handleL87FdtdSummaryFiles(files: FileList | null): Promise<void> {
+    const file = files?.[0];
+    if (!file) return;
+    try {
+      setL87FdtdSummary(parseRobustFdtdCandidateSweepSummary(await file.text()));
+      setL87FdtdImportError(null);
+    } catch (error) {
+      setL87FdtdImportError(error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -912,17 +1015,17 @@ export function SimulationBuilderPanel() {
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L8.6 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L8.7 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L8.6 Process / Tolerance Runner + Direct Optical Bench Editing</h2>
+        <h2>L8.7 Robust Design Advisor + Process / Tolerance Runner</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, diagnostic process/tolerance variation studies, external FDTD handoff evidence, precise numeric edits, optional diagram drag, and a validation report.
-          Browser FDTD, arbitrary 3D Maxwell material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, sensor-stack EM, digital twin behavior, and manufacturing
+          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, diagnostic process/tolerance variation studies, robust-design recommendations, external FDTD handoff evidence, precise numeric edits, optional diagram drag, and a validation report.
+          Browser FDTD, arbitrary 3D Maxwell material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
           certification are not implemented.
         </span>
       </div>
@@ -1206,6 +1309,23 @@ export function SimulationBuilderPanel() {
             onExportFdtdSweep={exportL86FdtdSweepPack}
             onImportBundledFdtdSummary={importL86BundledFdtdSummary}
             onImportFdtdSummaryFiles={handleL86FdtdSummaryFiles}
+          />
+          <L87RobustDesignAdvisorPanel
+            report={l87Report}
+            rankingMode={l87RankingMode}
+            permissions={l87Permissions}
+            fdtdManifest={l87FdtdManifest}
+            fdtdSummary={l87FdtdSummary}
+            fdtdWarnings={l87FdtdWarnings}
+            fdtdImportError={l87FdtdImportError}
+            onRankingMode={setL87RankingMode}
+            onPermission={updateL87Permission}
+            onResetPermissions={resetL87Permissions}
+            onApplyCandidate={applyL87Candidate}
+            onExportReport={exportL87RobustDesignReport}
+            onExportFdtdSweep={exportL87FdtdCandidateSweepPack}
+            onImportBundledFdtdSummary={importL87BundledFdtdSummary}
+            onImportFdtdSummaryFiles={handleL87FdtdSummaryFiles}
           />
         </div>
       </div>
@@ -2195,6 +2315,188 @@ function L86ToleranceRunnerPanel(props: {
             {props.fdtdWarnings.map((warning, index) => <span key={`${warning.code}:${index}`}><strong>{warning.code}</strong> {warning.message}</span>)}
             {props.fdtdImportError && <span><strong>import error</strong> {props.fdtdImportError}</span>}
             {!props.fdtdSummary && <span><strong>boundary</strong> Export/import only. The browser does not execute FDTD or certify tolerance sweeps.</span>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function L87RobustDesignAdvisorPanel(props: {
+  report: RobustDesignAdvisorReport;
+  rankingMode: RobustDesignRankingMode;
+  permissions: RobustDesignVariablePermission[];
+  fdtdManifest: RobustFdtdCandidateSweepManifest;
+  fdtdSummary: RobustFdtdCandidateSweepSummary | null;
+  fdtdWarnings: SolverWarning[];
+  fdtdImportError: string | null;
+  onRankingMode: (mode: RobustDesignRankingMode) => void;
+  onPermission: (specId: string, patch: Partial<RobustDesignVariablePermission>) => void;
+  onResetPermissions: () => void;
+  onApplyCandidate: (candidate: RobustDesignCandidate) => void;
+  onExportReport: () => void;
+  onExportFdtdSweep: () => void;
+  onImportBundledFdtdSummary: () => void;
+  onImportFdtdSummaryFiles: (files: FileList | null) => void | Promise<void>;
+}) {
+  const best = props.report.bestCandidate;
+  const bestDelta = best?.comparison.passRateDelta ?? 0;
+  const rankingModes: RobustDesignRankingMode[] = ["weighted", "worst-case", "p90", "pass-rate", "expected", "improvement-per-cost"];
+  return (
+    <div className="maxwell-data-table l85-wide l87-robust-panel" aria-label="L8.7 robust design advisor smoke preview">
+      <div className="maxwell-section-heading">
+        <h2>L8.7 Robust Design Advisor</h2>
+        <strong>{best ? "candidate ready" : "diagnostic"}</strong>
+      </div>
+      <div className="l2-disclosure">
+        <strong>Tolerance-to-action guidance over the current L8.6 result.</strong>
+        <span>
+          Rank practical recentering, tolerance tightening, tolerance relaxation, and robust-grid candidates with cost-aware comparison.
+          This is diagnostic robust-design guidance only, not certified optical tolerancing, automatic final design approval, full inverse design, browser FDTD, arbitrary 3D Maxwell, FEM/BEM/RCWA, production EM solving, digital twin behavior, or manufacturing certification.
+        </span>
+      </div>
+
+      <div className="maxwell-layer-actions simulation-builder-actions l87-action-row">
+        <label className="l87-select-field">
+          <span>Ranking</span>
+          <select value={props.rankingMode} onChange={(event) => props.onRankingMode(event.currentTarget.value as RobustDesignRankingMode)}>
+            {rankingModes.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
+          </select>
+        </label>
+        <button type="button" onClick={props.onResetPermissions}>
+          <Sparkles size={15} />
+          <span>Reset Cost / Locks</span>
+        </button>
+        <button type="button" onClick={props.onExportReport}>
+          <FileDown size={15} />
+          <span>Export Robust Design Report</span>
+        </button>
+        <button type="button" onClick={props.onExportFdtdSweep}>
+          <FileDown size={15} />
+          <span>Export Candidate FDTD Sweep</span>
+        </button>
+        <button type="button" onClick={props.onImportBundledFdtdSummary}>
+          <Sparkles size={15} />
+          <span>Import Bundled Candidate Sweep</span>
+        </button>
+        <label className="l87-file-import">
+          <span>Import Candidate Sweep JSON</span>
+          <input aria-label="Import robust candidate sweep summary" type="file" accept="application/json,.json" onChange={(event) => void props.onImportFdtdSummaryFiles(event.currentTarget.files)} />
+        </label>
+      </div>
+
+      <div className="l87-summary-grid">
+        <Stat label="Baseline pass rate" value={pct(props.report.baselineEvaluation.passRate)} />
+        <Stat label="Best candidate" value={best?.label ?? "none"} />
+        <Stat label="Pass-rate delta" value={pct(bestDelta)} />
+        <Stat label="Worst-case improvement" value={formatCompact(best?.comparison.worstCaseImprovement ?? 0)} />
+        <Stat label="P90 improvement" value={formatCompact(best?.comparison.p90Improvement ?? 0)} />
+        <Stat label="Recommendations" value={String(props.report.recommendations.length)} />
+      </div>
+
+      <div className="l87-layout">
+        <div className="l87-card l87-wide-card" aria-label="L8.7 robust advisor recommendations smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Ranked Recommendations</h3>
+            <strong>{props.report.recommendations.length} actions</strong>
+          </div>
+          <div className="l87-recommendation-table">
+            <div className="l87-recommendation-row l87-header">
+              <span>action</span>
+              <span>why</span>
+              <span>metric</span>
+              <span>improve/cost</span>
+              <span>confidence</span>
+            </div>
+            {props.report.recommendations.slice(0, 8).map((item) => (
+              <div className="l87-recommendation-row" key={item.id}>
+                <strong>{item.label}</strong>
+                <span>{item.why}</span>
+                <span>{metricLabel(item.metric)}</span>
+                <span>{formatCompact(item.improvementPerCost)}</span>
+                <em>{item.confidence}</em>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="l87-card l87-wide-card" aria-label="L8.7 candidate comparison smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Baseline vs Candidate Comparison</h3>
+            <strong>{props.report.candidates.length} candidates</strong>
+          </div>
+          <div className="l87-candidate-table">
+            <div className="l87-candidate-row l87-header">
+              <span>candidate</span>
+              <span>kind</span>
+              <span>pass delta</span>
+              <span>worst</span>
+              <span>p90</span>
+              <span>cost</span>
+              <span>action</span>
+            </div>
+            {props.report.candidates.slice(0, 8).map((candidate) => (
+              <div className="l87-candidate-row" key={candidate.id}>
+                <strong>{candidate.label}</strong>
+                <span>{candidate.actionKind}</span>
+                <span>{pct(candidate.comparison.passRateDelta)}</span>
+                <span>{formatCompact(candidate.comparison.worstCaseImprovement)}</span>
+                <span>{formatCompact(candidate.comparison.p90Improvement)}</span>
+                <span>{formatCompact(candidate.costScore)}</span>
+                <button type="button" onClick={() => props.onApplyCandidate(candidate)}>
+                  <Sparkles size={14} />
+                  <span>Apply Candidate</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="l87-card" aria-label="L8.7 tolerance budget smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Tolerance Budget Advisor</h3>
+            <strong>{props.report.toleranceBudget.filter((row) => row.action !== "keep").length} changes</strong>
+          </div>
+          <div className="l87-budget-table">
+            <div className="l87-budget-row l87-header">
+              <span>lock</span>
+              <span>variation</span>
+              <span>action</span>
+              <span>current</span>
+              <span>recommended</span>
+              <span>cost</span>
+            </div>
+            {props.report.toleranceBudget.map((row) => {
+              const permission = props.permissions.find((item) => item.specId === row.specId);
+              return (
+                <div className="l87-budget-row" key={row.specId}>
+                  <input aria-label={`Lock ${row.label}`} type="checkbox" checked={permission?.locked ?? row.action === "locked"} onChange={(event) => props.onPermission(row.specId, { locked: event.currentTarget.checked })} />
+                  <strong>{row.label}</strong>
+                  <span>{row.action}</span>
+                  <span>{formatCompact(row.currentDelta)}</span>
+                  <span>{formatCompact(row.recommendedDelta)}</span>
+                  <input aria-label={`${row.label} cost weight`} type="number" min="0" step="0.25" value={permission?.costWeight ?? row.costWeight} onChange={(event) => props.onPermission(row.specId, { costWeight: Number(event.currentTarget.value) })} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="l87-card" aria-label="L8.7 fdtd candidate sweep smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>External FDTD Candidate Sweep</h3>
+            <strong>{props.fdtdSummary ? "summary imported" : "manifest ready"}</strong>
+          </div>
+          <div className="l87-summary-grid compact">
+            <Stat label="Manifest hash" value={props.fdtdManifest.manifestHash.slice(0, 10)} />
+            <Stat label="Candidates" value={String(props.fdtdManifest.candidateCount)} />
+            <Stat label="Imported rows" value={String(props.fdtdSummary?.results.length ?? 0)} />
+          </div>
+          <div className="fdtd-warning-list">
+            {props.fdtdSummary && <span><strong>summary</strong> {props.fdtdSummary.summaryHash.slice(0, 12)} imported with {props.fdtdSummary.results.filter((row) => row.status === "pass").length} passing candidates.</span>}
+            {props.fdtdWarnings.map((warning, index) => <span key={`${warning.code}:${index}`}><strong>{warning.code}</strong> {warning.message}</span>)}
+            {props.fdtdImportError && <span><strong>import error</strong> {props.fdtdImportError}</span>}
+            {!props.fdtdSummary && <span><strong>boundary</strong> Export/import only. The browser does not execute FDTD or approve a final robust design.</span>}
           </div>
         </div>
       </div>

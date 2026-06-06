@@ -60,6 +60,7 @@ export * from "./maxwell/planarSceneCompiler";
 export * from "./maxwell/planarTmm";
 export * from "./maxwell/planarTmmBackend";
 export * from "./maxwell/processToleranceRunner";
+export * from "./maxwell/robustDesignAdvisor";
 export * from "./maxwell/solverBackend";
 export * from "./maxwell/solverRegistry";
 export * from "./maxwell/simulationBuilder";
