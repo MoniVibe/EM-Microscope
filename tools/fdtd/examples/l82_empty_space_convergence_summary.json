@@ -1,0 +1,1084 @@
+{
+  "schema": "emmicro.fdtd.convergenceSummary.v1",
+  "benchmarkKind": "empty-space",
+  "sourceScenarioHash": "1571e32be6e8d372",
+  "benchmarkHash": "d9bb21f3caa68d7d",
+  "sweepHash": "42c2eb7eefcd7c44",
+  "reference": {
+    "benchmarkKind": "empty-space",
+    "referenceModel": "flux-conservation",
+    "expected": {
+      "reflectance": 0,
+      "transmittance": 1,
+      "absorbance": 0
+    },
+    "invariant": "R stays near 0, T stays near 1, and R+T+A stays near 1 as resolution/PML/padding vary.",
+    "thresholds": {
+      "referenceResidualPass": 0.02,
+      "referenceResidualWarning": 0.06,
+      "energyBalancePass": 0.01,
+      "energyBalanceWarning": 0.03,
+      "pmlSensitivityWarning": 0.015,
+      "pmlSensitivityFail": 0.05,
+      "fieldDeltaWarning": 0.08
+    },
+    "referenceHash": "44c9029626856d30"
+  },
+  "runs": [
+    {
+      "runId": "l82-empty-space-r10-pml0p5-pad1-m1p5",
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.01134,
+        "transmittance": 0.9865,
+        "absorbance": 0.007859999999999999
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.01134,
+        "transmittance": 0.013499999999999956,
+        "absorbance": 0.007859999999999999,
+        "energyBalance": 0.005700000000000038,
+        "referenceResidual": 0.013499999999999956
+      },
+      "energyBalance": 1.0057,
+      "fieldSliceDelta": 0.0189,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r10-pml0p5-pad2-m1p5",
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.01008,
+        "transmittance": 0.988,
+        "absorbance": 0.00732
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.01008,
+        "transmittance": 0.01200000000000001,
+        "absorbance": 0.00732,
+        "energyBalance": 0.005400000000000071,
+        "referenceResidual": 0.01200000000000001
+      },
+      "energyBalance": 1.0054,
+      "fieldSliceDelta": 0.0168,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r10-pml0p5-pad3-m1p5",
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00987,
+        "transmittance": 0.98825,
+        "absorbance": 0.00723
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00987,
+        "transmittance": 0.011750000000000038,
+        "absorbance": 0.00723,
+        "energyBalance": 0.005349999999999966,
+        "referenceResidual": 0.011750000000000038
+      },
+      "energyBalance": 1.00535,
+      "fieldSliceDelta": 0.01645,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r10-pml1-pad1-m1p5",
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.009029999999999998,
+        "transmittance": 0.98925,
+        "absorbance": 0.0042699999999999995
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.009029999999999998,
+        "transmittance": 0.010750000000000037,
+        "absorbance": 0.0042699999999999995,
+        "energyBalance": 0.0025500000000000522,
+        "referenceResidual": 0.010750000000000037
+      },
+      "energyBalance": 1.00255,
+      "fieldSliceDelta": 0.015049999999999997,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r10-pml1-pad2-m1p5",
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.007769999999999999,
+        "transmittance": 0.99075,
+        "absorbance": 0.00373
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.007769999999999999,
+        "transmittance": 0.00924999999999998,
+        "absorbance": 0.00373,
+        "energyBalance": 0.0022500000000000853,
+        "referenceResidual": 0.00924999999999998
+      },
+      "energyBalance": 1.00225,
+      "fieldSliceDelta": 0.012949999999999998,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r10-pml1-pad3-m1p5",
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.007559999999999999,
+        "transmittance": 0.991,
+        "absorbance": 0.00364
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.007559999999999999,
+        "transmittance": 0.009000000000000008,
+        "absorbance": 0.00364,
+        "energyBalance": 0.0021999999999999797,
+        "referenceResidual": 0.009000000000000008
+      },
+      "energyBalance": 1.0022,
+      "fieldSliceDelta": 0.012599999999999998,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r10-pml1p5-pad1-m1p5",
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.009029999999999998,
+        "transmittance": 0.98925,
+        "absorbance": 0.0042699999999999995
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.009029999999999998,
+        "transmittance": 0.010750000000000037,
+        "absorbance": 0.0042699999999999995,
+        "energyBalance": 0.0025500000000000522,
+        "referenceResidual": 0.010750000000000037
+      },
+      "energyBalance": 1.00255,
+      "fieldSliceDelta": 0.015049999999999997,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r10-pml1p5-pad2-m1p5",
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.007769999999999999,
+        "transmittance": 0.99075,
+        "absorbance": 0.00373
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.007769999999999999,
+        "transmittance": 0.00924999999999998,
+        "absorbance": 0.00373,
+        "energyBalance": 0.0022500000000000853,
+        "referenceResidual": 0.00924999999999998
+      },
+      "energyBalance": 1.00225,
+      "fieldSliceDelta": 0.012949999999999998,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r10-pml1p5-pad3-m1p5",
+      "resolutionPointsPerWavelength": 10,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.007559999999999999,
+        "transmittance": 0.991,
+        "absorbance": 0.00364
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.007559999999999999,
+        "transmittance": 0.009000000000000008,
+        "absorbance": 0.00364,
+        "energyBalance": 0.0021999999999999797,
+        "referenceResidual": 0.009000000000000008
+      },
+      "energyBalance": 1.0022,
+      "fieldSliceDelta": 0.012599999999999998,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r15-pml0p5-pad1-m1p5",
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.0071400000000000005,
+        "transmittance": 0.9915,
+        "absorbance": 0.00606
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.0071400000000000005,
+        "transmittance": 0.008499999999999952,
+        "absorbance": 0.00606,
+        "energyBalance": 0.0047000000000001485,
+        "referenceResidual": 0.008499999999999952
+      },
+      "energyBalance": 1.0047000000000001,
+      "fieldSliceDelta": 0.0119,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r15-pml0p5-pad2-m1p5",
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00588,
+        "transmittance": 0.993,
+        "absorbance": 0.005520000000000001
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00588,
+        "transmittance": 0.007000000000000006,
+        "absorbance": 0.005520000000000001,
+        "energyBalance": 0.0043999999999999595,
+        "referenceResidual": 0.007000000000000006
+      },
+      "energyBalance": 1.0044,
+      "fieldSliceDelta": 0.0098,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r15-pml0p5-pad3-m1p5",
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00567,
+        "transmittance": 0.99325,
+        "absorbance": 0.00543
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00567,
+        "transmittance": 0.006750000000000034,
+        "absorbance": 0.00543,
+        "energyBalance": 0.004349999999999854,
+        "referenceResidual": 0.006750000000000034
+      },
+      "energyBalance": 1.0043499999999999,
+      "fieldSliceDelta": 0.00945,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r15-pml1-pad1-m1p5",
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00483,
+        "transmittance": 0.99425,
+        "absorbance": 0.00247
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00483,
+        "transmittance": 0.005750000000000033,
+        "absorbance": 0.00247,
+        "energyBalance": 0.0015499999999999403,
+        "referenceResidual": 0.005750000000000033
+      },
+      "energyBalance": 1.00155,
+      "fieldSliceDelta": 0.00805,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r15-pml1-pad2-m1p5",
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.0035700000000000003,
+        "transmittance": 0.99575,
+        "absorbance": 0.00193
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.0035700000000000003,
+        "transmittance": 0.004249999999999976,
+        "absorbance": 0.00193,
+        "energyBalance": 0.0012499999999999734,
+        "referenceResidual": 0.004249999999999976
+      },
+      "energyBalance": 1.00125,
+      "fieldSliceDelta": 0.00595,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r15-pml1-pad3-m1p5",
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00336,
+        "transmittance": 0.996,
+        "absorbance": 0.0018399999999999998
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00336,
+        "transmittance": 0.0040000000000000036,
+        "absorbance": 0.0018399999999999998,
+        "energyBalance": 0.0012000000000000899,
+        "referenceResidual": 0.0040000000000000036
+      },
+      "energyBalance": 1.0012,
+      "fieldSliceDelta": 0.0056,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r15-pml1p5-pad1-m1p5",
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00483,
+        "transmittance": 0.99425,
+        "absorbance": 0.00247
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00483,
+        "transmittance": 0.005750000000000033,
+        "absorbance": 0.00247,
+        "energyBalance": 0.0015499999999999403,
+        "referenceResidual": 0.005750000000000033
+      },
+      "energyBalance": 1.00155,
+      "fieldSliceDelta": 0.00805,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r15-pml1p5-pad2-m1p5",
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.0035700000000000003,
+        "transmittance": 0.99575,
+        "absorbance": 0.00193
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.0035700000000000003,
+        "transmittance": 0.004249999999999976,
+        "absorbance": 0.00193,
+        "energyBalance": 0.0012499999999999734,
+        "referenceResidual": 0.004249999999999976
+      },
+      "energyBalance": 1.00125,
+      "fieldSliceDelta": 0.00595,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r15-pml1p5-pad3-m1p5",
+      "resolutionPointsPerWavelength": 15,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00336,
+        "transmittance": 0.996,
+        "absorbance": 0.0018399999999999998
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00336,
+        "transmittance": 0.0040000000000000036,
+        "absorbance": 0.0018399999999999998,
+        "energyBalance": 0.0012000000000000899,
+        "referenceResidual": 0.0040000000000000036
+      },
+      "energyBalance": 1.0012,
+      "fieldSliceDelta": 0.0056,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r20-pml0p5-pad1-m1p5",
+      "resolutionPointsPerWavelength": 20,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.005669999999999999,
+        "transmittance": 0.99325,
+        "absorbance": 0.005429999999999999
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.005669999999999999,
+        "transmittance": 0.006750000000000034,
+        "absorbance": 0.005429999999999999,
+        "energyBalance": 0.004349999999999854,
+        "referenceResidual": 0.006750000000000034
+      },
+      "energyBalance": 1.0043499999999999,
+      "fieldSliceDelta": 0.009449999999999998,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r20-pml0p5-pad2-m1p5",
+      "resolutionPointsPerWavelength": 20,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.004409999999999999,
+        "transmittance": 0.99475,
+        "absorbance": 0.00489
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.004409999999999999,
+        "transmittance": 0.005249999999999977,
+        "absorbance": 0.00489,
+        "energyBalance": 0.004050000000000109,
+        "referenceResidual": 0.005249999999999977
+      },
+      "energyBalance": 1.00405,
+      "fieldSliceDelta": 0.007349999999999999,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r20-pml0p5-pad3-m1p5",
+      "resolutionPointsPerWavelength": 20,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.004199999999999999,
+        "transmittance": 0.995,
+        "absorbance": 0.0048
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.004199999999999999,
+        "transmittance": 0.0050000000000000044,
+        "absorbance": 0.0048,
+        "energyBalance": 0.0040000000000000036,
+        "referenceResidual": 0.0050000000000000044
+      },
+      "energyBalance": 1.004,
+      "fieldSliceDelta": 0.006999999999999998,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r20-pml1-pad1-m1p5",
+      "resolutionPointsPerWavelength": 20,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00336,
+        "transmittance": 0.996,
+        "absorbance": 0.0018399999999999998
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00336,
+        "transmittance": 0.0040000000000000036,
+        "absorbance": 0.0018399999999999998,
+        "energyBalance": 0.0012000000000000899,
+        "referenceResidual": 0.0040000000000000036
+      },
+      "energyBalance": 1.0012,
+      "fieldSliceDelta": 0.0056,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r20-pml1-pad2-m1p5",
+      "resolutionPointsPerWavelength": 20,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.0020999999999999994,
+        "transmittance": 0.9975,
+        "absorbance": 0.0013
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.0020999999999999994,
+        "transmittance": 0.0024999999999999467,
+        "absorbance": 0.0013,
+        "energyBalance": 0.0009000000000001229,
+        "referenceResidual": 0.0024999999999999467
+      },
+      "energyBalance": 1.0009000000000001,
+      "fieldSliceDelta": 0.003499999999999999,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r20-pml1-pad3-m1p5",
+      "resolutionPointsPerWavelength": 20,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.0018899999999999993,
+        "transmittance": 0.99775,
+        "absorbance": 0.0012099999999999997
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.0018899999999999993,
+        "transmittance": 0.0022499999999999742,
+        "absorbance": 0.0012099999999999997,
+        "energyBalance": 0.0008500000000000174,
+        "referenceResidual": 0.0022499999999999742
+      },
+      "energyBalance": 1.00085,
+      "fieldSliceDelta": 0.003149999999999999,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r20-pml1p5-pad1-m1p5",
+      "resolutionPointsPerWavelength": 20,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00336,
+        "transmittance": 0.996,
+        "absorbance": 0.0018399999999999998
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00336,
+        "transmittance": 0.0040000000000000036,
+        "absorbance": 0.0018399999999999998,
+        "energyBalance": 0.0012000000000000899,
+        "referenceResidual": 0.0040000000000000036
+      },
+      "energyBalance": 1.0012,
+      "fieldSliceDelta": 0.0056,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r20-pml1p5-pad2-m1p5",
+      "resolutionPointsPerWavelength": 20,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.0020999999999999994,
+        "transmittance": 0.9975,
+        "absorbance": 0.0013
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.0020999999999999994,
+        "transmittance": 0.0024999999999999467,
+        "absorbance": 0.0013,
+        "energyBalance": 0.0009000000000001229,
+        "referenceResidual": 0.0024999999999999467
+      },
+      "energyBalance": 1.0009000000000001,
+      "fieldSliceDelta": 0.003499999999999999,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r20-pml1p5-pad3-m1p5",
+      "resolutionPointsPerWavelength": 20,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.0018899999999999993,
+        "transmittance": 0.99775,
+        "absorbance": 0.0012099999999999997
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.0018899999999999993,
+        "transmittance": 0.0022499999999999742,
+        "absorbance": 0.0012099999999999997,
+        "energyBalance": 0.0008500000000000174,
+        "referenceResidual": 0.0022499999999999742
+      },
+      "energyBalance": 1.00085,
+      "fieldSliceDelta": 0.003149999999999999,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r30-pml0p5-pad1-m1p5",
+      "resolutionPointsPerWavelength": 30,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00462,
+        "transmittance": 0.9945,
+        "absorbance": 0.00498
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00462,
+        "transmittance": 0.005499999999999949,
+        "absorbance": 0.00498,
+        "energyBalance": 0.0040999999999999925,
+        "referenceResidual": 0.005499999999999949
+      },
+      "energyBalance": 1.0041,
+      "fieldSliceDelta": 0.007699999999999999,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r30-pml0p5-pad2-m1p5",
+      "resolutionPointsPerWavelength": 30,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00336,
+        "transmittance": 0.996,
+        "absorbance": 0.0044399999999999995
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00336,
+        "transmittance": 0.0040000000000000036,
+        "absorbance": 0.0044399999999999995,
+        "energyBalance": 0.0038000000000000256,
+        "referenceResidual": 0.0044399999999999995
+      },
+      "energyBalance": 1.0038,
+      "fieldSliceDelta": 0.0056,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r30-pml0p5-pad3-m1p5",
+      "resolutionPointsPerWavelength": 30,
+      "pmlThicknessUm": 0.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.0031499999999999996,
+        "transmittance": 0.99625,
+        "absorbance": 0.00435
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.0031499999999999996,
+        "transmittance": 0.003750000000000031,
+        "absorbance": 0.00435,
+        "energyBalance": 0.00374999999999992,
+        "referenceResidual": 0.00435
+      },
+      "energyBalance": 1.00375,
+      "fieldSliceDelta": 0.0052499999999999995,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r30-pml1-pad1-m1p5",
+      "resolutionPointsPerWavelength": 30,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00231,
+        "transmittance": 0.99725,
+        "absorbance": 0.00139
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00231,
+        "transmittance": 0.00275000000000003,
+        "absorbance": 0.00139,
+        "energyBalance": 0.0009500000000000064,
+        "referenceResidual": 0.00275000000000003
+      },
+      "energyBalance": 1.00095,
+      "fieldSliceDelta": 0.0038499999999999997,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r30-pml1-pad2-m1p5",
+      "resolutionPointsPerWavelength": 30,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00105,
+        "transmittance": 0.99875,
+        "absorbance": 0.0008500000000000001
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00105,
+        "transmittance": 0.0012499999999999734,
+        "absorbance": 0.0008500000000000001,
+        "energyBalance": 0.0006500000000000394,
+        "referenceResidual": 0.0012499999999999734
+      },
+      "energyBalance": 1.00065,
+      "fieldSliceDelta": 0.0017499999999999998,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r30-pml1-pad3-m1p5",
+      "resolutionPointsPerWavelength": 30,
+      "pmlThicknessUm": 1,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00084,
+        "transmittance": 0.999,
+        "absorbance": 0.00076
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00084,
+        "transmittance": 0.0010000000000000009,
+        "absorbance": 0.00076,
+        "energyBalance": 0.0005999999999999339,
+        "referenceResidual": 0.0010000000000000009
+      },
+      "energyBalance": 1.0006,
+      "fieldSliceDelta": 0.0014,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r30-pml1p5-pad1-m1p5",
+      "resolutionPointsPerWavelength": 30,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 1,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00231,
+        "transmittance": 0.99725,
+        "absorbance": 0.00139
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00231,
+        "transmittance": 0.00275000000000003,
+        "absorbance": 0.00139,
+        "energyBalance": 0.0009500000000000064,
+        "referenceResidual": 0.00275000000000003
+      },
+      "energyBalance": 1.00095,
+      "fieldSliceDelta": 0.0038499999999999997,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r30-pml1p5-pad2-m1p5",
+      "resolutionPointsPerWavelength": 30,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 2,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00105,
+        "transmittance": 0.99875,
+        "absorbance": 0.0008500000000000001
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00105,
+        "transmittance": 0.0012499999999999734,
+        "absorbance": 0.0008500000000000001,
+        "energyBalance": 0.0006500000000000394,
+        "referenceResidual": 0.0012499999999999734
+      },
+      "energyBalance": 1.00065,
+      "fieldSliceDelta": 0.0017499999999999998,
+      "status": "pass",
+      "warnings": []
+    },
+    {
+      "runId": "l82-empty-space-r30-pml1p5-pad3-m1p5",
+      "resolutionPointsPerWavelength": 30,
+      "pmlThicknessUm": 1.5,
+      "paddingWavelengths": 3,
+      "monitorOffsetWavelengths": 1.5,
+      "imported": {
+        "reflectance": 0.00084,
+        "transmittance": 0.999,
+        "absorbance": 0.00076
+      },
+      "expected": {
+        "reflectance": 0,
+        "transmittance": 1,
+        "absorbance": 0
+      },
+      "residuals": {
+        "reflectance": 0.00084,
+        "transmittance": 0.0010000000000000009,
+        "absorbance": 0.00076,
+        "energyBalance": 0.0005999999999999339,
+        "referenceResidual": 0.0010000000000000009
+      },
+      "energyBalance": 1.0006,
+      "fieldSliceDelta": 0.0014,
+      "status": "pass",
+      "warnings": []
+    }
+  ],
+  "trend": {
+    "status": "decreasing",
+    "rows": [
+      {
+        "resolutionPointsPerWavelength": 10,
+        "meanReferenceResidual": 0.01058333333333334,
+        "maxEnergyBalanceError": 0.005700000000000038,
+        "meanFieldSliceDelta": 0.014816666666666665,
+        "runCount": 9
+      },
+      {
+        "resolutionPointsPerWavelength": 15,
+        "meanReferenceResidual": 0.005583333333333335,
+        "maxEnergyBalanceError": 0.0047000000000001485,
+        "meanFieldSliceDelta": 0.007816666666666666,
+        "runCount": 9
+      },
+      {
+        "resolutionPointsPerWavelength": 20,
+        "meanReferenceResidual": 0.0038333333333333184,
+        "maxEnergyBalanceError": 0.004349999999999854,
+        "meanFieldSliceDelta": 0.005366666666666665,
+        "runCount": 9
+      },
+      {
+        "resolutionPointsPerWavelength": 30,
+        "meanReferenceResidual": 0.0026988888888888844,
+        "maxEnergyBalanceError": 0.0040999999999999925,
+        "meanFieldSliceDelta": 0.003616666666666666,
+        "runCount": 9
+      }
+    ],
+    "finalReferenceResidual": 0.0026988888888888844,
+    "finalEnergyBalanceError": 0.0040999999999999925
+  },
+  "pmlSensitivity": {
+    "maxDelta": 0.003349999999999999,
+    "status": "pass"
+  },
+  "status": "pass",
+  "warnings": [
+    {
+      "code": "fdtd.benchmark.externalCostReview",
+      "message": "Sweep contains 36 external runs; review cost before launching an external solver."
+    }
+  ],
+  "summaryHash": "f67a32850a36619d"
+}

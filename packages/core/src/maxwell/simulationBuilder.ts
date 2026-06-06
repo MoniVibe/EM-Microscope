@@ -156,7 +156,8 @@ export const l80ReleaseTrail = [
   { milestone: "L7.3", label: "Measured target detection", runnable: "ROI-limited detection confidence report" },
   { milestone: "L7.6", label: "External detector bridge", runnable: "detector JSON/CSV receipt validation" },
   { milestone: "L8.0", label: "Sequential Simulation Builder", runnable: "grid/source/elements/material validation report" },
-  { milestone: "L8.1", label: "External FDTD field maps", runnable: "manifest/script export plus imported flux/field validation" }
+  { milestone: "L8.1", label: "External FDTD field maps", runnable: "manifest/script export plus imported flux/field validation" },
+  { milestone: "L8.2", label: "FDTD benchmark convergence suite", runnable: "sweep-plan export plus imported convergence/PML diagnostics" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -596,6 +597,24 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       label: "External FDTD field/flux import",
       status: "executable" as const,
       evidence: "L8.1 imports external receipt, flux summary, and field-slice CSV evidence for comparison against L8.0 analytic/TMM targets"
+    },
+    {
+      id: "external-fdtd-benchmark-export",
+      label: "External FDTD benchmark export",
+      status: "executable" as const,
+      evidence: "L8.2 exports deterministic benchmark manifests, bounded sweep plans, expected references, and Meep helper scripts"
+    },
+    {
+      id: "external-fdtd-convergence-import",
+      label: "External FDTD convergence import",
+      status: "executable" as const,
+      evidence: "L8.2 imports convergence summaries and per-run flux evidence for residual-vs-resolution and energy-balance diagnostics"
+    },
+    {
+      id: "external-fdtd-convergence-diagnostics",
+      label: "FDTD convergence diagnostics",
+      status: "executable" as const,
+      evidence: "L8.2 computes reference residual trends, field-slice deltas, and PML/padding sensitivity warnings over external-run evidence"
     },
     {
       id: "arbitrary-3d-material-geometry",

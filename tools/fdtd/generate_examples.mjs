@@ -3,11 +3,20 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createAbsorbingFdtdExampleBundle,
+  createFdtdBenchmarkExampleBundles,
   createTransparentFdtdExampleBundle,
+  fdtdBenchmarkManifestJson,
+  fdtdBenchmarkReportJson,
+  fdtdBenchmarkReportMarkdown,
+  fdtdConvergenceMetricsCsv,
+  fdtdConvergenceSummaryJson,
   fdtdExampleFluxSummaryJson,
   fdtdExampleReceiptJson,
+  fdtdFluxSummariesJson,
   fdtdManifestJson,
   fdtdMeepScriptText,
+  fdtdRunTableCsv,
+  fdtdSweepPlanJson,
   fdtdValidationMetricsCsv,
   fdtdValidationReportJson,
   fdtdValidationReportMarkdown
@@ -20,12 +29,13 @@ await mkdir(outDir, { recursive: true });
 
 const transparent = createTransparentFdtdExampleBundle();
 const absorbing = createAbsorbingFdtdExampleBundle();
+const benchmarkExamples = createFdtdBenchmarkExampleBundles();
 
 await writeExample("README.md", [
-  "# L8.1 FDTD Example Fixtures",
+  "# L8.1/L8.2 FDTD Example Fixtures",
   "",
   "These files are deterministic diagnostic fixtures generated from `packages/core`.",
-  "They are for import/export smoke testing only and are not measured lab results.",
+  "They are for import/export and convergence smoke testing only and are not measured lab results.",
   "",
   "Regenerate with:",
   "",
@@ -37,6 +47,9 @@ await writeExample("README.md", [
 
 await writeBundle("transparent_slab", transparent);
 await writeBundle("absorbing_slab", absorbing);
+for (const [kind, example] of Object.entries(benchmarkExamples)) {
+  await writeBenchmarkBundle(`l82_${kind.replaceAll("-", "_")}`, example);
+}
 
 async function writeBundle(prefix, example) {
   await writeExample(`${prefix}_scene.json`, fdtdManifestJson(example.manifest));
@@ -47,6 +60,22 @@ async function writeBundle(prefix, example) {
   await writeExample(`${prefix}_validation_report.json`, fdtdValidationReportJson(example.validation));
   await writeExample(`${prefix}_validation_report.md`, `${fdtdValidationReportMarkdown(example.validation)}\n`);
   await writeExample(`${prefix}_validation_metrics.csv`, `${fdtdValidationMetricsCsv(example.validation)}\n`);
+}
+
+async function writeBenchmarkBundle(prefix, example) {
+  await writeExample(`${prefix}_benchmark_manifest.json`, fdtdBenchmarkManifestJson(example.pack.benchmarkManifest));
+  await writeExample(`${prefix}_sweep_plan.json`, fdtdSweepPlanJson(example.pack.sweepPlan));
+  await writeExample(`${prefix}_expected_reference.json`, example.pack.expectedReferenceJson);
+  await writeExample(`${prefix}_convergence_summary.json`, fdtdConvergenceSummaryJson(example.convergenceSummary));
+  await writeExample(`${prefix}_flux_summaries.json`, fdtdFluxSummariesJson(example.fluxSummaries));
+  await writeExample(`${prefix}_benchmark_report.json`, fdtdBenchmarkReportJson(example.convergenceSummary));
+  await writeExample(`${prefix}_benchmark_report.md`, `${fdtdBenchmarkReportMarkdown(example.convergenceSummary)}\n`);
+  await writeExample(`${prefix}_convergence_metrics.csv`, `${fdtdConvergenceMetricsCsv(example.convergenceSummary)}\n`);
+  await writeExample(`${prefix}_run_table.csv`, `${fdtdRunTableCsv(example.convergenceSummary)}\n`);
+  await writeExample(`${prefix}_readme.md`, `${example.pack.readme}\n`);
+  if (example.pack.scripts[0]) {
+    await writeExample(`${prefix}_${example.pack.scripts[0].filename}`, example.pack.scripts[0].export.python);
+  }
 }
 
 async function writeExample(name, text) {

@@ -13,8 +13,8 @@ async function smoke(page) {
   await page.setViewportSize({ width: 1365, height: 768 });
   step("navigate");
   await page.goto(url, { waitUntil: "networkidle" });
-  await expectText("L8.1 Sequential Optical Bench + External FDTD Field Maps");
-  await expectText("L8.1 External FDTD / Field Maps");
+  await expectText("L8.2 Sequential Optical Bench + External FDTD Benchmark Convergence");
+  await expectText("L8.2 External FDTD / Field Maps");
   await expectText("External FDTD export/import only");
   await page.screenshot({ path: `${artifactDir}/l81-fdtd-export-readiness-smoke.png`, fullPage: true });
 

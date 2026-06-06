@@ -1,0 +1,1082 @@
+[
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r10-pml0p5-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.01134,
+    "transmittedFlux": 0.9865,
+    "absorbedFlux": 0.007859999999999999,
+    "reflectance": 0.01134,
+    "transmittance": 0.9865,
+    "absorbance": 0.007859999999999999,
+    "energyBalance": 1.0057,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.01134
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.9865
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "fa631e04c8165c7b"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r10-pml0p5-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.01008,
+    "transmittedFlux": 0.988,
+    "absorbedFlux": 0.00732,
+    "reflectance": 0.01008,
+    "transmittance": 0.988,
+    "absorbance": 0.00732,
+    "energyBalance": 1.0054,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.01008
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.988
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "ab70a7c2d9028ae6"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r10-pml0p5-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00987,
+    "transmittedFlux": 0.98825,
+    "absorbedFlux": 0.00723,
+    "reflectance": 0.00987,
+    "transmittance": 0.98825,
+    "absorbance": 0.00723,
+    "energyBalance": 1.00535,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00987
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.98825
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "83ea0d4b91f60b93"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r10-pml1-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.009029999999999998,
+    "transmittedFlux": 0.98925,
+    "absorbedFlux": 0.0042699999999999995,
+    "reflectance": 0.009029999999999998,
+    "transmittance": 0.98925,
+    "absorbance": 0.0042699999999999995,
+    "energyBalance": 1.00255,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.009029999999999998
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.98925
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "648a550cfb138ea6"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r10-pml1-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.007769999999999999,
+    "transmittedFlux": 0.99075,
+    "absorbedFlux": 0.00373,
+    "reflectance": 0.007769999999999999,
+    "transmittance": 0.99075,
+    "absorbance": 0.00373,
+    "energyBalance": 1.00225,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.007769999999999999
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99075
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "174ac50e238b56bf"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r10-pml1-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.007559999999999999,
+    "transmittedFlux": 0.991,
+    "absorbedFlux": 0.00364,
+    "reflectance": 0.007559999999999999,
+    "transmittance": 0.991,
+    "absorbance": 0.00364,
+    "energyBalance": 1.0022,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.007559999999999999
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.991
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "ace34a02c55080c1"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r10-pml1p5-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.009029999999999998,
+    "transmittedFlux": 0.98925,
+    "absorbedFlux": 0.0042699999999999995,
+    "reflectance": 0.009029999999999998,
+    "transmittance": 0.98925,
+    "absorbance": 0.0042699999999999995,
+    "energyBalance": 1.00255,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.009029999999999998
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.98925
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "9f25f1709abf6017"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r10-pml1p5-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.007769999999999999,
+    "transmittedFlux": 0.99075,
+    "absorbedFlux": 0.00373,
+    "reflectance": 0.007769999999999999,
+    "transmittance": 0.99075,
+    "absorbance": 0.00373,
+    "energyBalance": 1.00225,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.007769999999999999
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99075
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "dbd3dfe37bc9c716"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r10-pml1p5-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.007559999999999999,
+    "transmittedFlux": 0.991,
+    "absorbedFlux": 0.00364,
+    "reflectance": 0.007559999999999999,
+    "transmittance": 0.991,
+    "absorbance": 0.00364,
+    "energyBalance": 1.0022,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.007559999999999999
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.991
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "0a4972a29cb1b0dc"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r15-pml0p5-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.0071400000000000005,
+    "transmittedFlux": 0.9915,
+    "absorbedFlux": 0.00606,
+    "reflectance": 0.0071400000000000005,
+    "transmittance": 0.9915,
+    "absorbance": 0.00606,
+    "energyBalance": 1.0047000000000001,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.0071400000000000005
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.9915
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "aa2aec234432acb2"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r15-pml0p5-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00588,
+    "transmittedFlux": 0.993,
+    "absorbedFlux": 0.005520000000000001,
+    "reflectance": 0.00588,
+    "transmittance": 0.993,
+    "absorbance": 0.005520000000000001,
+    "energyBalance": 1.0044,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00588
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.993
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "1554a297e369f08e"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r15-pml0p5-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00567,
+    "transmittedFlux": 0.99325,
+    "absorbedFlux": 0.00543,
+    "reflectance": 0.00567,
+    "transmittance": 0.99325,
+    "absorbance": 0.00543,
+    "energyBalance": 1.0043499999999999,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00567
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99325
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "ac6f50ea40642593"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r15-pml1-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00483,
+    "transmittedFlux": 0.99425,
+    "absorbedFlux": 0.00247,
+    "reflectance": 0.00483,
+    "transmittance": 0.99425,
+    "absorbance": 0.00247,
+    "energyBalance": 1.00155,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00483
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99425
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "d03ebfb8f5c6b8ba"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r15-pml1-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.0035700000000000003,
+    "transmittedFlux": 0.99575,
+    "absorbedFlux": 0.00193,
+    "reflectance": 0.0035700000000000003,
+    "transmittance": 0.99575,
+    "absorbance": 0.00193,
+    "energyBalance": 1.00125,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.0035700000000000003
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99575
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "4afa575440784ec9"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r15-pml1-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00336,
+    "transmittedFlux": 0.996,
+    "absorbedFlux": 0.0018399999999999998,
+    "reflectance": 0.00336,
+    "transmittance": 0.996,
+    "absorbance": 0.0018399999999999998,
+    "energyBalance": 1.0012,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00336
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.996
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "8d6d077b1ff9ba2e"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r15-pml1p5-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00483,
+    "transmittedFlux": 0.99425,
+    "absorbedFlux": 0.00247,
+    "reflectance": 0.00483,
+    "transmittance": 0.99425,
+    "absorbance": 0.00247,
+    "energyBalance": 1.00155,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00483
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99425
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "e6b71e50451a8313"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r15-pml1p5-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.0035700000000000003,
+    "transmittedFlux": 0.99575,
+    "absorbedFlux": 0.00193,
+    "reflectance": 0.0035700000000000003,
+    "transmittance": 0.99575,
+    "absorbance": 0.00193,
+    "energyBalance": 1.00125,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.0035700000000000003
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99575
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "b897b9ab6886f588"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r15-pml1p5-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00336,
+    "transmittedFlux": 0.996,
+    "absorbedFlux": 0.0018399999999999998,
+    "reflectance": 0.00336,
+    "transmittance": 0.996,
+    "absorbance": 0.0018399999999999998,
+    "energyBalance": 1.0012,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00336
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.996
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "1eb0cd186218a35b"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r20-pml0p5-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.005669999999999999,
+    "transmittedFlux": 0.99325,
+    "absorbedFlux": 0.005429999999999999,
+    "reflectance": 0.005669999999999999,
+    "transmittance": 0.99325,
+    "absorbance": 0.005429999999999999,
+    "energyBalance": 1.0043499999999999,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.005669999999999999
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99325
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "ef85b75af6e6fd71"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r20-pml0p5-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.004409999999999999,
+    "transmittedFlux": 0.99475,
+    "absorbedFlux": 0.00489,
+    "reflectance": 0.004409999999999999,
+    "transmittance": 0.99475,
+    "absorbance": 0.00489,
+    "energyBalance": 1.00405,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.004409999999999999
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99475
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "09e6cb36e64de78c"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r20-pml0p5-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.004199999999999999,
+    "transmittedFlux": 0.995,
+    "absorbedFlux": 0.0048,
+    "reflectance": 0.004199999999999999,
+    "transmittance": 0.995,
+    "absorbance": 0.0048,
+    "energyBalance": 1.004,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.004199999999999999
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.995
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "708215b7b48c0f33"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r20-pml1-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00336,
+    "transmittedFlux": 0.996,
+    "absorbedFlux": 0.0018399999999999998,
+    "reflectance": 0.00336,
+    "transmittance": 0.996,
+    "absorbance": 0.0018399999999999998,
+    "energyBalance": 1.0012,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00336
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.996
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "5b56aa0040144dac"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r20-pml1-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.0020999999999999994,
+    "transmittedFlux": 0.9975,
+    "absorbedFlux": 0.0013,
+    "reflectance": 0.0020999999999999994,
+    "transmittance": 0.9975,
+    "absorbance": 0.0013,
+    "energyBalance": 1.0009000000000001,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.0020999999999999994
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.9975
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "cd41da948c4b68c8"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r20-pml1-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.0018899999999999993,
+    "transmittedFlux": 0.99775,
+    "absorbedFlux": 0.0012099999999999997,
+    "reflectance": 0.0018899999999999993,
+    "transmittance": 0.99775,
+    "absorbance": 0.0012099999999999997,
+    "energyBalance": 1.00085,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.0018899999999999993
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99775
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "d373eaf9b01dc510"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r20-pml1p5-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00336,
+    "transmittedFlux": 0.996,
+    "absorbedFlux": 0.0018399999999999998,
+    "reflectance": 0.00336,
+    "transmittance": 0.996,
+    "absorbance": 0.0018399999999999998,
+    "energyBalance": 1.0012,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00336
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.996
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "dbdd6f560fa2dc4d"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r20-pml1p5-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.0020999999999999994,
+    "transmittedFlux": 0.9975,
+    "absorbedFlux": 0.0013,
+    "reflectance": 0.0020999999999999994,
+    "transmittance": 0.9975,
+    "absorbance": 0.0013,
+    "energyBalance": 1.0009000000000001,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.0020999999999999994
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.9975
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "9e8ff8a8681161a5"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r20-pml1p5-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.0018899999999999993,
+    "transmittedFlux": 0.99775,
+    "absorbedFlux": 0.0012099999999999997,
+    "reflectance": 0.0018899999999999993,
+    "transmittance": 0.99775,
+    "absorbance": 0.0012099999999999997,
+    "energyBalance": 1.00085,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.0018899999999999993
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99775
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "6caef50a75abb3cd"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r30-pml0p5-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00462,
+    "transmittedFlux": 0.9945,
+    "absorbedFlux": 0.00498,
+    "reflectance": 0.00462,
+    "transmittance": 0.9945,
+    "absorbance": 0.00498,
+    "energyBalance": 1.0041,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00462
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.9945
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "829b7fabbc6800e0"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r30-pml0p5-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00336,
+    "transmittedFlux": 0.996,
+    "absorbedFlux": 0.0044399999999999995,
+    "reflectance": 0.00336,
+    "transmittance": 0.996,
+    "absorbance": 0.0044399999999999995,
+    "energyBalance": 1.0038,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00336
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.996
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "1464925e07ff091c"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r30-pml0p5-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.0031499999999999996,
+    "transmittedFlux": 0.99625,
+    "absorbedFlux": 0.00435,
+    "reflectance": 0.0031499999999999996,
+    "transmittance": 0.99625,
+    "absorbance": 0.00435,
+    "energyBalance": 1.00375,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.0031499999999999996
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99625
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "3544e7ddcd0f0ca7"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r30-pml1-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00231,
+    "transmittedFlux": 0.99725,
+    "absorbedFlux": 0.00139,
+    "reflectance": 0.00231,
+    "transmittance": 0.99725,
+    "absorbance": 0.00139,
+    "energyBalance": 1.00095,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00231
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99725
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "b17530c00de0e28a"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r30-pml1-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00105,
+    "transmittedFlux": 0.99875,
+    "absorbedFlux": 0.0008500000000000001,
+    "reflectance": 0.00105,
+    "transmittance": 0.99875,
+    "absorbance": 0.0008500000000000001,
+    "energyBalance": 1.00065,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00105
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99875
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "9c513e62652b63ca"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r30-pml1-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00084,
+    "transmittedFlux": 0.999,
+    "absorbedFlux": 0.00076,
+    "reflectance": 0.00084,
+    "transmittance": 0.999,
+    "absorbance": 0.00076,
+    "energyBalance": 1.0006,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00084
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.999
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "162edf6c7f300ef3"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r30-pml1p5-pad1-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00231,
+    "transmittedFlux": 0.99725,
+    "absorbedFlux": 0.00139,
+    "reflectance": 0.00231,
+    "transmittance": 0.99725,
+    "absorbance": 0.00139,
+    "energyBalance": 1.00095,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00231
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99725
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "998fa4549b8054b3"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r30-pml1p5-pad2-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00105,
+    "transmittedFlux": 0.99875,
+    "absorbedFlux": 0.0008500000000000001,
+    "reflectance": 0.00105,
+    "transmittance": 0.99875,
+    "absorbance": 0.0008500000000000001,
+    "energyBalance": 1.00065,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00105
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.99875
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "dce1c29eca10c7a3"
+  },
+  {
+    "schema": "emmicro.fdtd.fluxSummary.v1",
+    "runId": "l82-empty-space-r30-pml1p5-pad3-m1p5",
+    "sourceScenarioHash": "1571e32be6e8d372",
+    "manifestHash": "015f3497c7057b6f",
+    "incidentFlux": 1,
+    "reflectedFlux": 0.00084,
+    "transmittedFlux": 0.999,
+    "absorbedFlux": 0.00076,
+    "reflectance": 0.00084,
+    "transmittance": 0.999,
+    "absorbance": 0.00076,
+    "energyBalance": 1.0006,
+    "monitors": [
+      {
+        "id": "incident-flux",
+        "flux": 1
+      },
+      {
+        "id": "reflected-flux",
+        "flux": 0.00084
+      },
+      {
+        "id": "transmitted-flux",
+        "flux": 0.999
+      }
+    ],
+    "warnings": [],
+    "fluxHash": "d834b0344f86b4ae"
+  }
+]
