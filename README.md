@@ -39,6 +39,9 @@ summaries; L8.6 tolerance evidence; L8.7 robust before/after metrics; capability
 and one-click Markdown/JSON/CSV engineer dossier exports. L8.8 is evidence/reporting only, not certified validation,
 certified tolerancing, production EM solver certification, browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA,
 digital twin behavior, or manufacturing certification.
+L8.8a hardens the two-view editor contract: Optical Axis Placement is order and z-position only, X-Z Surface Geometry
+is finite shape and transverse placement, Inspect/Edit Geometry modes prevent accidental drag, pointer previews commit
+only on drop, Escape cancels previews, and inspector fields remain the exact source of truth.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
@@ -171,7 +174,10 @@ certification system.
   `solver_plan.json`, `monitor_stack.csv`, `multielement_validation_report.md`,
   `multielement_validation_report.json`, and `multielement_metrics.csv`. The optical-axis diagram and X-Z
   cross-section show the source, every placed element, finite dimensions, target, and observation plane with z
-  positions and capability tags.
+  positions and capability tags. L8.8a separates the interaction model: Optical Axis Placement handles order and
+  z-position only, while X-Z Surface Geometry handles finite shape and transverse placement through Inspect/Edit
+  Geometry modes, selected-object handles, keyboard/numeric alternatives, and warning visuals for overlap,
+  outside-domain placement, monitor/material proximity, PML proximity, and under-resolution.
 
   The L8.8 Engineering Evidence Campaign loads/imports a bundled golden campaign and exports an engineer-facing
   dossier. The campaign table covers transparent slab, absorbing slab, reflective plate, long-slit, circular-pinhole,

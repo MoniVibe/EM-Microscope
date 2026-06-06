@@ -3126,6 +3126,49 @@ h2 {
   font-size: 12px;
 }
 
+.l88a-two-view-helper {
+  margin: 0;
+}
+
+.l88a-view-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.l88a-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid #c8d1dd;
+  border-radius: 7px;
+  background: #f7fafc;
+}
+
+.l88a-mode-toggle button {
+  min-height: 30px;
+  border: 0;
+  border-radius: 5px;
+  padding: 5px 9px;
+  background: transparent;
+  color: #40506a;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.l88a-mode-toggle button:hover,
+.l88a-mode-toggle button:focus-visible {
+  background: #e9f3f6;
+}
+
+.l88a-mode-toggle-active {
+  background: #0b7788 !important;
+  color: #ffffff !important;
+}
+
 .l85-cross-section {
   display: grid;
   gap: 8px;
@@ -3175,6 +3218,10 @@ h2 {
 .l85-cross-section-draggable {
   cursor: grab;
   touch-action: none;
+}
+
+.l85-cross-section-selectable {
+  cursor: pointer;
 }
 
 .l85-cross-section-readonly {
@@ -3729,6 +3776,11 @@ button.l88-scenario-row.active {
     repeating-linear-gradient(90deg, #f8fbfd 0, #f8fbfd 36px, #f1f5f9 37px, #f1f5f9 38px);
 }
 
+.surface-cross-section-domain-edit {
+  outline: 2px solid rgba(11, 119, 136, 0.12);
+  outline-offset: -4px;
+}
+
 .surface-cross-section-axis {
   position: absolute;
   left: 0;
@@ -3796,6 +3848,76 @@ button.l88-scenario-row.active {
   box-shadow: 0 2px 8px rgba(21, 35, 52, 0.12);
 }
 
+.surface-cross-section-object-selectable {
+  cursor: pointer;
+}
+
+.surface-cross-section-object-editable {
+  cursor: grab;
+  touch-action: none;
+}
+
+.surface-cross-section-object-selected {
+  z-index: 6;
+  border-color: #0b6574;
+  outline: 2px solid #0b7788;
+  outline-offset: 2px;
+}
+
+.surface-cross-section-object-warning {
+  border-color: #b7791f;
+  box-shadow: 0 0 0 3px rgba(183, 121, 31, 0.18), 0 2px 8px rgba(21, 35, 52, 0.12);
+}
+
+.surface-cross-section-object-drag-preview {
+  opacity: 0.72;
+}
+
+.surface-cross-section-handle {
+  position: absolute;
+  z-index: 8;
+  display: block;
+  border: 1px solid #0b7788;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 5px rgba(21, 35, 52, 0.18);
+  touch-action: none;
+}
+
+.surface-cross-section-handle-left,
+.surface-cross-section-handle-right {
+  top: 50%;
+  width: 8px;
+  height: 28px;
+  margin-top: -14px;
+  cursor: ew-resize;
+}
+
+.surface-cross-section-handle-left {
+  left: -6px;
+}
+
+.surface-cross-section-handle-right {
+  right: -6px;
+}
+
+.surface-cross-section-handle-top,
+.surface-cross-section-handle-bottom {
+  left: 50%;
+  width: 28px;
+  height: 8px;
+  margin-left: -14px;
+  cursor: ns-resize;
+}
+
+.surface-cross-section-handle-top {
+  top: -6px;
+}
+
+.surface-cross-section-handle-bottom {
+  bottom: -6px;
+}
+
 .surface-cross-section-object-finite-transparent-block {
   background: rgba(91, 141, 185, 0.42);
 }
@@ -3826,6 +3948,23 @@ button.l88-scenario-row.active {
 }
 
 .surface-cross-section-legend span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.surface-cross-section-warning-strip {
+  display: grid;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid #dec27d;
+  border-radius: 6px;
+  background: #fff8e6;
+  color: #5f4515;
+  font-size: 11px;
+}
+
+.surface-cross-section-warning-strip span,
+.surface-cross-section-warning-strip strong {
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -3969,6 +4108,38 @@ button.l88-scenario-row.active {
   box-shadow: 0 2px 6px rgba(42, 57, 78, 0.08);
 }
 
+.l88a-axis-node-draggable {
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.l88a-axis-node-selected {
+  z-index: 5;
+  border-color: #0b6574;
+  outline: 2px solid #0b7788;
+  outline-offset: 2px;
+}
+
+.l88a-axis-node-preview {
+  opacity: 0.78;
+  box-shadow: 0 0 0 4px rgba(11, 119, 136, 0.14), 0 2px 6px rgba(42, 57, 78, 0.08);
+}
+
+.l88a-axis-distance-label {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 7;
+  border: 1px solid #b7c8d8;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #40506a;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 750;
+}
+
 .simulation-axis-node::after {
   content: "";
   position: absolute;
@@ -4108,6 +4279,7 @@ button.l88-scenario-row.active {
   .l88-detail-grid,
   .l88-detail-grid.compact,
   .l88-truth-table > div,
+  .l88a-view-toolbar,
   .fdtd-verification-controls,
   .surface-cross-section-legend,
   .simulation-field-grid,

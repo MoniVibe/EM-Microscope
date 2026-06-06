@@ -152,6 +152,7 @@ import {
   type SurfaceGeometryExampleBundle,
   type SurfaceGeometryKind,
   type SimulationBuilderCustomMonitor,
+  type SimulationBuilderAxisNode,
   type SimulationBuilderElement,
   type SimulationBuilderElementKind,
   type SimulationBuilderGrid,
@@ -221,6 +222,13 @@ type L85CommitOptions = {
   scalarDirty?: boolean;
   externalDirty?: boolean;
 };
+type XzGeometryMode = "inspect" | "edit";
+type SurfaceGeometryDragKind = "body" | "thickness-start" | "thickness-end" | "height-top" | "height-bottom";
+type SurfaceGeometryDragPreview = {
+  elementId: string;
+  dragKind: SurfaceGeometryDragKind;
+  patch: Partial<SimulationBuilderElement>;
+};
 
 function l86VariationPropertyMeta(property: ToleranceVariationProperty): { label: string; unit: ToleranceVariationSpec["unit"]; application: ToleranceVariationSpec["application"]; delta: number } {
   switch (property) {
@@ -274,6 +282,7 @@ export function SimulationBuilderPanel() {
   const [scenario, setScenario] = useState<SimulationBuilderScenario>(() => defaultOpticalBenchScenario());
   const [selectedL85, setSelectedL85] = useState<L85Selection>(() => initialL85Selection());
   const [l85SnapStepMm, setL85SnapStepMm] = useState(0.5);
+  const [xzGeometryMode, setXzGeometryMode] = useState<XzGeometryMode>("inspect");
   const [l85History, setL85History] = useState<OpticalBenchHistoryState>(() => createOpticalBenchHistory(defaultOpticalBenchScenario()));
   const [hasComputed, setHasComputed] = useState(false);
   const [hasL85ScalarPreview, setHasL85ScalarPreview] = useState(true);
@@ -567,15 +576,60 @@ export function SimulationBuilderPanel() {
 
   function commitL85DiagramPosition(selection: L85Selection, position: { zMm: number; xUm?: number }): void {
     if (selection.kind === "element") {
-      commitL85Edit("Drag optical bench element", (current) => updateOpticalBenchElementProperties(current, selection.id, {
-        zMm: snapOpticalBenchValue(position.zMm),
-        xUm: position.xUm
-      }), {
+      const patch: Partial<SimulationBuilderElement> = { zMm: snapOpticalBenchValue(position.zMm) };
+      if (position.xUm !== undefined) patch.xUm = position.xUm;
+      commitL85Edit("Drag optical bench element", (current) => updateOpticalBenchElementProperties(current, selection.id, patch), {
         select: selection
       });
       return;
     }
     updateL85MonitorPatch(selection.id, { zMm: snapOpticalBenchValue(position.zMm), xUm: position.xUm });
+  }
+
+  function commitOpticalAxisNodePosition(node: SimulationBuilderAxisNode, zMm: number): void {
+    const nextZ = clampNumber(snapOpticalBenchValue(zMm), scenario.grid.zStartMm, scenario.grid.zEndMm);
+    if (node.kind === "element") {
+      commitL85Edit("Drag optical axis element z-only", (current) => updateOpticalBenchElementProperties(current, node.id, { zMm: nextZ }), {
+        select: { kind: "element", id: node.id }
+      });
+      return;
+    }
+    if (node.kind === "observation") {
+      commitL85Edit("Drag optical axis observation z-only", (current) => ({
+        ...current,
+        observationPlaneZMm: nextZ
+      }), {
+        select: { kind: "monitor", id: "observation-plane" },
+        externalDirty: false
+      });
+      return;
+    }
+    if (node.kind === "source") {
+      commitL85Edit("Drag optical axis source z-only", (current) => ({
+        ...current,
+        source: { ...current.source, zMm: nextZ }
+      }));
+      return;
+    }
+    if (node.kind === "target") {
+      commitL85Edit("Drag optical axis target z-only", (current) => ({
+        ...current,
+        target: { ...current.target, zMm: nextZ }
+      }));
+    }
+  }
+
+  function commitSurfaceGeometryEdit(elementId: string, patch: Partial<SimulationBuilderElement>, label = "Edit finite surface geometry"): void {
+    const normalized: Partial<SimulationBuilderElement> = { ...patch };
+    if (normalized.zMm !== undefined) normalized.zMm = clampNumber(snapOpticalBenchValue(normalized.zMm), scenario.grid.zStartMm, scenario.grid.zEndMm);
+    if (normalized.widthUm !== undefined) normalized.widthUm = Math.max(0.05, normalized.widthUm);
+    if (normalized.heightUm !== undefined) normalized.heightUm = Math.max(0.05, normalized.heightUm);
+    if (normalized.thicknessUm !== undefined) normalized.thicknessUm = Math.max(0.05, normalized.thicknessUm);
+    if (normalized.apertureWidthUm !== undefined) normalized.apertureWidthUm = Math.max(0.05, normalized.apertureWidthUm);
+    if (normalized.apertureHeightUm !== undefined) normalized.apertureHeightUm = Math.max(0.05, normalized.apertureHeightUm);
+    commitL85Edit(label, (current) => updateOpticalBenchElementProperties(current, elementId, normalized), {
+      select: { kind: "element", id: elementId }
+    });
   }
 
   function undoL85Edit(): void {
@@ -1269,12 +1323,16 @@ export function SimulationBuilderPanel() {
           <div className="maxwell-data-table l85-wide" aria-label="L8.5 x-z cross-section smoke preview">
             <div className="maxwell-section-heading">
               <h2>X-Z Bench Cross-Section</h2>
-              <strong>{l85Bundle.crossSection.length} items</strong>
+              <strong>Finite shape and transverse placement</strong>
             </div>
+            <p className="simulation-builder-note l88a-two-view-helper">
+              Optical Axis Placement edits order and z-position. X-Z Surface Geometry edits finite shape and transverse placement in Edit Geometry mode. Inspector fields are exact source of truth.
+            </p>
             <L85BenchCrossSection
               bundle={l85Bundle}
               selected={selectedL85}
               snapStepMm={l85Snap.enabled ? l85Snap.stepMm : 0.1}
+              mode={xzGeometryMode}
               editableMonitorIds={editableL85MonitorIds}
               onSelect={setSelectedL85}
               onCommitPosition={commitL85DiagramPosition}
@@ -1511,29 +1569,45 @@ export function SimulationBuilderPanel() {
         <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide" aria-label="L8.0 optical axis diagram">
           <div className="maxwell-section-heading">
             <h2>Optical Axis Placement</h2>
-            <strong>{formatCompact(zMin)}-{formatCompact(zMax)} mm</strong>
+            <strong>Order and z-position</strong>
           </div>
-          <div className="simulation-axis" aria-label="L8.0 optical-axis diagram smoke preview">
-            <div className="simulation-axis-line" />
-            {result.axis.map((node) => {
-              const left = zMax === zMin ? 0 : ((node.zMm - zMin) / (zMax - zMin)) * 100;
-              return (
-                <div className={`simulation-axis-node simulation-axis-node-${node.kind}`} key={node.id} style={{ left: `${Math.max(0, Math.min(100, left))}%` }}>
-                  <span>{node.label}</span>
-                  <strong>{formatCompact(node.zMm)} mm</strong>
-                  <em>{node.status}</em>
-                </div>
-              );
-            })}
-          </div>
+          <p className="simulation-builder-note l88a-two-view-helper">Order and z-position only: drag or keyboard-nudge nodes along z, then commit on drop. Escape cancels preview; solver/evidence recompute waits until the committed edit.</p>
+          <OpticalAxisPlacementDiagram
+            axis={result.axis}
+            zMin={zMin}
+            zMax={zMax}
+            selected={selectedL85}
+            snapStepMm={l85Snap.enabled ? l85Snap.stepMm : 0.1}
+            onSelect={setSelectedL85}
+            onCommitZ={commitOpticalAxisNodePosition}
+          />
         </div>
 
         <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide" aria-label="L8.3 x-z cross-section geometry smoke preview">
           <div className="maxwell-section-heading">
             <h2>X-Z Surface Geometry Cross-Section</h2>
-            <strong>{scenario.elements.filter((element) => isSurfaceGeometryElementKind(element.kind)).length} finite</strong>
+            <strong>Finite shape and transverse placement</strong>
           </div>
-          <SurfaceGeometryCrossSection scenario={scenario} zMin={zMin} zMax={zMax} />
+          <div className="l88a-view-toolbar" aria-label="L8.8a two-view interaction model smoke preview">
+            <p className="simulation-builder-note l88a-two-view-helper">
+              Inspect mode selects geometry without moving it. Edit Geometry enables body drag for x/z and handles for thickness/transverse size; numeric fields remain authoritative.
+            </p>
+            <div className="l88a-mode-toggle" role="group" aria-label="X-Z geometry interaction mode">
+              <button type="button" className={xzGeometryMode === "inspect" ? "l88a-mode-toggle-active" : ""} onClick={() => setXzGeometryMode("inspect")}>Inspect</button>
+              <button type="button" className={xzGeometryMode === "edit" ? "l88a-mode-toggle-active" : ""} onClick={() => setXzGeometryMode("edit")}>Edit Geometry</button>
+            </div>
+          </div>
+          <SurfaceGeometryCrossSection
+            scenario={scenario}
+            zMin={zMin}
+            zMax={zMax}
+            selected={selectedL85}
+            mode={xzGeometryMode}
+            warnings={l85EditingWarnings}
+            snapStepMm={l85Snap.enabled ? l85Snap.stepMm : 0.1}
+            onSelect={setSelectedL85}
+            onCommitGeometry={commitSurfaceGeometryEdit}
+          />
         </div>
 
         <div className="maxwell-workspace-panel simulation-builder-card" aria-label="L8.0 target material step">
@@ -2890,10 +2964,118 @@ function L85NumberField(props: { label: string; value: number; step: number; dis
   );
 }
 
+function OpticalAxisPlacementDiagram(props: {
+  axis: SimulationBuilderAxisNode[];
+  zMin: number;
+  zMax: number;
+  selected: L85Selection;
+  snapStepMm: number;
+  onSelect: (selection: L85Selection) => void;
+  onCommitZ: (node: SimulationBuilderAxisNode, zMm: number) => void;
+}) {
+  const domainRef = useRef<HTMLDivElement | null>(null);
+  const zRange = Math.max(1e-9, props.zMax - props.zMin);
+  const [dragPreview, setDragPreview] = useState<{ nodeId: string; zMm: number } | null>(null);
+
+  function selectionForNode(node: SimulationBuilderAxisNode): L85Selection | null {
+    if (node.kind === "element") return { kind: "element", id: node.id };
+    if (node.kind === "observation") return { kind: "monitor", id: "observation-plane" };
+    return null;
+  }
+
+  function zFromPointer(event: PointerEvent<HTMLDivElement>): number {
+    const rect = domainRef.current?.getBoundingClientRect();
+    if (!rect) return props.zMin;
+    const xPercent = clampPercent(((event.clientX - rect.left) / Math.max(1, rect.width)) * 100);
+    const rawZ = props.zMin + (xPercent / 100) * zRange;
+    const snappedZ = props.snapStepMm > 0 ? Math.round(rawZ / props.snapStepMm) * props.snapStepMm : rawZ;
+    return clampNumber(snappedZ, props.zMin, props.zMax);
+  }
+
+  return (
+    <div
+      className="simulation-axis"
+      ref={domainRef}
+      aria-label="L8.0 optical-axis diagram smoke preview"
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          setDragPreview(null);
+        }
+      }}
+    >
+      <div className="simulation-axis-line" />
+      {props.axis.map((node) => {
+        const selection = selectionForNode(node);
+        const preview = dragPreview?.nodeId === node.id ? dragPreview : null;
+        const nodeZ = preview?.zMm ?? node.zMm;
+        const left = ((nodeZ - props.zMin) / zRange) * 100;
+        const selected = selection && props.selected.kind === selection.kind && props.selected.id === selection.id;
+        return (
+          <div
+            className={`simulation-axis-node simulation-axis-node-${node.kind} l88a-axis-node-draggable ${selected ? "l88a-axis-node-selected" : ""} ${preview ? "l88a-axis-node-preview" : ""}`}
+            key={node.id}
+            role="button"
+            tabIndex={0}
+            aria-label={`Move ${node.label} along optical axis`}
+            style={{ left: `${clampPercent(left)}%` }}
+            title={`${node.label}: z ${formatCompact(node.zMm)} mm. Axis drag is z-only; x and finite dimensions live in X-Z Surface Geometry.`}
+            onClick={() => {
+              if (selection) props.onSelect(selection);
+            }}
+            onPointerDown={(event) => {
+              event.preventDefault();
+              if (selection) props.onSelect(selection);
+              event.currentTarget.setPointerCapture(event.pointerId);
+              setDragPreview({ nodeId: node.id, zMm: zFromPointer(event) });
+            }}
+            onPointerMove={(event) => {
+              if (!dragPreview || dragPreview.nodeId !== node.id) return;
+              setDragPreview({ nodeId: node.id, zMm: zFromPointer(event) });
+            }}
+            onPointerUp={(event) => {
+              if (!dragPreview || dragPreview.nodeId !== node.id) return;
+              const nextZ = zFromPointer(event);
+              setDragPreview(null);
+              props.onCommitZ(node, nextZ);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                setDragPreview(null);
+                return;
+              }
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                if (selection) props.onSelect(selection);
+                return;
+              }
+              if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                props.onCommitZ(node, node.zMm - props.snapStepMm);
+                return;
+              }
+              if (event.key === "ArrowRight") {
+                event.preventDefault();
+                props.onCommitZ(node, node.zMm + props.snapStepMm);
+              }
+            }}
+          >
+            <span>{node.label}</span>
+            <strong>{formatCompact(nodeZ)} mm</strong>
+            <em>{preview ? "preview" : node.status}</em>
+          </div>
+        );
+      })}
+      {dragPreview && <div className="l88a-axis-distance-label">z {formatCompact(dragPreview.zMm)} mm</div>}
+    </div>
+  );
+}
+
 function L85BenchCrossSection(props: {
   bundle: ReturnType<typeof createOpticalBenchBundle>;
   selected: L85Selection;
   snapStepMm: number;
+  mode: XzGeometryMode;
   editableMonitorIds: ReadonlySet<string>;
   onSelect: (selection: L85Selection) => void;
   onCommitPosition: (selection: L85Selection, position: { zMm: number; xUm?: number }) => void;
@@ -2934,6 +3116,11 @@ function L85BenchCrossSection(props: {
         tabIndex={0}
         aria-label="Interactive L8.5.1 x-z bench diagram"
         onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setDragPreview(null);
+            return;
+          }
+          if (props.mode !== "edit") return;
           if (event.key === "ArrowLeft") {
             event.preventDefault();
             props.onKeyboardNudge({ zMm: -props.snapStepMm });
@@ -2961,37 +3148,43 @@ function L85BenchCrossSection(props: {
           const width = item.kind === "monitor" || item.kind === "source" || item.kind === "target" ? 0.65 : Math.max(0.8, Math.min(10, ((Math.max(0.02, item.thicknessUm) / 1000) / zRange) * 100));
           const selected = selection && props.selected.kind === selection.kind && props.selected.id === selection.id;
           const interactive = Boolean(selection);
+          const draggable = interactive && props.mode === "edit";
           return (
             <div
-              className={`l85-cross-section-item l85-cross-section-item-${item.kind} l85-cross-section-route-${item.solverRoute} ${interactive ? "l85-cross-section-draggable" : "l85-cross-section-readonly"} ${selected ? "l85-cross-section-selected" : ""} ${preview ? "l85-cross-section-drag-preview" : ""}`}
+              className={`l85-cross-section-item l85-cross-section-item-${item.kind} l85-cross-section-route-${item.solverRoute} ${draggable ? "l85-cross-section-draggable" : ""} ${interactive && !draggable ? "l85-cross-section-selectable" : ""} ${interactive ? "" : "l85-cross-section-readonly"} ${selected ? "l85-cross-section-selected" : ""} ${preview ? "l85-cross-section-drag-preview" : ""}`}
               key={item.id}
               role={interactive ? "button" : undefined}
               tabIndex={interactive ? 0 : undefined}
-              aria-label={interactive ? `Drag ${item.label}` : undefined}
+              aria-label={interactive ? `${props.mode === "edit" ? "Drag" : "Select"} ${item.label}` : undefined}
               style={{ left: `${clampPercent(left)}%`, top: `${clampPercent(top)}%`, width: `${width}%`, height: `${clampPercent(height)}%` }}
               title={`${item.label}: z ${formatCompact(item.zMm)} mm, route ${item.solverRoute}`}
               onClick={() => {
                 if (selection) props.onSelect(selection);
               }}
               onPointerDown={(event) => {
-                if (!interactive || !selection) return;
+                if (!draggable || !selection) return;
                 event.preventDefault();
                 props.onSelect(selection);
                 event.currentTarget.setPointerCapture(event.pointerId);
                 setDragPreview({ selection, ...positionFromPointer(event) });
               }}
               onPointerMove={(event) => {
-                if (!interactive || !dragPreview || !selection || dragPreview.selection.id !== item.id || dragPreview.selection.kind !== selection.kind) return;
+                if (!draggable || !dragPreview || !selection || dragPreview.selection.id !== item.id || dragPreview.selection.kind !== selection.kind) return;
                 setDragPreview({ selection, ...positionFromPointer(event) });
               }}
               onPointerUp={(event) => {
-                if (!interactive || !dragPreview || !selection || dragPreview.selection.id !== item.id || dragPreview.selection.kind !== selection.kind) return;
+                if (!draggable || !dragPreview || !selection || dragPreview.selection.id !== item.id || dragPreview.selection.kind !== selection.kind) return;
                 const next = positionFromPointer(event);
                 setDragPreview(null);
                 props.onCommitPosition(selection, next);
               }}
               onKeyDown={(event) => {
                 if (!selection) return;
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setDragPreview(null);
+                  return;
+                }
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   props.onSelect(selection);
@@ -3061,7 +3254,17 @@ function L85MonitorStack(props: { snapshots: OpticalBenchMonitorSnapshot[] }) {
   );
 }
 
-function SurfaceGeometryCrossSection(props: { scenario: SimulationBuilderScenario; zMin: number; zMax: number }) {
+function SurfaceGeometryCrossSection(props: {
+  scenario: SimulationBuilderScenario;
+  zMin: number;
+  zMax: number;
+  selected?: L85Selection;
+  mode?: XzGeometryMode;
+  warnings?: SolverWarning[];
+  snapStepMm?: number;
+  onSelect?: (selection: L85Selection) => void;
+  onCommitGeometry?: (elementId: string, patch: Partial<SimulationBuilderElement>, label?: string) => void;
+}) {
   const finiteElements = props.scenario.elements.filter((element) => isSurfaceGeometryElementKind(element.kind));
   const zRange = Math.max(1e-9, props.zMax - props.zMin);
   const xExtent = Math.max(
@@ -3069,11 +3272,86 @@ function SurfaceGeometryCrossSection(props: { scenario: SimulationBuilderScenari
     1,
     ...finiteElements.map((element) => Math.abs(element.xUm ?? 0) + Math.max(0.1, element.widthUm ?? 1) / 2)
   );
+  const mode = props.mode ?? "inspect";
+  const editable = mode === "edit" && Boolean(props.onCommitGeometry);
+  const snapStepMm = props.snapStepMm ?? 0.1;
+  const domainRef = useRef<HTMLDivElement | null>(null);
+  const [dragPreview, setDragPreview] = useState<SurfaceGeometryDragPreview | null>(null);
   const sourceLeft = ((props.scenario.source.zMm - props.zMin) / zRange) * 100;
   const observationLeft = ((props.scenario.observationPlaneZMm - props.zMin) / zRange) * 100;
+
+  function positionFromPointer(event: PointerEvent<HTMLElement>, snapZ: boolean): { zMm: number; xUm: number } {
+    const rect = domainRef.current?.getBoundingClientRect();
+    if (!rect) return { zMm: props.zMin, xUm: 0 };
+    const zPercent = clampPercent(((event.clientX - rect.left) / Math.max(1, rect.width)) * 100);
+    const xPercent = clampPercent(((event.clientY - rect.top) / Math.max(1, rect.height)) * 100);
+    const rawZ = props.zMin + (zPercent / 100) * zRange;
+    const zMm = snapZ && snapStepMm > 0 ? Math.round(rawZ / snapStepMm) * snapStepMm : rawZ;
+    return {
+      zMm: clampNumber(zMm, props.zMin, props.zMax),
+      xUm: clampNumber(((50 - xPercent) / 38) * xExtent, -xExtent, xExtent)
+    };
+  }
+
+  function patchForGeometryDrag(element: SimulationBuilderElement, dragKind: SurfaceGeometryDragKind, event: PointerEvent<HTMLElement>): Partial<SimulationBuilderElement> {
+    const position = positionFromPointer(event, dragKind === "body");
+    if (dragKind === "body") {
+      return { zMm: position.zMm, xUm: Number(position.xUm.toPrecision(12)) };
+    }
+    if (dragKind === "thickness-start" || dragKind === "thickness-end") {
+      const currentThicknessMm = Math.max(0.00005, (element.thicknessUm ?? 1) / 1000);
+      const startEdge = element.zMm - currentThicknessMm / 2;
+      const endEdge = element.zMm + currentThicknessMm / 2;
+      const fixedEdge = dragKind === "thickness-start" ? endEdge : startEdge;
+      const nextThicknessUm = Math.max(0.05, Math.abs(position.zMm - fixedEdge) * 1000);
+      const nextZ = clampNumber((position.zMm + fixedEdge) / 2, props.scenario.grid.zStartMm, props.scenario.grid.zEndMm);
+      return { zMm: Number(nextZ.toPrecision(12)), thicknessUm: Number(nextThicknessUm.toPrecision(12)) };
+    }
+    const currentWidthUm = Math.max(0.05, element.widthUm ?? 1);
+    const centerX = element.xUm ?? 0;
+    const negativeEdge = centerX - currentWidthUm / 2;
+    const positiveEdge = centerX + currentWidthUm / 2;
+    const fixedEdge = dragKind === "height-top" ? negativeEdge : positiveEdge;
+    const nextWidthUm = Math.max(0.05, Math.abs(position.xUm - fixedEdge));
+    const nextX = (position.xUm + fixedEdge) / 2;
+    return { xUm: Number(nextX.toPrecision(12)), widthUm: Number(nextWidthUm.toPrecision(12)) };
+  }
+
+  function startGeometryDrag(event: PointerEvent<HTMLElement>, element: SimulationBuilderElement, dragKind: SurfaceGeometryDragKind): void {
+    if (!editable || !props.onCommitGeometry) return;
+    event.preventDefault();
+    event.stopPropagation();
+    props.onSelect?.({ kind: "element", id: element.id });
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDragPreview({ elementId: element.id, dragKind, patch: patchForGeometryDrag(element, dragKind, event) });
+  }
+
+  function elementWarnings(elementId: string): SolverWarning[] {
+    return (props.warnings ?? []).filter((warning) => warning.elementId === elementId);
+  }
+
+  const visibleWarnings = (props.warnings ?? []).filter((warning) => warning.elementId && finiteElements.some((element) => element.id === warning.elementId)).slice(0, 4);
+
   return (
     <div className="surface-cross-section">
-      <div className="surface-cross-section-domain">
+      <div
+        className={`surface-cross-section-domain ${editable ? "surface-cross-section-domain-edit" : ""}`}
+        ref={domainRef}
+        onPointerMove={(event) => {
+          if (!dragPreview) return;
+          const element = finiteElements.find((item) => item.id === dragPreview.elementId);
+          if (!element) return;
+          setDragPreview({ ...dragPreview, patch: patchForGeometryDrag(element, dragPreview.dragKind, event) });
+        }}
+        onPointerUp={() => {
+          if (!dragPreview || !props.onCommitGeometry) return;
+          props.onCommitGeometry(dragPreview.elementId, dragPreview.patch, "Drag finite surface geometry");
+          setDragPreview(null);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") setDragPreview(null);
+        }}
+      >
         <span className="surface-cross-section-pml surface-cross-section-pml-start">PML</span>
         <span className="surface-cross-section-pml surface-cross-section-pml-end">PML</span>
         <div className="surface-cross-section-axis" />
@@ -3084,24 +3362,73 @@ function SurfaceGeometryCrossSection(props: { scenario: SimulationBuilderScenari
           monitor
         </div>
         {finiteElements.map((element) => {
-          const widthPercent = Math.max(1.2, ((Math.max(0.05, element.thicknessUm ?? 1) / 1000) / zRange) * 100);
-          const left = ((element.zMm - props.zMin) / zRange) * 100 - widthPercent / 2;
-          const heightPercent = Math.max(8, (Math.max(0.05, element.widthUm ?? 1) / (xExtent * 2)) * 78);
-          const top = 50 - ((element.xUm ?? 0) / Math.max(1e-9, xExtent)) * 38 - heightPercent / 2;
+          const preview = dragPreview?.elementId === element.id ? dragPreview : null;
+          const displayElement = preview ? { ...element, ...preview.patch } : element;
+          const widthPercent = Math.max(1.2, ((Math.max(0.05, displayElement.thicknessUm ?? 1) / 1000) / zRange) * 100);
+          const left = ((displayElement.zMm - props.zMin) / zRange) * 100 - widthPercent / 2;
+          const heightPercent = Math.max(8, (Math.max(0.05, displayElement.widthUm ?? 1) / (xExtent * 2)) * 78);
+          const top = 50 - ((displayElement.xUm ?? 0) / Math.max(1e-9, xExtent)) * 38 - heightPercent / 2;
+          const selected = props.selected?.kind === "element" && props.selected.id === element.id;
+          const warnings = elementWarnings(element.id);
           return (
             <div
-              className={`surface-cross-section-object surface-cross-section-object-${element.kind}`}
+              className={`surface-cross-section-object surface-cross-section-object-${element.kind} ${props.onSelect ? "surface-cross-section-object-selectable" : ""} ${editable ? "surface-cross-section-object-editable" : ""} ${selected ? "surface-cross-section-object-selected" : ""} ${warnings.length ? "surface-cross-section-object-warning" : ""} ${preview ? "surface-cross-section-object-drag-preview" : ""}`}
               key={element.id}
+              role={props.onSelect ? "button" : undefined}
+              tabIndex={props.onSelect ? 0 : undefined}
+              aria-label={`${editable ? "Edit" : "Inspect"} ${element.label}`}
               style={{
                 left: `${clampPercent(left)}%`,
                 width: `${Math.min(32, widthPercent)}%`,
                 top: `${clampPercent(top)}%`,
                 height: `${Math.min(82, heightPercent)}%`,
-                transform: element.orientationDeg ? `rotate(${element.orientationDeg}deg)` : undefined
+                transform: displayElement.orientationDeg ? `rotate(${displayElement.orientationDeg}deg)` : undefined
               }}
-              title={`${element.label}: x ${formatCompact(element.xUm ?? 0)} um, z ${formatCompact(element.zMm)} mm, ${elementSizeText(element)}`}
+              title={`${element.label}: x ${formatCompact(displayElement.xUm ?? 0)} um, z ${formatCompact(displayElement.zMm)} mm, ${elementSizeText(displayElement)}${warnings.length ? `; warnings ${warnings.map((warning) => warning.code).join(", ")}` : ""}`}
+              onClick={() => props.onSelect?.({ kind: "element", id: element.id })}
+              onPointerDown={(event) => startGeometryDrag(event, element, "body")}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setDragPreview(null);
+                  return;
+                }
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  props.onSelect?.({ kind: "element", id: element.id });
+                  return;
+                }
+                if (!editable || !props.onCommitGeometry) return;
+                if (event.key === "ArrowLeft") {
+                  event.preventDefault();
+                  props.onCommitGeometry(element.id, { zMm: element.zMm - snapStepMm }, "Keyboard nudge finite surface geometry");
+                  return;
+                }
+                if (event.key === "ArrowRight") {
+                  event.preventDefault();
+                  props.onCommitGeometry(element.id, { zMm: element.zMm + snapStepMm }, "Keyboard nudge finite surface geometry");
+                  return;
+                }
+                if (event.key === "ArrowUp") {
+                  event.preventDefault();
+                  props.onCommitGeometry(element.id, { xUm: (element.xUm ?? 0) + 0.25 }, "Keyboard nudge finite surface geometry");
+                  return;
+                }
+                if (event.key === "ArrowDown") {
+                  event.preventDefault();
+                  props.onCommitGeometry(element.id, { xUm: (element.xUm ?? 0) - 0.25 }, "Keyboard nudge finite surface geometry");
+                }
+              }}
             >
               <span>{surfaceElementShortLabel(element.kind)}</span>
+              {editable && selected && (
+                <>
+                  <i className="surface-cross-section-handle surface-cross-section-handle-left" title="Drag thickness start" onPointerDown={(event) => startGeometryDrag(event, element, "thickness-start")} />
+                  <i className="surface-cross-section-handle surface-cross-section-handle-right" title="Drag thickness end" onPointerDown={(event) => startGeometryDrag(event, element, "thickness-end")} />
+                  <i className="surface-cross-section-handle surface-cross-section-handle-top" title="Drag x-width positive edge" onPointerDown={(event) => startGeometryDrag(event, element, "height-top")} />
+                  <i className="surface-cross-section-handle surface-cross-section-handle-bottom" title="Drag x-width negative edge" onPointerDown={(event) => startGeometryDrag(event, element, "height-bottom")} />
+                </>
+              )}
             </div>
           );
         })}
@@ -3109,8 +3436,15 @@ function SurfaceGeometryCrossSection(props: { scenario: SimulationBuilderScenari
       <div className="surface-cross-section-legend">
         <span>z {formatCompact(props.scenario.grid.zStartMm)}-{formatCompact(props.scenario.grid.zEndMm)} mm</span>
         <span>x span {formatCompact(xExtent * 2)} um</span>
-        <span>{finiteElements.length ? "finite extents shown" : "add or load a finite surface fixture"}</span>
+        <span>{finiteElements.length ? `${mode} mode; finite extents shown` : "add or load a finite surface fixture"}</span>
       </div>
+      {visibleWarnings.length > 0 && (
+        <div className="surface-cross-section-warning-strip" aria-label="Surface geometry warning visual summary">
+          {visibleWarnings.map((warning, index) => (
+            <span key={`${warning.code}:${warning.elementId ?? ""}:${index}`}><strong>{warning.code}</strong> {warning.message}</span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

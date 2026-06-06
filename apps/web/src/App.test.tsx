@@ -552,6 +552,8 @@ describe("solver disclosure copy", () => {
   it("keeps the visible app shell focused on L8.8 evidence campaign with L8.7 robust advisor, L8.6 tolerance, L8.5.1 editing, L8.4/L8.3/L8.2/L8.1 FDTD, and L7.8 diagnostics still reachable", () => {
     const app = readFileSync(resolve(testDir, "App.tsx"), "utf8");
     const simulationBuilder = readFileSync(resolve(testDir, "maxwell/SimulationBuilderPanel.tsx"), "utf8");
+    const fdtdReadme = readFileSync(resolve(testDir, "../../../tools/fdtd/README.md"), "utf8");
+    const l88aSmoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l88a_browser_smoke_code.js"), "utf8");
     const maxwellReturn = app.indexOf("return <MaxwellOnlyApp />;");
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
@@ -621,6 +623,16 @@ describe("solver disclosure copy", () => {
     expect(simulationBuilder).toContain("L8.5.1 element inspector direct editing smoke preview");
     expect(simulationBuilder).toContain("Numeric/text fields are the source of truth");
     expect(simulationBuilder).toContain("Interactive L8.5.1 x-z bench diagram");
+    expect(simulationBuilder).toContain("Order and z-position");
+    expect(simulationBuilder).toContain("Finite shape and transverse placement");
+    expect(simulationBuilder).toContain("Inspector fields are exact source of truth");
+    expect(simulationBuilder).toContain("L8.8a two-view interaction model smoke preview");
+    expect(simulationBuilder).toContain("Inspect");
+    expect(simulationBuilder).toContain("Edit Geometry");
+    expect(simulationBuilder).toContain("Drag optical axis element z-only");
+    expect(simulationBuilder).toContain("Drag finite surface geometry");
+    expect(simulationBuilder).toContain("Keyboard nudge finite surface geometry");
+    expect(simulationBuilder).toContain("Surface geometry warning visual summary");
     expect(simulationBuilder).toContain("Drag optical bench element");
     expect(simulationBuilder).toContain("Monitor before");
     expect(simulationBuilder).toContain("Monitor after");
@@ -753,6 +765,12 @@ describe("solver disclosure copy", () => {
     expect(simulationBuilder).toContain("arbitrary 3D Maxwell");
     expect(simulationBuilder).toContain("FDTD/FEM/BEM/RCWA execution");
     expect(simulationBuilder).toContain("manufacturing certification");
+    expect(fdtdReadme).toContain("L8.8a two-view interaction hardening");
+    expect(fdtdReadme).toContain("l88a_browser_smoke_code.js");
+    expect(l88aSmoke).toContain("l88a-two-view-labels-smoke.png");
+    expect(l88aSmoke).toContain("l88a-axis-z-drag-smoke.png");
+    expect(l88aSmoke).toContain("l88a-xz-edit-handles-smoke.png");
+    expect(l88aSmoke).toContain("l88a-warning-visuals-smoke.png");
     expect(simulationBuilder).not.toMatch(/full 3D Maxwell execution is implemented|browser FDTD execution is available|FDTD execution is available in the browser|digital twin certified|manufacturing certification available/i);
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);
