@@ -2,8 +2,8 @@
   "schema": "emmicro.fdtd.runReceipt.v1",
   "runId": "l84-fixture-long-slit",
   "sourceScenarioHash": "d96beb814449f702",
-  "manifestHash": "c1075ced58ef74a9",
-  "scriptHash": "622e04573dc8aaeb",
+  "manifestHash": "33d117e7c5e980b1",
+  "scriptHash": "18ebd85d8771dbf9",
   "tool": {
     "name": "example-fixture",
     "version": "l84-deterministic",
@@ -57,5 +57,5 @@
       "elementId": "l84-long-slit"
     }
   ],
-  "receiptHash": "e8daca8b0225732c"
+  "receiptHash": "3617ae5390b3e184"
 }

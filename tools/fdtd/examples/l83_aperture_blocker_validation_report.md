@@ -1,8 +1,8 @@
 # L8.3 Finite aperture/blocker Validation Report
 
-Scene hash: ee5ff5479f1cf48c
-Manifest hash: dcd47a93a79ca5b3
-Script hash: dcd29415727afd05
+Scene hash: b43ec432f1467fa6
+Manifest hash: eece0113ac228cd3
+Script hash: 48bcd479fb464c3f
 Geometry hash: 7c7915c1b7f38713
 Status: DIAGNOSTIC
 

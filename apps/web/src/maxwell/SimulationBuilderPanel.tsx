@@ -26,7 +26,10 @@ import {
   createSurfaceGeometryScene,
   createTransparentFdtdExampleBundle,
   createTransparentFdtdExampleScenario,
+  defaultOpticalBenchScenario,
   defaultSimulationBuilderScenario,
+  deleteOpticalBenchElement,
+  duplicateOpticalBenchElement,
   fdtdBenchmarkManifestJson,
   fdtdBenchmarkReportJson,
   fdtdBenchmarkReportMarkdown,
@@ -42,10 +45,18 @@ import {
   fdtdValidationMetricsCsv,
   fdtdValidationReportJson,
   fdtdValidationReportMarkdown,
+  createOpticalBenchBundle,
   importFdtdRunArtifacts,
   importFdtdConvergenceBundleArtifacts,
   l80ReleaseTrail,
+  opticalBenchMetricsCsv,
+  opticalBenchMonitorStackCsv,
+  opticalBenchSceneJson,
+  opticalBenchSolverPlanJson,
+  opticalBenchValidationReportJson,
+  opticalBenchValidationReportMarkdown,
   runSimulationBuilderScenario,
+  setOpticalBenchElementEnabled,
   simulationBuilderScenarioJson,
   simulationBuilderValidationMetricsCsv,
   simulationBuilderValidationReportJson,
@@ -54,6 +65,7 @@ import {
   surfaceGeometrySceneJson,
   surfaceGeometryValidationReportJson,
   surfaceGeometryValidationReportMarkdown,
+  updateOpticalBenchElementZ,
   validateApertureImportedRun,
   validateFdtdImportedRunAgainstScenario,
   type ApertureConvergenceReport,
@@ -66,6 +78,9 @@ import {
   type FdtdFieldSlice,
   type FdtdImportedRun,
   type FdtdValidationReport,
+  type OpticalBenchElement,
+  type OpticalBenchMonitorSnapshot,
+  type OpticalBenchSolverPlanRow,
   type SurfaceGeometryExampleBundle,
   type SurfaceGeometryKind,
   type SimulationBuilderElement,
@@ -112,6 +127,18 @@ const apertureValidationActions: Array<{ kind: ApertureValidationKind; label: st
   { kind: "opaque-blocker", label: "Opaque Blocker", addLabel: "Add Opaque Blocker", fixtureLabel: "Load Opaque Blocker Fixture" }
 ];
 
+const l85BenchActions: Array<{ kind: SimulationBuilderElementKind; label: string; overrides?: Partial<SimulationBuilderElement> }> = [
+  { kind: "circular-aperture", label: "Add aperture" },
+  { kind: "finite-aperture-blocker", label: "Add slit", overrides: { apertureShape: "long-slit", apertureWidthUm: 3, apertureHeightUm: 14, label: "Long slit" } },
+  { kind: "ideal-lens", label: "Add ideal lens" },
+  { kind: "finite-transparent-block", label: "Add transparent block" },
+  { kind: "finite-absorbing-block", label: "Add absorbing block" },
+  { kind: "finite-reflective-plate", label: "Add reflective plate" },
+  { kind: "finite-aperture-blocker", label: "Add blocker", overrides: { apertureShape: "opaque-blocker", apertureWidthUm: 2, apertureHeightUm: 6, label: "Opaque blocker" } },
+  { kind: "tilted-interface-wedge", label: "Add wedge" },
+  { kind: "curved-material-lens", label: "Add curved lens scaffold" }
+];
+
 function downloadText(filename: string, mime: string, text: string): void {
   const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -125,8 +152,10 @@ function downloadText(filename: string, mime: string, text: string): void {
 }
 
 export function SimulationBuilderPanel() {
-  const [scenario, setScenario] = useState<SimulationBuilderScenario>(() => defaultSimulationBuilderScenario());
+  const [scenario, setScenario] = useState<SimulationBuilderScenario>(() => defaultOpticalBenchScenario());
   const [hasComputed, setHasComputed] = useState(false);
+  const [hasL85ScalarPreview, setHasL85ScalarPreview] = useState(true);
+  const [hasL85ExternalEvidence, setHasL85ExternalEvidence] = useState(true);
   const [importedFdtd, setImportedFdtd] = useState<FdtdImportedRun | null>(null);
   const [fdtdImportError, setFdtdImportError] = useState<string | null>(null);
   const [benchmarkKind, setBenchmarkKind] = useState<FdtdBenchmarkKind>("transparent-interface");
@@ -142,6 +171,7 @@ export function SimulationBuilderPanel() {
   const [apertureFieldSlice, setApertureFieldSlice] = useState<FdtdFieldSlice | null>(null);
   const [apertureImportError, setApertureImportError] = useState<string | null>(null);
   const result = useMemo(() => runSimulationBuilderScenario(scenario), [scenario]);
+  const l85Bundle = useMemo(() => createOpticalBenchBundle(scenario), [scenario]);
   const fdtdBundle = useMemo(() => exportFdtdBundleFromSimulationBuilder(scenario), [scenario]);
   const fdtdBenchmarkPack = useMemo(() => createFdtdBenchmarkPack({ benchmarkKind, scenario }), [benchmarkKind, scenario]);
   const surfaceGeometryScene = useMemo(() => surfaceGeometryExample?.scene ?? createSurfaceGeometryScene(scenario), [scenario, surfaceGeometryExample]);
@@ -189,6 +219,79 @@ export function SimulationBuilderPanel() {
     setSurfaceGeometryKind(kind);
     setSurfaceGeometryExample(null);
     setScenario((current) => addSimulationBuilderElement(current, { ...createSurfaceGeometryElement(kind, nextZ), id: `l83-${kind}-${labelSuffix}`, label: `${surfaceGeometryDisplayName(kind)} ${labelSuffix}` }));
+  }
+
+  function resetL85Bench(): void {
+    setScenario(defaultOpticalBenchScenario());
+    setHasComputed(true);
+    setHasL85ScalarPreview(true);
+    setHasL85ExternalEvidence(true);
+    setSurfaceGeometryExample(null);
+    clearApertureEvidence();
+  }
+
+  function addL85BenchElement(action: { kind: SimulationBuilderElementKind; label: string; overrides?: Partial<SimulationBuilderElement> }): void {
+    setScenario((current) => {
+      const nextZ = Math.min(current.grid.zEndMm - 1, Math.max(current.source.zMm, current.target.zMm - 2, ...current.elements.map((element) => element.zMm)) + 5);
+      const labelSuffix = current.elements.filter((element) => element.kind === action.kind).length + 1;
+      const label = action.overrides?.label ? `${action.overrides.label} ${labelSuffix}` : `${elementButtonLabel(action.kind)} ${labelSuffix}`;
+      const element = {
+        ...createSimulationBuilderElement(action.kind, nextZ, label),
+        ...action.overrides,
+        id: `l85-${action.kind}-${labelSuffix}-${Math.round(nextZ * 1000)}`,
+        label
+      };
+      return addSimulationBuilderElement(current, element);
+    });
+    setHasL85ScalarPreview(true);
+    setHasL85ExternalEvidence(false);
+  }
+
+  function duplicateL85Element(elementId: string): void {
+    setScenario((current) => duplicateOpticalBenchElement(current, elementId));
+    setHasL85ExternalEvidence(false);
+  }
+
+  function deleteL85Element(elementId: string): void {
+    setScenario((current) => deleteOpticalBenchElement(current, elementId));
+    setHasL85ExternalEvidence(false);
+  }
+
+  function toggleL85Element(element: OpticalBenchElement): void {
+    setScenario((current) => setOpticalBenchElementEnabled(current, element.id, !element.enabled));
+    setHasL85ExternalEvidence(false);
+  }
+
+  function updateL85ElementZ(elementId: string, value: number): void {
+    setScenario((current) => updateOpticalBenchElementZ(current, elementId, value));
+    setHasL85ExternalEvidence(false);
+  }
+
+  function addL85ObservationMonitor(): void {
+    setScenario((current) => ({
+      ...current,
+      observationPlaneZMm: Math.min(current.grid.zEndMm, Math.max(current.observationPlaneZMm + 5, ...current.elements.map((element) => element.zMm + 2)))
+    }));
+  }
+
+  function exportL85Scene(): void {
+    downloadText("multielement_scene.json", "application/json", opticalBenchSceneJson(l85Bundle.scene));
+    downloadText("solver_plan.json", "application/json", opticalBenchSolverPlanJson(l85Bundle.solverPlan));
+    downloadText("monitor_stack.csv", "text/csv", `${opticalBenchMonitorStackCsv(l85Bundle.scalarPreview)}\n`);
+  }
+
+  function exportL85ExternalFdtdChain(): void {
+    downloadText("multielement_fdtd_scene_manifest.json", "application/json", fdtdManifestJson(l85Bundle.fdtdBundle.manifest));
+    downloadText("multielement_meep.py", "text/x-python", fdtdMeepScriptText(l85Bundle.fdtdBundle.script));
+    downloadText("multielement_fixture_receipt.json", "application/json", JSON.stringify(l85Bundle.externalEvidence.receipt, null, 2));
+    downloadText("multielement_fixture_flux_summary.json", "application/json", JSON.stringify(l85Bundle.externalEvidence.flux, null, 2));
+    downloadText("multielement_fixture_field_slice_xz.csv", "text/csv", `${l85Bundle.externalEvidence.fieldSliceCsv}\n`);
+  }
+
+  function exportL85ValidationReport(): void {
+    downloadText("multielement_validation_report.md", "text/markdown", `${opticalBenchValidationReportMarkdown(l85Bundle.validationReport)}\n`);
+    downloadText("multielement_validation_report.json", "application/json", opticalBenchValidationReportJson(l85Bundle.validationReport));
+    downloadText("multielement_metrics.csv", "text/csv", `${opticalBenchMetricsCsv(l85Bundle.validationReport)}\n`);
   }
 
   function exportScenario(): void {
@@ -437,18 +540,18 @@ export function SimulationBuilderPanel() {
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L8.4 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L8.5 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L8.4 Aperture / Blocker Edge-Diffraction Validation + Surface Geometry FDTD Evidence</h2>
+        <h2>L8.5 Multi-Element Optical Bench Propagation Chain</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, ordered z-axis elements, finite surface geometry, target/material surface, compute path, validation report, L8.1 field-map import evidence, L8.2 benchmark convergence
-          diagnostics, L8.3 placed transparent/absorbing/reflective/aperture/wedge external FDTD fixtures, and L8.4 aperture/blocker scalar-reference validation. Browser FDTD, arbitrary 3D Maxwell
-          material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, sensor-stack EM, digital twin behavior, and manufacturing certification are not implemented.
+          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, external FDTD handoff evidence, and a validation report.
+          Browser FDTD, arbitrary 3D Maxwell material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, sensor-stack EM, digital twin behavior, and manufacturing
+          certification are not implemented.
         </span>
       </div>
 
@@ -459,6 +562,159 @@ export function SimulationBuilderPanel() {
             <strong>{result.stepStatuses[step]}</strong>
           </div>
         ))}
+      </div>
+
+      <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide l85-bench" aria-label="L8.5 multi-element optical bench smoke preview">
+        <div className="maxwell-section-heading">
+          <h2>Multi-Element Optical Bench</h2>
+          <strong>{l85Bundle.validationReport.computationStatus}</strong>
+        </div>
+        <div className="l2-disclosure">
+          <strong>Grid -&gt; source -&gt; element chain -&gt; target -&gt; observation / monitors -&gt; validation report.</strong>
+          <span>
+            The scalar preview executes ideal apertures, slits, lenses, free-space segments, and observation planes. Finite transparent blocks, absorbing blocks, reflective plates, aperture/blockers, and
+            tilted wedges are routed to deterministic external FDTD export/import evidence with receipts. Unsupported or scaffold-only items stay visible in the solver plan.
+          </span>
+        </div>
+        <div className="maxwell-layer-actions simulation-builder-actions l85-action-row">
+          <button type="button" onClick={resetL85Bench}>
+            <Sparkles size={15} />
+            <span>Load L8.5 Bench</span>
+          </button>
+          {l85BenchActions.map((action) => (
+            <button type="button" key={`${action.kind}:${action.label}`} onClick={() => addL85BenchElement(action)}>
+              <Plus size={15} />
+              <span>{action.label}</span>
+            </button>
+          ))}
+          <button type="button" onClick={addL85ObservationMonitor}>
+            <Plus size={15} />
+            <span>Add monitor</span>
+          </button>
+          <button type="button" onClick={() => setHasL85ScalarPreview(true)}>
+            <Sparkles size={15} />
+            <span>Run Scalar Preview</span>
+          </button>
+          <button type="button" onClick={() => setHasL85ExternalEvidence(true)}>
+            <Sparkles size={15} />
+            <span>Import Bundled Multi-Element Fixture</span>
+          </button>
+          <button type="button" onClick={exportL85Scene}>
+            <FileDown size={15} />
+            <span>Export Multi-Element Scene</span>
+          </button>
+          <button type="button" onClick={exportL85ExternalFdtdChain}>
+            <FileDown size={15} />
+            <span>Export External FDTD Chain</span>
+          </button>
+          <button type="button" onClick={exportL85ValidationReport}>
+            <FileDown size={15} />
+            <span>Export Multi-Element Validation Report</span>
+          </button>
+        </div>
+
+        <div className="l85-grid">
+          <div className="maxwell-data-table l85-wide" aria-label="L8.5 ordered element list smoke preview">
+            <div className="maxwell-section-heading">
+              <h2>Element Chain</h2>
+              <strong>{l85Bundle.scene.elements.length} elements</strong>
+            </div>
+            <div className="l85-element-table">
+              <div className="l85-element-row l85-element-header">
+                <span>order</span>
+                <span>element</span>
+                <span>z mm</span>
+                <span>route</span>
+                <span>status</span>
+                <span>controls</span>
+              </div>
+              {l85Bundle.scene.elements.map((element, index) => (
+                <div className="l85-element-row" key={element.id}>
+                  <span>{index + 1}</span>
+                  <strong>{element.label}</strong>
+                  <input aria-label={`${element.label} z position`} type="number" value={element.zMm} step={0.5} onChange={(event) => updateL85ElementZ(element.id, Number(event.currentTarget.value))} />
+                  <span>{element.solverRoute}</span>
+                  <em className={`simulation-capability simulation-capability-${element.status === "external-only" ? "scaffold-only" : element.status}`}>{element.status}</em>
+                  <span className="l85-row-actions">
+                    <button type="button" onClick={() => duplicateL85Element(element.id)}>Duplicate</button>
+                    <button type="button" onClick={() => toggleL85Element(element)}>{element.enabled ? "Disable" : "Enable"}</button>
+                    <button type="button" onClick={() => deleteL85Element(element.id)}>Delete</button>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="maxwell-data-table l85-wide" aria-label="L8.5 x-z cross-section smoke preview">
+            <div className="maxwell-section-heading">
+              <h2>X-Z Bench Cross-Section</h2>
+              <strong>{l85Bundle.crossSection.length} items</strong>
+            </div>
+            <L85BenchCrossSection bundle={l85Bundle} />
+          </div>
+
+          <div className="maxwell-data-table" aria-label="L8.5 solver plan smoke preview">
+            <div className="maxwell-section-heading">
+              <h2>Solver Plan</h2>
+              <strong>{l85Bundle.solverPlan.filter((row) => row.solverRoute === "external-fdtd").length} external</strong>
+            </div>
+            <L85SolverPlanTable rows={l85Bundle.solverPlan} />
+          </div>
+
+          <div className="maxwell-data-table" aria-label="L8.5 monitor stack smoke preview">
+            <div className="maxwell-section-heading">
+              <h2>Monitor Stack</h2>
+              <strong>{hasL85ScalarPreview ? `${l85Bundle.scalarPreview.snapshots.length} snapshots` : "ready"}</strong>
+            </div>
+            {hasL85ScalarPreview ? <L85MonitorStack snapshots={l85Bundle.scalarPreview.snapshots} /> : <div className="empty-state">Run scalar preview to compute monitor snapshots for supported ideal plane elements.</div>}
+          </div>
+
+          <div className="maxwell-data-table" aria-label="L8.5 scalar chain preview smoke preview">
+            <div className="maxwell-section-heading">
+              <h2>Scalar Chain Preview</h2>
+              <strong>{l85Bundle.scalarPreview.previewHash.slice(0, 10)}</strong>
+            </div>
+            <div className="maxwell-study-list">
+              <Stat label="Snapshots" value={String(l85Bundle.scalarPreview.snapshots.length)} />
+              <Stat label="Warnings" value={String(l85Bundle.scalarPreview.warnings.length)} />
+              <Stat label="First monitor" value={l85Bundle.scalarPreview.snapshots[0]?.label ?? "n/a"} />
+              <Stat label="Last monitor" value={l85Bundle.scalarPreview.snapshots[l85Bundle.scalarPreview.snapshots.length - 1]?.label ?? "n/a"} />
+            </div>
+          </div>
+
+          <div className="maxwell-data-table" aria-label="L8.5 external FDTD chain import smoke preview">
+            <div className="maxwell-section-heading">
+              <h2>External FDTD Chain Import</h2>
+              <strong>{hasL85ExternalEvidence ? "imported fixture" : "not imported"}</strong>
+            </div>
+            <div className="maxwell-study-list">
+              <Stat label="Run receipt" value={hasL85ExternalEvidence ? l85Bundle.externalEvidence.receipt.runId : "none"} />
+              <Stat label="Imported R/T/A" value={hasL85ExternalEvidence ? `${pct(l85Bundle.externalEvidence.flux.reflectance)} / ${pct(l85Bundle.externalEvidence.flux.transmittance)} / ${pct(l85Bundle.externalEvidence.flux.absorbance)}` : "n/a"} />
+              <Stat label="Energy balance" value={hasL85ExternalEvidence ? formatCompact(l85Bundle.externalEvidence.flux.energyBalance) : "n/a"} />
+              <Stat label="Field slice" value={hasL85ExternalEvidence ? `${l85Bundle.externalEvidence.fieldSlice.xCount} x ${l85Bundle.externalEvidence.fieldSlice.zCount}` : "n/a"} />
+              <Stat label="Report hash" value={l85Bundle.validationReport.reportHash.slice(0, 10)} />
+            </div>
+          </div>
+
+          <div className="maxwell-data-table l85-wide" aria-label="L8.5 boundary warning smoke preview">
+            <div className="maxwell-section-heading">
+              <h2>Validation Warnings / Boundaries</h2>
+              <strong>{l85Bundle.validationReport.warnings.length}</strong>
+            </div>
+            <div className="fdtd-warning-list">
+              {l85Bundle.validationReport.warnings.slice(0, 9).map((warning, index) => (
+                <span key={`${warning.code}:${warning.elementId ?? ""}:${index}`}>
+                  <strong>{warning.code}</strong> {warning.message}
+                </span>
+              ))}
+              {l85Bundle.validationReport.warnings.length === 0 && <span>No L8.5 warnings for the current ordered scene.</span>}
+              <span>
+                <strong>boundary</strong> No in-browser FDTD execution, arbitrary CAD/freeform geometry solve, general arbitrary 3D Maxwell, FEM/BEM/RCWA, production EM solver, digital twin, or
+                manufacturing certification is claimed.
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="simulation-builder-layout">
@@ -1236,6 +1492,91 @@ export function SimulationBuilderPanel() {
   );
 }
 
+function L85BenchCrossSection(props: { bundle: ReturnType<typeof createOpticalBenchBundle> }) {
+  const scene = props.bundle.scene;
+  const zMin = scene.grid.zStartMm;
+  const zMax = scene.grid.zEndMm;
+  const zRange = Math.max(1e-9, zMax - zMin);
+  const xExtent = Math.max(scene.grid.domainWidthUm / 2, 1, ...props.bundle.crossSection.map((item) => Math.abs(item.xUm) + Math.max(0.1, item.widthUm) / 2));
+  return (
+    <div className="l85-cross-section">
+      <div className="l85-cross-section-domain">
+        <div className="l85-cross-section-axis" />
+        {props.bundle.crossSection.map((item) => {
+          const left = ((item.zMm - zMin) / zRange) * 100;
+          const height = item.kind === "monitor" || item.kind === "source" || item.kind === "target" ? 86 : Math.max(10, (item.heightUm / Math.max(1e-9, xExtent * 2)) * 82);
+          const top = item.kind === "monitor" || item.kind === "source" || item.kind === "target" ? 7 : 50 - (item.xUm / Math.max(1e-9, xExtent)) * 38 - height / 2;
+          const width = item.kind === "monitor" || item.kind === "source" || item.kind === "target" ? 0.65 : Math.max(0.8, Math.min(10, ((Math.max(0.02, item.thicknessUm) / 1000) / zRange) * 100));
+          return (
+            <div
+              className={`l85-cross-section-item l85-cross-section-item-${item.kind} l85-cross-section-route-${item.solverRoute}`}
+              key={item.id}
+              style={{ left: `${clampPercent(left)}%`, top: `${clampPercent(top)}%`, width: `${width}%`, height: `${clampPercent(height)}%` }}
+              title={`${item.label}: z ${formatCompact(item.zMm)} mm, route ${item.solverRoute}`}
+            >
+              <span>{l85CrossSectionLabel(item.type, item.kind)}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="surface-cross-section-legend">
+        <span>z {formatCompact(zMin)}-{formatCompact(zMax)} mm</span>
+        <span>x span {formatCompact(xExtent * 2)} um</span>
+        <span>monitors, target, PML, and finite extents shown</span>
+      </div>
+    </div>
+  );
+}
+
+function L85SolverPlanTable(props: { rows: OpticalBenchSolverPlanRow[] }) {
+  return (
+    <div className="l85-solver-plan-table">
+      <div className="l85-solver-plan-row l85-solver-plan-header">
+        <span>segment</span>
+        <span>route</span>
+        <span>status</span>
+      </div>
+      {props.rows.map((row) => (
+        <div className="l85-solver-plan-row" key={row.id}>
+          <strong>{row.segment}</strong>
+          <span>{row.solverRoute}</span>
+          <em className={`simulation-capability simulation-capability-${row.status === "external-only" ? "scaffold-only" : row.status}`}>{row.status}</em>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function L85MonitorStack(props: { snapshots: OpticalBenchMonitorSnapshot[] }) {
+  return (
+    <div className="l85-monitor-stack">
+      {props.snapshots.slice(0, 6).map((snapshot) => (
+        <div className="l85-monitor-card" key={snapshot.monitorId}>
+          <div className="maxwell-section-heading">
+            <h2>{snapshot.label}</h2>
+            <strong>{snapshot.status}</strong>
+          </div>
+          <div className="maxwell-study-list">
+            <Stat label="z" value={`${formatCompact(snapshot.zMm)} mm`} />
+            <Stat label="route" value={snapshot.solverRoute} />
+            <Stat label="peak" value={formatCompact(snapshot.metrics.peakIntensity)} />
+            <Stat label="power" value={formatCompact(snapshot.metrics.relativePower)} />
+          </div>
+          <div className="l85-monitor-profile" aria-label={`${snapshot.label} monitor profile`}>
+            {snapshot.profile.slice(0, 32).map((point, index) => (
+              <span
+                key={`${snapshot.monitorId}:${index}`}
+                title={`x ${formatCompact(point.xUm)} um; I ${formatCompact(point.intensity)}`}
+                style={{ height: `${Math.max(3, Math.min(100, point.intensity * 100))}%` }}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function SurfaceGeometryCrossSection(props: { scenario: SimulationBuilderScenario; zMin: number; zMax: number }) {
   const finiteElements = props.scenario.elements.filter((element) => isSurfaceGeometryElementKind(element.kind));
   const zRange = Math.max(1e-9, props.zMax - props.zMin);
@@ -1466,6 +1807,19 @@ function surfaceElementShortLabel(kind: SimulationBuilderElementKind): string {
   if (kind === "finite-aperture-blocker") return "MASK";
   if (kind === "tilted-interface-wedge") return "W";
   return "E";
+}
+
+function l85CrossSectionLabel(type: string, kind: string): string {
+  if (kind === "source") return "SRC";
+  if (kind === "monitor") return "MON";
+  if (kind === "target") return "TGT";
+  if (kind === "pml") return "PML";
+  if (type.includes("lens")) return "LENS";
+  if (type.includes("aperture") || type.includes("slit")) return "MASK";
+  if (type.includes("absorbing")) return "ABS";
+  if (type.includes("reflective")) return "REF";
+  if (type.includes("wedge")) return "WEDGE";
+  return "BLK";
 }
 
 function elementPositionText(element: SimulationBuilderElement): string {

@@ -2,9 +2,9 @@
 
 Status: PASS
 Reference model: flux-conservation
-Benchmark hash: 714c6ec794e14fb5
-Sweep hash: 42be0d95b40760d3
-Summary hash: 85976025d88ae737
+Benchmark hash: 1d309d32f253e4c3
+Sweep hash: 74300c6ed938207e
+Summary hash: 7ea0fae7eff7e425
 
 ## Reference
 

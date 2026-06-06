@@ -1,0 +1,10 @@
+monitor_id,label,z_mm,solver_route,status,peak_intensity,mean_intensity,total_power,relative_power,centroid_x_um,warning_codes
+after-source,After source,0,scalar-chain,computed,1,1,1536,1,-1.480297366e-16,
+circular-aperture-10000-after-field,After Circular aperture 1,10.25,scalar-chain,computed,1,0.1145833333,176,0.1145833333,0,
+ideal-lens-20000-after-field,After Ideal thin lens 1,20.25,scalar-chain,computed,1.143405571,0.1145833333,176,0.1145833333,-7.569702441e-18,
+finite-transparent-block-30000-before-field,Before Transparent block 1,29.75,external-fdtd,external-only,1.102740792,0.1145833333,176,0.1145833333,1.930274122e-16,opticalBench.external.required
+finite-transparent-block-30000-after-field,After Transparent block 1,30.25,external-fdtd,external-only,0.9924667125,0.103125,158.4,0.103125,-2.593323984e-17,opticalBench.external.required
+finite-absorbing-block-40000-before-field,Before Absorbing blocker 1,39.75,external-fdtd,external-only,1.018774465,0.1145833333,176,0.1145833333,-8.484374819e-17,opticalBench.external.required
+finite-absorbing-block-40000-after-field,After Absorbing blocker 1,40.25,external-fdtd,external-only,0.7335176151,0.0825,126.72,0.0825,-1.112128592e-16,opticalBench.external.required
+target-field,At target,50,scalar-chain,computed,0.9555093181,0.1145833333,176,0.1145833333,-6.708254533e-17,
+observation-plane,Observation plane,60,scalar-chain,computed,0.899786495,0.1145750465,175.9872714,0.1145750465,7.901448369e-17,

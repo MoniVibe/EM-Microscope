@@ -1,8 +1,8 @@
 {
   "schema": "emmicro.fdtd.sweepPlan.v1",
-  "benchmarkHash": "0ecd7857ec9ad4b8",
+  "benchmarkHash": "6e44da280ef45778",
   "sourceScenarioHash": "aaee306f50bff012",
-  "baseManifestHash": "8d9d310b59298ad5",
+  "baseManifestHash": "e94f930dada9b325",
   "settings": {
     "resolutionPointsPerWavelength": [
       10,
@@ -42,7 +42,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 21600000000,
-      "scriptHash": "90e4add93c1aaa1a"
+      "scriptHash": "57c2137fbe6e67de"
     },
     {
       "runId": "l82-transparent-interface-r10-pml0p5-pad2-m1p5",
@@ -53,7 +53,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 23200000000,
-      "scriptHash": "2a596782fd7395a9"
+      "scriptHash": "ea9f9ae0467e298d"
     },
     {
       "runId": "l82-transparent-interface-r10-pml0p5-pad3-m1p5",
@@ -64,7 +64,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 24800000000,
-      "scriptHash": "5b395ff3c84a56c8"
+      "scriptHash": "75f8d07d0775e6dc"
     },
     {
       "runId": "l82-transparent-interface-r10-pml1-pad1-m1p5",
@@ -75,7 +75,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 21600000000,
-      "scriptHash": "7869309839548e8b"
+      "scriptHash": "ce1668b8561330e7"
     },
     {
       "runId": "l82-transparent-interface-r10-pml1-pad2-m1p5",
@@ -86,7 +86,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 23200000000,
-      "scriptHash": "2ea57a31cc901532"
+      "scriptHash": "63ca59a598438e66"
     },
     {
       "runId": "l82-transparent-interface-r10-pml1-pad3-m1p5",
@@ -97,7 +97,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 24800000000,
-      "scriptHash": "d1c1e44122803af1"
+      "scriptHash": "e5d413423005fb35"
     },
     {
       "runId": "l82-transparent-interface-r10-pml1p5-pad1-m1p5",
@@ -108,7 +108,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 21600000000,
-      "scriptHash": "ae84f53c69781bc6"
+      "scriptHash": "1445a21ebca2a432"
     },
     {
       "runId": "l82-transparent-interface-r10-pml1p5-pad2-m1p5",
@@ -119,7 +119,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 23200000000,
-      "scriptHash": "71b0c57822eb3571"
+      "scriptHash": "c31673f44fcd88ad"
     },
     {
       "runId": "l82-transparent-interface-r10-pml1p5-pad3-m1p5",
@@ -130,7 +130,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 24800000000,
-      "scriptHash": "9bfdc75f92c0d150"
+      "scriptHash": "0555eceedb5b1e74"
     },
     {
       "runId": "l82-transparent-interface-r15-pml0p5-pad1-m1p5",
@@ -141,7 +141,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 72900000000,
-      "scriptHash": "96fb72db3add0201"
+      "scriptHash": "1c31e4328c760fd5"
     },
     {
       "runId": "l82-transparent-interface-r15-pml0p5-pad2-m1p5",
@@ -152,7 +152,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 78300000000,
-      "scriptHash": "f933b39bada62c31"
+      "scriptHash": "71257555ca83585d"
     },
     {
       "runId": "l82-transparent-interface-r15-pml0p5-pad3-m1p5",
@@ -163,7 +163,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 83700000000,
-      "scriptHash": "14ee3a2c1ad858c2"
+      "scriptHash": "4f2c19f0b96a526e"
     },
     {
       "runId": "l82-transparent-interface-r15-pml1-pad1-m1p5",
@@ -174,7 +174,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 72900000000,
-      "scriptHash": "b7faf0841d9e5833"
+      "scriptHash": "e7e5828165969427"
     },
     {
       "runId": "l82-transparent-interface-r15-pml1-pad2-m1p5",
@@ -185,7 +185,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 78300000000,
-      "scriptHash": "b36902b30962832c"
+      "scriptHash": "4fa3d69e93d46860"
     },
     {
       "runId": "l82-transparent-interface-r15-pml1-pad3-m1p5",
@@ -196,7 +196,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 83700000000,
-      "scriptHash": "08581c7204db8491"
+      "scriptHash": "4152fb7e22fcb88d"
     },
     {
       "runId": "l82-transparent-interface-r15-pml1p5-pad1-m1p5",
@@ -207,7 +207,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 72900000000,
-      "scriptHash": "322f61e31efdce00"
+      "scriptHash": "6293ed0de6e28df4"
     },
     {
       "runId": "l82-transparent-interface-r15-pml1p5-pad2-m1p5",
@@ -218,7 +218,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 78300000000,
-      "scriptHash": "026c72dad2280b01"
+      "scriptHash": "d4c5a340c90624b5"
     },
     {
       "runId": "l82-transparent-interface-r15-pml1p5-pad3-m1p5",
@@ -229,7 +229,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 83700000000,
-      "scriptHash": "9649594f060e5a32"
+      "scriptHash": "5988f9accf3b5b96"
     },
     {
       "runId": "l82-transparent-interface-r20-pml0p5-pad1-m1p5",
@@ -240,7 +240,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 172800000000,
-      "scriptHash": "97578f2a0d421eb7"
+      "scriptHash": "975ea86cf16d1a23"
     },
     {
       "runId": "l82-transparent-interface-r20-pml0p5-pad2-m1p5",
@@ -251,7 +251,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 185600000000,
-      "scriptHash": "98d7ec9108ef6ed0"
+      "scriptHash": "5bfabb7e2c0de6fc"
     },
     {
       "runId": "l82-transparent-interface-r20-pml0p5-pad3-m1p5",
@@ -262,7 +262,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 198400000000,
-      "scriptHash": "66e341382b45430a"
+      "scriptHash": "438a1d248dd6e046"
     },
     {
       "runId": "l82-transparent-interface-r20-pml1-pad1-m1p5",
@@ -273,7 +273,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 172800000000,
-      "scriptHash": "d5ea374d062d2589"
+      "scriptHash": "ade2f541b30b68ed"
     },
     {
       "runId": "l82-transparent-interface-r20-pml1-pad2-m1p5",
@@ -284,7 +284,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 185600000000,
-      "scriptHash": "71c1c93122de4068"
+      "scriptHash": "cd347572ee852dbc"
     },
     {
       "runId": "l82-transparent-interface-r20-pml1-pad3-m1p5",
@@ -295,7 +295,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 198400000000,
-      "scriptHash": "4d73b3ef0796e247"
+      "scriptHash": "3400f4a75015f24b"
     },
     {
       "runId": "l82-transparent-interface-r20-pml1p5-pad1-m1p5",
@@ -306,7 +306,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 172800000000,
-      "scriptHash": "cbd454f8189c87cc"
+      "scriptHash": "b1db3e072311d6b0"
     },
     {
       "runId": "l82-transparent-interface-r20-pml1p5-pad2-m1p5",
@@ -317,7 +317,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 185600000000,
-      "scriptHash": "0de091d731819f8b"
+      "scriptHash": "22ad09eefc539b1f"
     },
     {
       "runId": "l82-transparent-interface-r20-pml1p5-pad3-m1p5",
@@ -328,7 +328,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 198400000000,
-      "scriptHash": "66bdf219dfd3ea2e"
+      "scriptHash": "cdeffd7db5361322"
     },
     {
       "runId": "l82-transparent-interface-r30-pml0p5-pad1-m1p5",
@@ -339,7 +339,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 583200000000,
-      "scriptHash": "cf6e92d8ce7604df"
+      "scriptHash": "8f23294675bec0b3"
     },
     {
       "runId": "l82-transparent-interface-r30-pml0p5-pad2-m1p5",
@@ -350,7 +350,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 626400000000,
-      "scriptHash": "4239dd7cd463c3e6"
+      "scriptHash": "1b8fb1bb3ba319b2"
     },
     {
       "runId": "l82-transparent-interface-r30-pml0p5-pad3-m1p5",
@@ -361,7 +361,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 669600000000,
-      "scriptHash": "fbc992f74c5902f5"
+      "scriptHash": "290277e0ef8d2201"
     },
     {
       "runId": "l82-transparent-interface-r30-pml1-pad1-m1p5",
@@ -372,7 +372,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 583200000000,
-      "scriptHash": "d1268d0f7f4f86f9"
+      "scriptHash": "b4fb9bb5bb5bb1bd"
     },
     {
       "runId": "l82-transparent-interface-r30-pml1-pad2-m1p5",
@@ -383,7 +383,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 626400000000,
-      "scriptHash": "a94727e8b14454e6"
+      "scriptHash": "883d4e2a3e4e832a"
     },
     {
       "runId": "l82-transparent-interface-r30-pml1-pad3-m1p5",
@@ -394,7 +394,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 669600000000,
-      "scriptHash": "cfe75916dfb8109f"
+      "scriptHash": "ad10ba1e7226e843"
     },
     {
       "runId": "l82-transparent-interface-r30-pml1p5-pad1-m1p5",
@@ -405,7 +405,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 583200000000,
-      "scriptHash": "59023772755f5102"
+      "scriptHash": "77d000970118b5fe"
     },
     {
       "runId": "l82-transparent-interface-r30-pml1p5-pad2-m1p5",
@@ -416,7 +416,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 626400000000,
-      "scriptHash": "ec89aff8aab0ff4b"
+      "scriptHash": "3e39377e5157d45f"
     },
     {
       "runId": "l82-transparent-interface-r30-pml1p5-pad3-m1p5",
@@ -427,7 +427,7 @@
       "monitorOffsetWavelengths": 1.5,
       "runUntil": 240,
       "estimatedCells": 669600000000,
-      "scriptHash": "c5e8327cc564bd9c"
+      "scriptHash": "6c5ec8f833776f20"
     }
   ],
   "warnings": [
@@ -436,5 +436,5 @@
       "message": "Sweep contains 36 external runs; review cost before launching an external solver."
     }
   ],
-  "sweepHash": "ee9612ec879a52f3"
+  "sweepHash": "f19cfbadf43b59c3"
 }

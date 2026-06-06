@@ -2,7 +2,7 @@
   "schema": "emmicro.fdtd.fluxSummary.v1",
   "runId": "l83-example-aperture-blocker",
   "sourceScenarioHash": "4bfd03c065f43f6e",
-  "manifestHash": "dcd47a93a79ca5b3",
+  "manifestHash": "eece0113ac228cd3",
   "incidentFlux": 1,
   "reflectedFlux": 0.0036,
   "transmittedFlux": 0.222,
@@ -55,5 +55,5 @@
       "elementId": "l83-aperture-blocker"
     }
   ],
-  "fluxHash": "d1f9a36a8b933031"
+  "fluxHash": "1af0d1124417ae64"
 }

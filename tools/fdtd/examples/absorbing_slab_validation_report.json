@@ -1,8 +1,8 @@
 {
   "schema": "emmicro.fdtd.validationReport.v1",
   "sourceScenarioHash": "b1a3c346ded7d3c4",
-  "manifestHash": "db1fbca0d2617f70",
-  "scriptHash": "c9b886b23ee1a513",
+  "manifestHash": "8c4ad9d71f011bf0",
+  "scriptHash": "30ae4ea0281e3125",
   "targetKind": "absorbing-slab",
   "expected": {
     "reflectance": 0,
@@ -23,5 +23,5 @@
   "energyBalance": 1,
   "status": "pass",
   "warnings": [],
-  "reportHash": "2898ce47b621deb5"
+  "reportHash": "14196aa37c5988b2"
 }

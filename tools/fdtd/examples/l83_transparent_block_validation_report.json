@@ -2,9 +2,9 @@
   "schema": "emmicro.fdtd.surfaceGeometryValidationReport.v1",
   "kind": "transparent-block",
   "sourceScenarioHash": "19fb44b37e9129fb",
-  "manifestHash": "8b1d0dba2373cb65",
-  "scriptHash": "9df92ddebf6c2c7f",
-  "sceneHash": "e671385254c70f19",
+  "manifestHash": "97e54c42ab66b8bd",
+  "scriptHash": "35795dcb00e6e499",
+  "sceneHash": "e2f740688f7a3e8a",
   "geometryHash": "4e2d6e660c3bdf6d",
   "grid": {
     "gridSpacingNm": 41.666666666666664,
@@ -76,5 +76,5 @@
       "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
     }
   ],
-  "reportHash": "94fb2589e819be41"
+  "reportHash": "29fc15adc3661c2f"
 }

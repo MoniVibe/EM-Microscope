@@ -4,7 +4,7 @@
   "label": "L8.2 Absorbing slab convergence benchmark",
   "benchmarkKind": "absorbing-slab",
   "sourceScenarioHash": "982f243c1082d38f",
-  "baseManifestHash": "06f32a328dc5e54a",
+  "baseManifestHash": "2fbdb1863c5086c2",
   "baseManifest": {
     "schema": "emmicro.fdtd.sceneManifest.v1",
     "id": "l81-fdtd-l82-absorbing-slab-fdtd-benchmark",
@@ -192,9 +192,10 @@
       "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
       "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
       "L8.4 aperture/blocker edge-diffraction validation is limited to long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker diagnostic scenes with scalar limiting-case references and convergence warnings.",
+      "L8.5 multi-element optical bench export/import composes supported finite geometry into deterministic external FDTD helper scenes with monitor definitions and receipts; it is not an in-browser FDTD solve.",
       "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
     ],
-    "manifestHash": "06f32a328dc5e54a"
+    "manifestHash": "2fbdb1863c5086c2"
   },
   "reference": {
     "benchmarkKind": "absorbing-slab",
@@ -223,5 +224,5 @@
     "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
   ],
   "warnings": [],
-  "benchmarkHash": "9708c6cde63bfc06"
+  "benchmarkHash": "52ccaa5123ac249e"
 }

@@ -3,9 +3,9 @@
   "kind": "circular-pinhole",
   "screenModel": "absorbing-screen",
   "sourceScenarioHash": "c4f75c6515cf0057",
-  "manifestHash": "6da38901feba2cf8",
-  "scriptHash": "d0c74c39562a4d61",
-  "sceneHash": "c9177c476aa276ff",
+  "manifestHash": "4988876e01a19248",
+  "scriptHash": "91e497b3ad5863f1",
+  "sceneHash": "4b5d69a020723f13",
   "geometryHash": "26b86a0994b5eee7",
   "diagnostics": {
     "gridSpacingNm": 62.5,
@@ -683,5 +683,5 @@
       "elementId": "l84-circular-pinhole"
     }
   ],
-  "reportHash": "300c5c979813d654"
+  "reportHash": "52d09ddc61225611"
 }

@@ -1,8 +1,8 @@
 # L8.1 External FDTD Field Import Validation
 
 Scenario hash: b1a3c346ded7d3c4
-Manifest hash: db1fbca0d2617f70
-Script hash: c9b886b23ee1a513
+Manifest hash: 8c4ad9d71f011bf0
+Script hash: 30ae4ea0281e3125
 Target kind: absorbing-slab
 Status: PASS
 

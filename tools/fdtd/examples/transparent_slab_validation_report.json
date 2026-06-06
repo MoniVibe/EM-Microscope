@@ -1,8 +1,8 @@
 {
   "schema": "emmicro.fdtd.validationReport.v1",
   "sourceScenarioHash": "dc8f68ca2eb20de5",
-  "manifestHash": "4dde335b46ec93b3",
-  "scriptHash": "aab51ce802be2a67",
+  "manifestHash": "41b44b7a02ff4003",
+  "scriptHash": "8a60cd5f3c9137e5",
   "targetKind": "transparent-dielectric",
   "expected": {
     "reflectance": 0.04000000000000001,
@@ -23,5 +23,5 @@
   "energyBalance": 1,
   "status": "pass",
   "warnings": [],
-  "reportHash": "45698a1604a8c5ab"
+  "reportHash": "ea501e3cc4833f08"
 }

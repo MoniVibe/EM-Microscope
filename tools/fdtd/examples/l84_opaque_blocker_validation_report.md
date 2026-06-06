@@ -1,8 +1,8 @@
 # L8.4 Opaque blocker Aperture Validation Report
 
-Scene hash: a696cb934d1c28d5
-Manifest hash: ec4ecc80507426ef
-Script hash: fe9ffd7f7f59210e
+Scene hash: 2e3df6389ef3c64b
+Manifest hash: bc4e42a117624937
+Script hash: b1ea0c44476885fc
 Geometry hash: d8f8bee53d12687a
 Status: DIAGNOSTIC
 

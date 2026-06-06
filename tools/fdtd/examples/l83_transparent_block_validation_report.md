@@ -1,8 +1,8 @@
 # L8.3 Finite transparent block Validation Report
 
-Scene hash: e671385254c70f19
-Manifest hash: 8b1d0dba2373cb65
-Script hash: 9df92ddebf6c2c7f
+Scene hash: e2f740688f7a3e8a
+Manifest hash: 97e54c42ab66b8bd
+Script hash: 35795dcb00e6e499
 Geometry hash: 4e2d6e660c3bdf6d
 Status: PASS
 

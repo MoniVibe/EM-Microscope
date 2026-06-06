@@ -3,9 +3,9 @@
   "kind": "opaque-blocker",
   "screenModel": "absorbing-screen",
   "sourceScenarioHash": "b2f5d1d694898fb6",
-  "manifestHash": "ec4ecc80507426ef",
-  "scriptHash": "fe9ffd7f7f59210e",
-  "sceneHash": "a696cb934d1c28d5",
+  "manifestHash": "bc4e42a117624937",
+  "scriptHash": "b1ea0c44476885fc",
+  "sceneHash": "2e3df6389ef3c64b",
   "geometryHash": "d8f8bee53d12687a",
   "diagnostics": {
     "gridSpacingNm": 62.5,
@@ -684,5 +684,5 @@
       "elementId": "l84-opaque-blocker"
     }
   ],
-  "reportHash": "d797eeb643ec6e65"
+  "reportHash": "aa4e956dd14d810a"
 }

@@ -2914,6 +2914,208 @@ h2 {
   background: #0b7788;
 }
 
+.l85-bench {
+  margin-bottom: 12px;
+}
+
+.l85-action-row {
+  gap: 8px;
+  align-items: center;
+}
+
+.l85-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.l85-wide {
+  grid-column: 1 / -1;
+}
+
+.l85-element-table,
+.l85-solver-plan-table,
+.l85-monitor-stack {
+  display: grid;
+  gap: 5px;
+  overflow-x: auto;
+}
+
+.l85-element-row {
+  min-width: 900px;
+  display: grid;
+  grid-template-columns: 54px minmax(170px, 1.1fr) 84px minmax(120px, 0.8fr) 132px minmax(250px, 1.25fr);
+  gap: 8px;
+  align-items: center;
+  padding: 7px 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #516078;
+  font-size: 12px;
+}
+
+.l85-element-row input {
+  min-width: 0;
+  width: 100%;
+  height: 30px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  padding: 0 7px;
+  background: #ffffff;
+  color: #263244;
+}
+
+.l85-element-header,
+.l85-solver-plan-header {
+  background: #eef4f8;
+  color: #40506a;
+  font-weight: 750;
+}
+
+.l85-element-row strong,
+.l85-element-row span,
+.l85-solver-plan-row strong,
+.l85-solver-plan-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.l85-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.l85-row-actions button {
+  min-height: 28px;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.l85-cross-section {
+  display: grid;
+  gap: 8px;
+}
+
+.l85-cross-section-domain {
+  position: relative;
+  min-height: 230px;
+  overflow: hidden;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, rgba(226, 232, 240, 0.86), transparent 7%, transparent 93%, rgba(226, 232, 240, 0.86)),
+    repeating-linear-gradient(90deg, #f8fbfd 0, #f8fbfd 34px, #edf3f7 35px, #edf3f7 36px);
+}
+
+.l85-cross-section-axis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: #879ab3;
+}
+
+.l85-cross-section-item {
+  position: absolute;
+  z-index: 2;
+  min-width: 10px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #7f8da2;
+  border-radius: 4px;
+  color: #102033;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 800;
+  transform: translateX(-50%);
+  box-shadow: 0 2px 8px rgba(21, 35, 52, 0.1);
+}
+
+.l85-cross-section-item span {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.l85-cross-section-item-source {
+  background: #edf7fa;
+  border-color: #8fbfd0;
+}
+
+.l85-cross-section-item-monitor,
+.l85-cross-section-item-target {
+  background: rgba(247, 250, 252, 0.95);
+  border-color: #9fb0c6;
+}
+
+.l85-cross-section-route-scalar-chain {
+  background-color: rgba(126, 174, 142, 0.42);
+}
+
+.l85-cross-section-route-external-fdtd {
+  background-color: rgba(93, 132, 174, 0.45);
+}
+
+.l85-cross-section-route-scaffold,
+.l85-cross-section-route-unsupported {
+  background-color: rgba(218, 176, 92, 0.55);
+}
+
+.l85-cross-section-route-boundary {
+  background-color: rgba(215, 224, 235, 0.88);
+}
+
+.l85-solver-plan-row {
+  min-width: 620px;
+  display: grid;
+  grid-template-columns: minmax(240px, 1.3fr) minmax(110px, 0.7fr) 132px;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #516078;
+  font-size: 12px;
+}
+
+.l85-monitor-stack {
+  max-height: 520px;
+  overflow: auto;
+}
+
+.l85-monitor-card {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+}
+
+.l85-monitor-profile {
+  height: 76px;
+  display: grid;
+  grid-template-columns: repeat(32, minmax(3px, 1fr));
+  align-items: end;
+  gap: 2px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  padding: 6px;
+  background: #f8fafc;
+}
+
+.l85-monitor-profile span {
+  min-width: 0;
+  display: block;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, #0b7788, #5a9b72);
+}
+
 .surface-cross-section {
   display: grid;
   gap: 8px;
@@ -3299,6 +3501,7 @@ h2 {
   .simulation-builder-layout,
   .simulation-builder-footer,
   .fdtd-grid,
+  .l85-grid,
   .fdtd-verification-controls,
   .surface-cross-section-legend,
   .simulation-field-grid {

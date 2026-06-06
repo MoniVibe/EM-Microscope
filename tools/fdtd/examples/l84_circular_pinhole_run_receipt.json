@@ -2,8 +2,8 @@
   "schema": "emmicro.fdtd.runReceipt.v1",
   "runId": "l84-fixture-circular-pinhole",
   "sourceScenarioHash": "c4f75c6515cf0057",
-  "manifestHash": "6da38901feba2cf8",
-  "scriptHash": "d0c74c39562a4d61",
+  "manifestHash": "4988876e01a19248",
+  "scriptHash": "91e497b3ad5863f1",
   "tool": {
     "name": "example-fixture",
     "version": "l84-deterministic",
@@ -57,5 +57,5 @@
       "elementId": "l84-circular-pinhole"
     }
   ],
-  "receiptHash": "c6a01f88806b32fc"
+  "receiptHash": "e1667613800d6984"
 }

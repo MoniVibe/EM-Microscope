@@ -1,6 +1,6 @@
-# EMMicro L8.1/L8.2/L8.3/L8.4 External FDTD Helpers
+# EMMicro L8.1/L8.2/L8.3/L8.4/L8.5 External FDTD Helpers
 
-These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, and the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench.
+These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, and the L8.5 `Multi-Element Optical Bench Propagation Chain`.
 
 Scope:
 - The web app exports an EMMicro FDTD scene manifest and a deterministic Meep-style Python helper script.
@@ -9,6 +9,7 @@ Scope:
 - L8.2 benchmark packs add bounded resolution/PML/padding sweep plans, expected reference files, convergence summary import, residual-vs-resolution diagnostics, and benchmark dossiers.
 - L8.3 surface-geometry packs add finite transparent block, absorbing block, ideal reflective plate, aperture/blocker, and tilted wedge/interface scene manifests, Meep helper scripts, deterministic field/flux fixtures, validation reports, and convergence sweep hooks.
 - L8.4 aperture/blocker packs add long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker scene manifests, Meep helper scripts, deterministic field/flux fixtures, scalar limiting-case profile comparisons, aperture cells-across diagnostics, convergence rows, and validation dossiers.
+- L8.5 multi-element packs add ordered bench scene JSON, solver plan JSON, monitor stack CSV, validation report JSON/Markdown, metrics CSV, FDTD manifest/script exports, and bundled receipt/flux/field-slice evidence for supported finite geometry chains.
 
 Not scope:
 - No browser FDTD execution.
@@ -49,6 +50,10 @@ L8.4 example prefixes include:
 - `l84_circular_pinhole_*`
 - `l84_rectangular_aperture_*`
 - `l84_opaque_blocker_*`
+
+L8.5 example prefixes include:
+
+- `l85_multi_element_bench_*`
 
 ## Scripts
 
@@ -96,4 +101,13 @@ Playwright CLI smoke helper for the L8.4 aperture/blocker validation workbench, 
 ```powershell
 npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
 npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l84_browser_smoke_code.js
+```
+
+`l85_browser_smoke_code.js`
+
+Playwright CLI smoke helper for the L8.5 multi-element bench, solver plan, monitor stack, scalar preview, external FDTD fixture import, and L8.4/L8.2/L7.8 regressions:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
+npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l85_browser_smoke_code.js
 ```

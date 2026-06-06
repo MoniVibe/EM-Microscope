@@ -1,8 +1,8 @@
 # L8.4 Long-slit aperture Aperture Validation Report
 
-Scene hash: 56061e498e031bd7
-Manifest hash: c1075ced58ef74a9
-Script hash: 622e04573dc8aaeb
+Scene hash: 20016793069c92b3
+Manifest hash: 33d117e7c5e980b1
+Script hash: 18ebd85d8771dbf9
 Geometry hash: 1980ab03b3ad7ac1
 Status: PASS
 

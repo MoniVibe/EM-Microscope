@@ -3,9 +3,9 @@
   "kind": "rectangular-aperture",
   "screenModel": "absorbing-screen",
   "sourceScenarioHash": "690bcd0934d9aa12",
-  "manifestHash": "c0382146f92ba396",
-  "scriptHash": "05c7fa222ae012de",
-  "sceneHash": "25c012532a0f947a",
+  "manifestHash": "80d7cf1849f3a70e",
+  "scriptHash": "b0b61bd5a7e830a0",
+  "sceneHash": "c9a5069d89adc05e",
   "geometryHash": "3e65e055186c0225",
   "diagnostics": {
     "gridSpacingNm": 62.5,
@@ -685,5 +685,5 @@
       "elementId": "l84-rectangular-aperture"
     }
   ],
-  "reportHash": "16fb1c81e193ff4f"
+  "reportHash": "da5e89cf3e9ea3c6"
 }

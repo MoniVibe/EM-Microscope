@@ -1,0 +1,31 @@
+{
+  "schema": "emmicro.fdtd.fluxSummary.v1",
+  "runId": "l85-multi-element-fixture-588269a5",
+  "sourceScenarioHash": "2569f7e424c2366a",
+  "manifestHash": "dcc211305c62b196",
+  "incidentFlux": 1,
+  "reflectedFlux": 0.08,
+  "transmittedFlux": 0.74,
+  "absorbedFlux": 0.18,
+  "reflectance": 0.08,
+  "transmittance": 0.74,
+  "absorbance": 0.18,
+  "energyBalance": 1,
+  "monitors": [
+    {
+      "id": "finite-transparent-block-30000-flux",
+      "flux": 0.74
+    },
+    {
+      "id": "finite-absorbing-block-40000-flux",
+      "flux": 0.7178
+    }
+  ],
+  "warnings": [
+    {
+      "code": "opticalBench.external.fixture",
+      "message": "Bundled L8.5 multi-element evidence is deterministic fixture data for UI/report validation, not a browser-run FDTD solve."
+    }
+  ],
+  "fluxHash": "bf0c47211a268766"
+}
