@@ -3,19 +3,30 @@ import {
   addSimulationBuilderElement,
   createAbsorbingFdtdExampleBundle,
   createAbsorbingFdtdExampleScenario,
+  createFdtdBenchmarkExampleBundle,
+  createFdtdBenchmarkPack,
+  createFdtdBenchmarkScenario,
   createSimulationBuilderElement,
   createTransparentFdtdExampleBundle,
   createTransparentFdtdExampleScenario,
   defaultSimulationBuilderScenario,
+  fdtdBenchmarkManifestJson,
+  fdtdBenchmarkReportJson,
+  fdtdBenchmarkReportMarkdown,
+  fdtdConvergenceMetricsCsv,
+  fdtdConvergenceSummaryJson,
   exportFdtdBundleFromSimulationBuilder,
   fdtdFieldSliceToCsv,
   fdtdImportedRunJson,
   fdtdManifestJson,
   fdtdMeepScriptText,
+  fdtdRunTableCsv,
+  fdtdSweepPlanJson,
   fdtdValidationMetricsCsv,
   fdtdValidationReportJson,
   fdtdValidationReportMarkdown,
   importFdtdRunArtifacts,
+  importFdtdConvergenceBundleArtifacts,
   l80ReleaseTrail,
   runSimulationBuilderScenario,
   simulationBuilderScenarioJson,
@@ -23,6 +34,8 @@ import {
   simulationBuilderValidationReportJson,
   simulationBuilderValidationReportMarkdown,
   validateFdtdImportedRunAgainstScenario,
+  type FdtdBenchmarkKind,
+  type FdtdConvergenceSummary,
   type FdtdFieldSlice,
   type FdtdImportedRun,
   type FdtdValidationReport,
@@ -71,8 +84,13 @@ export function SimulationBuilderPanel() {
   const [hasComputed, setHasComputed] = useState(false);
   const [importedFdtd, setImportedFdtd] = useState<FdtdImportedRun | null>(null);
   const [fdtdImportError, setFdtdImportError] = useState<string | null>(null);
+  const [benchmarkKind, setBenchmarkKind] = useState<FdtdBenchmarkKind>("transparent-interface");
+  const [hasGeneratedBenchmarkPlan, setHasGeneratedBenchmarkPlan] = useState(true);
+  const [fdtdConvergence, setFdtdConvergence] = useState<FdtdConvergenceSummary | null>(null);
+  const [fdtdConvergenceError, setFdtdConvergenceError] = useState<string | null>(null);
   const result = useMemo(() => runSimulationBuilderScenario(scenario), [scenario]);
   const fdtdBundle = useMemo(() => exportFdtdBundleFromSimulationBuilder(scenario), [scenario]);
+  const fdtdBenchmarkPack = useMemo(() => createFdtdBenchmarkPack({ benchmarkKind, scenario }), [benchmarkKind, scenario]);
   const fdtdValidation = useMemo<FdtdValidationReport | null>(
     () => (importedFdtd ? validateFdtdImportedRunAgainstScenario(scenario, fdtdBundle, importedFdtd) : null),
     [fdtdBundle, importedFdtd, scenario]
@@ -133,6 +151,65 @@ export function SimulationBuilderPanel() {
     downloadText("fdtd_validation_metrics.csv", "text/csv", fdtdValidationMetricsCsv(fdtdValidation));
   }
 
+  function selectBenchmarkKind(kind: FdtdBenchmarkKind): void {
+    setBenchmarkKind(kind);
+    setScenario(createFdtdBenchmarkScenario(kind));
+    setFdtdConvergence(null);
+    setFdtdConvergenceError(null);
+    setHasGeneratedBenchmarkPlan(true);
+    setHasComputed(true);
+  }
+
+  function exportFdtdBenchmarkPack(): void {
+    downloadText("fdtd_benchmark_manifest.json", "application/json", fdtdBenchmarkManifestJson(fdtdBenchmarkPack.benchmarkManifest));
+    downloadText("fdtd_sweep_plan.json", "application/json", fdtdSweepPlanJson(fdtdBenchmarkPack.sweepPlan));
+    downloadText("fdtd_expected_reference.json", "application/json", fdtdBenchmarkPack.expectedReferenceJson);
+    downloadText("fdtd_benchmark_readme.md", "text/markdown", `${fdtdBenchmarkPack.readme}\n`);
+    if (fdtdBenchmarkPack.scripts[0]) {
+      downloadText("fdtd_benchmark_first_run_meep.py", "text/x-python", fdtdBenchmarkPack.scripts[0].export.python);
+    }
+  }
+
+  function loadFdtdBenchmarkFixture(kind: FdtdBenchmarkKind): void {
+    const example = createFdtdBenchmarkExampleBundle(kind, kind === "absorbing-slab" ? { pmlSensitive: true } : {});
+    setBenchmarkKind(kind);
+    setScenario(createFdtdBenchmarkScenario(kind));
+    setFdtdConvergence(example.convergenceSummary);
+    setFdtdConvergenceError(null);
+    setHasGeneratedBenchmarkPlan(true);
+    setHasComputed(true);
+  }
+
+  function exportFdtdBenchmarkDossier(): void {
+    if (!fdtdConvergence) return;
+    downloadText("fdtd_benchmark_report.md", "text/markdown", fdtdBenchmarkReportMarkdown(fdtdConvergence));
+    downloadText("fdtd_benchmark_report.json", "application/json", fdtdBenchmarkReportJson(fdtdConvergence));
+    downloadText("fdtd_convergence_metrics.csv", "text/csv", `${fdtdConvergenceMetricsCsv(fdtdConvergence)}\n`);
+    downloadText("fdtd_run_table.csv", "text/csv", `${fdtdRunTableCsv(fdtdConvergence)}\n`);
+  }
+
+  async function importFdtdConvergence(files: FileList | null): Promise<void> {
+    setFdtdConvergenceError(null);
+    if (!files || files.length === 0) return;
+    const entries = await Promise.all(Array.from(files).map(async (file) => ({ name: file.name.toLowerCase(), text: await file.text() })));
+    const convergence = entries.find((entry) => entry.name.includes("convergence") && entry.name.endsWith(".json")) ?? entries.find((entry) => entry.name.endsWith(".json"));
+    const flux = entries.find((entry) => entry.name.includes("flux") && entry.name.endsWith(".json"));
+    if (!convergence) {
+      setFdtdConvergenceError("Select convergence_summary.json, optionally with flux_summaries.json.");
+      return;
+    }
+    try {
+      const imported = importFdtdConvergenceBundleArtifacts({
+        convergenceSummaryJson: convergence.text,
+        fluxSummariesJson: flux?.text,
+        expectedPack: fdtdBenchmarkPack
+      });
+      setFdtdConvergence(imported);
+    } catch (error) {
+      setFdtdConvergenceError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
   function loadTransparentFdtdFixture(): void {
     const example = createTransparentFdtdExampleBundle();
     setScenario(createTransparentFdtdExampleScenario());
@@ -178,18 +255,18 @@ export function SimulationBuilderPanel() {
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L8.1 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L8.2 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L8.1 Sequential Optical Bench + External FDTD Field Maps</h2>
+        <h2>L8.2 Sequential Optical Bench + External FDTD Benchmark Convergence</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, ordered z-axis elements, target/material surface, compute path, validation report, and L8.1 external FDTD export/import evidence. In-app execution remains
-          limited to transparent, reflective, and absorbing planar surface/slab checks only; arbitrary 3D Maxwell material geometry, browser FDTD/FEM/BEM/RCWA execution, real curved material lens
-          solving, sensor-stack EM, digital twin behavior, and manufacturing certification are not implemented.
+          Define grid density, source, ordered z-axis elements, target/material surface, compute path, validation report, L8.1 field-map import evidence, and L8.2 benchmark convergence diagnostics. In-app
+          execution remains limited to transparent, reflective, and absorbing planar surface/slab checks only; arbitrary 3D Maxwell material geometry, browser FDTD/FEM/BEM/RCWA execution, real curved
+          material lens solving, sensor-stack EM, digital twin behavior, and manufacturing certification are not implemented.
         </span>
       </div>
 
@@ -382,9 +459,9 @@ export function SimulationBuilderPanel() {
           <p className="simulation-builder-note">{result.validation.analyticReference}</p>
         </div>
 
-        <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide" aria-label="L8.1 External FDTD / Field Maps">
+        <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide" aria-label="L8.2 External FDTD / Field Maps">
           <div className="maxwell-section-heading">
-            <h2>L8.1 External FDTD / Field Maps</h2>
+            <h2>L8.2 External FDTD / Field Maps</h2>
             <strong>{fdtdReadinessLabel(fdtdBundle.manifest.readiness.status)}</strong>
           </div>
           <div className="l2-disclosure">
@@ -492,6 +569,152 @@ export function SimulationBuilderPanel() {
               </div>
             </div>
           </div>
+
+          <div className="fdtd-verification-suite" aria-label="L8.2 FDTD benchmark suite smoke preview">
+            <div className="maxwell-section-heading">
+              <h2>L8.2 FDTD Verification Suite</h2>
+              <strong>{fdtdConvergence?.status ?? "ready"}</strong>
+            </div>
+            <div className="l2-disclosure">
+              <strong>Benchmark convergence evidence, not new in-browser physics.</strong>
+              <span>
+                Generate bounded external FDTD benchmark packs, import convergence summaries, compare against flux conservation, Fresnel/TMM, Beer-Lambert, or mirror references, and flag residual,
+                energy-balance, trend, and PML sensitivity issues. Browser FDTD execution, arbitrary 3D Maxwell/CAD solving, FEM/BEM/RCWA, curved material lens solving, and production solver
+                validation are not implemented.
+              </span>
+            </div>
+            <div className="simulation-field-grid fdtd-verification-controls">
+              <label>
+                <span>Benchmark</span>
+                <select aria-label="FDTD benchmark" value={benchmarkKind} onChange={(event) => selectBenchmarkKind(event.currentTarget.value as FdtdBenchmarkKind)}>
+                  <option value="empty-space">empty space</option>
+                  <option value="transparent-interface">transparent interface</option>
+                  <option value="transparent-slab">transparent slab</option>
+                  <option value="absorbing-slab">absorbing slab</option>
+                  <option value="mirror">ideal mirror</option>
+                </select>
+              </label>
+              <button type="button" onClick={() => setHasGeneratedBenchmarkPlan(true)}>
+                <Sparkles size={15} />
+                <span>Generate Sweep Plan</span>
+              </button>
+              <button type="button" onClick={exportFdtdBenchmarkPack}>
+                <FileDown size={15} />
+                <span>Export Benchmark Pack</span>
+              </button>
+              <button type="button" onClick={() => loadFdtdBenchmarkFixture("transparent-interface")}>
+                <Sparkles size={15} />
+                <span>Load Transparent Convergence Fixture</span>
+              </button>
+              <button type="button" onClick={() => loadFdtdBenchmarkFixture("absorbing-slab")}>
+                <Sparkles size={15} />
+                <span>Load Absorber Convergence Fixture</span>
+              </button>
+              <label className="fdtd-file-import">
+                <span>Import Convergence</span>
+                <input aria-label="Import FDTD convergence summary" type="file" accept=".json" multiple onChange={(event) => void importFdtdConvergence(event.currentTarget.files)} />
+              </label>
+              <button type="button" disabled={!fdtdConvergence} onClick={exportFdtdBenchmarkDossier}>
+                <FileDown size={15} />
+                <span>Export Benchmark Dossier</span>
+              </button>
+            </div>
+            {fdtdConvergenceError && <div className="error-banner">{fdtdConvergenceError}</div>}
+
+            <div className="fdtd-grid">
+              <div className="maxwell-data-table" aria-label="L8.2 sweep plan smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Sweep Plan</h2>
+                  <strong>{hasGeneratedBenchmarkPlan ? `${fdtdBenchmarkPack.sweepPlan.runCount} runs` : "pending"}</strong>
+                </div>
+                <div className="maxwell-study-list">
+                  <Stat label="Reference" value={fdtdBenchmarkPack.benchmarkManifest.reference.referenceModel} />
+                  <Stat label="Expected R/T/A" value={`${pct(fdtdBenchmarkPack.benchmarkManifest.reference.expected.reflectance)} / ${pct(fdtdBenchmarkPack.benchmarkManifest.reference.expected.transmittance)} / ${pct(fdtdBenchmarkPack.benchmarkManifest.reference.expected.absorbance)}`} />
+                  <Stat label="Resolution ppw" value={fdtdBenchmarkPack.sweepPlan.settings.resolutionPointsPerWavelength.join(", ")} />
+                  <Stat label="PML um" value={fdtdBenchmarkPack.sweepPlan.settings.pmlThicknessUm.join(", ")} />
+                  <Stat label="Padding lambda" value={fdtdBenchmarkPack.sweepPlan.settings.paddingWavelengths.join(", ")} />
+                  <Stat label="Sweep hash" value={fdtdBenchmarkPack.sweepPlan.sweepHash.slice(0, 10)} />
+                </div>
+                <div className="fdtd-sweep-table">
+                  <div className="fdtd-sweep-row fdtd-sweep-header">
+                    <span>run</span>
+                    <span>ppw</span>
+                    <span>PML</span>
+                    <span>pad</span>
+                    <span>cells</span>
+                  </div>
+                  {fdtdBenchmarkPack.sweepPlan.runs.slice(0, 6).map((run) => (
+                    <div className="fdtd-sweep-row" key={run.runId}>
+                      <span>{run.index + 1}</span>
+                      <span>{run.resolutionPointsPerWavelength}</span>
+                      <span>{formatCompact(run.pmlThicknessUm)}</span>
+                      <span>{formatCompact(run.paddingWavelengths)}</span>
+                      <span>{formatCompact(run.estimatedCells)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="maxwell-data-table" aria-label="L8.2 convergence import smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Convergence Summary</h2>
+                  <strong>{fdtdConvergence?.status ?? "no import"}</strong>
+                </div>
+                <div className="maxwell-study-list">
+                  <Stat label="Benchmark" value={fdtdConvergence ? benchmarkDisplayName(fdtdConvergence.benchmarkKind) : benchmarkDisplayName(benchmarkKind)} />
+                  <Stat label="Trend" value={fdtdConvergence?.trend.status ?? "pending"} />
+                  <Stat label="Final residual" value={fdtdConvergence ? formatCompact(fdtdConvergence.trend.finalReferenceResidual) : "n/a"} />
+                  <Stat label="Energy error" value={fdtdConvergence ? formatCompact(fdtdConvergence.trend.finalEnergyBalanceError) : "n/a"} />
+                  <Stat label="PML sensitivity" value={fdtdConvergence ? `${formatCompact(fdtdConvergence.pmlSensitivity.maxDelta)} (${fdtdConvergence.pmlSensitivity.status})` : "n/a"} />
+                  <Stat label="Summary hash" value={fdtdConvergence?.summaryHash.slice(0, 10) ?? "n/a"} />
+                </div>
+              </div>
+
+              <div className="maxwell-data-table" aria-label="L8.2 Fresnel convergence smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Residual vs Resolution</h2>
+                  <strong>{fdtdConvergence ? fdtdConvergence.trend.status : "pending"}</strong>
+                </div>
+                {fdtdConvergence ? <FdtdConvergenceTrendTable summary={fdtdConvergence} /> : <div className="empty-state">Load or import a convergence summary to inspect residual-vs-resolution evidence.</div>}
+              </div>
+
+              <div className="maxwell-data-table" aria-label="L8.2 absorber convergence smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Reference Comparison</h2>
+                  <strong>{fdtdConvergence?.reference.referenceModel ?? fdtdBenchmarkPack.benchmarkManifest.reference.referenceModel}</strong>
+                </div>
+                <div className="maxwell-study-list">
+                  <Stat label="Invariant" value={fdtdConvergence?.reference.invariant ?? fdtdBenchmarkPack.benchmarkManifest.reference.invariant} />
+                  <Stat label="Pass residual" value={formatCompact(fdtdBenchmarkPack.benchmarkManifest.reference.thresholds.referenceResidualPass)} />
+                  <Stat label="Warning residual" value={formatCompact(fdtdBenchmarkPack.benchmarkManifest.reference.thresholds.referenceResidualWarning)} />
+                  <Stat label="Field delta warn" value={formatCompact(fdtdBenchmarkPack.benchmarkManifest.reference.thresholds.fieldDeltaWarning)} />
+                </div>
+              </div>
+
+              <div className="maxwell-data-table fdtd-wide" aria-label="L8.2 PML warning smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>PML / Stability Warnings</h2>
+                  <strong>{fdtdConvergence?.warnings.length ?? fdtdBenchmarkPack.sweepPlan.warnings.length}</strong>
+                </div>
+                <div className="fdtd-warning-list">
+                  {(fdtdConvergence?.warnings.length ? fdtdConvergence.warnings : fdtdBenchmarkPack.sweepPlan.warnings).map((warning, index) => (
+                    <span key={`${warning.code}:${warning.elementId ?? ""}:${index}`}>
+                      <strong>{warning.code}</strong> {warning.message}
+                    </span>
+                  ))}
+                  {!fdtdConvergence && fdtdBenchmarkPack.sweepPlan.warnings.length === 0 && <span>No convergence warning imported yet.</span>}
+                </div>
+              </div>
+
+              <div className="maxwell-data-table fdtd-wide" aria-label="L8.2 convergence run table smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Run Residual Table</h2>
+                  <strong>{fdtdConvergence ? `${fdtdConvergence.runs.length} runs` : "pending"}</strong>
+                </div>
+                {fdtdConvergence ? <FdtdConvergenceRunsTable summary={fdtdConvergence} /> : <div className="empty-state">No convergence run table imported yet.</div>}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -594,6 +817,54 @@ function FdtdFieldSlicePreview(props: { slice: FdtdFieldSlice }) {
   );
 }
 
+function FdtdConvergenceTrendTable(props: { summary: FdtdConvergenceSummary }) {
+  return (
+    <div className="fdtd-sweep-table">
+      <div className="fdtd-sweep-row fdtd-sweep-header">
+        <span>ppw</span>
+        <span>residual</span>
+        <span>energy</span>
+        <span>field</span>
+        <span>runs</span>
+      </div>
+      {props.summary.trend.rows.map((row) => (
+        <div className="fdtd-sweep-row" key={row.resolutionPointsPerWavelength}>
+          <span>{row.resolutionPointsPerWavelength}</span>
+          <span>{formatCompact(row.meanReferenceResidual)}</span>
+          <span>{formatCompact(row.maxEnergyBalanceError)}</span>
+          <span>{formatCompact(row.meanFieldSliceDelta)}</span>
+          <span>{row.runCount}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FdtdConvergenceRunsTable(props: { summary: FdtdConvergenceSummary }) {
+  return (
+    <div className="fdtd-run-table">
+      <div className="fdtd-run-row fdtd-run-header">
+        <span>run</span>
+        <span>ppw</span>
+        <span>PML</span>
+        <span>R/T/A</span>
+        <span>residual</span>
+        <span>status</span>
+      </div>
+      {props.summary.runs.slice(0, 9).map((run) => (
+        <div className="fdtd-run-row" key={run.runId}>
+          <span>{run.runId}</span>
+          <span>{run.resolutionPointsPerWavelength}</span>
+          <span>{formatCompact(run.pmlThicknessUm)}</span>
+          <span>{`${pct(run.imported.reflectance)} / ${pct(run.imported.transmittance)} / ${pct(run.imported.absorbance)}`}</span>
+          <span>{formatCompact(run.residuals.referenceResidual)}</span>
+          <span>{run.status}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function targetForKind(kind: SimulationBuilderTargetKind, zMm: number): SimulationBuilderTarget {
   if (kind === "mirror") {
     return {
@@ -646,6 +917,14 @@ function targetDisplayName(kind: SimulationBuilderTargetKind): string {
   if (kind === "mirror") return "mirror";
   if (kind === "absorbing-slab") return "absorber";
   return "transparent";
+}
+
+function benchmarkDisplayName(kind: FdtdBenchmarkKind): string {
+  if (kind === "empty-space") return "empty space";
+  if (kind === "transparent-interface") return "transparent interface";
+  if (kind === "transparent-slab") return "transparent slab";
+  if (kind === "absorbing-slab") return "absorbing slab";
+  return "ideal mirror";
 }
 
 function fdtdReadinessLabel(status: "ready" | "warning" | "blocked"): string {

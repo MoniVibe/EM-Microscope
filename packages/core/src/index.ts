@@ -2,6 +2,7 @@ export * from "./export/detectorExport";
 export * from "./export/fieldImageExport";
 export * from "./export/fieldProfileExport";
 export * from "./fdtd/fdtdExamples";
+export * from "./fdtd/fdtdBenchmarkSuite";
 export * from "./fdtd/fdtdRunImport";
 export * from "./fdtd/fdtdSceneExport";
 export * from "./fdtd/fdtdTypes";

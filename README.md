@@ -1,13 +1,15 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L8.1 External FDTD Field Maps Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L8.2 External FDTD Benchmark Convergence Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L8.1 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+Real Detector Bridge. L8.2 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
 workflow, optical-axis placement, transparent dielectric Fresnel validation, ideal mirror validation, absorbing slab
 Beer-Lambert validation, scenario/report exports, and a milestone trail that states iteration count is not validation,
-then adds external FDTD scene manifest export, deterministic Meep helper script export, importable run receipt/flux
+then includes the L8.1 external FDTD scene manifest export, deterministic Meep helper script export, importable run receipt/flux
 summary/field-slice CSV evidence, field-map preview, R/T/A energy-balance comparison against the L8.0 analytic/TMM
-target result, deterministic fixtures, and optional helper scripts under `tools/fdtd/`.
+target result, deterministic fixtures, optional helper scripts under `tools/fdtd/`, and L8.2 external FDTD benchmark
+packs with bounded resolution/PML/padding sweeps, convergence summary import, residual-vs-resolution diagnostics,
+PML sensitivity warnings, and exportable benchmark dossiers.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
@@ -127,7 +129,7 @@ certification system.
 
 ## Current Visible Mode
 
-- `L8.1 Sequential Optical Bench + External FDTD Field Maps`: a top-level Simulation Builder workflow that
+- `L8.2 Sequential Optical Bench + External FDTD Benchmark Convergence`: a top-level Simulation Builder workflow that
   follows `Grid -> Source -> Elements -> Target / Material -> Compute -> Validate`. It lets users define domain
   units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
   of apertures, ideal lenses, planar material interfaces/slabs, mirrors, and absorbers. The optical-axis diagram shows
@@ -139,12 +141,17 @@ certification system.
   - absorbing slab: Beer-Lambert attenuation check where transmission decreases with thickness and residuals are
     reported against `I = I0 exp(-alpha d)`.
 
-  L8.1 exports `simulation_builder_scenario.json`, `validation_report.md`, `validation_report.json`,
+  L8.1/L8.2 exports `simulation_builder_scenario.json`, `validation_report.md`, `validation_report.json`,
   `validation_metrics.csv`, `fdtd_scene_manifest.json`, `meep_scene.py`, imported field-slice CSV evidence, and FDTD
   validation reports. It also imports receipt/flux/field-slice artifacts, previews the imported field map, compares
   imported R/T/A against the L8.0 analytic/TMM target result, provides transparent and absorbing slab fixtures, and
-  keeps optional external helper scripts in `tools/fdtd/`. Boundary: this is limited ordered optical-bench validation
-  plus external FDTD export/import evidence only, not browser FDTD execution, arbitrary 3D material geometry,
+  keeps optional external helper scripts in `tools/fdtd/`. L8.2 adds `fdtd_benchmark_manifest.json`,
+  `fdtd_sweep_plan.json`, `fdtd_expected_reference.json`, `fdtd_benchmark_report.md`,
+  `fdtd_benchmark_report.json`, `fdtd_convergence_metrics.csv`, and `fdtd_run_table.csv` exports; imports
+  `convergence_summary.json` plus optional per-run flux summaries; and shows residual-vs-resolution, energy-balance,
+  field-delta, and PML/padding sensitivity diagnostics for empty-space, transparent-interface, transparent-slab,
+  absorbing-slab, and mirror fixtures. Boundary: this is limited ordered optical-bench validation plus external FDTD
+  export/import and benchmark convergence evidence only, not browser FDTD execution, arbitrary 3D material geometry,
   FEM/BEM/RCWA execution, real curved material lens solving, finite-thickness
   metal aperture Maxwell solving, sensor-stack EM, digital twin behavior, or manufacturing certification.
 

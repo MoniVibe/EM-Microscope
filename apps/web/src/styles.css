@@ -2844,6 +2844,63 @@ h2 {
   color: #5f3910;
 }
 
+.fdtd-verification-suite {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #d8e0ea;
+}
+
+.fdtd-verification-controls {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+}
+
+.fdtd-sweep-table,
+.fdtd-run-table {
+  display: grid;
+  gap: 4px;
+  margin-top: 8px;
+  overflow-x: auto;
+}
+
+.fdtd-sweep-row,
+.fdtd-run-row {
+  min-width: 640px;
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #516078;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fdtd-sweep-row {
+  grid-template-columns: 52px 64px 64px 64px minmax(100px, 1fr);
+}
+
+.fdtd-run-row {
+  grid-template-columns: minmax(180px, 1.4fr) 58px 58px minmax(160px, 1fr) 92px 78px;
+}
+
+.fdtd-sweep-row span,
+.fdtd-run-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fdtd-sweep-header,
+.fdtd-run-header {
+  background: #eef4f8;
+  color: #40506a;
+  font-weight: 750;
+}
+
 .simulation-elements-table {
   display: grid;
   gap: 4px;
@@ -3068,6 +3125,7 @@ h2 {
   .simulation-builder-layout,
   .simulation-builder-footer,
   .fdtd-grid,
+  .fdtd-verification-controls,
   .simulation-field-grid {
     grid-template-columns: 1fr;
   }

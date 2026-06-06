@@ -1,11 +1,12 @@
 # EMMicro L8.1 External FDTD Helpers
 
-These tools support the L8.1 `External FDTD / Field Maps` workflow.
+These tools support the L8.1 `External FDTD / Field Maps` workflow and the L8.2 `FDTD Verification Suite`.
 
 Scope:
 - The web app exports an EMMicro FDTD scene manifest and a deterministic Meep-style Python helper script.
 - External Meep/FDTD execution is optional and happens outside the browser.
 - The browser imports receipt, flux summary, and field-slice evidence for comparison against the L8.0 analytic/TMM surface result.
+- L8.2 benchmark packs add bounded resolution/PML/padding sweep plans, expected reference files, convergence summary import, residual-vs-resolution diagnostics, and benchmark dossiers.
 
 Not scope:
 - No browser FDTD execution.
@@ -22,6 +23,14 @@ Typical flow:
 
 The files in `examples/` are deterministic diagnostic fixtures. They are not measured lab results.
 
+L8.2 example prefixes include:
+
+- `l82_empty_space_*`
+- `l82_transparent_interface_*`
+- `l82_transparent_slab_*`
+- `l82_absorbing_slab_*`
+- `l82_mirror_*`
+
 ## Scripts
 
 `run_meep_scene.py`
@@ -36,9 +45,18 @@ Both scripts use only the Python standard library unless you choose to execute M
 
 `l81_browser_smoke_code.js`
 
-Playwright CLI smoke helper for the L8.1 panel. Open the target URL first; the helper runs against the current page and writes screenshots under `.playwright-cli/`:
+Playwright CLI smoke helper for the L8.1 single-run field-map controls under the current app shell. Open the target URL first; the helper runs against the current page and writes screenshots under `.playwright-cli/`:
 
 ```powershell
 npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
 npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l81_browser_smoke_code.js
+```
+
+`l82_browser_smoke_code.js`
+
+Playwright CLI smoke helper for the L8.2 benchmark convergence suite:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
+npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l82_browser_smoke_code.js
 ```

@@ -1,0 +1,20 @@
+{
+  "benchmarkKind": "mirror",
+  "referenceModel": "ideal-mirror",
+  "expected": {
+    "reflectance": 1,
+    "transmittance": 0,
+    "absorbance": 0
+  },
+  "invariant": "Ideal mirror reflectance stays near 1 while transmission stays near 0.",
+  "thresholds": {
+    "referenceResidualPass": 0.02,
+    "referenceResidualWarning": 0.06,
+    "energyBalancePass": 0.01,
+    "energyBalanceWarning": 0.03,
+    "pmlSensitivityWarning": 0.015,
+    "pmlSensitivityFail": 0.05,
+    "fieldDeltaWarning": 0.08
+  },
+  "referenceHash": "98499069656035e7"
+}
