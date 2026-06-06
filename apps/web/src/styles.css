@@ -3172,9 +3172,13 @@ h2 {
   box-shadow: 0 2px 8px rgba(21, 35, 52, 0.1);
 }
 
-.l85-cross-section-item[role="button"] {
+.l85-cross-section-draggable {
   cursor: grab;
   touch-action: none;
+}
+
+.l85-cross-section-readonly {
+  pointer-events: none;
 }
 
 .l85-cross-section-selected {

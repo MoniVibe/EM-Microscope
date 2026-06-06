@@ -225,6 +225,7 @@ export function SimulationBuilderPanel() {
   const selectedL85SceneElement = selectedL85.kind === "element" ? l85Bundle.scene.elements.find((element) => element.id === selectedL85.id) ?? null : null;
   const selectedL85Monitor = selectedL85.kind === "monitor" ? l85Bundle.scene.monitors.find((monitor) => monitor.id === selectedL85.id) ?? null : null;
   const selectedL85CustomMonitor = selectedL85.kind === "monitor" ? (scenario.customMonitors ?? []).find((monitor) => monitor.id === selectedL85.id) ?? null : null;
+  const editableL85MonitorIds = useMemo(() => new Set(["observation-plane", ...(scenario.customMonitors ?? []).map((monitor) => monitor.id)]), [scenario.customMonitors]);
   const zMin = Math.min(scenario.grid.zStartMm, ...result.axis.map((node) => node.zMm));
   const zMax = Math.max(scenario.observationPlaneZMm, scenario.grid.zEndMm, ...result.axis.map((node) => node.zMm));
 
@@ -927,6 +928,7 @@ export function SimulationBuilderPanel() {
               bundle={l85Bundle}
               selected={selectedL85}
               snapStepMm={l85Snap.enabled ? l85Snap.stepMm : 0.1}
+              editableMonitorIds={editableL85MonitorIds}
               onSelect={setSelectedL85}
               onCommitPosition={commitL85DiagramPosition}
               onKeyboardNudge={nudgeL85Selection}
@@ -1917,6 +1919,7 @@ function L85BenchCrossSection(props: {
   bundle: ReturnType<typeof createOpticalBenchBundle>;
   selected: L85Selection;
   snapStepMm: number;
+  editableMonitorIds: ReadonlySet<string>;
   onSelect: (selection: L85Selection) => void;
   onCommitPosition: (selection: L85Selection, position: { zMm: number; xUm?: number }) => void;
   onKeyboardNudge: (delta: { zMm?: number; xUm?: number }) => void;
@@ -1931,7 +1934,7 @@ function L85BenchCrossSection(props: {
 
   function selectionForItem(item: ReturnType<typeof createOpticalBenchBundle>["crossSection"][number]): L85Selection | null {
     if (item.kind === "element") return { kind: "element", id: item.id };
-    if (item.kind === "monitor") return { kind: "monitor", id: item.id };
+    if (item.kind === "monitor" && props.editableMonitorIds.has(item.id)) return { kind: "monitor", id: item.id };
     return null;
   }
 
@@ -1985,28 +1988,29 @@ function L85BenchCrossSection(props: {
           const interactive = Boolean(selection);
           return (
             <div
-              className={`l85-cross-section-item l85-cross-section-item-${item.kind} l85-cross-section-route-${item.solverRoute} ${selected ? "l85-cross-section-selected" : ""} ${preview ? "l85-cross-section-drag-preview" : ""}`}
+              className={`l85-cross-section-item l85-cross-section-item-${item.kind} l85-cross-section-route-${item.solverRoute} ${interactive ? "l85-cross-section-draggable" : "l85-cross-section-readonly"} ${selected ? "l85-cross-section-selected" : ""} ${preview ? "l85-cross-section-drag-preview" : ""}`}
               key={item.id}
               role={interactive ? "button" : undefined}
               tabIndex={interactive ? 0 : undefined}
+              aria-label={interactive ? `Drag ${item.label}` : undefined}
               style={{ left: `${clampPercent(left)}%`, top: `${clampPercent(top)}%`, width: `${width}%`, height: `${clampPercent(height)}%` }}
               title={`${item.label}: z ${formatCompact(item.zMm)} mm, route ${item.solverRoute}`}
               onClick={() => {
                 if (selection) props.onSelect(selection);
               }}
               onPointerDown={(event) => {
-                if (!selection) return;
+                if (!interactive || !selection) return;
                 event.preventDefault();
                 props.onSelect(selection);
                 event.currentTarget.setPointerCapture(event.pointerId);
                 setDragPreview({ selection, ...positionFromPointer(event) });
               }}
               onPointerMove={(event) => {
-                if (!dragPreview || !selection || dragPreview.selection.id !== item.id || dragPreview.selection.kind !== selection.kind) return;
+                if (!interactive || !dragPreview || !selection || dragPreview.selection.id !== item.id || dragPreview.selection.kind !== selection.kind) return;
                 setDragPreview({ selection, ...positionFromPointer(event) });
               }}
               onPointerUp={(event) => {
-                if (!dragPreview || !selection || dragPreview.selection.id !== item.id || dragPreview.selection.kind !== selection.kind) return;
+                if (!interactive || !dragPreview || !selection || dragPreview.selection.id !== item.id || dragPreview.selection.kind !== selection.kind) return;
                 const next = positionFromPointer(event);
                 setDragPreview(null);
                 props.onCommitPosition(selection, next);
