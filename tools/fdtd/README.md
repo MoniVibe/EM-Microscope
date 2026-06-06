@@ -1,6 +1,6 @@
-# EMMicro L8.1/L8.2/L8.3/L8.4/L8.5/L8.5.1/L8.6/L8.7/L8.8/L8.8a External FDTD Helpers
+# EMMicro L8.1/L8.2/L8.3/L8.4/L8.5/L8.5.1/L8.6/L8.7/L8.8/L8.8a/L8.9 External FDTD Helpers
 
-These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, and the L8.8a two-view interaction hardening smoke flow.
+These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, the L8.8a two-view interaction hardening smoke flow, and the L8.9 `Real External FDTD Run Ingestion` workflow.
 
 Scope:
 - The web app exports an EMMicro FDTD scene manifest and a deterministic Meep-style Python helper script.
@@ -15,6 +15,7 @@ Scope:
 - L8.7 robust-design packs add ranked recommendations, candidate tables, tolerance budgets, before/after metric exports, FDTD candidate sweep manifests, and imported candidate sweep summary receipts.
 - L8.8 engineering-evidence packs add curated transparent/absorbing/reflective/aperture/multi-element/robust scenarios, analytic/TMM/scalar references, convergence/PML summaries, L8.6 tolerance evidence, L8.7 robust before/after evidence, capability truth tables, unsupported-item tables, and engineer-facing Markdown/JSON/CSV dossiers under `tools/evidence/`.
 - L8.8a two-view interaction hardening adds explicit Optical Axis Placement vs X-Z Surface Geometry roles, Inspect/Edit Geometry mode, z-only axis drag, finite geometry body/handle edits, warning visuals, and source-of-truth inspector copy.
+- L8.9 real-run packs add `scene_manifest.json`, `meep_scene.py`, `expected_reference.json`, `run_config.json`, `material_receipts.json`, `monitor_receipts.json`, `README.md`, `reproduce.sh`, `reproduce.ps1`, `postprocess.py`, and `requirements-meep.txt` exports; import `real_run_bundle.json` or individual receipt/flux/field/energy/postprocess artifacts; validate hashes and required monitors/files; compare R/T/A, energy balance, and field-slice residuals; promote accepted evidence; and export reproducibility reports.
 
 Not scope:
 - No browser FDTD execution.
@@ -32,6 +33,15 @@ Typical flow:
 2. Run or adapt `meep_scene.py` in an environment where Meep is installed.
 3. Produce `run_receipt.json`, `flux_summary.json`, and `field_slice_xz.csv`.
 4. Import those artifacts in the L8.1 panel.
+
+L8.9 real-run flow:
+
+1. Export `Export Real Run Pack` from the L8.9 panel.
+2. Run or adapt `reproduce.sh` / `reproduce.ps1` locally if Meep is installed.
+3. Produce or postprocess `run_receipt.json`, `flux_summary.json`, `field_slice_xz.csv`, `energy_balance.json`, and `postprocess_log.json`.
+4. Import those files or a `real_run_bundle.json` in the L8.9 panel.
+5. Review hash validation, reference comparison, field/intensity preview, warnings, and promotion state.
+6. Export `reproducibility_report.md`, `reproducibility_report.json`, `real_run_metrics.csv`, and `real_run_warnings.json`.
 
 The files in `examples/` are deterministic diagnostic fixtures. They are not measured lab results.
 
@@ -99,6 +109,17 @@ L8.8a smoke artifacts include:
 - `l88a-axis-z-drag-smoke.png`
 - `l88a-xz-edit-handles-smoke.png`
 - `l88a-warning-visuals-smoke.png`
+
+L8.9 smoke artifacts include:
+
+- `l89-real-run-pack-smoke.png`
+- `l89-real-run-fixture-smoke.png`
+- `l89-hash-mismatch-smoke.png`
+- `l89-repro-report-smoke.png`
+
+L8.9 fixture manifest:
+
+- `examples/l89_real_run_fixtures_manifest.json`
 
 ## Scripts
 
@@ -200,4 +221,13 @@ Playwright CLI smoke helper for L8.8a two-view editing: labels, Inspect/Edit Geo
 ```powershell
 npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
 npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l88a_browser_smoke_code.js
+```
+
+`l89_browser_smoke_code.js`
+
+Playwright CLI smoke helper for L8.9 real external run ingestion: pack controls, transparent/aperture/hash-mismatch fixtures, validation/comparison, promotion controls, and L8.8 regression visibility:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
+npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l89_browser_smoke_code.js
 ```

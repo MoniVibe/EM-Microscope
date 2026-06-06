@@ -1,9 +1,9 @@
 # EMMicro
 
-An EM-first light simulator MVP. The visible web app is now the L8.8 Engineering Evidence Campaign + Robust Design Advisor Simulation Builder over the existing
+An EM-first light simulator MVP. The visible web app is now the L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign Simulation Builder over the existing
 Maxwell Design Foundry planar multilayer transfer-matrix workbench and L7.8 Detector Round-Trip Acceptance Pack /
-Real Detector Bridge. L8.8 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
-workflow, adds an engineer-facing golden evidence campaign over L8.1-L8.7 evidence, keeps the diagnostic robust-design advisor over the L8.6 process/tolerance variation runner, and keeps the L8.5.1 multi-element scene graph plus element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
+Real Detector Bridge. L8.9 keeps the ordered Grid -> Source -> Elements -> Target / Material -> Compute -> Validate
+workflow, adds a real external-run pack/import/reproducibility path on top of L8.1-L8.8 FDTD evidence, keeps the engineer-facing golden evidence campaign over L8.1-L8.7 evidence, keeps the diagnostic robust-design advisor over the L8.6 process/tolerance variation runner, and keeps the L8.5.1 multi-element scene graph plus element inspector for source -> apertures/slits/lenses/finite geometry -> target -> observation/monitors,
 including numeric source-of-truth editing, optional diagram drag, non-drag nudge/order controls, snap settings, undo/redo, custom monitors, edit warnings,
 x-z bench cross-section, solver-plan routing, scalar multi-plane monitor snapshots, external FDTD chain fixture import,
 scene/solver/monitor/report exports, tolerance sensitivity ranking, pass/fail thresholds, worst-case tables, tolerance report exports, external FDTD variation sweep manifest/summary receipts, and a milestone trail that states iteration count is not validation,
@@ -42,6 +42,17 @@ digital twin behavior, or manufacturing certification.
 L8.8a hardens the two-view editor contract: Optical Axis Placement is order and z-position only, X-Z Surface Geometry
 is finite shape and transverse placement, Inspect/Edit Geometry modes prevent accidental drag, pointer previews commit
 only on drop, Escape cancels previews, and inspector fields remain the exact source of truth.
+L8.9 adds a real external FDTD run ingestion and reproducibility workbench: it exports a deterministic pack containing
+`scene_manifest.json`, `meep_scene.py`, `expected_reference.json`, `run_config.json`, `material_receipts.json`,
+`monitor_receipts.json`, `README.md`, `reproduce.sh`, `reproduce.ps1`, `postprocess.py`, and
+`requirements-meep.txt`; imports `run_receipt.json`, `flux_summary.json`, `field_slice_xz.csv`, optional field preview
+metadata, `energy_balance.json`, and `postprocess_log.json`; validates scene/script/material/monitor/run-config hashes,
+required monitor ids, required files, and receipt hashes; compares R/T/A, energy balance, field-slice RMS, and reference
+residuals; promotes accepted imports to the Engineering Evidence Campaign evidence queue; and exports
+`reproducibility_report.md`, `reproducibility_report.json`, `real_run_metrics.csv`, and `real_run_warnings.json`.
+Meep/Python remain optional local user-machine tooling only; npm tests, the browser runtime, and GitHub Pages do not
+execute FDTD. L8.9 is still not in-browser FDTD, arbitrary 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD execution, production
+solver certification, digital twin behavior, lab accreditation, hardware control, or manufacturing certification.
 The L7.8 diagnostic workbenches remain available as the Diagnostic Workbenches mode, with diagnostic external
 detector round-trip acceptance, board/export helper workflow, external detector JSON/CSV import, optional external OpenCV ChArUco runner tooling, detector receipt and hash validation, detector comparison, synthetic fiducial board generation,
 imported/synthetic marker matching, partial-view QA, manual correction, L7.2 geometry handoff, L7.4 session QA
@@ -161,7 +172,7 @@ certification system.
 
 ## Current Visible Mode
 
-- `L8.8 Engineering Evidence Campaign + Robust Design Advisor`: a top-level Simulation Builder workflow that
+- `L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign`: a top-level Simulation Builder workflow that
   follows `Grid -> Source -> Elements -> Target / Material -> Observation / Monitors -> Validate`. It lets users define domain
   units, x/y/z extents, points per wavelength, source type/position/wavelength/coherence, and an ordered z-axis list
   of apertures, ideal lenses, planar material interfaces/slabs, mirrors, absorbers, and L8.3 finite transparent
@@ -189,6 +200,16 @@ certification system.
   validation. This dossier reports runnable evidence, references, residuals, convergence behavior, and limitations."
   The bundled files live under `tools/evidence/`, with optional external-run scaffolding; npm tests/build and browser
   runtime do not require Meep or Python.
+
+  The L8.9 Real External FDTD Run Ingestion workbench makes the external path real-user runnable without moving FDTD
+  into the browser. It exports a named run pack, imports a full `real_run_bundle.json` or individual
+  `run_receipt.json`, `flux_summary.json`, `field_slice_xz.csv`, `energy_balance.json`, and `postprocess_log.json`
+  artifacts, validates scene/script/material/monitor/run-config hashes and required monitor/file coverage, shows
+  field/intensity previews plus imported monitor positions and R/T/A energy-balance deltas, compares against the
+  current analytic/TMM/scalar reference, and can promote accepted results to the Engineering Evidence Campaign. It
+  exports `reproducibility_report.md`, `reproducibility_report.json`, `real_run_metrics.csv`,
+  `real_run_warnings.json`, `real_run_validation.json`, `real_run_comparison.json`, and optional
+  `real_run_promotion.json`.
 
   The L8.6 process/tolerance runner attaches source, element, material, geometry, and monitor variation specs to that
   current editable scene, then runs one-at-a-time, bounded deterministic-grid, or seeded deterministic diagnostic

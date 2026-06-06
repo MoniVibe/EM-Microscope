@@ -1,0 +1,51 @@
+{
+  "schema": "emmicro.fdtd.l89RealRunFixturesManifest.v1",
+  "label": "L8.9 real external FDTD run ingestion bundled fixtures",
+  "fixtures": [
+    {
+      "id": "transparent-slab",
+      "label": "Transparent real-run fixture",
+      "uiAction": "Load Transparent Real Run Fixture",
+      "source": "createRealExternalRunFixture(\"transparent-slab\")",
+      "purpose": "Pass-path receipt, flux, field slice, energy balance, postprocess log, comparison, and promotion smoke."
+    },
+    {
+      "id": "aperture-blocker",
+      "label": "Aperture/blocker real-run fixture",
+      "uiAction": "Load Aperture Real Run Fixture",
+      "source": "createRealExternalRunFixture(\"aperture-blocker\")",
+      "purpose": "Warning-tolerant finite aperture/blocker external-run-style evidence with field/intensity preview."
+    },
+    {
+      "id": "hash-mismatch",
+      "label": "Hash-mismatch warning fixture",
+      "uiAction": "Load Hash-Mismatch Fixture",
+      "source": "createRealExternalRunFixture(\"hash-mismatch\")",
+      "purpose": "Intentional material, monitor, and run-config hash mismatch fixture that must fail validation."
+    }
+  ],
+  "requiredImportFiles": [
+    "run_receipt.json",
+    "flux_summary.json",
+    "field_slice_xz.csv",
+    "energy_balance.json",
+    "postprocess_log.json"
+  ],
+  "packFiles": [
+    "scene_manifest.json",
+    "meep_scene.py",
+    "expected_reference.json",
+    "run_config.json",
+    "material_receipts.json",
+    "monitor_receipts.json",
+    "README.md",
+    "reproduce.sh",
+    "reproduce.ps1",
+    "postprocess.py",
+    "requirements-meep.txt"
+  ],
+  "boundary": [
+    "Fixtures are deterministic diagnostic evidence for import-contract and UI validation.",
+    "They are not measured lab results, certified solver validation, browser FDTD execution, arbitrary 3D Maxwell/FEM/BEM/RCWA execution, digital twins, or manufacturing certification."
+  ]
+}

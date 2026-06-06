@@ -69,8 +69,12 @@ import {
   engineeringEvidenceUnsupportedItemsCsv,
   isOpticalBenchEditingBlocked,
   createOpticalBenchBundle,
+  createRealExternalRunFixture,
+  createRealExternalRunPack,
+  createRealExternalRunReproducibilityReport,
   importFdtdRunArtifacts,
   importFdtdConvergenceBundleArtifacts,
+  importRealExternalRunBundle,
   l80ReleaseTrail,
   metricLabel,
   moveOpticalBenchElementInOrder,
@@ -82,6 +86,7 @@ import {
   opticalBenchValidationReportJson,
   opticalBenchValidationReportMarkdown,
   redoOpticalBenchHistory,
+  compareRealExternalRunToReferences,
   robustBeforeAfterMetricsCsv,
   robustCandidateTableCsv,
   robustDesignReportJson,
@@ -99,6 +104,17 @@ import {
   simulationBuilderValidationMetricsCsv,
   simulationBuilderValidationReportJson,
   simulationBuilderValidationReportMarkdown,
+  parseRealExternalRunBundleJson,
+  promoteRealExternalRunToEvidenceCampaign,
+  realExternalRunBundleJson,
+  realExternalRunComparisonJson,
+  realExternalRunMetricsCsv,
+  realExternalRunPackManifestJson,
+  realExternalRunPromotionJson,
+  realExternalRunReproducibilityMarkdown,
+  realExternalRunReproducibilityReportJson,
+  realExternalRunValidationJson,
+  realExternalRunWarningsJson,
   surfaceGeometryMetricsCsv,
   surfaceGeometrySceneJson,
   surfaceGeometryValidationReportJson,
@@ -107,6 +123,7 @@ import {
   updateOpticalBenchCustomMonitor,
   updateOpticalBenchElementProperties,
   validateApertureImportedRun,
+  validateRealExternalRunBundle,
   validateOpticalBenchEditing,
   validateFdtdImportedRunAgainstScenario,
   goldenEvidenceCampaignSummaryJson,
@@ -137,6 +154,9 @@ import {
   type GoldenEvidenceCampaignSummary,
   type FdtdImportedRun,
   type FdtdValidationReport,
+  type RealExternalRunBundle,
+  type RealExternalRunFixtureKind,
+  type RealExternalRunPromotion,
   type OpticalBenchHistoryState,
   type OpticalBenchElement,
   type OpticalBenchMonitor,
@@ -299,6 +319,9 @@ export function SimulationBuilderPanel() {
   const [l88Manifest, setL88Manifest] = useState<EngineeringEvidenceCampaignManifest>(() => createEngineeringEvidenceCampaignManifest());
   const [l88Summary, setL88Summary] = useState<GoldenEvidenceCampaignSummary | null>(null);
   const [l88ImportError, setL88ImportError] = useState<string | null>(null);
+  const [l89RunBundle, setL89RunBundle] = useState<RealExternalRunBundle | null>(null);
+  const [l89Promotion, setL89Promotion] = useState<RealExternalRunPromotion | null>(null);
+  const [l89ImportError, setL89ImportError] = useState<string | null>(null);
   const [importedFdtd, setImportedFdtd] = useState<FdtdImportedRun | null>(null);
   const [fdtdImportError, setFdtdImportError] = useState<string | null>(null);
   const [benchmarkKind, setBenchmarkKind] = useState<FdtdBenchmarkKind>("transparent-interface");
@@ -316,6 +339,7 @@ export function SimulationBuilderPanel() {
   const result = useMemo(() => runSimulationBuilderScenario(scenario), [scenario]);
   const l85Bundle = useMemo(() => createOpticalBenchBundle(scenario), [scenario]);
   const fdtdBundle = useMemo(() => exportFdtdBundleFromSimulationBuilder(scenario), [scenario]);
+  const l89RunPack = useMemo(() => createRealExternalRunPack(scenario), [scenario]);
   const fdtdBenchmarkPack = useMemo(() => createFdtdBenchmarkPack({ benchmarkKind, scenario }), [benchmarkKind, scenario]);
   const surfaceGeometryScene = useMemo(() => surfaceGeometryExample?.scene ?? createSurfaceGeometryScene(scenario), [scenario, surfaceGeometryExample]);
   const surfaceGeometryConvergencePack = useMemo(() => createSurfaceGeometryConvergencePack(surfaceGeometryScene.kind), [surfaceGeometryScene.kind]);
@@ -329,6 +353,19 @@ export function SimulationBuilderPanel() {
   const fdtdValidation = useMemo<FdtdValidationReport | null>(
     () => (importedFdtd ? validateFdtdImportedRunAgainstScenario(scenario, fdtdBundle, importedFdtd) : null),
     [fdtdBundle, importedFdtd, scenario]
+  );
+  const l89Validation = useMemo(
+    () => (l89RunBundle ? validateRealExternalRunBundle(scenario, l89RunPack, l89RunBundle) : null),
+    [l89RunBundle, l89RunPack, scenario]
+  );
+  const l89Comparison = useMemo(
+    () => (l89RunBundle && l89Validation ? compareRealExternalRunToReferences(l89RunPack, l89RunBundle, l89Validation) : null),
+    [l89RunBundle, l89RunPack, l89Validation]
+  );
+  const activeL89Promotion = l89Promotion && l89Comparison && l89Promotion.receipts.comparisonHash === l89Comparison.comparisonHash ? l89Promotion : null;
+  const l89Report = useMemo(
+    () => createRealExternalRunReproducibilityReport(l89RunPack, l89RunBundle, l89Validation, l89Comparison, activeL89Promotion),
+    [activeL89Promotion, l89Comparison, l89RunBundle, l89RunPack, l89Validation]
   );
   const l85Snap = useMemo(() => ({ enabled: l85SnapStepMm > 0, stepMm: l85SnapStepMm }), [l85SnapStepMm]);
   const l85EditingWarnings = useMemo(() => validateOpticalBenchEditing(scenario), [scenario]);
@@ -424,6 +461,7 @@ export function SimulationBuilderPanel() {
     if (options.externalDirty !== false) setHasL85ExternalEvidence(false);
     setSurfaceGeometryExample(null);
     clearApertureEvidence();
+    setL89Promotion(null);
   }
 
   function resetL85Bench(): void {
@@ -442,6 +480,9 @@ export function SimulationBuilderPanel() {
     setHasL85ScalarPreview(true);
     setHasL85ExternalEvidence(true);
     setSurfaceGeometryExample(null);
+    setL89RunBundle(null);
+    setL89Promotion(null);
+    setL89ImportError(null);
     clearApertureEvidence();
   }
 
@@ -886,6 +927,92 @@ export function SimulationBuilderPanel() {
     }
   }
 
+  function exportL89RunPack(): void {
+    downloadText("l89_run_pack_manifest.json", "application/json", realExternalRunPackManifestJson(l89RunPack));
+    for (const file of l89RunPack.files) {
+      downloadText(file.path, file.mime, file.text);
+    }
+  }
+
+  function loadL89Fixture(kind: RealExternalRunFixtureKind): void {
+    const fixture = createRealExternalRunFixture(kind);
+    setScenario(fixture.scenario);
+    setL89RunBundle(fixture.bundle);
+    setL89Promotion(fixture.promotion.accepted ? fixture.promotion : null);
+    setImportedFdtd(fixture.bundle.imported);
+    setFdtdImportError(null);
+    setL89ImportError(null);
+    setHasComputed(true);
+  }
+
+  async function importL89RunFiles(files: FileList | null): Promise<void> {
+    setL89ImportError(null);
+    if (!files || files.length === 0) return;
+    const entries = await Promise.all(Array.from(files).map(async (file) => ({ name: file.name.toLowerCase(), text: await file.text() })));
+    const bundleJson = entries.find((entry) => entry.name.includes("real_run_bundle") && entry.name.endsWith(".json"));
+    try {
+      if (bundleJson) {
+        const bundle = parseRealExternalRunBundleJson(bundleJson.text);
+        setL89RunBundle(bundle);
+        setImportedFdtd(bundle.imported);
+        setL89Promotion(null);
+        setHasComputed(true);
+        return;
+      }
+      const receipt = entries.find((entry) => entry.name.includes("receipt") && entry.name.endsWith(".json"));
+      const flux = entries.find((entry) => entry.name.includes("flux") && entry.name.endsWith(".json"));
+      const fieldSlice = entries.find((entry) => entry.name.includes("field_slice") && entry.name.endsWith(".csv")) ?? entries.find((entry) => entry.name.includes("slice") && entry.name.endsWith(".csv")) ?? entries.find((entry) => entry.name.endsWith(".csv"));
+      const energy = entries.find((entry) => entry.name.includes("energy_balance") && entry.name.endsWith(".json"));
+      const log = entries.find((entry) => entry.name.includes("postprocess_log") && entry.name.endsWith(".json"));
+      if (!receipt || !flux || !fieldSlice) {
+        throw new Error("Select l89 real_run_bundle.json or run_receipt.json, flux_summary.json, and field_slice_xz.csv together.");
+      }
+      const imported = importRealExternalRunBundle(l89RunPack, {
+        receiptJson: receipt.text,
+        fluxJson: flux.text,
+        fieldSliceCsv: fieldSlice.text,
+        fieldSlice: {
+          id: l89RunPack.runConfig.fieldSliceId,
+          sourceScenarioHash: l89RunPack.sourceScenarioHash,
+          manifestHash: l89RunPack.manifestHash
+        },
+        energyBalanceJson: energy?.text,
+        postprocessLogJson: log?.text
+      });
+      setL89RunBundle(imported);
+      setImportedFdtd(imported.imported);
+      setL89Promotion(null);
+      setHasComputed(true);
+    } catch (error) {
+      setL89ImportError(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  function promoteL89Run(acceptWarnings = false): void {
+    if (!l89Comparison || !l89Validation) return;
+    setL89Promotion(promoteRealExternalRunToEvidenceCampaign(l89RunPack, l89Comparison, l89Validation, acceptWarnings));
+  }
+
+  function exportL89ImportedBundle(): void {
+    if (!l89RunBundle) return;
+    downloadText("real_run_bundle.json", "application/json", realExternalRunBundleJson(l89RunBundle));
+    downloadText("run_receipt.json", "application/json", `${JSON.stringify(l89RunBundle.receipt, null, 2)}\n`);
+    downloadText("flux_summary.json", "application/json", `${JSON.stringify(l89RunBundle.flux, null, 2)}\n`);
+    downloadText("field_slice_xz.csv", "text/csv", `${l89RunBundle.fieldSliceCsv}\n`);
+    downloadText("energy_balance.json", "application/json", `${JSON.stringify(l89RunBundle.energyBalance, null, 2)}\n`);
+    downloadText("postprocess_log.json", "application/json", `${JSON.stringify(l89RunBundle.postprocessLog, null, 2)}\n`);
+  }
+
+  function exportL89ReproducibilityReport(): void {
+    downloadText("reproducibility_report.md", "text/markdown", `${realExternalRunReproducibilityMarkdown(l89Report)}\n`);
+    downloadText("reproducibility_report.json", "application/json", realExternalRunReproducibilityReportJson(l89Report));
+    downloadText("real_run_metrics.csv", "text/csv", `${realExternalRunMetricsCsv(l89Comparison, l89Validation)}\n`);
+    downloadText("real_run_warnings.json", "application/json", realExternalRunWarningsJson(l89Report));
+    if (l89Validation) downloadText("real_run_validation.json", "application/json", realExternalRunValidationJson(l89Validation));
+    if (l89Comparison) downloadText("real_run_comparison.json", "application/json", realExternalRunComparisonJson(l89Comparison));
+    if (activeL89Promotion) downloadText("real_run_promotion.json", "application/json", realExternalRunPromotionJson(activeL89Promotion));
+  }
+
   function exportScenario(): void {
     downloadText("simulation_builder_scenario.json", "application/json", simulationBuilderScenarioJson(scenario));
   }
@@ -1132,16 +1259,16 @@ export function SimulationBuilderPanel() {
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L8.8 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L8.9 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L8.8 Engineering Evidence Campaign + Robust Design Advisor</h2>
+        <h2>L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, external FDTD handoff evidence, precise numeric edits, optional diagram drag, and a validation report.
+          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, real external FDTD run ingestion and reproducibility reports, precise numeric edits, optional diagram drag, and a validation report.
           Browser FDTD, arbitrary 3D Maxwell material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
           certification are not implemented.
         </span>
@@ -2060,6 +2187,175 @@ export function SimulationBuilderPanel() {
                     <strong>{warning.code}</strong> {warning.message}
                   </span>
                 ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="fdtd-verification-suite l89-real-run-suite" aria-label="L8.9 real external FDTD run ingestion smoke preview">
+            <div className="maxwell-section-heading">
+              <h2>L8.9 Real External FDTD Run Ingestion</h2>
+              <strong>{l89Comparison?.status ?? l89Validation?.status ?? fdtdReadinessLabel(l89RunPack.bundle.manifest.readiness.status)}</strong>
+            </div>
+            <div className="l2-disclosure">
+              <strong>Export pack, run Meep locally, import receipts, compare, and promote evidence.</strong>
+              <span>
+                The pack includes scene_manifest.json, meep_scene.py, expected_reference.json, run_config.json, material_receipts.json, monitor_receipts.json, README.md,
+                reproduce.sh, reproduce.ps1, postprocess.py, and requirements-meep.txt. Meep/Python stay local to the user machine; npm tests, the browser runtime, and GitHub Pages do not execute FDTD.
+                Browser FDTD, arbitrary 3D Maxwell/FDTD/FEM/BEM/RCWA/CAD physics, production solver certification, digital twins, hardware control, and manufacturing certification are not implemented.
+              </span>
+            </div>
+            <div className="maxwell-layer-actions simulation-builder-actions fdtd-action-row">
+              <button type="button" onClick={exportL89RunPack}>
+                <FileDown size={15} />
+                <span>Export Real Run Pack</span>
+              </button>
+              <button type="button" onClick={() => loadL89Fixture("transparent-slab")}>
+                <Sparkles size={15} />
+                <span>Load Transparent Real Run Fixture</span>
+              </button>
+              <button type="button" onClick={() => loadL89Fixture("aperture-blocker")}>
+                <Sparkles size={15} />
+                <span>Load Aperture Real Run Fixture</span>
+              </button>
+              <button type="button" onClick={() => loadL89Fixture("hash-mismatch")}>
+                <Sparkles size={15} />
+                <span>Load Hash-Mismatch Fixture</span>
+              </button>
+              <label className="fdtd-file-import">
+                <span>Import Real Run Bundle</span>
+                <input aria-label="Import L8.9 real external FDTD run bundle" type="file" accept=".json,.csv" multiple onChange={(event) => void importL89RunFiles(event.currentTarget.files)} />
+              </label>
+              <button type="button" disabled={!l89RunBundle} onClick={exportL89ImportedBundle}>
+                <FileDown size={15} />
+                <span>Export Imported Real Run</span>
+              </button>
+              <button type="button" disabled={!l89Comparison || l89Comparison.status !== "pass"} onClick={() => promoteL89Run(false)}>
+                <Sparkles size={15} />
+                <span>Promote to Engineering Evidence Campaign</span>
+              </button>
+              <button type="button" disabled={!l89Comparison || l89Comparison.status === "fail"} onClick={() => promoteL89Run(true)}>
+                <Sparkles size={15} />
+                <span>Accept Warnings + Promote</span>
+              </button>
+              <button type="button" onClick={exportL89ReproducibilityReport}>
+                <FileDown size={15} />
+                <span>Export Reproducibility Report</span>
+              </button>
+            </div>
+            {l89ImportError && <div className="error-banner">{l89ImportError}</div>}
+            <div className="fdtd-grid">
+              <div className="maxwell-data-table" aria-label="L8.9 real run pack receipt smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Run Pack Receipts</h2>
+                  <strong>{l89RunPack.packHash.slice(0, 10)}</strong>
+                </div>
+                <div className="maxwell-study-list">
+                  <Stat label="Scene hash" value={l89RunPack.sourceScenarioHash.slice(0, 10)} />
+                  <Stat label="Manifest hash" value={l89RunPack.manifestHash.slice(0, 10)} />
+                  <Stat label="Script hash" value={l89RunPack.scriptHash.slice(0, 10)} />
+                  <Stat label="Material hash" value={l89RunPack.materialHash.slice(0, 10)} />
+                  <Stat label="Monitor hash" value={l89RunPack.monitorHash.slice(0, 10)} />
+                  <Stat label="Run config" value={l89RunPack.runConfigHash.slice(0, 10)} />
+                </div>
+              </div>
+
+              <div className="maxwell-data-table" aria-label="L8.9 local run instructions smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Local Run Contract</h2>
+                  <strong>{l89RunPack.runConfig.requiredMonitorIds.length} monitors</strong>
+                </div>
+                <div className="maxwell-study-list">
+                  <Stat label="Resolution" value={String(l89RunPack.runConfig.resolution)} />
+                  <Stat label="Until" value={String(l89RunPack.runConfig.until)} />
+                  <Stat label="PML" value={`${formatCompact(l89RunPack.runConfig.pmlThicknessUm)} um`} />
+                  <Stat label="Field slice" value={l89RunPack.runConfig.fieldSliceId} />
+                  <Stat label="Required files" value={String(l89RunPack.runConfig.outputFiles.length)} />
+                  <Stat label="Install" value="requirements-meep.txt" />
+                </div>
+                <pre className="fdtd-script-preview">{[l89RunPack.commands.install, l89RunPack.commands.run, l89RunPack.commands.postprocess].join("\n")}</pre>
+              </div>
+
+              <div className="maxwell-data-table" aria-label="L8.9 imported real run receipt smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Imported Real Run</h2>
+                  <strong>{l89RunBundle?.receipt.runId ?? "no import"}</strong>
+                </div>
+                <div className="maxwell-study-list">
+                  <Stat label="Tool" value={l89RunBundle ? `${l89RunBundle.receipt.tool.name} ${l89RunBundle.receipt.tool.version}` : "n/a"} />
+                  <Stat label="Files" value={l89RunBundle ? String(l89RunBundle.postprocessLog.files.length) : "n/a"} />
+                  <Stat label="Energy balance" value={l89RunBundle ? `${formatCompact(l89RunBundle.energyBalance.rtaSum)} (${l89RunBundle.energyBalance.status})` : "n/a"} />
+                  <Stat label="Field preview" value={l89RunBundle ? `${l89RunBundle.fieldPreview.width} x ${l89RunBundle.fieldPreview.height}` : "n/a"} />
+                  <Stat label="Bundle hash" value={l89RunBundle?.bundleHash.slice(0, 10) ?? "n/a"} />
+                </div>
+              </div>
+
+              <div className="maxwell-data-table" aria-label="L8.9 receipt hash validation smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Hash Validation</h2>
+                  <strong>{l89Validation?.status ?? "pending"}</strong>
+                </div>
+                <div className="maxwell-study-list">
+                  <Stat label="Material hash" value={l89Validation?.materialHashStatus ?? "pending"} />
+                  <Stat label="Monitor hash" value={l89Validation?.monitorHashStatus ?? "pending"} />
+                  <Stat label="Run config hash" value={l89Validation?.runConfigHashStatus ?? "pending"} />
+                  <Stat label="Required files" value={l89Validation?.requiredFilesStatus ?? "pending"} />
+                  <Stat label="Required monitors" value={l89Validation?.requiredMonitorsStatus ?? "pending"} />
+                  <Stat label="Receipt hashes" value={l89Validation?.receiptStatus ?? "pending"} />
+                </div>
+              </div>
+
+              <div className="maxwell-data-table" aria-label="L8.9 RTA comparison smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Reference Comparison</h2>
+                  <strong>{l89Comparison?.status ?? "pending"}</strong>
+                </div>
+                <div className="maxwell-study-list">
+                  <Stat label="Expected R/T/A" value={`${pct(l89RunPack.expectedReference.expected.reflectance)} / ${pct(l89RunPack.expectedReference.expected.transmittance)} / ${pct(l89RunPack.expectedReference.expected.absorbance)}`} />
+                  <Stat label="Imported R/T/A" value={l89RunBundle ? `${pct(l89RunBundle.flux.reflectance)} / ${pct(l89RunBundle.flux.transmittance)} / ${pct(l89RunBundle.flux.absorbance)}` : "n/a"} />
+                  <Stat label="R/T/A delta" value={l89Comparison ? `${formatCompact(l89Comparison.rtaDelta.reflectance)} / ${formatCompact(l89Comparison.rtaDelta.transmittance)} / ${formatCompact(l89Comparison.rtaDelta.absorbance)}` : "n/a"} />
+                  <Stat label="Energy delta" value={l89Comparison ? formatCompact(l89Comparison.energyBalanceDelta) : "n/a"} />
+                  <Stat label="Field RMS delta" value={l89Comparison ? formatCompact(l89Comparison.fieldSliceRmsDelta) : "n/a"} />
+                  <Stat label="Reference residual" value={l89Comparison ? formatCompact(l89Comparison.referenceResidual) : "n/a"} />
+                </div>
+              </div>
+
+              <div className="maxwell-data-table" aria-label="L8.9 evidence promotion smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Evidence Promotion</h2>
+                  <strong>{activeL89Promotion ? (activeL89Promotion.acceptedWithWarnings ? "accepted with warnings" : "accepted") : "not promoted"}</strong>
+                </div>
+                <div className="maxwell-study-list">
+                  <Stat label="Campaign target" value={activeL89Promotion?.campaignTarget ?? "Engineering Evidence Campaign"} />
+                  <Stat label="Promotion hash" value={activeL89Promotion?.promotionHash.slice(0, 10) ?? "n/a"} />
+                  <Stat label="Validation hash" value={l89Validation?.validationHash.slice(0, 10) ?? "n/a"} />
+                  <Stat label="Comparison hash" value={l89Comparison?.comparisonHash.slice(0, 10) ?? "n/a"} />
+                  <Stat label="Report hash" value={l89Report.reportHash.slice(0, 10)} />
+                </div>
+              </div>
+
+              <div className="maxwell-data-table" aria-label="L8.9 real run field preview smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Real Run Field / Intensity</h2>
+                  <strong>{l89RunBundle ? `${l89RunBundle.fieldSlice.xCount} x ${l89RunBundle.fieldSlice.zCount}` : "no import"}</strong>
+                </div>
+                {l89RunBundle ? <FdtdFieldSlicePreview slice={l89RunBundle.fieldSlice} /> : <div className="empty-state">Import a real run bundle or load an L8.9 fixture to inspect field/intensity slices.</div>}
+              </div>
+
+              <div className="maxwell-data-table fdtd-wide" aria-label="L8.9 run warnings and boundaries smoke preview">
+                <div className="maxwell-section-heading">
+                  <h2>Real Run Warnings / Boundary</h2>
+                  <strong>{l89Report.warnings.length} warnings</strong>
+                </div>
+                <div className="fdtd-warning-list">
+                  {l89Report.warnings.length === 0 ? <span>No L8.9 real-run warnings for the active pack/import.</span> : l89Report.warnings.map((warning, index) => (
+                    <span key={`${warning.code}:${warning.elementId ?? ""}:${index}`}>
+                      <strong>{warning.code}</strong> {warning.message}
+                    </span>
+                  ))}
+                  {l89Report.boundary.slice(0, 3).map((item) => (
+                    <span key={item}>{item}</span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

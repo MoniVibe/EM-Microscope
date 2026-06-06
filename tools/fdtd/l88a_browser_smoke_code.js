@@ -13,7 +13,7 @@ async function smoke(page) {
   await page.setViewportSize({ width: 1500, height: 1040 });
   step("navigate");
   await page.goto(url, { waitUntil: "networkidle" });
-  await expectText("L8.8 Engineering Evidence Campaign + Robust Design Advisor");
+  await expectText("L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign");
   await expectText("Order and z-position");
   await expectText("Finite shape and transverse placement");
   await expectText("Inspector fields are exact source of truth");

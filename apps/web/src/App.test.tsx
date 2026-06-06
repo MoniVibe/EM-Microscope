@@ -549,7 +549,7 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented|certified metrology report executable|lab accreditation workflow executable|hardware control implemented|AprilTag detector executable|ArUco detector executable/i);
   });
 
-  it("keeps the visible app shell focused on L8.8 evidence campaign with L8.7 robust advisor, L8.6 tolerance, L8.5.1 editing, L8.4/L8.3/L8.2/L8.1 FDTD, and L7.8 diagnostics still reachable", () => {
+  it("keeps the visible app shell focused on L8.9 real external run ingestion with L8.8 evidence campaign, L8.7 robust advisor, L8.6 tolerance, L8.5.1 editing, L8.4/L8.3/L8.2/L8.1 FDTD, and L7.8 diagnostics still reachable", () => {
     const app = readFileSync(resolve(testDir, "App.tsx"), "utf8");
     const simulationBuilder = readFileSync(resolve(testDir, "maxwell/SimulationBuilderPanel.tsx"), "utf8");
     const fdtdReadme = readFileSync(resolve(testDir, "../../../tools/fdtd/README.md"), "utf8");
@@ -558,8 +558,9 @@ describe("solver disclosure copy", () => {
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("L8.8 Engineering Evidence Campaign + Robust Design Advisor / L8.4 Aperture Validation / L7.8 Detector Round Trip");
+    expect(app).toContain("L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign / L8.4 Aperture Validation / L7.8 Detector Round Trip");
     expect(app).toContain("Simulation Builder + Engineering Evidence Dossier + Multi-Element FDTD Evidence");
+    expect(app).toContain("L8.9 real external FDTD run ingestion and reproducibility reports");
     expect(app).toContain("L8.8 engineering evidence campaign");
     expect(app).toContain("L8.7 robust design advisor");
     expect(app).toContain("L8.6 process/tolerance variation runner");
@@ -570,7 +571,8 @@ describe("solver disclosure copy", () => {
     expect(app).toContain("Diagnostic Workbenches");
     expect(app).toContain("<SimulationBuilderPanel />");
     expect(app).toContain("<MaxwellPanel />");
-    expect(simulationBuilder).toContain("L8.8 Engineering Evidence Campaign + Robust Design Advisor");
+    expect(simulationBuilder).toContain("L8.9 Real External FDTD Run Ingestion + Engineering Evidence Campaign");
+    expect(simulationBuilder).toContain("real external FDTD run ingestion and reproducibility reports");
     expect(simulationBuilder).toContain("engineering evidence campaign dossiers");
     expect(simulationBuilder).toContain("diagnostic process/tolerance variation studies");
     expect(simulationBuilder).toContain("robust-design recommendations");
@@ -752,6 +754,29 @@ describe("solver disclosure copy", () => {
     expect(simulationBuilder).toContain("fdtd_scene_manifest.json");
     expect(simulationBuilder).toContain("meep_scene.py");
     expect(simulationBuilder).toContain("fdtd_validation_report.md");
+    expect(simulationBuilder).toContain("L8.9 Real External FDTD Run Ingestion");
+    expect(simulationBuilder).toContain("L8.9 real external FDTD run ingestion smoke preview");
+    expect(simulationBuilder).toContain("Export Real Run Pack");
+    expect(simulationBuilder).toContain("Load Transparent Real Run Fixture");
+    expect(simulationBuilder).toContain("Load Aperture Real Run Fixture");
+    expect(simulationBuilder).toContain("Load Hash-Mismatch Fixture");
+    expect(simulationBuilder).toContain("Import Real Run Bundle");
+    expect(simulationBuilder).toContain("Promote to Engineering Evidence Campaign");
+    expect(simulationBuilder).toContain("Accept Warnings + Promote");
+    expect(simulationBuilder).toContain("Export Reproducibility Report");
+    expect(simulationBuilder).toContain("scene_manifest.json");
+    expect(simulationBuilder).toContain("expected_reference.json");
+    expect(simulationBuilder).toContain("run_config.json");
+    expect(simulationBuilder).toContain("material_receipts.json");
+    expect(simulationBuilder).toContain("monitor_receipts.json");
+    expect(simulationBuilder).toContain("reproduce.sh");
+    expect(simulationBuilder).toContain("reproduce.ps1");
+    expect(simulationBuilder).toContain("postprocess.py");
+    expect(simulationBuilder).toContain("requirements-meep.txt");
+    expect(simulationBuilder).toContain("reproducibility_report.md");
+    expect(simulationBuilder).toContain("real_run_metrics.csv");
+    expect(simulationBuilder).toContain("real_run_warnings.json");
+    expect(simulationBuilder).toContain("Meep/Python stay local to the user machine");
     expect(simulationBuilder).toContain("External FDTD export/import only");
     expect(simulationBuilder).toContain("browser app does not execute FDTD");
     expect(simulationBuilder).toContain("Benchmark convergence evidence, not new in-browser physics.");
@@ -767,6 +792,8 @@ describe("solver disclosure copy", () => {
     expect(simulationBuilder).toContain("manufacturing certification");
     expect(fdtdReadme).toContain("L8.8a two-view interaction hardening");
     expect(fdtdReadme).toContain("l88a_browser_smoke_code.js");
+    expect(fdtdReadme).toContain("L8.9 real-run packs");
+    expect(fdtdReadme).toContain("l89_browser_smoke_code.js");
     expect(l88aSmoke).toContain("l88a-two-view-labels-smoke.png");
     expect(l88aSmoke).toContain("l88a-axis-z-drag-smoke.png");
     expect(l88aSmoke).toContain("l88a-xz-edit-handles-smoke.png");
