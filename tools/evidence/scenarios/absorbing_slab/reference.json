@@ -1,0 +1,17 @@
+{
+  "schema": "emmicro.l88.scenarioReference.v1",
+  "scenarioId": "absorbing-slab",
+  "referenceModel": "beer-lambert",
+  "referenceDescription": "Beer-Lambert attenuation residual and energy balance stabilize as grid density increases.",
+  "expected": {
+    "reflectance": 0,
+    "transmittance": 0.6065306597126334,
+    "absorbance": 0.3934693402873666
+  },
+  "thresholds": {
+    "passResidual": 0.03,
+    "warningResidual": 0.08,
+    "pmlWarning": 0.015,
+    "pmlFail": 0.05
+  }
+}

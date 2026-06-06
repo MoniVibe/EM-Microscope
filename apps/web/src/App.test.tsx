@@ -549,15 +549,16 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented|certified metrology report executable|lab accreditation workflow executable|hardware control implemented|AprilTag detector executable|ArUco detector executable/i);
   });
 
-  it("keeps the visible app shell focused on L8.7 robust design advisor with L8.6 tolerance, L8.5.1 editing, L8.4/L8.3/L8.2/L8.1 FDTD, and L7.8 diagnostics still reachable", () => {
+  it("keeps the visible app shell focused on L8.8 evidence campaign with L8.7 robust advisor, L8.6 tolerance, L8.5.1 editing, L8.4/L8.3/L8.2/L8.1 FDTD, and L7.8 diagnostics still reachable", () => {
     const app = readFileSync(resolve(testDir, "App.tsx"), "utf8");
     const simulationBuilder = readFileSync(resolve(testDir, "maxwell/SimulationBuilderPanel.tsx"), "utf8");
     const maxwellReturn = app.indexOf("return <MaxwellOnlyApp />;");
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("L8.7 Robust Design Advisor + Process / Tolerance Runner / L8.4 Aperture Validation / L7.8 Detector Round Trip");
-    expect(app).toContain("Simulation Builder + Process Tolerances + Multi-Element FDTD Evidence");
+    expect(app).toContain("L8.8 Engineering Evidence Campaign + Robust Design Advisor / L8.4 Aperture Validation / L7.8 Detector Round Trip");
+    expect(app).toContain("Simulation Builder + Engineering Evidence Dossier + Multi-Element FDTD Evidence");
+    expect(app).toContain("L8.8 engineering evidence campaign");
     expect(app).toContain("L8.7 robust design advisor");
     expect(app).toContain("L8.6 process/tolerance variation runner");
     expect(app).toContain("L8.5.1 numeric editing, optional diagram drag, undo/edit warnings");
@@ -567,9 +568,20 @@ describe("solver disclosure copy", () => {
     expect(app).toContain("Diagnostic Workbenches");
     expect(app).toContain("<SimulationBuilderPanel />");
     expect(app).toContain("<MaxwellPanel />");
-    expect(simulationBuilder).toContain("L8.7 Robust Design Advisor + Process / Tolerance Runner");
+    expect(simulationBuilder).toContain("L8.8 Engineering Evidence Campaign + Robust Design Advisor");
+    expect(simulationBuilder).toContain("engineering evidence campaign dossiers");
     expect(simulationBuilder).toContain("diagnostic process/tolerance variation studies");
     expect(simulationBuilder).toContain("robust-design recommendations");
+    expect(simulationBuilder).toContain("L8.8 Engineering Evidence Campaign");
+    expect(simulationBuilder).toContain("Golden Evidence Pack / External FDTD Acceptance Campaign");
+    expect(simulationBuilder).toContain("Load Bundled Golden Campaign");
+    expect(simulationBuilder).toContain("Generate Engineer Review Dossier");
+    expect(simulationBuilder).toContain("Golden Scenarios");
+    expect(simulationBuilder).toContain("Capability Truth Table");
+    expect(simulationBuilder).toContain("engineering_evidence_dossier.md");
+    expect(simulationBuilder).toContain("scenario_summary.csv");
+    expect(simulationBuilder).toContain("capability_truth_table.csv");
+    expect(simulationBuilder).toContain("unsupported_items.csv");
     expect(simulationBuilder).toContain("L8.6 Process / Tolerance Runner");
     expect(simulationBuilder).toContain("L8.7 Robust Design Advisor");
     expect(simulationBuilder).toContain("Ranked Recommendations");

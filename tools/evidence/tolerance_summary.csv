@@ -1,0 +1,2 @@
+label,report_hash,variation_hash,pass_rate,worst_case_status,failing_case_count,top_sensitivity,sweep_manifest_hash,sweep_summary_hash
+L8.8 golden campaign L8.6 tolerance variation,c65b0f6facea2221,bd2caa3320dde47d,0,warning,0,Ideal thin lens 1 z shift +/-0.05 mm,d70bc83a148dcd4f,f4c9c61e598df19e

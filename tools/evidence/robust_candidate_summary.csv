@@ -1,0 +1,2 @@
+label,report_hash,best_candidate,candidate_hash,baseline_pass_rate,candidate_pass_rate,pass_rate_delta,worst_case_improvement,expected_improvement,remaining_failure_driver,sweep_manifest_hash,sweep_summary_hash
+L8.8 golden campaign L8.7 robust candidate review,003a785060fa1160,Balanced robust-grid candidate,c460d926afd0b8ab,0,0,0,0,0,Circular aperture 1 x decenter +/-5 um,6f6eb57055ac04df,e72e590e9c042e8e

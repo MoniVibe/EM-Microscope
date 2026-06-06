@@ -1,0 +1,16 @@
+{
+  "schema": "emmicro.l88.scenarioReference.v1",
+  "scenarioId": "multielement-chain",
+  "referenceModel": "stage-by-stage receipts",
+  "referenceDescription": "Ordered elements route scalar-capable stages to scalar preview and finite elements to external FDTD evidence receipts.",
+  "expected": {
+    "transmittance": 1,
+    "peakIntensity": 0.899786495
+  },
+  "thresholds": {
+    "passResidual": 0.03,
+    "warningResidual": 0.08,
+    "pmlWarning": 0.015,
+    "pmlFail": 0.05
+  }
+}

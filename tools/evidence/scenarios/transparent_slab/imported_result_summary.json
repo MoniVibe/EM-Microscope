@@ -1,0 +1,28 @@
+{
+  "schema": "emmicro.l88.importedResultSummary.v1",
+  "scenarioId": "transparent-slab",
+  "status": "pass",
+  "computed": {
+    "reflectance": 0.0007466666666666666,
+    "transmittance": 0.9991111111111111,
+    "absorbance": 0.00072
+  },
+  "residual": 0.00260358024691,
+  "convergenceStatus": "decreasing",
+  "pmlStatus": "pass",
+  "warnings": [
+    {
+      "code": "fdtd.benchmark.externalCostReview",
+      "message": "Sweep contains 36 external runs; review cost before launching an external solver."
+    }
+  ],
+  "receipts": {
+    "sceneHash": "b9e9d2c32c66a0a6",
+    "sourceScenarioHash": "b9e9d2c32c66a0a6",
+    "manifestHash": "6f7759a16a257a90",
+    "scriptHash": "5e07ed066a2e27c9",
+    "referenceHash": "c0d9f4ae6feebd90",
+    "summaryHash": "e0f37596b2a45898",
+    "resultHash": "e0f37596b2a45898"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "emmicro.l88.scenarioConvergenceSummary.v1",
+  "scenarioId": "circular-pinhole",
+  "convergence": {
+    "scenarioId": "circular-pinhole",
+    "label": "Circular aperture",
+    "runCount": 5,
+    "trend": "decreasing",
+    "finalResidual": 0.0173872479294,
+    "finalEnergyBalanceError": 0.00782426156822,
+    "pmlSensitivity": null,
+    "status": "fail"
+  }
+}

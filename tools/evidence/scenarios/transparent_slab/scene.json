@@ -1,0 +1,21 @@
+{
+  "schema": "emmicro.l88.scenarioScene.v1",
+  "scenarioId": "transparent-slab",
+  "label": "Transparent slab",
+  "purpose": "Transparent air-glass-air material interaction",
+  "evidenceType": "imported-fixture",
+  "receipts": {
+    "sceneHash": "b9e9d2c32c66a0a6",
+    "sourceScenarioHash": "b9e9d2c32c66a0a6",
+    "manifestHash": "6f7759a16a257a90",
+    "scriptHash": "5e07ed066a2e27c9",
+    "referenceHash": "c0d9f4ae6feebd90",
+    "summaryHash": "e0f37596b2a45898",
+    "resultHash": "e0f37596b2a45898"
+  },
+  "notes": [
+    "Benchmark hash b9e2e5c2ede7c342",
+    "Sweep hash f1f861e2ef70aced"
+  ],
+  "unsupported": []
+}

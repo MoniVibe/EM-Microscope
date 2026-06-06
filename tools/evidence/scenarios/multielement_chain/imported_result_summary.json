@@ -1,0 +1,38 @@
+{
+  "schema": "emmicro.l88.importedResultSummary.v1",
+  "scenarioId": "multielement-chain",
+  "status": "warning",
+  "computed": {
+    "reflectance": 0.08,
+    "transmittance": 0.74,
+    "absorbance": 0.18,
+    "peakIntensity": 0.899786495
+  },
+  "residual": 0,
+  "convergenceStatus": "stage receipts",
+  "pmlStatus": "n/a",
+  "warnings": [
+    {
+      "code": "opticalBench.scalar.externalBoundary",
+      "message": "Transparent block 1 is finite geometry; scalar preview stops at a placement/attenuation diagnostic and requires imported external FDTD evidence.",
+      "elementId": "finite-transparent-block-30000"
+    },
+    {
+      "code": "opticalBench.scalar.externalBoundary",
+      "message": "Absorbing blocker 1 is finite geometry; scalar preview stops at a placement/attenuation diagnostic and requires imported external FDTD evidence.",
+      "elementId": "finite-absorbing-block-40000"
+    },
+    {
+      "code": "opticalBench.external.fixture",
+      "message": "Bundled L8.5 multi-element evidence is deterministic fixture data for UI/report validation, not a browser-run FDTD solve."
+    }
+  ],
+  "receipts": {
+    "sceneHash": "588269a545ca93a2",
+    "sourceScenarioHash": "2569f7e424c2366a",
+    "manifestHash": "dcc211305c62b196",
+    "scriptHash": "17d79f269458dc42",
+    "resultHash": "d58c421fe1e36261",
+    "summaryHash": "bcd790c2ac38d20d"
+  }
+}

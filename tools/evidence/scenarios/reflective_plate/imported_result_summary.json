@@ -1,0 +1,28 @@
+{
+  "schema": "emmicro.l88.importedResultSummary.v1",
+  "scenarioId": "reflective-plate",
+  "status": "pass",
+  "computed": {
+    "reflectance": 1,
+    "transmittance": 0,
+    "absorbance": 0.0007999999999999999
+  },
+  "residual": 0.00223666666667,
+  "convergenceStatus": "decreasing",
+  "pmlStatus": "pass",
+  "warnings": [
+    {
+      "code": "fdtd.benchmark.externalCostReview",
+      "message": "Sweep contains 36 external runs; review cost before launching an external solver."
+    }
+  ],
+  "receipts": {
+    "sceneHash": "9bea0bd00510266d",
+    "sourceScenarioHash": "9bea0bd00510266d",
+    "manifestHash": "5ae7e4fdaf3e9f05",
+    "scriptHash": "78484ba2c44f97ea",
+    "referenceHash": "98499069656035e7",
+    "summaryHash": "e74ac1703db9f22a",
+    "resultHash": "e74ac1703db9f22a"
+  }
+}

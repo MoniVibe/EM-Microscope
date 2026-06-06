@@ -1,0 +1,14 @@
+{
+  "schema": "emmicro.l88.scenarioConvergenceSummary.v1",
+  "scenarioId": "transparent-slab",
+  "convergence": {
+    "scenarioId": "transparent-slab",
+    "label": "Transparent slab",
+    "runCount": 36,
+    "trend": "decreasing",
+    "finalResidual": 0.00260358024691,
+    "finalEnergyBalanceError": 0.00407777777778,
+    "pmlSensitivity": 0.00342111111111,
+    "status": "pass"
+  }
+}

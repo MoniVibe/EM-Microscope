@@ -1,0 +1,17 @@
+{
+  "schema": "emmicro.l88.scenarioReference.v1",
+  "scenarioId": "robust-candidate",
+  "referenceModel": "L8.7 before/after tolerance metrics",
+  "referenceDescription": "Best robust candidate is compared against the deterministic-grid baseline pass rate, expected score, and worst-case score.",
+  "expected": {
+    "passRate": 0,
+    "worstCaseScore": 50,
+    "expectedScore": 50
+  },
+  "thresholds": {
+    "passResidual": 0.03,
+    "warningResidual": 0.08,
+    "pmlWarning": 0.015,
+    "pmlFail": 0.05
+  }
+}

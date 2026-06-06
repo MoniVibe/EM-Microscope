@@ -1,0 +1,14 @@
+{
+  "schema": "emmicro.l88.scenarioConvergenceSummary.v1",
+  "scenarioId": "reflective-plate",
+  "convergence": {
+    "scenarioId": "reflective-plate",
+    "label": "Reflective plate",
+    "runCount": 36,
+    "trend": "decreasing",
+    "finalResidual": 0.00223666666667,
+    "finalEnergyBalanceError": 0.00502,
+    "pmlSensitivity": 0.00359,
+    "status": "pass"
+  }
+}

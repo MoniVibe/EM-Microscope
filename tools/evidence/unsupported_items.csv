@@ -1,0 +1,7 @@
+item_id,label,status,reason
+browser-fdtd,In-browser FDTD execution,not-implemented,The web app exports/imports external evidence only.
+arbitrary-3d-maxwell,Arbitrary 3D Maxwell/CAD solve,not-implemented,"Current 3D work is schema/export/import scaffolding and diagnostics, not a full 3D solver."
+fem-bem-rcwa,FEM/BEM/RCWA execution,not-implemented,"No FEM, BEM, or RCWA backend is shipped."
+certified-tolerancing,Certified optical tolerancing,not-implemented,L8.6/L8.7/L8.8 are diagnostic engineering aids only.
+automatic-final-design-approval,Automatic final design approval,not-implemented,Robust candidates require explicit user application and review.
+digital-twin,Digital twin / manufacturing certification,unsupported,"No measured hardware loop, manufacturing line, or certified metrology process is implemented."

@@ -1,0 +1,21 @@
+{
+  "schema": "emmicro.l88.scenarioScene.v1",
+  "scenarioId": "reflective-plate",
+  "label": "Reflective plate",
+  "purpose": "Ideal mirror / high-reflection limit",
+  "evidenceType": "imported-fixture",
+  "receipts": {
+    "sceneHash": "9bea0bd00510266d",
+    "sourceScenarioHash": "9bea0bd00510266d",
+    "manifestHash": "5ae7e4fdaf3e9f05",
+    "scriptHash": "78484ba2c44f97ea",
+    "referenceHash": "98499069656035e7",
+    "summaryHash": "e74ac1703db9f22a",
+    "resultHash": "e74ac1703db9f22a"
+  },
+  "notes": [
+    "Benchmark hash c7e794c03d3043bd",
+    "Sweep hash ae88e36f6ee25693"
+  ],
+  "unsupported": []
+}

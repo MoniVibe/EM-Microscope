@@ -1,0 +1,17 @@
+{
+  "schema": "emmicro.l88.scenarioReference.v1",
+  "scenarioId": "transparent-slab",
+  "referenceModel": "planar-tmm-stack",
+  "referenceDescription": "Planar TMM slab R/T/A stabilizes as grid density increases.",
+  "expected": {
+    "reflectance": 1.1267052346091418e-26,
+    "transmittance": 1,
+    "absorbance": 0
+  },
+  "thresholds": {
+    "passResidual": 0.03,
+    "warningResidual": 0.08,
+    "pmlWarning": 0.015,
+    "pmlFail": 0.05
+  }
+}
