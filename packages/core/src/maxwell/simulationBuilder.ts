@@ -171,15 +171,16 @@ export type SimulationBuilderValidationInput = {
 };
 
 export const l80SimulationBuilderBoundary = [
-  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration only.",
+  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration and L8.6 diagnostic process/tolerance variation only.",
   "L8.5.1 element inspector editing changes placement, dimensions, material metadata, custom monitors, and workflow state only; it does not add new physics.",
+  "L8.6 process/tolerance variation runs deterministic one-at-a-time, grid, seeded sample, and external FDTD sweep receipt workflows over the current editable scene; it is not certified tolerancing or auto redesign.",
   "L8.5 scalar chain preview is limited to ideal plane elements and observation planes.",
   "L8.5 finite geometry routes to external FDTD export/import evidence with receipts; the browser does not execute FDTD.",
   "Transparent, reflective, and absorbing planar surface/slab cases are executable.",
   "Apertures and ideal lenses are placement-aware scalar/ideal elements in this builder, not material Maxwell geometry solves.",
   "No arbitrary 3D material geometry is executable in-app.",
   "No FDTD/FEM/BEM/RCWA execution is performed in the browser.",
-  "No real curved material lens solve, finite-thickness metal aperture Maxwell solve, sensor-stack EM absorption, digital twin, or manufacturing certification is claimed."
+  "No real curved material lens solve, finite-thickness metal aperture Maxwell solve, sensor-stack EM absorption, inverse optimization, digital twin, certified tolerancing, or manufacturing certification is claimed."
 ] as const;
 
 export const l80ReleaseTrail = [
@@ -199,7 +200,8 @@ export const l80ReleaseTrail = [
   { milestone: "L8.3", label: "Finite surface geometry starter set", runnable: "placed transparent/absorbing/reflective/aperture/wedge external FDTD fixtures" },
   { milestone: "L8.4", label: "Aperture/blocker edge-diffraction validation", runnable: "long-slit/circular/rectangular/blocker scalar reference and external FDTD fixture diagnostics" },
   { milestone: "L8.5", label: "Multi-element optical bench propagation chain", runnable: "ordered multi-element scene graph, solver plan, scalar monitor stack, and external FDTD chain fixture" },
-  { milestone: "L8.5.1", label: "Element inspector + direct editing", runnable: "numeric source-of-truth editing, optional diagram drag, custom monitors, warnings, and undo/redo" }
+  { milestone: "L8.5.1", label: "Element inspector + direct editing", runnable: "numeric source-of-truth editing, optional diagram drag, custom monitors, warnings, and undo/redo" },
+  { milestone: "L8.6", label: "Process / tolerance variation runner", runnable: "deterministic tolerance studies, sensitivity ranking, pass/fail tables, and external FDTD sweep receipts" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -646,6 +648,18 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       evidence: "L8.5 exports deterministic multi-element manifests/scripts and imports bundled field/flux/receipt evidence for supported finite geometry"
     },
     {
+      id: "process-tolerance-variation-runner",
+      label: "Process / tolerance variation runner",
+      status: "executable" as const,
+      evidence: "L8.6 runs deterministic one-at-a-time, grid, and seeded process/tolerance studies over the editable L8.5.1 bench scene with pass/fail, sensitivity ranking, and worst-case tables"
+    },
+    {
+      id: "external-fdtd-variation-sweep",
+      label: "External FDTD variation sweep export/import",
+      status: "executable" as const,
+      evidence: "L8.6 exports deterministic variation sweep manifests and imports external FDTD summary receipts; the browser does not execute the FDTD sweep"
+    },
+    {
       id: "sequential-simulation-builder",
       label: "Sequential Simulation Builder",
       status: "executable" as const,
@@ -740,6 +754,18 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       label: "Arbitrary 3D material geometry",
       status: "not-implemented" as const,
       evidence: "explicit boundary; ExternalFdtdBackend remains scaffold/export-only"
+    },
+    {
+      id: "certified-optical-tolerancing",
+      label: "Certified optical tolerancing",
+      status: "not-implemented" as const,
+      evidence: "L8.6 is diagnostic process variation only; it is not certified optical tolerancing or manufacturing qualification"
+    },
+    {
+      id: "auto-redesign-inverse-optimization",
+      label: "Auto redesign / inverse optimization",
+      status: "not-implemented" as const,
+      evidence: "L8.6 ranks sensitivity and worst cases but does not automatically redesign geometry, tune sources, or run inverse optimization"
     }
   ];
   return [

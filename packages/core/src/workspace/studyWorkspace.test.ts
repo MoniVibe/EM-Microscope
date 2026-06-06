@@ -97,11 +97,17 @@ describe("L6.6 Practical Study Workspace core", () => {
     expect(capabilities.find((capability) => capability.id === "external-fdtd-circular-pinhole-diagnostic")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "external-fdtd-opaque-blocker-diagnostic")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "aperture-edge-convergence-diagnostics")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "process-tolerance-variation-runner")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "one-at-a-time-tolerance-sensitivity")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "deterministic-grid-tolerance-study")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "external-fdtd-variation-sweep")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "external-fdtd-backend-runner")?.status).toBe("scaffold-only");
     expect(capabilities.find((capability) => capability.id === "browser-fdtd-execution")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "3d-maxwell-solve")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "fdtd-fem-bem-rcwa-execution")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "production-metal-aperture-model")?.status).toBe("not-implemented");
+    expect(capabilities.find((capability) => capability.id === "certified-optical-tolerancing")?.status).toBe("not-implemented");
+    expect(capabilities.find((capability) => capability.id === "auto-redesign-inverse-optimization")?.status).toBe("not-implemented");
     expect(l68Capabilities.find((capability) => capability.id === "pixel-level-sensor-stack")?.status).toBe("not-implemented");
     expect(l68Capabilities.find((capability) => capability.id === "certified-emva-characterization")?.status).toBe("not-implemented");
     expect(l69Capabilities.find((capability) => capability.id === "emva-1288-certification")?.status).toBe("not-implemented");
@@ -137,11 +143,15 @@ describe("L6.6 Practical Study Workspace core", () => {
     expect(markdown).toContain("Long-slit aperture diagnostic");
     expect(markdown).toContain("Circular pinhole diagnostic");
     expect(markdown).toContain("Aperture edge convergence diagnostics");
+    expect(markdown).toContain("Process / tolerance variation runner");
+    expect(markdown).toContain("One-at-a-time tolerance sensitivity");
+    expect(markdown).toContain("Deterministic grid tolerance study");
     expect(csv).toContain("External FDTD finite surface geometry export");
     expect(csv).toContain("Surface geometry X-Z cross-section");
     expect(csv).toContain("Opaque blocker diagnostic");
+    expect(csv).toContain("External FDTD variation sweep");
     expect(csv).toContain("Production metal aperture model");
-    expect(`${markdown}\n${csv}`).not.toMatch(/3D Maxwell solve executed|FDTD solver executable|FEM\/BEM\/RCWA available|digital twin certified|certified EMVA characterization executable|EMVA 1288 certification executable|pixel-level sensor stack executable|ISO 12233 certification executable|Imatest-equivalent certification executable|pure lens-only MTF certification executable|calibrated optical model fitting executable|certified camera calibration executable|lab-accredited metrology executable|certified metrology report executable|lab accreditation executable|full 3D pose calibration executable|stereo calibration executable|AprilTag detector executable|browser-native OpenCV.js\/ArUco detector executable/i);
+    expect(`${markdown}\n${csv}`).not.toMatch(/3D Maxwell solve executed|FDTD solver executable|FEM\/BEM\/RCWA available|digital twin certified|certified tolerancing executable|auto redesign executable|inverse optimization executable|certified EMVA characterization executable|EMVA 1288 certification executable|pixel-level sensor stack executable|ISO 12233 certification executable|Imatest-equivalent certification executable|pure lens-only MTF certification executable|calibrated optical model fitting executable|certified camera calibration executable|lab-accredited metrology executable|certified metrology report executable|lab accreditation executable|full 3D pose calibration executable|stereo calibration executable|AprilTag detector executable|browser-native OpenCV.js\/ArUco detector executable/i);
   });
 
   it("saves and reimports a validation study bundle deterministically", () => {
@@ -171,12 +181,14 @@ describe("L6.6 Practical Study Workspace core", () => {
     const imported = parseStudyBundleJson(JSON.stringify(bundle));
 
     expect(study.type).toBe("l78PracticalStudy");
-    expect(bundle.appVersion).toContain("L8.5");
+    expect(bundle.appVersion).toContain("L8.6");
     expect(imported.study.resultHash).toBe(study.resultHash);
     expect(imported.manifest.resultHashes).toEqual([result.resultHash]);
     expect(imported.manifest.materialReceiptCount).toBe(1);
     expect(imported.manifest.capabilityBoundary).toContain("L8.4 long-slit/circular-pinhole/rectangular-aperture/opaque-blocker edge-diffraction validation dossiers");
     expect(imported.manifest.capabilityBoundary).toContain("L8.5.1 multi-element optical bench scene graph/solver plan/scalar monitor stack/external FDTD chain export-import workflow plus element inspector numeric editing");
+    expect(imported.manifest.capabilityBoundary).toContain("L8.6 diagnostic process/tolerance variation studies");
+    expect(imported.manifest.capabilityBoundary).toContain("certified optical tolerancing, auto redesign, inverse optimization");
     expect(imported.metricsCsv).toContain("visibility");
     expect(imported.profilesCsv).toContain("centerline");
     expect(studyMetricsCsv(study)).toContain("orderSpacingMm");

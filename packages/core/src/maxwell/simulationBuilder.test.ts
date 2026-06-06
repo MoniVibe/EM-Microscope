@@ -159,6 +159,18 @@ describe("workflow clarity boundaries", () => {
     expect(l80SimulationBuilderBoundary.join(" ")).toContain("No arbitrary 3D material geometry is executable in-app");
   });
 
+  it("states L8.6 process variation is diagnostic and not certified tolerancing or auto redesign", () => {
+    const boundary = l80SimulationBuilderBoundary.join(" ");
+    const result = runSimulationBuilderScenario(defaultSimulationBuilderScenario());
+
+    expect(boundary).toContain("L8.6 process/tolerance variation");
+    expect(boundary).toContain("not certified tolerancing or auto redesign");
+    expect(result.capabilitySummary.find((capability) => capability.id === "process-tolerance-variation-runner")?.status).toBe("executable");
+    expect(result.capabilitySummary.find((capability) => capability.id === "external-fdtd-variation-sweep")?.status).toBe("executable");
+    expect(result.capabilitySummary.find((capability) => capability.id === "certified-optical-tolerancing")?.status).toBe("not-implemented");
+    expect(result.capabilitySummary.find((capability) => capability.id === "auto-redesign-inverse-optimization")?.status).toBe("not-implemented");
+  });
+
   it("states curved material lens solving is scaffold-only if shown", () => {
     const element = createSimulationBuilderElement("curved-material-lens", 35);
 

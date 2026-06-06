@@ -549,15 +549,16 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented|certified metrology report executable|lab accreditation workflow executable|hardware control implemented|AprilTag detector executable|ArUco detector executable/i);
   });
 
-  it("keeps the visible app shell focused on L8.5 multi-element bench with L8.4/L8.3/L8.2/L8.1 FDTD and L7.8 diagnostics still reachable", () => {
+  it("keeps the visible app shell focused on L8.6 process tolerance bench with L8.5.1 editing, L8.4/L8.3/L8.2/L8.1 FDTD, and L7.8 diagnostics still reachable", () => {
     const app = readFileSync(resolve(testDir, "App.tsx"), "utf8");
     const simulationBuilder = readFileSync(resolve(testDir, "maxwell/SimulationBuilderPanel.tsx"), "utf8");
     const maxwellReturn = app.indexOf("return <MaxwellOnlyApp />;");
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("L8.5.1 Element Inspector + Multi-Element Bench / L8.4 Aperture Validation / L7.8 Detector Round Trip");
-    expect(app).toContain("Simulation Builder + Element Inspector + Multi-Element FDTD Evidence");
+    expect(app).toContain("L8.6 Process / Tolerance Runner + Multi-Element Bench / L8.4 Aperture Validation / L7.8 Detector Round Trip");
+    expect(app).toContain("Simulation Builder + Process Tolerances + Multi-Element FDTD Evidence");
+    expect(app).toContain("L8.6 process/tolerance variation runner");
     expect(app).toContain("L8.5.1 numeric editing, optional diagram drag, undo/edit warnings");
     expect(app).toContain("L8.4 aperture validation");
     expect(app).toContain("L8.3 finite surface geometry export/import fixtures");
@@ -565,7 +566,27 @@ describe("solver disclosure copy", () => {
     expect(app).toContain("Diagnostic Workbenches");
     expect(app).toContain("<SimulationBuilderPanel />");
     expect(app).toContain("<MaxwellPanel />");
-    expect(simulationBuilder).toContain("L8.5.1 Element Inspector + Direct Optical Bench Editing");
+    expect(simulationBuilder).toContain("L8.6 Process / Tolerance Runner + Direct Optical Bench Editing");
+    expect(simulationBuilder).toContain("diagnostic process/tolerance variation studies");
+    expect(simulationBuilder).toContain("L8.6 Process / Tolerance Runner");
+    expect(simulationBuilder).toContain("Load L8.6 Demo Tolerances");
+    expect(simulationBuilder).toContain("Run One-at-a-Time");
+    expect(simulationBuilder).toContain("Run Deterministic Grid");
+    expect(simulationBuilder).toContain("Run Seeded Samples");
+    expect(simulationBuilder).toContain("Add Source Wavelength");
+    expect(simulationBuilder).toContain("Add Selected Thickness");
+    expect(simulationBuilder).toContain("Export Tolerance Report");
+    expect(simulationBuilder).toContain("Export FDTD Sweep Pack");
+    expect(simulationBuilder).toContain("Import Bundled FDTD Sweep");
+    expect(simulationBuilder).toContain("Variation Parameters");
+    expect(simulationBuilder).toContain("Metrics / Requirements");
+    expect(simulationBuilder).toContain("Sensitivity Ranking");
+    expect(simulationBuilder).toContain("Run Table / Worst Cases");
+    expect(simulationBuilder).toContain("External FDTD Variation Sweep");
+    expect(simulationBuilder).toContain("tolerance_report.md");
+    expect(simulationBuilder).toContain("tolerance_run_table.csv");
+    expect(simulationBuilder).toContain("tolerance_sensitivity.csv");
+    expect(simulationBuilder).toContain("fdtd_variation_sweep_manifest.json");
     expect(simulationBuilder).toContain("Multi-Element Optical Bench");
     expect(simulationBuilder).toContain("Element Inspector");
     expect(simulationBuilder).toContain("L8.5.1 element inspector direct editing smoke preview");

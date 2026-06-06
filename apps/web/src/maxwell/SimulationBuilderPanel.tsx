@@ -23,14 +23,19 @@ import {
   commitOpticalBenchHistory,
   createOpticalBenchHistory,
   createSimulationBuilderElement,
+  createExampleToleranceFdtdSweepSummary,
   createSurfaceGeometryConvergencePack,
   createSurfaceGeometryElement,
+  createToleranceFdtdSweepManifest,
   createSurfaceGeometryExampleBundle,
   createSurfaceGeometryScene,
   createTransparentFdtdExampleBundle,
   createTransparentFdtdExampleScenario,
   defaultOpticalBenchScenario,
   defaultSimulationBuilderScenario,
+  defaultToleranceMetrics,
+  defaultToleranceThresholds,
+  defaultToleranceVariationSpecs,
   deleteOpticalBenchCustomMonitor,
   deleteOpticalBenchElement,
   duplicateOpticalBenchElement,
@@ -54,6 +59,7 @@ import {
   importFdtdRunArtifacts,
   importFdtdConvergenceBundleArtifacts,
   l80ReleaseTrail,
+  metricLabel,
   moveOpticalBenchElementInOrder,
   nudgeOpticalBenchElement,
   opticalBenchMetricsCsv,
@@ -64,6 +70,7 @@ import {
   opticalBenchValidationReportMarkdown,
   redoOpticalBenchHistory,
   runSimulationBuilderScenario,
+  runToleranceAnalysis,
   setOpticalBenchElementEnabled,
   undoOpticalBenchHistory,
   simulationBuilderScenarioJson,
@@ -80,6 +87,15 @@ import {
   validateApertureImportedRun,
   validateOpticalBenchEditing,
   validateFdtdImportedRunAgainstScenario,
+  parseToleranceFdtdSweepSummary,
+  toleranceFailingCasesCsv,
+  toleranceFdtdSweepManifestJson,
+  toleranceFdtdSweepSummaryJson,
+  toleranceReportJson,
+  toleranceReportMarkdown,
+  toleranceRunTableCsv,
+  toleranceSensitivityCsv,
+  validateToleranceFdtdSweepSummary,
   type ApertureConvergenceReport,
   type ApertureScreenModel,
   type ApertureValidationExampleBundle,
@@ -105,7 +121,14 @@ import {
   type SimulationBuilderScenario,
   type SimulationBuilderSource,
   type SimulationBuilderTarget,
-  type SimulationBuilderTargetKind
+  type SimulationBuilderTargetKind,
+  type ToleranceAnalysisReport,
+  type ToleranceFdtdSweepManifest,
+  type ToleranceFdtdSweepSummary,
+  type ToleranceRunMode,
+  type ToleranceThreshold,
+  type ToleranceVariationProperty,
+  type ToleranceVariationSpec
 } from "@emmicro/core";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Copy, Eye, EyeOff, FileDown, Plus, Redo2, Sparkles, Trash2, Undo2 } from "lucide-react";
 
@@ -162,6 +185,37 @@ type L85CommitOptions = {
   externalDirty?: boolean;
 };
 
+function l86VariationPropertyMeta(property: ToleranceVariationProperty): { label: string; unit: ToleranceVariationSpec["unit"]; application: ToleranceVariationSpec["application"]; delta: number } {
+  switch (property) {
+    case "xUm":
+      return { label: "x decenter", unit: "um", application: "absolute", delta: 1 };
+    case "yUm":
+      return { label: "y decenter", unit: "um", application: "absolute", delta: 1 };
+    case "zMm":
+      return { label: "z shift", unit: "mm", application: "absolute", delta: 0.05 };
+    case "thicknessUm":
+      return { label: "thickness tolerance", unit: "relative", application: "relative", delta: 0.02 };
+    case "materialIndex":
+      return { label: "material n tolerance", unit: "unitless", application: "absolute", delta: 0.02 };
+    case "focalLengthMm":
+      return { label: "focal length tolerance", unit: "mm", application: "absolute", delta: 0.5 };
+    case "orientationDeg":
+      return { label: "tilt tolerance", unit: "deg", application: "absolute", delta: 0.5 };
+    case "widthUm":
+      return { label: "width tolerance", unit: "relative", application: "relative", delta: 0.02 };
+    case "heightUm":
+      return { label: "height tolerance", unit: "relative", application: "relative", delta: 0.02 };
+    case "absorptionCoefficientPerM":
+      return { label: "absorption tolerance", unit: "relative", application: "relative", delta: 0.05 };
+    case "wavelengthNm":
+      return { label: "wavelength tolerance", unit: "nm", application: "absolute", delta: 5 };
+    case "sourceIntensityScale":
+      return { label: "source intensity metadata", unit: "relative", application: "relative", delta: 0.05 };
+    default:
+      return { label: property, unit: "unitless", application: "absolute", delta: 1 };
+  }
+}
+
 function downloadText(filename: string, mime: string, text: string): void {
   const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -187,6 +241,11 @@ export function SimulationBuilderPanel() {
   const [hasComputed, setHasComputed] = useState(false);
   const [hasL85ScalarPreview, setHasL85ScalarPreview] = useState(true);
   const [hasL85ExternalEvidence, setHasL85ExternalEvidence] = useState(true);
+  const [l86Mode, setL86Mode] = useState<ToleranceRunMode>("one-at-a-time");
+  const [l86Variations, setL86Variations] = useState<ToleranceVariationSpec[]>(() => defaultToleranceVariationSpecs(defaultOpticalBenchScenario()));
+  const [l86Thresholds, setL86Thresholds] = useState<ToleranceThreshold[]>(() => defaultToleranceThresholds());
+  const [l86FdtdSummary, setL86FdtdSummary] = useState<ToleranceFdtdSweepSummary | null>(null);
+  const [l86FdtdImportError, setL86FdtdImportError] = useState<string | null>(null);
   const [importedFdtd, setImportedFdtd] = useState<FdtdImportedRun | null>(null);
   const [fdtdImportError, setFdtdImportError] = useState<string | null>(null);
   const [benchmarkKind, setBenchmarkKind] = useState<FdtdBenchmarkKind>("transparent-interface");
@@ -226,6 +285,29 @@ export function SimulationBuilderPanel() {
   const selectedL85Monitor = selectedL85.kind === "monitor" ? l85Bundle.scene.monitors.find((monitor) => monitor.id === selectedL85.id) ?? null : null;
   const selectedL85CustomMonitor = selectedL85.kind === "monitor" ? (scenario.customMonitors ?? []).find((monitor) => monitor.id === selectedL85.id) ?? null : null;
   const editableL85MonitorIds = useMemo(() => new Set(["observation-plane", ...(scenario.customMonitors ?? []).map((monitor) => monitor.id)]), [scenario.customMonitors]);
+  const l86Report = useMemo(
+    () => runToleranceAnalysis(scenario, {
+      variations: l86Variations,
+      thresholds: l86Thresholds,
+      selectedMetrics: [...defaultToleranceMetrics],
+      mode: l86Mode,
+      gridMaxRuns: 27,
+      seededSamples: 12,
+      seed: 860
+    }),
+    [l86Mode, l86Thresholds, l86Variations, scenario]
+  );
+  const l86SweepManifest = useMemo(
+    () => createToleranceFdtdSweepManifest(scenario, {
+      variations: l86Variations,
+      thresholds: l86Thresholds,
+      selectedMetrics: [...defaultToleranceMetrics],
+      mode: "deterministic-grid",
+      gridMaxRuns: 18
+    }),
+    [l86Thresholds, l86Variations, scenario]
+  );
+  const l86FdtdWarnings = useMemo(() => (l86FdtdSummary ? validateToleranceFdtdSweepSummary(l86SweepManifest, l86FdtdSummary) : []), [l86FdtdSummary, l86SweepManifest]);
   const zMin = Math.min(scenario.grid.zStartMm, ...result.axis.map((node) => node.zMm));
   const zMax = Math.max(scenario.observationPlaneZMm, scenario.grid.zEndMm, ...result.axis.map((node) => node.zMm));
 
@@ -281,6 +363,10 @@ export function SimulationBuilderPanel() {
     setScenario(next);
     setL85History(createOpticalBenchHistory(next));
     setSelectedL85(initialL85Selection());
+    setL86Variations(defaultToleranceVariationSpecs(next));
+    setL86Thresholds(defaultToleranceThresholds());
+    setL86FdtdSummary(null);
+    setL86FdtdImportError(null);
     setHasComputed(true);
     setHasL85ScalarPreview(true);
     setHasL85ExternalEvidence(true);
@@ -483,6 +569,101 @@ export function SimulationBuilderPanel() {
     downloadText("multielement_validation_report.md", "text/markdown", `${opticalBenchValidationReportMarkdown(l85Bundle.validationReport)}\n`);
     downloadText("multielement_validation_report.json", "application/json", opticalBenchValidationReportJson(l85Bundle.validationReport));
     downloadText("multielement_metrics.csv", "text/csv", `${opticalBenchMetricsCsv(l85Bundle.validationReport)}\n`);
+  }
+
+  function resetL86Variations(): void {
+    setL86Variations(defaultToleranceVariationSpecs(scenario));
+    setL86Thresholds(defaultToleranceThresholds());
+    setL86FdtdSummary(null);
+    setL86FdtdImportError(null);
+  }
+
+  function updateL86VariationDelta(specId: string, delta: number): void {
+    setL86Variations((current) => current.map((spec) => spec.id === specId && spec.model.kind === "plus-minus" ? { ...spec, model: { ...spec.model, delta: Math.max(0, delta) } } : spec));
+    setL86FdtdSummary(null);
+  }
+
+  function toggleL86Variation(specId: string): void {
+    setL86Variations((current) => current.map((spec) => spec.id === specId ? { ...spec, enabled: !spec.enabled } : spec));
+    setL86FdtdSummary(null);
+  }
+
+  function updateL86Threshold(thresholdId: string, value: number): void {
+    setL86Thresholds((current) => current.map((threshold) => threshold.id === thresholdId ? { ...threshold, pass: value } : threshold));
+  }
+
+  function toggleL86Threshold(thresholdId: string): void {
+    setL86Thresholds((current) => current.map((threshold) => threshold.id === thresholdId ? { ...threshold, enabled: !threshold.enabled } : threshold));
+  }
+
+  function addL86SourceWavelengthVariation(): void {
+    const count = l86Variations.filter((spec) => spec.targetKind === "source" && spec.property === "wavelengthNm").length + 1;
+    setL86Variations((current) => [
+      ...current,
+      {
+        id: `l86-source-wavelength-${count}`,
+        label: `Source wavelength tolerance ${count}`,
+        targetKind: "source",
+        targetId: "source",
+        property: "wavelengthNm",
+        unit: "nm",
+        application: "absolute",
+        model: { kind: "plus-minus", delta: 5, includeNominal: true },
+        enabled: true
+      }
+    ]);
+    setL86FdtdSummary(null);
+  }
+
+  function addL86SelectedVariation(property: ToleranceVariationProperty): void {
+    if (!selectedL85Element) return;
+    const meta = l86VariationPropertyMeta(property);
+    const count = l86Variations.filter((spec) => spec.targetId === selectedL85Element.id && spec.property === property).length + 1;
+    setL86Variations((current) => [
+      ...current,
+      {
+        id: `l86-${selectedL85Element.id}-${property}-${count}`,
+        label: `${selectedL85Element.label} ${meta.label} ${count}`,
+        targetKind: "element",
+        targetId: selectedL85Element.id,
+        property,
+        unit: meta.unit,
+        application: meta.application,
+        model: { kind: "plus-minus", delta: meta.delta, includeNominal: true },
+        enabled: true
+      }
+    ]);
+    setL86FdtdSummary(null);
+  }
+
+  function exportL86ToleranceReport(): void {
+    downloadText("tolerance_report.md", "text/markdown", `${toleranceReportMarkdown(l86Report, l86FdtdSummary)}\n`);
+    downloadText("tolerance_report.json", "application/json", toleranceReportJson(l86Report));
+    downloadText("tolerance_run_table.csv", "text/csv", `${toleranceRunTableCsv(l86Report)}\n`);
+    downloadText("tolerance_sensitivity.csv", "text/csv", `${toleranceSensitivityCsv(l86Report)}\n`);
+    downloadText("failing_cases.csv", "text/csv", `${toleranceFailingCasesCsv(l86Report)}\n`);
+  }
+
+  function exportL86FdtdSweepPack(): void {
+    const summary = createExampleToleranceFdtdSweepSummary(l86SweepManifest);
+    downloadText("fdtd_variation_sweep_manifest.json", "application/json", toleranceFdtdSweepManifestJson(l86SweepManifest));
+    downloadText("fdtd_variation_sweep_fixture_summary.json", "application/json", toleranceFdtdSweepSummaryJson(summary));
+  }
+
+  function importL86BundledFdtdSummary(): void {
+    setL86FdtdSummary(createExampleToleranceFdtdSweepSummary(l86SweepManifest));
+    setL86FdtdImportError(null);
+  }
+
+  async function handleL86FdtdSummaryFiles(files: FileList | null): Promise<void> {
+    const file = files?.[0];
+    if (!file) return;
+    try {
+      setL86FdtdSummary(parseToleranceFdtdSweepSummary(await file.text()));
+      setL86FdtdImportError(null);
+    } catch (error) {
+      setL86FdtdImportError(error instanceof Error ? error.message : String(error));
+    }
   }
 
   function exportScenario(): void {
@@ -731,16 +912,16 @@ export function SimulationBuilderPanel() {
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L8.5.1 Simulation Builder">
+    <section className="wave-panel simulation-builder-panel" aria-label="L8.6 Simulation Builder">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L8.5.1 Element Inspector + Direct Optical Bench Editing</h2>
+        <h2>L8.6 Process / Tolerance Runner + Direct Optical Bench Editing</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, external FDTD handoff evidence, precise numeric edits, optional diagram drag, and a validation report.
+          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, solver routing, scalar multi-plane preview, diagnostic process/tolerance variation studies, external FDTD handoff evidence, precise numeric edits, optional diagram drag, and a validation report.
           Browser FDTD, arbitrary 3D Maxwell material geometry/CAD solving, FDTD/FEM/BEM/RCWA execution, real curved material lens solving, sensor-stack EM, digital twin behavior, and manufacturing
           certification are not implemented.
         </span>
@@ -1002,6 +1183,30 @@ export function SimulationBuilderPanel() {
               </span>
             </div>
           </div>
+
+          <L86ToleranceRunnerPanel
+            report={l86Report}
+            mode={l86Mode}
+            variations={l86Variations}
+            thresholds={l86Thresholds}
+            selectedElement={selectedL85Element}
+            sweepManifest={l86SweepManifest}
+            fdtdSummary={l86FdtdSummary}
+            fdtdWarnings={l86FdtdWarnings}
+            fdtdImportError={l86FdtdImportError}
+            onMode={setL86Mode}
+            onReset={resetL86Variations}
+            onToggleVariation={toggleL86Variation}
+            onVariationDelta={updateL86VariationDelta}
+            onAddSourceWavelength={addL86SourceWavelengthVariation}
+            onAddSelectedVariation={addL86SelectedVariation}
+            onToggleThreshold={toggleL86Threshold}
+            onThreshold={updateL86Threshold}
+            onExportReport={exportL86ToleranceReport}
+            onExportFdtdSweep={exportL86FdtdSweepPack}
+            onImportBundledFdtdSummary={importL86BundledFdtdSummary}
+            onImportFdtdSummaryFiles={handleL86FdtdSummaryFiles}
+          />
         </div>
       </div>
 
@@ -1777,6 +1982,223 @@ export function SimulationBuilderPanel() {
         </div>
       </div>
     </section>
+  );
+}
+
+function L86ToleranceRunnerPanel(props: {
+  report: ToleranceAnalysisReport;
+  mode: ToleranceRunMode;
+  variations: ToleranceVariationSpec[];
+  thresholds: ToleranceThreshold[];
+  selectedElement: SimulationBuilderElement | null;
+  sweepManifest: ToleranceFdtdSweepManifest;
+  fdtdSummary: ToleranceFdtdSweepSummary | null;
+  fdtdWarnings: SolverWarning[];
+  fdtdImportError: string | null;
+  onMode: (mode: ToleranceRunMode) => void;
+  onReset: () => void;
+  onToggleVariation: (specId: string) => void;
+  onVariationDelta: (specId: string, delta: number) => void;
+  onAddSourceWavelength: () => void;
+  onAddSelectedVariation: (property: ToleranceVariationProperty) => void;
+  onToggleThreshold: (thresholdId: string) => void;
+  onThreshold: (thresholdId: string, value: number) => void;
+  onExportReport: () => void;
+  onExportFdtdSweep: () => void;
+  onImportBundledFdtdSummary: () => void;
+  onImportFdtdSummaryFiles: (files: FileList | null) => void | Promise<void>;
+}) {
+  const runCount = props.report.runs.length + 1;
+  const topSensitivity = props.report.sensitivity[0];
+  return (
+    <div className="maxwell-data-table l85-wide l86-tolerance-panel" aria-label="L8.6 process tolerance runner smoke preview">
+      <div className="maxwell-section-heading">
+        <h2>L8.6 Process / Tolerance Runner</h2>
+        <strong>{props.report.passRate >= 1 ? "pass" : props.report.failingCases.length > 0 ? "fail cases" : "warnings"}</strong>
+      </div>
+      <div className="l2-disclosure">
+        <strong>Diagnostic process variation over the current editable bench scene.</strong>
+        <span>
+          Assign source, placement, material, and geometry tolerances; run deterministic one-at-a-time, grid, or seeded studies; inspect sensitivity, worst cases, pass/fail, and external FDTD sweep evidence.
+          This is not certified tolerancing, auto redesign, inverse optimization, browser FDTD, arbitrary 3D Maxwell, FEM/BEM/RCWA, production EM solving, digital twin behavior, or manufacturing certification.
+        </span>
+      </div>
+      <div className="maxwell-layer-actions simulation-builder-actions l86-action-row">
+        <button type="button" onClick={props.onReset}>
+          <Sparkles size={15} />
+          <span>Load L8.6 Demo Tolerances</span>
+        </button>
+        {(["one-at-a-time", "deterministic-grid", "seeded-samples"] as const).map((mode) => (
+          <button type="button" key={mode} className={props.mode === mode ? "active" : ""} onClick={() => props.onMode(mode)}>
+            <Sparkles size={15} />
+            <span>{mode === "one-at-a-time" ? "Run One-at-a-Time" : mode === "deterministic-grid" ? "Run Deterministic Grid" : "Run Seeded Samples"}</span>
+          </button>
+        ))}
+        <button type="button" onClick={props.onAddSourceWavelength}>
+          <Plus size={15} />
+          <span>Add Source Wavelength</span>
+        </button>
+        <button type="button" onClick={() => props.onAddSelectedVariation("xUm")} disabled={!props.selectedElement}>
+          <Plus size={15} />
+          <span>Add Selected x</span>
+        </button>
+        <button type="button" onClick={() => props.onAddSelectedVariation("zMm")} disabled={!props.selectedElement}>
+          <Plus size={15} />
+          <span>Add Selected z</span>
+        </button>
+        <button type="button" onClick={() => props.onAddSelectedVariation("thicknessUm")} disabled={!props.selectedElement}>
+          <Plus size={15} />
+          <span>Add Selected Thickness</span>
+        </button>
+        <button type="button" onClick={() => props.onAddSelectedVariation("materialIndex")} disabled={!props.selectedElement}>
+          <Plus size={15} />
+          <span>Add Selected n</span>
+        </button>
+        <button type="button" onClick={props.onExportReport}>
+          <FileDown size={15} />
+          <span>Export Tolerance Report</span>
+        </button>
+        <button type="button" onClick={props.onExportFdtdSweep}>
+          <FileDown size={15} />
+          <span>Export FDTD Sweep Pack</span>
+        </button>
+        <button type="button" onClick={props.onImportBundledFdtdSummary}>
+          <Sparkles size={15} />
+          <span>Import Bundled FDTD Sweep</span>
+        </button>
+        <label className="l86-file-import">
+          <span>Import Sweep JSON</span>
+          <input aria-label="Import FDTD tolerance sweep summary" type="file" accept="application/json,.json" onChange={(event) => void props.onImportFdtdSummaryFiles(event.currentTarget.files)} />
+        </label>
+      </div>
+
+      <div className="l86-summary-grid">
+        <Stat label="Variation hash" value={props.report.variationHash.slice(0, 10)} />
+        <Stat label="Run count" value={String(runCount)} />
+        <Stat label="Pass rate" value={pct(props.report.passRate)} />
+        <Stat label="Worst case" value={props.report.worstCase.label} />
+        <Stat label="Top driver" value={topSensitivity ? `${topSensitivity.label} / ${metricLabel(topSensitivity.metric)}` : "n/a"} />
+        <Stat label="FDTD sweep cases" value={String(props.sweepManifest.caseCount)} />
+      </div>
+
+      <div className="l86-layout">
+        <div className="l86-card" aria-label="L8.6 variation parameter setup smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Variation Parameters</h3>
+            <strong>{props.variations.filter((spec) => spec.enabled).length} enabled</strong>
+          </div>
+          <div className="l86-variation-table">
+            <div className="l86-variation-row l86-header">
+              <span>on</span>
+              <span>variation</span>
+              <span>target</span>
+              <span>+/- delta</span>
+              <span>unit</span>
+            </div>
+            {props.variations.map((spec) => (
+              <div className="l86-variation-row" key={spec.id}>
+                <input aria-label={`Enable ${spec.label}`} type="checkbox" checked={spec.enabled} onChange={() => props.onToggleVariation(spec.id)} />
+                <strong>{spec.label}</strong>
+                <span>{spec.targetKind}:{spec.targetId}</span>
+                <input
+                  aria-label={`${spec.label} delta`}
+                  type="number"
+                  disabled={spec.model.kind !== "plus-minus"}
+                  value={spec.model.kind === "plus-minus" ? spec.model.delta : 0}
+                  step={spec.application === "relative" ? 0.005 : spec.unit === "mm" ? 0.01 : 0.25}
+                  onChange={(event) => props.onVariationDelta(spec.id, Number(event.currentTarget.value))}
+                />
+                <em>{spec.application === "relative" ? "relative" : spec.unit}</em>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="l86-card" aria-label="L8.6 metrics requirements smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Metrics / Requirements</h3>
+            <strong>{props.thresholds.filter((threshold) => threshold.enabled).length} active</strong>
+          </div>
+          <div className="l86-threshold-table">
+            {props.thresholds.map((threshold) => (
+              <label className="l86-threshold-row" key={threshold.id}>
+                <input aria-label={`Enable ${threshold.label}`} type="checkbox" checked={threshold.enabled} onChange={() => props.onToggleThreshold(threshold.id)} />
+                <span>{metricLabel(threshold.metric)}</span>
+                <em>{threshold.direction}</em>
+                <input aria-label={`${threshold.label} threshold`} type="number" value={threshold.pass} step={threshold.metric === "centroidShiftAbsUm" ? 0.5 : 0.01} onChange={(event) => props.onThreshold(threshold.id, Number(event.currentTarget.value))} />
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="l86-card" aria-label="L8.6 sensitivity table smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Sensitivity Ranking</h3>
+            <strong>{props.report.sensitivity.length} rows</strong>
+          </div>
+          <div className="l86-sensitivity-table">
+            <div className="l86-sensitivity-row l86-header">
+              <span>driver</span>
+              <span>metric</span>
+              <span>delta</span>
+              <span>slope</span>
+            </div>
+            {props.report.sensitivity.slice(0, 8).map((row) => (
+              <div className="l86-sensitivity-row" key={`${row.specId}:${row.metric}`}>
+                <strong>{row.label}</strong>
+                <span>{metricLabel(row.metric)}</span>
+                <span>{formatCompact(row.delta)}</span>
+                <span>{formatCompact(row.slopePerUnit)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="l86-card" aria-label="L8.6 worst case pass fail smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>Run Table / Worst Cases</h3>
+            <strong>{props.report.failingCases.length} failing</strong>
+          </div>
+          <div className="l86-run-table">
+            <div className="l86-run-row l86-header">
+              <span>run</span>
+              <span>status</span>
+              <span>peak</span>
+              <span>centroid</span>
+              <span>flux</span>
+            </div>
+            {[props.report.nominalRun, ...props.report.runs].slice(0, 10).map((run) => (
+              <div className={`l86-run-row l86-run-${run.status}`} key={run.id}>
+                <strong>{run.label}</strong>
+                <span>{run.status}</span>
+                <span>{formatCompact(run.metrics.peakIntensity)}</span>
+                <span>{formatCompact(run.metrics.centroidShiftAbsUm)}</span>
+                <span>{formatCompact(run.metrics.transmittedFlux)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="l86-card l86-wide-card" aria-label="L8.6 external FDTD sweep pack smoke preview">
+          <div className="maxwell-section-heading">
+            <h3>External FDTD Variation Sweep</h3>
+            <strong>{props.fdtdSummary ? "summary imported" : "manifest ready"}</strong>
+          </div>
+          <div className="l86-summary-grid">
+            <Stat label="Manifest hash" value={props.sweepManifest.manifestHash.slice(0, 10)} />
+            <Stat label="Variation hash" value={props.sweepManifest.variationHash.slice(0, 10)} />
+            <Stat label="Case count" value={String(props.sweepManifest.caseCount)} />
+            <Stat label="Imported rows" value={String(props.fdtdSummary?.results.length ?? 0)} />
+          </div>
+          <div className="fdtd-warning-list">
+            {props.fdtdSummary && <span><strong>summary</strong> {props.fdtdSummary.summaryHash.slice(0, 12)} imported with {props.fdtdSummary.results.filter((row) => row.status === "pass").length} passing rows.</span>}
+            {props.fdtdWarnings.map((warning, index) => <span key={`${warning.code}:${index}`}><strong>{warning.code}</strong> {warning.message}</span>)}
+            {props.fdtdImportError && <span><strong>import error</strong> {props.fdtdImportError}</span>}
+            {!props.fdtdSummary && <span><strong>boundary</strong> Export/import only. The browser does not execute FDTD or certify tolerance sweeps.</span>}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
