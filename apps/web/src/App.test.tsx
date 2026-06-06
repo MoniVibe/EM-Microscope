@@ -715,6 +715,8 @@ describe("solver disclosure copy", () => {
     expect(viteConfig).toContain("maxwell-panel");
     expect(viteConfig).toContain("core-measurement");
     expect(viteConfig).toContain("core-workspace");
+    expect(viteConfig).toContain("core-maxwell");
+    expect(viteConfig).not.toContain("core-shared");
     expect(viteConfig).not.toContain("chunkSizeWarningLimit");
   });
 });
