@@ -1,0 +1,8 @@
+metric,value,status,classification
+reflectance,0.0354,pass,DIAGNOSTIC
+transmittance,0.0519,pass,DIAGNOSTIC
+absorbance,0.9127000000000001,pass,DIAGNOSTIC
+blocked_power,0.9480999999999999,pass,DIAGNOSTIC
+profile_rms,0.024768209479229728,pass,DIAGNOSTIC
+aperture_cells_across,192,pass,DIAGNOSTIC
+screen_thickness_cells,12.8,pass,DIAGNOSTIC

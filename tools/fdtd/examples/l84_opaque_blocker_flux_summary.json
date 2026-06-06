@@ -1,0 +1,80 @@
+{
+  "schema": "emmicro.fdtd.fluxSummary.v1",
+  "runId": "l84-fixture-opaque-blocker",
+  "sourceScenarioHash": "b2f5d1d694898fb6",
+  "manifestHash": "ec4ecc80507426ef",
+  "incidentFlux": 1,
+  "reflectedFlux": 0.0354,
+  "transmittedFlux": 0.0519,
+  "absorbedFlux": 0.9127000000000001,
+  "reflectance": 0.0354,
+  "transmittance": 0.0519,
+  "absorbance": 0.9127000000000001,
+  "energyBalance": 1,
+  "monitors": [
+    {
+      "id": "incident-flux",
+      "flux": 1
+    },
+    {
+      "id": "reflected-flux",
+      "flux": 0.0354
+    },
+    {
+      "id": "transmitted-flux",
+      "flux": 0.0519
+    },
+    {
+      "id": "blocked-power",
+      "flux": 0.9480999999999999
+    }
+  ],
+  "warnings": [
+    {
+      "code": "fdtd.geometry.monitorProximity",
+      "message": "Opaque blocker has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+      "elementId": "l84-opaque-blocker"
+    },
+    {
+      "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+      "message": "Opaque blocker has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+      "elementId": "l84-opaque-blocker"
+    },
+    {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Opaque blocker finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.",
+      "elementId": "l84-opaque-blocker"
+    },
+    {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Scalar diffraction reference is a limiting-case check for diagnostic comparison, not an exact finite FDTD screen solution.",
+      "elementId": "l84-opaque-blocker"
+    },
+    {
+      "code": "fdtd.aperture.nearFieldFarField",
+      "message": "Near-field slices are not the same as far-field diffraction patterns; use far-field or downstream observation evidence with convergence.",
+      "elementId": "l84-opaque-blocker"
+    },
+    {
+      "code": "fdtd.aperture.convergenceRequired",
+      "message": "Current aperture/blocker diagnostics require convergence sweep evidence before physical interpretation.",
+      "elementId": "l84-opaque-blocker"
+    },
+    {
+      "code": "fdtd.aperture.monitorTooClose",
+      "message": "Flux monitor is within two wavelengths of aperture/blocker edges.",
+      "elementId": "l84-opaque-blocker"
+    },
+    {
+      "code": "fdtd.aperture.blockerNoClosedForm",
+      "message": "Opaque blocker validation is flux/shadow diagnostic; no closed-form finite-edge diffraction overclaim is made.",
+      "elementId": "l84-opaque-blocker"
+    },
+    {
+      "code": "fdtd.aperture.edgeStaircasing",
+      "message": "Aperture edges are staircasing-sensitive at this grid density; increase resolution and compare residual trends.",
+      "elementId": "l84-opaque-blocker"
+    }
+  ],
+  "fluxHash": "11f36d2919182280"
+}

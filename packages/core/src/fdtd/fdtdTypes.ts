@@ -1,6 +1,8 @@
 import type {
+  SimulationBuilderApertureShape,
   SimulationBuilderCapabilityStatus,
   SimulationBuilderElement,
+  SimulationBuilderScreenModel,
   SimulationBuilderScenario,
   SimulationBuilderTargetKind,
   SimulationBuilderValidationStatus
@@ -47,6 +49,8 @@ export type FdtdGeometry = {
   materialId: string;
   rotationDeg?: number;
   apertureUm?: { width: number; height: number };
+  apertureShape?: SimulationBuilderApertureShape;
+  screenModel?: SimulationBuilderScreenModel;
   diagnostic?: "analytic-reference" | "edge-field" | "ideal-reflector" | "snell-fresnel";
   sourceElementId?: string;
 };

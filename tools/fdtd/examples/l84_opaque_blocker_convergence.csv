@@ -1,0 +1,6 @@
+run_id,resolution_ppw,aperture_cells_across,pml_padding_lambda,monitor_distance_lambda,reference_residual,energy_residual,status
+l84-opaque-blocker-r6,6,48,1.5,1.5,0.16,0.07200000000000001,fail
+l84-opaque-blocker-r8,8,64,1.5,2.4,0.06727171322029717,0.030272270949133727,warning
+l84-opaque-blocker-r12,12,96,2.5,2.4,0.04052456990141827,0.018236056455638222,warning
+l84-opaque-blocker-r16,16,128,2.5,2.4,0.028284271247461905,0.012727922061357857,pass
+l84-opaque-blocker-r24,24,192,2.5,2.4,0.021399689759245503,0.009629860391660477,pass

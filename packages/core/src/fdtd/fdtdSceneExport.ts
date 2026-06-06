@@ -21,6 +21,7 @@ export const l81FdtdBoundary = [
   "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
   "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
   "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
+  "L8.4 aperture/blocker edge-diffraction validation is limited to long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker diagnostic scenes with scalar limiting-case references and convergence warnings.",
   "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
 ] as const;
 
@@ -240,7 +241,13 @@ function fdtdMaterialsForScenario(scenario: SimulationBuilderScenario): FdtdMate
     } else if (element.kind === "finite-reflective-plate") {
       pushUniqueMaterial(materials, material(`element-${element.id}-ideal-reflector`, element.label, 1e6, 0));
     } else if (element.kind === "finite-aperture-blocker") {
-      pushUniqueMaterial(materials, material(`element-${element.id}-blocker`, element.label, 1.1, 0.05, 25000));
+      if (element.screenModel === "transparent-reference") {
+        pushUniqueMaterial(materials, material(`element-${element.id}-blocker`, element.label, 1, 0));
+      } else if (element.screenModel === "ideal-reflective-screen") {
+        pushUniqueMaterial(materials, material(`element-${element.id}-blocker`, element.label, 1e6, 0));
+      } else {
+        pushUniqueMaterial(materials, material(`element-${element.id}-blocker`, element.label, 1.1, 0.05, 25000));
+      }
     }
   }
   return materials;
@@ -410,6 +417,8 @@ function fdtdGeometryForFiniteElement(element: SimulationBuilderElement): FdtdGe
         width: Math.max(0.01, Math.min(element.apertureWidthUm ?? sizeUm.x * 0.4, sizeUm.x)),
         height: Math.max(0.01, Math.min(element.apertureHeightUm ?? sizeUm.y * 0.4, sizeUm.y))
       },
+      apertureShape: element.apertureShape ?? "rectangular-aperture",
+      screenModel: element.screenModel ?? "absorbing-screen",
       diagnostic: "edge-field",
       sourceElementId: element.id
     };
@@ -478,11 +487,36 @@ function finiteGeometryWarnings(element: SimulationBuilderElement, scenario: Sim
     });
   }
   if (element.kind === "finite-aperture-blocker") {
+    const apertureWidth = Math.max(0, element.apertureWidthUm ?? element.apertureDiameterUm ?? 0);
+    const apertureHeight = Math.max(0, element.apertureHeightUm ?? element.apertureDiameterUm ?? 0);
+    const apertureCellsAcross = Math.min(
+      apertureWidth > 0 ? apertureWidth / Math.max(1e-9, gridSpacingNm / 1000) : Number.POSITIVE_INFINITY,
+      apertureHeight > 0 ? apertureHeight / Math.max(1e-9, gridSpacingNm / 1000) : Number.POSITIVE_INFINITY
+    );
+    if ((element.apertureShape ?? "rectangular-aperture") !== "opaque-blocker" && apertureCellsAcross < 12) {
+      warnings.push({
+        code: "fdtd.aperture.underResolved",
+        message: `${element.label} aperture is only ${apertureCellsAcross.toPrecision(3)} cells across; increase grid density or aperture size before trusting edge diffraction.`,
+        elementId: element.id
+      });
+    }
     warnings.push({
       code: "fdtd.geometry.edgeFieldConvergenceRequired",
       message: `${element.label} has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.`,
       elementId: element.id
     });
+    warnings.push({
+      code: "fdtd.aperture.scalarLimit",
+      message: `${element.label} finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.`,
+      elementId: element.id
+    });
+    if (element.screenModel === "ideal-reflective-screen") {
+      warnings.push({
+        code: "fdtd.aperture.idealReflectorScreen",
+        message: `${element.label} uses an ideal reflective screen diagnostic, not a production metal aperture model.`,
+        elementId: element.id
+      });
+    }
   }
   if (element.kind === "tilted-interface-wedge") {
     warnings.push({
@@ -508,10 +542,12 @@ function fdtdGeometryPythonLines(geometry: FdtdGeometry): string[] {
 
 function apertureBlockerPythonLines(geometry: FdtdGeometry): string[] {
   const aperture = geometry.apertureUm ?? { width: geometry.sizeUm.x * 0.4, height: geometry.sizeUm.y * 0.4 };
+  if (geometry.apertureShape === "opaque-blocker") return solidApertureScreenPythonLines(geometry);
+  if (geometry.apertureShape === "circular-pinhole") return circularPinholePythonLines(geometry, aperture);
   const sideWidth = Math.max(0, (geometry.sizeUm.x - aperture.width) / 2);
   const topHeight = Math.max(0, (geometry.sizeUm.y - aperture.height) / 2);
-  const materialExpr = `materials[${quote(geometry.materialId)}]`;
-  const lines = [`    # ${geometry.kind}: four absorbing/reflective blocker blocks around a rectangular aperture`];
+  const materialExpr = apertureMaterialExpr(geometry);
+  const lines = [`    # ${geometry.kind}: ${geometry.apertureShape ?? "rectangular-aperture"} four-screen-block helper around aperture; diagnostic edge validation only`];
   if (sideWidth > 0) {
     lines.push(
       `    mp.Block(center=mp.Vector3(${formatNumber(geometry.centerUm.x - (aperture.width + sideWidth) / 2)}, ${formatNumber(geometry.centerUm.y)}, ${formatNumber(geometry.centerUm.z)}), size=mp.Vector3(${formatNumber(sideWidth)}, ${formatNumber(geometry.sizeUm.y)}, ${formatNumber(geometry.sizeUm.z)}), material=${materialExpr}),`,
@@ -525,6 +561,41 @@ function apertureBlockerPythonLines(geometry: FdtdGeometry): string[] {
     );
   }
   return lines;
+}
+
+function solidApertureScreenPythonLines(geometry: FdtdGeometry): string[] {
+  return [
+    `    # ${geometry.kind}: opaque-blocker solid screen diagnostic; not a production metal aperture model`,
+    `    mp.Block(center=mp.Vector3(${formatNumber(geometry.centerUm.x)}, ${formatNumber(geometry.centerUm.y)}, ${formatNumber(geometry.centerUm.z)}), size=mp.Vector3(${formatNumber(geometry.sizeUm.x)}, ${formatNumber(geometry.sizeUm.y)}, ${formatNumber(geometry.sizeUm.z)}), material=${apertureMaterialExpr(geometry)}),`
+  ];
+}
+
+function circularPinholePythonLines(geometry: FdtdGeometry, aperture: { width: number; height: number }): string[] {
+  const radius = Math.max(0.01, Math.min(aperture.width, aperture.height) / 2);
+  const screenRadius = Math.max(radius, Math.min(geometry.sizeUm.x, geometry.sizeUm.y) / 2);
+  const materialExpr = apertureMaterialExpr(geometry);
+  const lines = [
+    `    # ${geometry.kind}: circular-pinhole segmented screen helper; Meep run should use convergence/subpixel review before interpretation`,
+    `    # aperture_radius_um=${formatNumber(radius)} screen_radius_um=${formatNumber(screenRadius)}`
+  ];
+  const segmentCount = 8;
+  for (let index = 0; index < segmentCount; index += 1) {
+    const angle = (index * Math.PI * 2) / segmentCount;
+    const nextAngle = ((index + 1) * Math.PI * 2) / segmentCount;
+    const mid = (angle + nextAngle) / 2;
+    const radialCenter = (radius + screenRadius) / 2;
+    const segmentWidth = Math.max(0.01, screenRadius - radius);
+    const segmentHeight = Math.max(0.01, (Math.PI * (radius + screenRadius)) / segmentCount);
+    lines.push(
+      `    mp.Block(center=mp.Vector3(${formatNumber(geometry.centerUm.x + Math.cos(mid) * radialCenter)}, ${formatNumber(geometry.centerUm.y + Math.sin(mid) * radialCenter)}, ${formatNumber(geometry.centerUm.z)}), size=mp.Vector3(${formatNumber(segmentWidth)}, ${formatNumber(segmentHeight)}, ${formatNumber(geometry.sizeUm.z)}), material=${materialExpr}, e1=mp.Vector3(${formatNumber(Math.cos(mid))}, ${formatNumber(Math.sin(mid))}, 0), e2=mp.Vector3(${formatNumber(-Math.sin(mid))}, ${formatNumber(Math.cos(mid))}, 0), e3=mp.Vector3(0, 0, 1)),`
+    );
+  }
+  return lines;
+}
+
+function apertureMaterialExpr(geometry: FdtdGeometry): string {
+  if (geometry.screenModel === "ideal-reflective-screen") return "mp.metal";
+  return `materials[${quote(geometry.materialId)}]`;
 }
 
 function degToRad(value: number): number {

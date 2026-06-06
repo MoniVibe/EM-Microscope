@@ -1,9 +1,9 @@
 # L8.3 Finite aperture/blocker Validation Report
 
-Scene hash: 8a66b672dc21182d
-Manifest hash: d91477717e995069
-Script hash: 96e6f49f4b1beb6e
-Geometry hash: 005c7b5109a3534c
+Scene hash: ee5ff5479f1cf48c
+Manifest hash: dcd47a93a79ca5b3
+Script hash: dcd29415727afd05
+Geometry hash: 7c7915c1b7f38713
 Status: DIAGNOSTIC
 
 ## Grid / Boundary
@@ -39,6 +39,7 @@ Invariant: Blocked/transmitted power follows aperture open fraction only as a di
 ## Warnings
 - fdtd.geometry.monitorProximity: Finite aperture/blocker has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.
 - fdtd.geometry.edgeFieldConvergenceRequired: Finite aperture/blocker has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.
+- fdtd.aperture.scalarLimit: Finite aperture/blocker finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.
 - fdtd.export.largeGrid: Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources.
 - fdtd.surfaceGeometry.noClosedFormAperture: Finite aperture/blocker edge fields are diagnostic and need convergence evidence.
 

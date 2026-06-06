@@ -1,0 +1,6 @@
+run_id,resolution_ppw,aperture_cells_across,pml_padding_lambda,monitor_distance_lambda,reference_residual,energy_residual,status
+l84-rectangular-aperture-r6,6,48,1.5,1.5,0.11,0.0495,fail
+l84-rectangular-aperture-r8,8,64,1.5,2.4,0.0462493028389543,0.020812186277529437,warning
+l84-rectangular-aperture-r12,12,96,2.5,2.4,0.02786064180722506,0.012537288813251278,pass
+l84-rectangular-aperture-r16,16,128,2.5,2.4,0.019445436482630057,0.008750446417183526,pass
+l84-rectangular-aperture-r24,24,192,2.5,2.4,0.014712286709481284,0.006620529019266578,pass

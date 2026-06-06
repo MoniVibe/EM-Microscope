@@ -2,7 +2,16 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  apertureConvergenceCsv,
+  apertureFluxSummaryJson,
+  apertureMetricsCsv,
+  apertureProfileCsv,
+  apertureReceiptJson,
+  apertureValidationReportJson,
+  apertureValidationReportMarkdown,
+  apertureValidationSceneJson,
   createAbsorbingFdtdExampleBundle,
+  createApertureValidationExampleBundles,
   createFdtdBenchmarkExampleBundles,
   createSurfaceGeometryConvergencePack,
   createSurfaceGeometryExampleBundles,
@@ -39,13 +48,15 @@ const transparent = createTransparentFdtdExampleBundle();
 const absorbing = createAbsorbingFdtdExampleBundle();
 const benchmarkExamples = createFdtdBenchmarkExampleBundles();
 const surfaceGeometryExamples = createSurfaceGeometryExampleBundles();
+const apertureExamples = createApertureValidationExampleBundles();
 
 await writeExample("README.md", [
-  "# L8.1/L8.2/L8.3 FDTD Example Fixtures",
+  "# L8.1/L8.2/L8.3/L8.4 FDTD Example Fixtures",
   "",
   "These files are deterministic diagnostic fixtures generated from `packages/core`.",
   "They are for import/export and convergence smoke testing only and are not measured lab results.",
   "L8.3 adds finite placed surface-geometry diagnostics for transparent blocks, absorbing blocks, reflective plates, aperture/blockers, and tilted interface wedges.",
+  "L8.4 adds finite aperture/blocker edge-diffraction validation diagnostics for long slits, circular pinholes, rectangular apertures, and opaque blockers.",
   "",
   "Regenerate with:",
   "",
@@ -62,6 +73,9 @@ for (const [kind, example] of Object.entries(benchmarkExamples)) {
 }
 for (const [kind, example] of Object.entries(surfaceGeometryExamples)) {
   await writeSurfaceGeometryBundle(`l83_${kind.replaceAll("-", "_")}`, example);
+}
+for (const [kind, example] of Object.entries(apertureExamples)) {
+  await writeApertureBundle(`l84_${kind.replaceAll("-", "_")}`, example);
 }
 
 async function writeBundle(prefix, example) {
@@ -109,6 +123,20 @@ async function writeSurfaceGeometryBundle(prefix, example) {
   if (convergencePack.scripts[0]) {
     await writeExample(`${prefix}_${convergencePack.scripts[0].filename}`, convergencePack.scripts[0].export.python);
   }
+}
+
+async function writeApertureBundle(prefix, example) {
+  await writeExample(`${prefix}_aperture_validation_scene.json`, apertureValidationSceneJson(example.scene));
+  await writeExample(`${prefix}_fdtd_scene_manifest.json`, fdtdManifestJson(example.scene.bundle.manifest));
+  await writeExample(`${prefix}_meep.py`, fdtdMeepScriptText(example.scene.bundle.script));
+  await writeExample(`${prefix}_run_receipt.json`, apertureReceiptJson(example));
+  await writeExample(`${prefix}_flux_summary.json`, apertureFluxSummaryJson(example));
+  await writeExample(`${prefix}_field_slice.csv`, `${example.fieldSliceCsv}\n`);
+  await writeExample(`${prefix}_validation_report.json`, apertureValidationReportJson(example.validation));
+  await writeExample(`${prefix}_validation_report.md`, `${apertureValidationReportMarkdown(example.validation)}\n`);
+  await writeExample(`${prefix}_validation_metrics.csv`, `${apertureMetricsCsv(example.validation)}\n`);
+  await writeExample(`${prefix}_profile.csv`, `${apertureProfileCsv(example.validation)}\n`);
+  await writeExample(`${prefix}_convergence.csv`, `${apertureConvergenceCsv(example.validation)}\n`);
 }
 
 async function writeExample(name, text) {

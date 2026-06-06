@@ -4,7 +4,7 @@
   "label": "L8.2 Transparent slab convergence benchmark",
   "benchmarkKind": "transparent-slab",
   "sourceScenarioHash": "b9e9d2c32c66a0a6",
-  "baseManifestHash": "e5a9df377946834f",
+  "baseManifestHash": "d0334fdadd056d20",
   "baseManifest": {
     "schema": "emmicro.fdtd.sceneManifest.v1",
     "id": "l81-fdtd-l82-transparent-slab-fdtd-benchmark",
@@ -190,9 +190,10 @@
       "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
       "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
       "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
+      "L8.4 aperture/blocker edge-diffraction validation is limited to long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker diagnostic scenes with scalar limiting-case references and convergence warnings.",
       "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
     ],
-    "manifestHash": "e5a9df377946834f"
+    "manifestHash": "d0334fdadd056d20"
   },
   "reference": {
     "benchmarkKind": "transparent-slab",
@@ -221,5 +222,5 @@
     "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
   ],
   "warnings": [],
-  "benchmarkHash": "68715c9fe3b1d50d"
+  "benchmarkHash": "fe86fa0698e4fcc0"
 }

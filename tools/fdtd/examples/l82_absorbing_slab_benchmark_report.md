@@ -2,9 +2,9 @@
 
 Status: FAIL
 Reference model: beer-lambert
-Benchmark hash: af103979d652915d
-Sweep hash: a59ceda2dd68ec40
-Summary hash: 1c5763069a465a3a
+Benchmark hash: 9708c6cde63bfc06
+Sweep hash: 818cfa022f236f7e
+Summary hash: 32ffedca35ee6879
 
 ## Reference
 

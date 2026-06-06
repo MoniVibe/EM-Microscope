@@ -2,7 +2,7 @@
   "schema": "emmicro.fdtd.fluxSummary.v1",
   "runId": "l81-example-transparent-slab",
   "sourceScenarioHash": "dc8f68ca2eb20de5",
-  "manifestHash": "10b72314c5d2f8be",
+  "manifestHash": "4dde335b46ec93b3",
   "incidentFlux": 1,
   "reflectedFlux": 0.04000000000000001,
   "transmittedFlux": 0.96,
@@ -26,5 +26,5 @@
     }
   ],
   "warnings": [],
-  "fluxHash": "6f1e7a470e8bf8fb"
+  "fluxHash": "b651c63d985b2ee9"
 }

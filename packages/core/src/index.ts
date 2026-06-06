@@ -4,6 +4,7 @@ export * from "./export/fieldProfileExport";
 export * from "./fdtd/fdtdExamples";
 export * from "./fdtd/fdtdBenchmarkSuite";
 export * from "./fdtd/fdtdSurfaceGeometry";
+export * from "./fdtd/fdtdApertureValidation";
 export * from "./fdtd/fdtdRunImport";
 export * from "./fdtd/fdtdSceneExport";
 export * from "./fdtd/fdtdTypes";

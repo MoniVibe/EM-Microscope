@@ -1,0 +1,420 @@
+{
+  "schema": "emmicro.fdtd.apertureValidationScene.v1",
+  "kind": "long-slit",
+  "screenModel": "absorbing-screen",
+  "scenario": {
+    "schema": "emmicro.simulationBuilder.v1",
+    "id": "l84-long-slit-absorbing-screen",
+    "label": "L8.4 Long-slit aperture edge-diffraction external FDTD diagnostic",
+    "grid": {
+      "units": "um",
+      "domainWidthUm": 16,
+      "domainHeightUm": 16,
+      "zStartMm": 0,
+      "zEndMm": 0.06,
+      "pointsPerWavelength": 8
+    },
+    "source": {
+      "type": "plane-wave",
+      "label": "500 nm coherent plane wave for aperture edge diagnostic",
+      "wavelengthNm": 500,
+      "xUm": 0,
+      "yUm": 0,
+      "zMm": 0.004,
+      "direction": "+z",
+      "coherence": "coherent"
+    },
+    "elements": [
+      {
+        "id": "l84-long-slit",
+        "kind": "finite-aperture-blocker",
+        "label": "Long-slit aperture",
+        "zMm": 0.025,
+        "xUm": 0,
+        "yUm": 0,
+        "widthUm": 14,
+        "heightUm": 14,
+        "apertureWidthUm": 2,
+        "apertureHeightUm": 14,
+        "apertureShape": "long-slit",
+        "screenModel": "absorbing-screen",
+        "thicknessUm": 0.8,
+        "materialLabel": "absorbing screen",
+        "model": "external FDTD aperture/blocker edge diagnostic",
+        "status": "executable",
+        "validation": "external FDTD fixture compared to scalar limiting-case reference and convergence diagnostics"
+      }
+    ],
+    "target": {
+      "kind": "transparent-dielectric",
+      "label": "Air observation reference",
+      "zMm": 0.058,
+      "incidentIndex": 1,
+      "substrateIndex": 1,
+      "extinctionCoefficient": 0,
+      "absorptionCoefficientPerM": 0,
+      "thicknessUm": 0
+    },
+    "observationPlaneZMm": 0.055,
+    "boundary": [
+      "Limited aperture/blocker edge-diffraction diagnostics only: long slit, circular pinhole, rectangular aperture, and opaque blocker.",
+      "External FDTD export/import evidence only; the browser app does not execute FDTD or arbitrary 3D Maxwell.",
+      "Scalar sinc/Airy references are limiting-case checks, not exact finite-screen FDTD truth.",
+      "Finite screen size, screen thickness, staircasing, PML placement, monitor placement, and near-field/far-field interpretation require convergence review.",
+      "Ideal reflective screens are diagnostics only, not production metal aperture models.",
+      "No arbitrary CAD aperture, conformal aperture-edge coating, curved/freeform aperture surface, FEM/BEM/RCWA execution, sensor-stack EM, digital twin, or manufacturing certification is claimed."
+    ]
+  },
+  "bundle": {
+    "manifest": {
+      "schema": "emmicro.fdtd.sceneManifest.v1",
+      "id": "l81-fdtd-l84-long-slit-absorbing-screen",
+      "label": "L8.1 external FDTD export for L8.4 Long-slit aperture edge-diffraction external FDTD diagnostic",
+      "sourceScenarioId": "l84-long-slit-absorbing-screen",
+      "sourceScenarioHash": "d96beb814449f702",
+      "targetKind": "transparent-dielectric",
+      "units": "um",
+      "grid": {
+        "domainWidthUm": 16,
+        "domainHeightUm": 16,
+        "zStartUm": 0,
+        "zEndUm": 60,
+        "gridSpacingNm": 62.5,
+        "pointsPerWavelength": 8,
+        "estimatedCells": 62914560
+      },
+      "source": {
+        "kind": "plane-wave",
+        "wavelengthUm": 0.5,
+        "centerUm": {
+          "x": 0,
+          "y": 0,
+          "z": 4
+        },
+        "direction": "+z",
+        "component": "Ez"
+      },
+      "materials": [
+        {
+          "id": "air",
+          "label": "Air",
+          "refractiveIndex": {
+            "n": 1,
+            "k": 0
+          },
+          "materialHash": "2653810c8f22d751"
+        },
+        {
+          "id": "target-dielectric",
+          "label": "Air observation reference",
+          "refractiveIndex": {
+            "n": 1,
+            "k": 0
+          },
+          "materialHash": "9a86ca1878c587aa"
+        },
+        {
+          "id": "element-l84-long-slit-blocker",
+          "label": "Long-slit aperture",
+          "refractiveIndex": {
+            "n": 1.1,
+            "k": 0.05
+          },
+          "absorptionCoefficientPerM": 25000,
+          "materialHash": "76b190e45283c189"
+        }
+      ],
+      "geometry": [
+        {
+          "id": "target-block",
+          "kind": "transparent-slab",
+          "label": "Air observation reference",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 58
+          },
+          "sizeUm": {
+            "x": 16,
+            "y": 16,
+            "z": 100
+          },
+          "materialId": "target-dielectric"
+        },
+        {
+          "id": "l84-long-slit",
+          "kind": "finite-aperture-blocker",
+          "label": "Long-slit aperture",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 25
+          },
+          "sizeUm": {
+            "x": 14,
+            "y": 14,
+            "z": 0.8
+          },
+          "materialId": "element-l84-long-slit-blocker",
+          "apertureUm": {
+            "width": 2,
+            "height": 14
+          },
+          "apertureShape": "long-slit",
+          "screenModel": "absorbing-screen",
+          "diagnostic": "edge-field",
+          "sourceElementId": "l84-long-slit"
+        }
+      ],
+      "monitors": [
+        {
+          "id": "incident-flux",
+          "kind": "flux-plane",
+          "label": "Incident flux plane",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 104
+          },
+          "sizeUm": {
+            "x": 16,
+            "y": 16,
+            "z": 0
+          },
+          "normal": "+z"
+        },
+        {
+          "id": "reflected-flux",
+          "kind": "flux-plane",
+          "label": "Reflected flux plane",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 54
+          },
+          "sizeUm": {
+            "x": 16,
+            "y": 16,
+            "z": 0
+          },
+          "normal": "-z"
+        },
+        {
+          "id": "transmitted-flux",
+          "kind": "flux-plane",
+          "label": "Transmitted flux plane",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 55
+          },
+          "sizeUm": {
+            "x": 16,
+            "y": 16,
+            "z": 0
+          },
+          "normal": "+z"
+        },
+        {
+          "id": "field-slice-xz",
+          "kind": "field-slice",
+          "label": "XZ field/intensity slice",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 30
+          },
+          "sizeUm": {
+            "x": 16,
+            "y": 0,
+            "z": 60
+          },
+          "normal": "+y",
+          "fields": [
+            "Ez",
+            "intensity"
+          ]
+        },
+        {
+          "id": "l84-long-slit-front-flux",
+          "kind": "flux-plane",
+          "label": "Long-slit aperture front flux",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 23.8
+          },
+          "sizeUm": {
+            "x": 14,
+            "y": 14,
+            "z": 0
+          },
+          "normal": "+z"
+        },
+        {
+          "id": "l84-long-slit-back-flux",
+          "kind": "flux-plane",
+          "label": "Long-slit aperture back flux",
+          "centerUm": {
+            "x": 0,
+            "y": 0,
+            "z": 26.2
+          },
+          "sizeUm": {
+            "x": 14,
+            "y": 14,
+            "z": 0
+          },
+          "normal": "+z"
+        }
+      ],
+      "boundaries": {
+        "pmlThicknessUm": 0.75,
+        "note": "PML boundary scaffold for optional external Meep execution."
+      },
+      "readiness": {
+        "status": "warning",
+        "supported": [
+          {
+            "id": "source",
+            "label": "500 nm coherent plane wave for aperture edge diagnostic",
+            "evidence": "plane-wave source exported as Meep source scaffold"
+          },
+          {
+            "id": "l84-long-slit",
+            "label": "Long-slit aperture",
+            "evidence": "finite surface geometry export with L8.3 validation warnings"
+          },
+          {
+            "id": "target",
+            "label": "Air observation reference",
+            "evidence": "transparent dielectric slab/block export with Fresnel/TMM comparison"
+          }
+        ],
+        "unsupported": [],
+        "warnings": [
+          {
+            "code": "fdtd.geometry.monitorProximity",
+            "message": "Long-slit aperture has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+            "elementId": "l84-long-slit"
+          },
+          {
+            "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+            "message": "Long-slit aperture has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+            "elementId": "l84-long-slit"
+          },
+          {
+            "code": "fdtd.aperture.scalarLimit",
+            "message": "Long-slit aperture finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.",
+            "elementId": "l84-long-slit"
+          }
+        ],
+        "estimatedCells": 62914560,
+        "gridSpacingNm": 62.5,
+        "sceneHash": "d96beb814449f702"
+      },
+      "limitations": [
+        "External FDTD export/import only; the browser app does not execute FDTD.",
+        "Generated Meep scripts are deterministic helper artifacts for optional local execution.",
+        "Imported field/flux maps are external-run evidence with receipts, not in-browser Maxwell solves.",
+        "L8.3 finite surface geometry is limited to placed transparent blocks, absorbing blocks, ideal reflector diagnostics, aperture/blocker masks, and tilted/wedge diagnostics with convergence warnings.",
+        "L8.4 aperture/blocker edge-diffraction validation is limited to long-slit, circular-pinhole, rectangular-aperture, and opaque-blocker diagnostic scenes with scalar limiting-case references and convergence warnings.",
+        "No arbitrary 3D CAD geometry, curved material lens solve, finite-thickness metal aperture Maxwell solve, FEM/BEM/RCWA execution, production solver validation, sensor-stack EM, digital twin, or manufacturing certification is claimed."
+      ],
+      "manifestHash": "c1075ced58ef74a9"
+    },
+    "script": {
+      "schema": "emmicro.fdtd.meepScript.v1",
+      "manifestHash": "c1075ced58ef74a9",
+      "sourceScenarioHash": "d96beb814449f702",
+      "scriptHash": "622e04573dc8aaeb",
+      "python": "# Generated by EMMicro L8.1 External FDTD / Field Maps.\n# Optional external helper only; the browser app does not execute FDTD.\n# source_scenario_hash: d96beb814449f702\n# manifest_hash: c1075ced58ef74a9\n\nimport json\nimport meep as mp\n\ncell_size = mp.Vector3(16, 16, 60)\nresolution = 16\npml_layers = [mp.PML(0.75)]\n\nmaterials = {\n    \"air\": mp.Medium(index=1),  # k=0 hash=2653810c8f22d751\n    \"target-dielectric\": mp.Medium(index=1),  # k=0 hash=9a86ca1878c587aa\n    \"element-l84-long-slit-blocker\": mp.Medium(index=1.1),  # k=0.05 hash=76b190e45283c189\n}\n\ngeometry = [\n    mp.Block(center=mp.Vector3(0, 0, 58), size=mp.Vector3(16, 16, 100), material=materials[\"target-dielectric\"]),  # transparent-slab\n    # finite-aperture-blocker: long-slit four-screen-block helper around aperture; diagnostic edge validation only\n    mp.Block(center=mp.Vector3(-4, 0, 25), size=mp.Vector3(6, 14, 0.8), material=materials[\"element-l84-long-slit-blocker\"]),\n    mp.Block(center=mp.Vector3(4, 0, 25), size=mp.Vector3(6, 14, 0.8), material=materials[\"element-l84-long-slit-blocker\"]),\n]\n\nsources = [\n    mp.Source(mp.ContinuousSource(wavelength=0.5), component=mp.Ez, center=mp.Vector3(0, 0, 4), size=mp.Vector3(16, 16, 0)),\n]\n\nsim = mp.Simulation(cell_size=cell_size, boundary_layers=pml_layers, geometry=geometry, sources=sources, resolution=resolution)\n\n# Monitor definitions. External postprocess writes flux_summary.json and field_slice_xz.csv.\n# monitor incident-flux: flux-plane center=(0, 0, 104) size=(16, 16, 0) normal=+z\n# monitor reflected-flux: flux-plane center=(0, 0, 54) size=(16, 16, 0) normal=-z\n# monitor transmitted-flux: flux-plane center=(0, 0, 55) size=(16, 16, 0) normal=+z\n# monitor field-slice-xz: field-slice center=(0, 0, 30) size=(16, 0, 60) normal=+y\n# monitor l84-long-slit-front-flux: flux-plane center=(0, 0, 23.8) size=(14, 14, 0) normal=+z\n# monitor l84-long-slit-back-flux: flux-plane center=(0, 0, 26.2) size=(14, 14, 0) normal=+z\n\n# sim.run(until=200)\n# sim.output_efield_z()\n# Use tools/fdtd/postprocess_meep_output.py to produce importable JSON/CSV summaries.\n",
+      "warnings": []
+    }
+  },
+  "geometryIds": [
+    "l84-long-slit"
+  ],
+  "monitorIds": [
+    "field-slice-xz",
+    "l84-long-slit-front-flux",
+    "l84-long-slit-back-flux"
+  ],
+  "reference": {
+    "kind": "long-slit",
+    "model": "single-slit-sinc2",
+    "wavelengthNm": 500,
+    "observationDistanceUm": 30,
+    "apertureWidthUm": 2,
+    "apertureHeightUm": 14,
+    "apertureDiameterUm": 14,
+    "expectedMinimaUm": [
+      7.745966692414833,
+      17.320508075688775,
+      34.01680257083045
+    ],
+    "expectedFirstMinimumUm": 7.745966692414833,
+    "apertureOpenFraction": 0.14285714285714285,
+    "invariant": "Long-slit scalar limiting case: minima satisfy a sin(theta) = m lambda.",
+    "referenceHash": "0b0c42018e91a284"
+  },
+  "diagnostics": {
+    "gridSpacingNm": 62.5,
+    "apertureCellsAcross": 32,
+    "screenThicknessCells": 12.8,
+    "pmlDistanceWavelengths": 47.7,
+    "monitorDistanceWavelengths": 1.6,
+    "observationContainsFirstMinimum": true
+  },
+  "warnings": [
+    {
+      "code": "fdtd.geometry.monitorProximity",
+      "message": "Long-slit aperture has flux monitors within two wavelengths of the scatterer in the generated helper scene; move monitors farther away for production convergence runs.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.geometry.edgeFieldConvergenceRequired",
+      "message": "Long-slit aperture has aperture edges; treat downstream fields as diagnostic until resolution/PML convergence is shown.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Long-slit aperture finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Scalar diffraction reference is a limiting-case check for diagnostic comparison, not an exact finite FDTD screen solution.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.nearFieldFarField",
+      "message": "Near-field slices are not the same as far-field diffraction patterns; use far-field or downstream observation evidence with convergence.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.convergenceRequired",
+      "message": "Current aperture/blocker diagnostics require convergence sweep evidence before physical interpretation.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.monitorTooClose",
+      "message": "Flux monitor is within two wavelengths of aperture/blocker edges.",
+      "elementId": "l84-long-slit"
+    },
+    {
+      "code": "fdtd.aperture.edgeStaircasing",
+      "message": "Aperture edges are staircasing-sensitive at this grid density; increase resolution and compare residual trends.",
+      "elementId": "l84-long-slit"
+    }
+  ],
+  "limitations": [
+    "Limited aperture/blocker edge-diffraction diagnostics only: long slit, circular pinhole, rectangular aperture, and opaque blocker.",
+    "External FDTD export/import evidence only; the browser app does not execute FDTD or arbitrary 3D Maxwell.",
+    "Scalar sinc/Airy references are limiting-case checks, not exact finite-screen FDTD truth.",
+    "Finite screen size, screen thickness, staircasing, PML placement, monitor placement, and near-field/far-field interpretation require convergence review.",
+    "Ideal reflective screens are diagnostics only, not production metal aperture models.",
+    "No arbitrary CAD aperture, conformal aperture-edge coating, curved/freeform aperture surface, FEM/BEM/RCWA execution, sensor-stack EM, digital twin, or manufacturing certification is claimed."
+  ],
+  "sceneHash": "56061e498e031bd7"
+}

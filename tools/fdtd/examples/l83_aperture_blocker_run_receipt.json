@@ -1,9 +1,9 @@
 {
   "schema": "emmicro.fdtd.runReceipt.v1",
   "runId": "l83-example-aperture-blocker",
-  "sourceScenarioHash": "97fd288cdfbf1c8c",
-  "manifestHash": "d91477717e995069",
-  "scriptHash": "96e6f49f4b1beb6e",
+  "sourceScenarioHash": "4bfd03c065f43f6e",
+  "manifestHash": "dcd47a93a79ca5b3",
+  "scriptHash": "dcd29415727afd05",
   "tool": {
     "name": "example-fixture",
     "version": "emmicro.l83.fixture",
@@ -27,6 +27,11 @@
       "elementId": "l83-aperture-blocker"
     },
     {
+      "code": "fdtd.aperture.scalarLimit",
+      "message": "Finite aperture/blocker finite FDTD screen is compared only to scalar limiting-case diffraction references; finite thickness and finite screen size can shift residuals.",
+      "elementId": "l83-aperture-blocker"
+    },
+    {
       "code": "fdtd.export.largeGrid",
       "message": "Estimated FDTD grid is large; external execution may require coarser resolution or HPC resources."
     },
@@ -36,5 +41,5 @@
       "elementId": "l83-aperture-blocker"
     }
   ],
-  "receiptHash": "0873277068bc2c5b"
+  "receiptHash": "c8143b963a3a594e"
 }

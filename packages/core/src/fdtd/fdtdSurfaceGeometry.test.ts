@@ -88,7 +88,7 @@ describe("L8.3 finite surface geometry export", () => {
     const script = fdtdMeepScriptText(scene.bundle.script);
 
     expect(script).toContain("finite-aperture-blocker");
-    expect(script).toContain("four absorbing/reflective blocker blocks");
+    expect(script).toContain("rectangular-aperture four-screen-block helper");
     expect(scene.bundle.manifest.geometry.find((item) => item.kind === "finite-aperture-blocker")?.apertureUm).toEqual({ width: 4, height: 6 });
   });
 

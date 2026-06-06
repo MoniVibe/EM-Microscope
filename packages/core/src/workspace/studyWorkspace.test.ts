@@ -93,10 +93,15 @@ describe("L6.6 Practical Study Workspace core", () => {
     expect(capabilities.find((capability) => capability.id === "external-fdtd-finite-surface-geometry-export")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "external-fdtd-surface-geometry-fixtures")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "surface-geometry-xz-cross-section")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "external-fdtd-long-slit-aperture-diagnostic")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "external-fdtd-circular-pinhole-diagnostic")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "external-fdtd-opaque-blocker-diagnostic")?.status).toBe("executable");
+    expect(capabilities.find((capability) => capability.id === "aperture-edge-convergence-diagnostics")?.status).toBe("executable");
     expect(capabilities.find((capability) => capability.id === "external-fdtd-backend-runner")?.status).toBe("scaffold-only");
     expect(capabilities.find((capability) => capability.id === "browser-fdtd-execution")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "3d-maxwell-solve")?.status).toBe("not-implemented");
     expect(capabilities.find((capability) => capability.id === "fdtd-fem-bem-rcwa-execution")?.status).toBe("not-implemented");
+    expect(capabilities.find((capability) => capability.id === "production-metal-aperture-model")?.status).toBe("not-implemented");
     expect(l68Capabilities.find((capability) => capability.id === "pixel-level-sensor-stack")?.status).toBe("not-implemented");
     expect(l68Capabilities.find((capability) => capability.id === "certified-emva-characterization")?.status).toBe("not-implemented");
     expect(l69Capabilities.find((capability) => capability.id === "emva-1288-certification")?.status).toBe("not-implemented");
@@ -129,8 +134,13 @@ describe("L6.6 Practical Study Workspace core", () => {
     expect(csv).toContain("External FDTD benchmark export");
     expect(csv).toContain("FDTD convergence diagnostics");
     expect(markdown).toContain("Surface geometry fixture import/validation");
+    expect(markdown).toContain("Long-slit aperture diagnostic");
+    expect(markdown).toContain("Circular pinhole diagnostic");
+    expect(markdown).toContain("Aperture edge convergence diagnostics");
     expect(csv).toContain("External FDTD finite surface geometry export");
     expect(csv).toContain("Surface geometry X-Z cross-section");
+    expect(csv).toContain("Opaque blocker diagnostic");
+    expect(csv).toContain("Production metal aperture model");
     expect(`${markdown}\n${csv}`).not.toMatch(/3D Maxwell solve executed|FDTD solver executable|FEM\/BEM\/RCWA available|digital twin certified|certified EMVA characterization executable|EMVA 1288 certification executable|pixel-level sensor stack executable|ISO 12233 certification executable|Imatest-equivalent certification executable|pure lens-only MTF certification executable|calibrated optical model fitting executable|certified camera calibration executable|lab-accredited metrology executable|certified metrology report executable|lab accreditation executable|full 3D pose calibration executable|stereo calibration executable|AprilTag detector executable|browser-native OpenCV.js\/ArUco detector executable/i);
   });
 
@@ -161,11 +171,11 @@ describe("L6.6 Practical Study Workspace core", () => {
     const imported = parseStudyBundleJson(JSON.stringify(bundle));
 
     expect(study.type).toBe("l78PracticalStudy");
-    expect(bundle.appVersion).toContain("L7.8");
+    expect(bundle.appVersion).toContain("L8.4");
     expect(imported.study.resultHash).toBe(study.resultHash);
     expect(imported.manifest.resultHashes).toEqual([result.resultHash]);
     expect(imported.manifest.materialReceiptCount).toBe(1);
-    expect(imported.manifest.capabilityBoundary).toContain("L8.3 finite placed transparent/absorbing/reflective/aperture/wedge geometry export/import diagnostics");
+    expect(imported.manifest.capabilityBoundary).toContain("L8.4 long-slit/circular-pinhole/rectangular-aperture/opaque-blocker edge-diffraction validation dossiers");
     expect(imported.metricsCsv).toContain("visibility");
     expect(imported.profilesCsv).toContain("centerline");
     expect(studyMetricsCsv(study)).toContain("orderSpacingMm");
