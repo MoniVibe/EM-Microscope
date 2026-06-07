@@ -91,6 +91,9 @@ import {
   opticalBenchValidationReportMarkdown,
   redoOpticalBenchHistory,
   compareRealExternalRunToReferences,
+  consistencyAssumptionsCsv,
+  consistencyMetricsCsv,
+  createCrossSolverConsistencyBench,
   robustBeforeAfterMetricsCsv,
   robustCandidateTableCsv,
   robustDesignReportJson,
@@ -107,9 +110,12 @@ import {
   solverRouteMatrixCsv,
   solverRouteReportJson,
   solverRouteReportMarkdown,
+  solverPairResidualsCsv,
   solverEvidenceBundleFiles,
   solverEvidencePromotionJson,
   simulationBuilderToFdtd2dSandbox,
+  crossSolverConsistencyReportJson,
+  crossSolverConsistencyReportMarkdown,
   promoteSolverEvidenceTaskToCampaign,
   unsupportedItemsCsv,
   undoOpticalBenchHistory,
@@ -162,6 +168,10 @@ import {
   type EngineeringEvidenceCampaignManifest,
   type EngineeringEvidenceScenarioId,
   type ApertureValidationReport,
+  type CrossSolverConsistencyBench,
+  type CrossSolverConsistencyCase,
+  type CrossSolverConsistencyCaseId,
+  type CrossSolverConsistencyStatus,
   type FdtdBenchmarkKind,
   type FdtdConvergenceSummary,
   type FdtdFieldSlice,
@@ -345,6 +355,7 @@ export function SimulationBuilderPanel(
   const [l94SelectedMatrixFeature, setL94SelectedMatrixFeature] = useState<MethodMatrixFeatureId>("periodic-1d-grating");
   const [l95GeneratedTask, setL95GeneratedTask] = useState<SolverEvidenceTask | null>(null);
   const [l95Promotion, setL95Promotion] = useState<SolverEvidenceCampaignPromotion | null>(null);
+  const [l96SelectedCaseId, setL96SelectedCaseId] = useState<CrossSolverConsistencyCaseId>("tmm-rcwa-no-pattern");
   const [l85SnapStepMm, setL85SnapStepMm] = useState(0.5);
   const [xzGeometryMode, setXzGeometryMode] = useState<XzGeometryMode>("inspect");
   const [l85History, setL85History] = useState<OpticalBenchHistoryState>(() => createOpticalBenchHistory(defaultOpticalBenchScenario()));
@@ -387,6 +398,12 @@ export function SimulationBuilderPanel(
   const l95EvidenceTask = useMemo(() => createSolverEvidenceTask(l94RouteScene, l94RouteDecision), [l94RouteDecision, l94RouteScene]);
   const activeL95GeneratedTask = l95GeneratedTask?.taskHash === l95EvidenceTask.taskHash ? l95GeneratedTask : null;
   const activeL95Promotion = l95Promotion?.taskHash === l95EvidenceTask.taskHash ? l95Promotion : null;
+  const l96ConsistencyBench = useMemo(() => createCrossSolverConsistencyBench(l95EvidenceTask), [l95EvidenceTask]);
+  const l96SelectedCase = useMemo<CrossSolverConsistencyCase>(() => {
+    const selectedCase = l96ConsistencyBench.cases.find((item) => item.id === l96SelectedCaseId) ?? l96ConsistencyBench.cases[0];
+    if (!selectedCase) throw new Error("L9.6 consistency bench has no cases");
+    return selectedCase;
+  }, [l96ConsistencyBench, l96SelectedCaseId]);
   const l94MethodMatrix = useMemo(() => methodSelectionMatrix(), []);
   const l85Bundle = useMemo(() => createOpticalBenchBundle(scenario), [scenario]);
   const fdtdBundle = useMemo(() => exportFdtdBundleFromSimulationBuilder(scenario), [scenario]);
@@ -800,6 +817,20 @@ export function SimulationBuilderPanel(
     setL95GeneratedTask(l95EvidenceTask);
     loadL88BundledCampaign();
     downloadText("solver_evidence_promotion.json", "application/json", solverEvidencePromotionJson(promotion));
+  }
+
+  function exportL96ConsistencyReport(): void {
+    downloadText("cross_solver_consistency_report.md", "text/markdown", `${crossSolverConsistencyReportMarkdown(l96ConsistencyBench)}\n`);
+    downloadText("cross_solver_consistency_report.json", "application/json", crossSolverConsistencyReportJson(l96ConsistencyBench));
+    downloadText("consistency_metrics.csv", "text/csv", `${consistencyMetricsCsv(l96ConsistencyBench)}\n`);
+    downloadText("solver_pair_residuals.csv", "text/csv", `${solverPairResidualsCsv(l96ConsistencyBench)}\n`);
+    downloadText("consistency_assumptions.csv", "text/csv", `${consistencyAssumptionsCsv(l96ConsistencyBench)}\n`);
+  }
+
+  function importL96ExternalSlabFixture(): void {
+    setL96SelectedCaseId("tmm-external-fdtd-slab");
+    setL94RoutePreset("external");
+    loadL89Fixture("transparent-slab");
   }
 
   function handleL95EvidenceAction(action: SolverEvidenceAction): void {
@@ -1403,17 +1434,17 @@ export function SimulationBuilderPanel(
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L9.5 Simulation Builder solver evidence router">
+    <section className="wave-panel simulation-builder-panel" aria-label="L9.6 Simulation Builder cross-solver consistency router">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L9.5 Simulation Builder + Solver Evidence Auto-Pack + 2D Sandbox Handoff</h2>
+        <h2>L9.6 Simulation Builder + Cross-Solver Consistency + Evidence Auto-Pack</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
         <strong>Simulation Builder</strong>
         <span>
-          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, L9.5 evidence task generation, L9.4 solver recommendation, scalar multi-plane preview, a bounded L9.2 2D FDTD sandbox handoff exporting fdtd2d_sandbox_scene.json and fdtd2d_sandbox_handoff.json, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, real external FDTD run ingestion and reproducibility reports, precise numeric edits, optional diagram drag, and a validation report.
-          The L9.5 evidence auto-pack generates route evidence tasks only, not automatic correctness proof. The L9.4 router is method selection only. The L9.2 sandbox is capped 2D TMz only with CPU reference stepping, optional WebGPU acceleration, parity/performance diagnostics, and stability, validation, boundary, and convergence diagnostics. Arbitrary 3D Maxwell material geometry/CAD solving, production FDTD, required WebGPU execution, FDTD/FEM/BEM/RCWA execution beyond the bounded 1D RCWA preview and bounded 2D sandbox, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
+          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, L9.6 cross-solver consistency diagnostics, L9.5 evidence task generation, L9.4 solver recommendation, scalar multi-plane preview, a bounded L9.2 2D FDTD sandbox handoff exporting fdtd2d_sandbox_scene.json and fdtd2d_sandbox_handoff.json, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, real external FDTD run ingestion and reproducibility reports, precise numeric edits, optional diagram drag, and a validation report.
+          The L9.6 bench compares overlapping solver lanes only and does not prove solver correctness. The L9.5 evidence auto-pack generates route evidence tasks only, not automatic correctness proof. The L9.4 router is method selection only. The L9.2 sandbox is capped 2D TMz only with CPU reference stepping, optional WebGPU acceleration, parity/performance diagnostics, and stability, validation, boundary, and convergence diagnostics. Arbitrary 3D Maxwell material geometry/CAD solving, production FDTD, required WebGPU execution, FDTD/FEM/BEM/RCWA execution beyond the bounded 1D RCWA preview and bounded 2D sandbox, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
           certification are not implemented.
         </span>
       </div>
@@ -1439,6 +1470,15 @@ export function SimulationBuilderPanel(
         onSelectedFeature={setL94SelectedMatrixFeature}
         onAction={handleL94RouteAction}
         onEvidenceAction={handleL95EvidenceAction}
+      />
+
+      <L96CrossSolverConsistencyPanel
+        bench={l96ConsistencyBench}
+        selectedCase={l96SelectedCase}
+        selectedCaseId={l96SelectedCaseId}
+        onSelectedCase={setL96SelectedCaseId}
+        onExport={exportL96ConsistencyReport}
+        onImportExternalSlab={importL96ExternalSlabFixture}
       />
 
       <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide l85-bench" aria-label="L8.5.1 multi-element optical bench editor smoke preview">
@@ -2706,6 +2746,160 @@ export function SimulationBuilderPanel(
       </div>
     </section>
   );
+}
+
+function L96CrossSolverConsistencyPanel(props: {
+  bench: CrossSolverConsistencyBench;
+  selectedCase: CrossSolverConsistencyCase;
+  selectedCaseId: CrossSolverConsistencyCaseId;
+  onSelectedCase: (caseId: CrossSolverConsistencyCaseId) => void;
+  onExport: () => void;
+  onImportExternalSlab: () => void;
+}) {
+  const exportNames = [
+    "cross_solver_consistency_report.md",
+    "cross_solver_consistency_report.json",
+    "consistency_metrics.csv",
+    "solver_pair_residuals.csv",
+    "consistency_assumptions.csv"
+  ];
+
+  return (
+    <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide l96-consistency-panel" aria-label="L9.6 cross-solver consistency bench smoke preview">
+      <div className="maxwell-section-heading">
+        <h2>L9.6 Cross-Solver Consistency Bench</h2>
+        <strong className={`maxwell-l72-status maxwell-l72-status-${consistencyStatusClass(props.selectedCase.status)}`}>{props.selectedCase.status}</strong>
+      </div>
+      <div className="l2-disclosure">
+        <strong>Cross-Solver Consistency</strong>
+        <span>
+          Compares overlapping solver lanes with deterministic residuals, declared tolerances, status categories, assumptions, and evidence hashes. This bench is a consistency diagnostic only: it is not a new solver, not new optical physics, not an automatic correctness proof, not certified solver selection, not production RCWA/FDTD certification, not arbitrary 3D Maxwell/FEM/BEM execution, and not manufacturing certification.
+        </span>
+      </div>
+
+      <div className="l94-preset-row" aria-label="L9.6 consistency case selector">
+        {props.bench.cases.map((item) => (
+          <button type="button" key={item.id} className={props.selectedCaseId === item.id ? "active" : ""} title={item.statusReason} onClick={() => props.onSelectedCase(item.id)}>
+            <Sparkles size={14} />
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="l94-router-grid">
+        <div className="l94-route-card l94-route-primary" aria-label="L9.6 selected consistency case">
+          <div className="maxwell-section-heading">
+            <h2>{props.selectedCase.label}</h2>
+            <strong>{props.selectedCase.status}</strong>
+          </div>
+          <div className="maxwell-study-list">
+            <Stat label="Shared scene" value={props.selectedCase.sharedScene} />
+            <Stat label="Solvers" value={props.selectedCase.comparedSolvers.join(" vs ")} />
+            <Stat label="Case hash" value={props.selectedCase.caseHash.slice(0, 10)} />
+            <Stat label="Report hash" value={props.bench.reportHash.slice(0, 10)} />
+            <Stat label="Evidence hashes" value={String(props.selectedCase.evidenceTaskHashes.length)} />
+          </div>
+          <div className="fdtd-warning-list l94-route-reasons">
+            <span><strong>reason</strong> {props.selectedCase.statusReason}</span>
+            {props.selectedCase.assumptions.slice(0, 4).map((assumption) => (
+              <span key={assumption}><strong>assumption</strong> {assumption}</span>
+            ))}
+            {props.selectedCase.warnings.slice(0, 4).map((warning) => (
+              <span key={`${warning.code}:${warning.message}`}><strong>warning</strong> {warning.message}</span>
+            ))}
+          </div>
+          <div className="maxwell-layer-actions simulation-builder-actions l94-action-list">
+            <button type="button" onClick={() => props.onSelectedCase(props.selectedCase.id)}>
+              <Sparkles size={14} />
+              <span>Run Selected Consistency Case</span>
+            </button>
+            <button type="button" onClick={props.onImportExternalSlab}>
+              <FileDown size={14} />
+              <span>Import Bundled External FDTD Slab Fixture</span>
+            </button>
+            <button type="button" onClick={props.onExport}>
+              <FileDown size={14} />
+              <span>Export Consistency Report</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="l94-route-card l94-method-matrix-card" aria-label="L9.6 consistency metrics">
+          <div className="maxwell-section-heading">
+            <h2>Residual Metrics</h2>
+            <strong>{props.selectedCase.metrics.length} rows</strong>
+          </div>
+          <div className="l94-matrix-table l96-metrics-table">
+            <div className="l94-matrix-row l94-matrix-header l96-metric-row">
+              <span>metric</span>
+              <span>A</span>
+              <span>B</span>
+              <span>residual</span>
+              <span>tol</span>
+              <span>status</span>
+            </div>
+            {props.selectedCase.metrics.map((metric) => (
+              <div className="l94-matrix-row l96-metric-row" key={metric.id} title={metric.note}>
+                <strong>{metric.label}</strong>
+                <span>{formatConsistencyValue(metric.valueA)}</span>
+                <span>{formatConsistencyValue(metric.valueB)}</span>
+                <span>{formatConsistencyValue(metric.residual)}</span>
+                <span>{formatConsistencyValue(metric.tolerance)}</span>
+                <span className={`l94-matrix-cell l94-cell-${metric.status === "PASS" ? "valid" : metric.status === "FAIL" ? "not-valid" : "external-only"}`}>{metric.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="l94-route-card" aria-label="L9.6 status summary">
+          <div className="maxwell-section-heading">
+            <h2>Status Categories</h2>
+            <strong>{props.bench.summary.total} cases</strong>
+          </div>
+          <div className="maxwell-study-list">
+            <Stat label="PASS" value={String(props.bench.summary.pass)} />
+            <Stat label="WARNING" value={String(props.bench.summary.warning)} />
+            <Stat label="FAIL" value={String(props.bench.summary.fail)} />
+            <Stat label="NOT COMPARABLE" value={String(props.bench.summary.notComparable)} />
+            <Stat label="NEEDS EXTERNAL EVIDENCE" value={String(props.bench.summary.needsExternalEvidence)} />
+          </div>
+          <div className="l94-export-list" aria-label="L9.6 consistency export filenames">
+            {exportNames.map((name) => (
+              <span key={name}>{name}</span>
+            ))}
+          </div>
+        </div>
+
+        <div className="l94-route-card" aria-label="L9.6 evidence and boundary">
+          <div className="maxwell-section-heading">
+            <h2>Evidence / Boundary</h2>
+            <strong>{props.selectedCase.requiredEvidence.length} required</strong>
+          </div>
+          <div className="l94-export-list" aria-label="L9.6 required evidence filenames">
+            {props.selectedCase.requiredEvidence.length ? props.selectedCase.requiredEvidence.map((item) => <span key={item}>{item}</span>) : <span>no external evidence required</span>}
+          </div>
+          <div className="fdtd-warning-list">
+            {props.selectedCase.evidenceTaskHashes.slice(0, 4).map((hashValue) => (
+              <span key={hashValue}><strong>task hash</strong> {hashValue.slice(0, 12)}</span>
+            ))}
+            {props.bench.boundary.slice(0, 4).map((boundary) => (
+              <span key={boundary}><strong>boundary</strong> {boundary}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function consistencyStatusClass(status: CrossSolverConsistencyStatus): "pass" | "warning" | "fail" {
+  if (status === "PASS") return "pass";
+  if (status === "FAIL") return "fail";
+  return "warning";
+}
+
+function formatConsistencyValue(value: number | null): string {
+  return value === null ? "n/a" : formatCompact(value);
 }
 
 function L94SolverRouterPanel(props: {

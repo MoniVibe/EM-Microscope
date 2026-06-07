@@ -47,6 +47,7 @@ export * from "./maxwell/coatingSearch";
 export * from "./maxwell/coatingStack";
 export * from "./maxwell/coatingUncertainty";
 export * from "./maxwell/coatingYield";
+export * from "./maxwell/crossSolverConsistency";
 export * from "./maxwell/designFoundry";
 export * from "./maxwell/externalFdtdBackend";
 export * from "./maxwell/fieldDatasetManifest";

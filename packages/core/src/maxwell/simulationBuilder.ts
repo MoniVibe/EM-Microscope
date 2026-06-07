@@ -171,9 +171,10 @@ export type SimulationBuilderValidationInput = {
 };
 
 export const l80SimulationBuilderBoundary = [
-  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, L8.7 robust-design guidance, L8.8 engineering evidence dossier reporting, L9.4 solver-router method selection, and L9.5 solver-router evidence task auto-pack only.",
+  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, L8.7 robust-design guidance, L8.8 engineering evidence dossier reporting, L9.4 solver-router method selection, L9.5 solver-router evidence task auto-pack, and L9.6 cross-solver consistency diagnostics only.",
   "L9.5 Solver Router Evidence Auto-Pack turns L9.4 route decisions for PlanarTmmBackend, scalar propagation, bounded 1D RCWA preview, bounded 2D FDTD CPU/WebGPU diagnostics, external FDTD evidence, or unsupported/scaffold routes into deterministic evidence tasks, artifact lists, validation plans, exports, and campaign-promotion metadata.",
-  "L9.5 is not automatic solver correctness proof, certified solver selection, arbitrary 3D Maxwell execution, FEM/BEM implementation, production RCWA/FDTD certification, external solver replacement, digital twin behavior, or manufacturing certification.",
+  "L9.6 Cross-Solver Consistency Bench compares only overlapping solver lanes with declared residuals, assumptions, status categories, evidence hashes, and report exports.",
+  "L9.5/L9.6 are not automatic solver correctness proof, certified solver selection, arbitrary 3D Maxwell execution, FEM/BEM implementation, production RCWA/FDTD certification, external solver replacement, digital twin behavior, or manufacturing certification.",
   "L8.5.1 element inspector editing changes placement, dimensions, material metadata, custom monitors, and workflow state only; it does not add new physics.",
   "L8.6 process/tolerance variation runs deterministic one-at-a-time, grid, seeded sample, and external FDTD sweep receipt workflows over the current editable scene; it is not certified tolerancing or auto redesign.",
   "L8.7 robust design recommendations compare recentering, tolerance-budget, and candidate-grid actions over existing L8.6 evidence; they are not automatic final design approval or full inverse design.",
@@ -209,7 +210,8 @@ export const l80ReleaseTrail = [
   { milestone: "L8.7", label: "Robust Design Advisor", runnable: "ranked design actions, candidate comparison, tolerance budget, and external FDTD candidate sweep receipts" },
   { milestone: "L8.8", label: "Engineering Evidence Campaign", runnable: "golden scenario dossier, convergence review, tolerance/robust summaries, and capability truth table exports" },
   { milestone: "L9.4", label: "Solver Router / Method Selection Matrix", runnable: "scene classification, recommended solver, alternatives, route actions, method matrix, and route report exports" },
-  { milestone: "L9.5", label: "Solver Router Evidence Auto-Pack", runnable: "deterministic evidence task generation, route-specific artifacts, promotion metadata, and evidence exports" }
+  { milestone: "L9.5", label: "Solver Router Evidence Auto-Pack", runnable: "deterministic evidence task generation, route-specific artifacts, promotion metadata, and evidence exports" },
+  { milestone: "L9.6", label: "Cross-Solver Consistency Bench", runnable: "overlap-case residuals, status categories, evidence hashes, and report exports" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -662,10 +664,22 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       evidence: "L9.5 promotes task, route, scene hashes, warnings, and limitations to Engineering Evidence Campaign handoff metadata"
     },
     {
+      id: "cross-solver-consistency-bench",
+      label: "Cross-solver consistency bench",
+      status: "executable" as const,
+      evidence: "L9.6 compares overlapping solver lanes for TMM/RCWA no-pattern, CPU/WebGPU FDTD parity, scalar-vs-2D FDTD aperture diagnostics, external FDTD slab evidence, absorber consistency, missing external grating evidence, and non-comparable guardrails"
+    },
+    {
+      id: "cross-solver-consistency-export",
+      label: "Cross-solver consistency export",
+      status: "executable" as const,
+      evidence: "L9.6 exports cross_solver_consistency_report.md/json, consistency_metrics.csv, solver_pair_residuals.csv, and consistency_assumptions.csv with case hashes and preserved L9.5 evidence task hashes"
+    },
+    {
       id: "automatic-certified-solver-selection",
       label: "Automatic certified solver selection",
       status: "not-implemented" as const,
-      evidence: "L9.5 packages evidence tasks from a recommended method and lists validation needs; it does not prove correctness or certify solver selection"
+      evidence: "L9.5 packages evidence tasks and L9.6 compares overlap residuals from recommended lanes; neither proves correctness nor certifies solver selection"
     },
     {
       id: "fem-bem-route",

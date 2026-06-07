@@ -549,9 +549,10 @@ describe("solver disclosure copy", () => {
     expect(maxwellPanel).not.toMatch(/general 3D Maxwell solver ready|full 3D FEM Maxwell solver|arbitrary CAD Maxwell solved|production FEM\/BEM\/RCWA|3D Maxwell solve executed|full 3D Maxwell aperture solver|FDTD aperture solved|real thick lens solved|full stochastic 3D Maxwell simulated|real source statistics engine executed|certified calibration service|digital twin certified|manufacturing certified|EMVA compliant|pixel-level sensor stack executable|certified EMVA characterization executable|certified ISO 12233 result|Imatest-equivalent result|pure lens-only MTF certified|calibrated optical model fitting implemented|certified metrology report executable|lab accreditation workflow executable|hardware control implemented|AprilTag detector executable|ArUco detector executable/i);
   });
 
-  it("keeps the visible app shell focused on L9.5 solver evidence packs with L9.4 routing, L9.3 RCWA, L9.2 FDTD, L8.9 external run ingestion, and earlier diagnostics still reachable", () => {
+  it("keeps the visible app shell focused on L9.6 cross-solver consistency with L9.5 evidence packs, L9.4 routing, L9.3 RCWA, L9.2 FDTD, L8.9 external run ingestion, and earlier diagnostics still reachable", () => {
     const app = readFileSync(resolve(testDir, "App.tsx"), "utf8");
     const simulationBuilder = readFileSync(resolve(testDir, "maxwell/SimulationBuilderPanel.tsx"), "utf8");
+    const crossSolverConsistency = readFileSync(resolve(testDir, "../../../packages/core/src/maxwell/crossSolverConsistency.ts"), "utf8");
     const solverRouter = readFileSync(resolve(testDir, "../../../packages/core/src/maxwell/solverRouter.ts"), "utf8");
     const solverEvidence = readFileSync(resolve(testDir, "../../../packages/core/src/maxwell/solverEvidence.ts"), "utf8");
     const fdtd2dSandbox = readFileSync(resolve(testDir, "maxwell/Fdtd2dSandboxPanel.tsx"), "utf8");
@@ -564,13 +565,14 @@ describe("solver disclosure copy", () => {
     const l93Smoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l93_browser_smoke_code.js"), "utf8");
     const l94Smoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l94_browser_smoke_code.js"), "utf8");
     const l95Smoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l95_browser_smoke_code.js"), "utf8");
+    const l96Smoke = readFileSync(resolve(testDir, "../../../tools/fdtd/l96_browser_smoke_code.js"), "utf8");
     const maxwellReturn = app.indexOf("return <MaxwellOnlyApp />;");
     const legacyWorkspace = app.indexOf('<main className="workspace">');
 
     expect(app).toContain('aria-label="Maxwell simulator"');
-    expect(app).toContain("L9.5 Solver Router Evidence Auto-Pack / L9.4 Method Selection Matrix / L9.3 In-Browser 1D RCWA Preview / L9.2 WebGPU-Accelerated 2D FDTD Sandbox");
-    expect(app).toContain("Evidence Auto-Pack + Solver Router + RCWA Preview + 2D Maxwell Sandbox + Simulation Builder + External FDTD Evidence");
-    expect(app).toContain("L9.5 deterministic evidence auto-pack turns each L9.4 solver recommendation into route-specific evidence tasks");
+    expect(app).toContain("L9.6 Cross-Solver Consistency Bench / L9.5 Solver Router Evidence Auto-Pack / L9.4 Method Selection Matrix / L9.3 In-Browser 1D RCWA Preview");
+    expect(app).toContain("Cross-Solver Consistency + Evidence Auto-Pack + Solver Router + RCWA Preview + 2D Maxwell Sandbox + External FDTD Evidence");
+    expect(app).toContain("L9.6 compares overlapping solver lanes with deterministic residuals, status categories, report exports, and L9.5 evidence task hashes");
     expect(app).toContain("L9.4 method selection, L9.3 bounded 1D periodic RCWA preview, and L9.2 bounded 2D TMz FDTD diagnostics remain available");
     expect(app).toContain("without claiming automatic correctness proof or solver certification");
     expect(app).toContain("2D Maxwell Sandbox");
@@ -596,10 +598,39 @@ describe("solver disclosure copy", () => {
     expect(rcwaPanel).toContain("not production RCWA certification");
     expect(rcwaPanel).toContain("not arbitrary 3D Maxwell");
     expect(rcwaPanel).toContain("not FEM/BEM");
-    expect(simulationBuilder).toContain("L9.5 Simulation Builder + Solver Evidence Auto-Pack + 2D Sandbox Handoff");
+    expect(simulationBuilder).toContain("L9.6 Simulation Builder + Cross-Solver Consistency + Evidence Auto-Pack");
+    expect(simulationBuilder).toContain("L9.6 Cross-Solver Consistency Bench");
+    expect(simulationBuilder).toContain("L9.6 cross-solver consistency bench smoke preview");
+    expect(simulationBuilder).toContain("PASS");
+    expect(simulationBuilder).toContain("WARNING");
+    expect(simulationBuilder).toContain("NOT COMPARABLE");
+    expect(simulationBuilder).toContain("NEEDS EXTERNAL EVIDENCE");
+    expect(simulationBuilder).toContain("cross_solver_consistency_report.md");
+    expect(simulationBuilder).toContain("cross_solver_consistency_report.json");
+    expect(simulationBuilder).toContain("consistency_metrics.csv");
+    expect(simulationBuilder).toContain("solver_pair_residuals.csv");
+    expect(simulationBuilder).toContain("consistency_assumptions.csv");
+    expect(simulationBuilder).toContain("Import Bundled External FDTD Slab Fixture");
+    expect(simulationBuilder).toContain("Export Consistency Report");
     expect(simulationBuilder).toContain("L9.5 Solver Router Evidence Auto-Pack / L9.4 Method Selection Matrix");
     expect(simulationBuilder).toContain("Solver Recommendation");
     expect(simulationBuilder).toContain("Evidence Pack");
+    expect(crossSolverConsistency).toContain("L9.6 Cross-Solver Consistency Bench");
+    expect(crossSolverConsistency).toContain("TMM vs RCWA no-pattern consistency");
+    expect(crossSolverConsistency).toContain("CPU FDTD vs WebGPU FDTD parity");
+    expect(crossSolverConsistency).toContain("Scalar aperture vs 2D FDTD diagnostic");
+    expect(crossSolverConsistency).toContain("TMM/Fresnel vs external FDTD slab");
+    expect(crossSolverConsistency).toContain("Absorber consistency");
+    expect(crossSolverConsistency).toContain("RCWA vs external FDTD grating fixture");
+    expect(crossSolverConsistency).toContain("tmm-rcwa-no-pattern");
+    expect(crossSolverConsistency).toContain("fdtd-cpu-webgpu-parity");
+    expect(crossSolverConsistency).toContain("scalar-fdtd-aperture");
+    expect(crossSolverConsistency).toContain("tmm-external-fdtd-slab");
+    expect(crossSolverConsistency).toContain("absorber-consistency");
+    expect(crossSolverConsistency).toContain("NEEDS EXTERNAL EVIDENCE");
+    expect(crossSolverConsistency).toContain("NOT COMPARABLE");
+    expect(crossSolverConsistency).toContain("does not add a solver or new optical physics");
+    expect(crossSolverConsistency).toContain("does not prove universal solver correctness");
     expect(solverEvidence).toContain("Generate Evidence Pack");
     expect(solverEvidence).toContain("Run In-Browser Checks");
     expect(solverEvidence).toContain("Export Evidence Bundle");
@@ -642,6 +673,7 @@ describe("solver disclosure copy", () => {
     expect(solverEvidence).toContain("promoteSolverEvidenceTaskToCampaign");
     expect(solverEvidence).toContain("L9.5 does not certify solver selection");
     expect(simulationBuilder).toContain("bounded L9.2 2D FDTD sandbox handoff");
+    expect(simulationBuilder).toContain("The L9.6 bench compares overlapping solver lanes only and does not prove solver correctness");
     expect(simulationBuilder).toContain("The L9.5 evidence auto-pack generates route evidence tasks only, not automatic correctness proof");
     expect(simulationBuilder).toContain("The L9.4 router is method selection only");
     expect(simulationBuilder).toContain("The L9.2 sandbox is capped 2D TMz only with CPU reference stepping, optional WebGPU acceleration, parity/performance diagnostics");
@@ -924,6 +956,8 @@ describe("solver disclosure copy", () => {
     expect(fdtdReadme).toContain("l94_browser_smoke_code.js");
     expect(fdtdReadme).toContain("L9.5 smoke artifacts");
     expect(fdtdReadme).toContain("l95_browser_smoke_code.js");
+    expect(fdtdReadme).toContain("L9.6 smoke artifacts");
+    expect(fdtdReadme).toContain("l96_browser_smoke_code.js");
     expect(l88aSmoke).toContain("l88a-two-view-labels-smoke.png");
     expect(l88aSmoke).toContain("l88a-axis-z-drag-smoke.png");
     expect(l88aSmoke).toContain("l88a-xz-edit-handles-smoke.png");
@@ -960,6 +994,14 @@ describe("solver disclosure copy", () => {
     expect(l95Smoke).toContain("l95-evidence-external-smoke.png");
     expect(l95Smoke).toContain("l95-evidence-unsupported-smoke.png");
     expect(l95Smoke).toContain("l95-evidence-promotion-smoke.png");
+    expect(l96Smoke).toContain("l96-cross-solver-overview-smoke.png");
+    expect(l96Smoke).toContain("l96-cross-solver-tmm-rcwa-smoke.png");
+    expect(l96Smoke).toContain("l96-cross-solver-fdtd-parity-smoke.png");
+    expect(l96Smoke).toContain("l96-cross-solver-external-slab-smoke.png");
+    expect(l96Smoke).toContain("l96-cross-solver-report-export-smoke.png");
+    expect(l96Smoke).toContain("TMM vs RCWA no-pattern consistency");
+    expect(l96Smoke).toContain("CPU FDTD vs WebGPU FDTD parity");
+    expect(l96Smoke).toContain("NEEDS EXTERNAL EVIDENCE");
     expect(simulationBuilder).not.toMatch(/full 3D Maxwell execution is implemented|browser FDTD execution is available|FDTD execution is available in the browser|automatic correctness proof is complete|automatic correctness proof implemented|solver correctness certified|certified solver selection implemented|production RCWA certified|production FDTD certified|production RCWA\/FDTD certification implemented|FEM\/BEM route implemented|digital twin certified|manufacturing certification available/i);
     expect(maxwellReturn).toBeGreaterThan(0);
     expect(maxwellReturn).toBeLessThan(legacyWorkspace);

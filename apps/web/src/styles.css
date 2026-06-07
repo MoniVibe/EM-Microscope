@@ -3497,6 +3497,20 @@ button.l94-matrix-row:focus-visible {
   overflow-wrap: anywhere;
 }
 
+.l96-metrics-table {
+  overflow-x: visible;
+}
+
+.l96-metrics-table .l96-metric-row {
+  min-width: 0;
+  grid-template-columns: minmax(140px, 1.35fr) repeat(5, minmax(0, 0.75fr));
+}
+
+.l96-metrics-table .l96-metric-row > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .l85-action-row {
   gap: 8px;
   align-items: center;
