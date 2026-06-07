@@ -3626,6 +3626,420 @@ h2 {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+.advisor-packet-panel {
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #c8d1dd;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.advisor-packet-heading p {
+  margin-top: 4px;
+  color: #59687b;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.advisor-packet-boundary span {
+  overflow-wrap: anywhere;
+}
+
+.advisor-packet-workflow {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.advisor-packet-workflow span {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #d4deea;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #3f4e64;
+  font-size: 11px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.advisor-packet-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.35fr) minmax(0, 0.65fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.advisor-packet-sidebar,
+.advisor-packet-main {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.advisor-packet-preset-detail {
+  display: grid;
+  gap: 5px;
+  padding: 9px;
+  border: 1px solid #d6e0ea;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.advisor-packet-preset-detail strong {
+  color: #172338;
+  font-size: 13px;
+}
+
+.advisor-packet-preset-detail span {
+  color: #536175;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.advisor-packet-example-list,
+.advisor-packet-scene-list {
+  min-width: 0;
+  max-height: 420px;
+  display: grid;
+  gap: 6px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.advisor-packet-scene-list strong {
+  color: #40506a;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.advisor-packet-example-check,
+.advisor-packet-scene-list label {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 7px;
+  align-items: start;
+  padding: 7px;
+  border: 1px solid #e0e7ef;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #40506a;
+  font-size: 12px;
+}
+
+.advisor-packet-example-check.active {
+  border-color: #0b7788;
+  background: #eefbfd;
+}
+
+.advisor-packet-example-check span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.advisor-packet-example-check strong,
+.advisor-packet-example-check em,
+.advisor-packet-scene-list span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.advisor-packet-example-check em {
+  color: #607086;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 750;
+}
+
+.advisor-packet-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.advisor-packet-card {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.advisor-packet-summary {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.advisor-packet-summary h3,
+.advisor-packet-card-heading h3 {
+  margin: 0;
+  color: #172338;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.advisor-packet-summary p {
+  margin: 4px 0 0;
+  color: #536175;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.advisor-packet-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.advisor-packet-card-heading strong {
+  color: #172338;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.advisor-packet-two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.advisor-packet-checks,
+.advisor-packet-export-grid,
+.advisor-packet-gap-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.advisor-packet-check {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  padding: 7px;
+  border: 1px solid #d6e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #40506a;
+  font-size: 11px;
+}
+
+.advisor-packet-check strong,
+.advisor-packet-check em {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.advisor-packet-check em {
+  font-style: normal;
+  font-weight: 800;
+}
+
+.advisor-packet-check-complete {
+  border-color: #98c6a1;
+  background: #f1faf3;
+}
+
+.advisor-packet-check-warning {
+  border-color: #dec27d;
+  background: #fff8e6;
+}
+
+.advisor-packet-check-missing {
+  border-color: #d9a2a2;
+  background: #fff2f2;
+}
+
+.advisor-packet-check-not-applicable {
+  color: #68778e;
+}
+
+.advisor-packet-export-grid button {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-start;
+  padding: 7px;
+  border: 1px solid #ccd6e4;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #172338;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.advisor-packet-export-grid button span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.advisor-packet-claim-table {
+  display: grid;
+  gap: 6px;
+}
+
+.advisor-packet-claim-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 122px minmax(0, 0.75fr);
+  gap: 8px;
+  align-items: start;
+  padding: 8px;
+  border: 1px solid #d6e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #40506a;
+  font-size: 12px;
+}
+
+.advisor-packet-claim-row strong,
+.advisor-packet-claim-row span,
+.advisor-packet-claim-row em {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.advisor-packet-claim-row em {
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-style: normal;
+  font-weight: 850;
+  text-align: center;
+}
+
+.advisor-packet-claim-supported em {
+  border: 1px solid #98c6a1;
+  background: #f1faf3;
+  color: #205b34;
+}
+
+.advisor-packet-claim-diagnostic em {
+  border: 1px solid #dec27d;
+  background: #fff8e6;
+  color: #765414;
+}
+
+.advisor-packet-claim-unsupported em,
+.advisor-packet-claim-not-implemented em {
+  border: 1px solid #d9a2a2;
+  background: #fff2f2;
+  color: #8b3030;
+}
+
+.advisor-packet-scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.advisor-packet-scenario-card {
+  min-width: 0;
+  min-height: 150px;
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: 10px;
+  border: 1px solid #d6e0ea;
+  border-radius: 6px;
+  background: #fbfdff;
+}
+
+.advisor-packet-scenario-card span {
+  color: #5b697d;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.advisor-packet-scenario-card strong {
+  color: #172338;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.advisor-packet-scenario-card p {
+  margin: 0;
+  color: #536175;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.advisor-packet-scenario-card div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.advisor-packet-scenario-card em {
+  border: 1px solid #c8d1dd;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #f4f7fb;
+  color: #40506a;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.advisor-packet-scenario-card span,
+.advisor-packet-scenario-card strong,
+.advisor-packet-scenario-card p,
+.advisor-packet-scenario-card em {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.advisor-packet-gap {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: start;
+  padding: 8px;
+  border: 1px solid #d9a2a2;
+  border-radius: 6px;
+  background: #fff8f8;
+  color: #40506a;
+  font-size: 12px;
+}
+
+.advisor-packet-gap span {
+  grid-column: 2 / -1;
+  color: #6a3b00;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.advisor-packet-gap strong,
+.advisor-packet-gap em,
+.advisor-packet-gap span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.advisor-packet-gap em {
+  color: #8b3030;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 850;
+}
+
 .l94-preset-row {
   display: flex;
   flex-wrap: wrap;
@@ -5223,6 +5637,15 @@ button.l88-scenario-row.active {
   .l97-step-grid,
   .l97-option-grid,
   .l97-recommendation-grid,
+  .advisor-packet-workflow,
+  .advisor-packet-layout,
+  .advisor-packet-stat-grid,
+  .advisor-packet-summary,
+  .advisor-packet-two-col,
+  .advisor-packet-checks,
+  .advisor-packet-export-grid,
+  .advisor-packet-claim-row,
+  .advisor-packet-gap-grid,
   .example-library-controls,
   .example-library-layout,
   .example-library-meta,

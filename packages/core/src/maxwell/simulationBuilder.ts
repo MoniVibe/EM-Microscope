@@ -171,12 +171,13 @@ export type SimulationBuilderValidationInput = {
 };
 
 export const l80SimulationBuilderBoundary = [
-  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, L8.7 robust-design guidance, L8.8 engineering evidence dossier reporting, L9.4 solver-router method selection, L9.5 solver-router evidence task auto-pack, L9.6 cross-solver consistency diagnostics, L9.7 simulation intake guidance, and L9.8 guided example library starter packs only.",
+  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, L8.7 robust-design guidance, L8.8 engineering evidence dossier reporting, L9.4 solver-router method selection, L9.5 solver-router evidence task auto-pack, L9.6 cross-solver consistency diagnostics, L9.7 simulation intake guidance, L9.8 guided example library starter packs, and L9.9 advisor review packet generation only.",
+  "L9.9 Advisor Review Packet / Evidence Dossier Generator packages selected examples/scenes, route decisions, evidence tasks, claim ledger rows, completeness warnings, unsupported gaps, review questions, and reproducibility receipts; it does not add optical physics.",
   "L9.8 Guided Example Library maps deterministic known experiment cards to existing L9.7 wizard answers, L9.4 routes, L9.5 evidence tasks, L9.6 consistency cases, RCWA/FDTD/diagnostic handoffs, exports, and unsupported gap reports; it does not add optical physics.",
   "L9.7 Solver Method Decision Wizard / Simulation Intake turns user intent into deterministic L9.4/L9.5/L9.6 routes, generated scene templates, evidence actions, unsupported gap reports, and decision exports; it does not add optical physics.",
   "L9.5 Solver Router Evidence Auto-Pack turns L9.4 route decisions for PlanarTmmBackend, scalar propagation, bounded 1D RCWA preview, bounded 2D FDTD CPU/WebGPU diagnostics, external FDTD evidence, or unsupported/scaffold routes into deterministic evidence tasks, artifact lists, validation plans, exports, and campaign-promotion metadata.",
   "L9.6 Cross-Solver Consistency Bench compares only overlapping solver lanes with declared residuals, assumptions, status categories, evidence hashes, and report exports.",
-  "L9.5/L9.6/L9.7/L9.8 are not automatic solver correctness proof, certified validation, certified solver selection, arbitrary 3D Maxwell execution, FEM/BEM implementation, production RCWA/FDTD certification, external solver replacement, digital twin behavior, or manufacturing certification.",
+  "L9.5/L9.6/L9.7/L9.8/L9.9 are not automatic solver correctness proof, certified validation, certified solver selection, arbitrary 3D Maxwell execution, FEM/BEM implementation, production RCWA/FDTD certification, external solver replacement, digital twin behavior, or manufacturing certification.",
   "L8.5.1 element inspector editing changes placement, dimensions, material metadata, custom monitors, and workflow state only; it does not add new physics.",
   "L8.6 process/tolerance variation runs deterministic one-at-a-time, grid, seeded sample, and external FDTD sweep receipt workflows over the current editable scene; it is not certified tolerancing or auto redesign.",
   "L8.7 robust design recommendations compare recentering, tolerance-budget, and candidate-grid actions over existing L8.6 evidence; they are not automatic final design approval or full inverse design.",
@@ -215,7 +216,8 @@ export const l80ReleaseTrail = [
   { milestone: "L9.5", label: "Solver Router Evidence Auto-Pack", runnable: "deterministic evidence task generation, route-specific artifacts, promotion metadata, and evidence exports" },
   { milestone: "L9.6", label: "Cross-Solver Consistency Bench", runnable: "overlap-case residuals, status categories, evidence hashes, and report exports" },
   { milestone: "L9.7", label: "Solver Method Decision Wizard / Simulation Intake", runnable: "guided intake, recommended workflow, scene templates, gap reports, and decision exports" },
-  { milestone: "L9.8", label: "Guided Example Library / Known Experiment Pack", runnable: "searchable examples, solver routes, wizard answers, evidence tasks, gap reports, and example exports" }
+  { milestone: "L9.8", label: "Guided Example Library / Known Experiment Pack", runnable: "searchable examples, solver routes, wizard answers, evidence tasks, gap reports, and example exports" },
+  { milestone: "L9.9", label: "Advisor Review Packet / Evidence Dossier Generator", runnable: "packet presets, claim ledger, completeness checks, gap table, review questions, receipts, and advisor packet exports" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -637,6 +639,30 @@ function surfaceValidationResult(input: {
 
 function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]): SimulationBuilderResult["capabilitySummary"] {
   const base = [
+    {
+      id: "advisor-review-packet",
+      label: "Advisor Review Packet",
+      status: "executable" as const,
+      evidence: "L9.9 generates deterministic advisor review dossiers with selected examples/scenes, solver routes, evidence tasks, claim ledger rows, completeness checks, gap tables, review questions, receipts, and Markdown/JSON/CSV/HTML exports"
+    },
+    {
+      id: "evidence-dossier-generation",
+      label: "Evidence dossier generation",
+      status: "executable" as const,
+      evidence: "L9.9 packages existing L9.8/L9.7/L9.6/L9.5/L8.9 evidence into review-ready reports without adding solver physics or certification claims"
+    },
+    {
+      id: "certified-validation-report",
+      label: "Certified validation report",
+      status: "not-implemented" as const,
+      evidence: "L9.9 exports advisor review packets only; certified validation, automatic correctness proof, and certified solver selection remain out of scope"
+    },
+    {
+      id: "automatic-correctness-proof",
+      label: "Automatic correctness proof",
+      status: "not-implemented" as const,
+      evidence: "Iteration count is not validation; L9.9 reports runnable evidence, references, residuals, convergence behavior, and limitations for advisor review"
+    },
     {
       id: "guided-example-library",
       label: "Guided Example Library",

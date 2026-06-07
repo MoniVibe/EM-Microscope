@@ -1,6 +1,6 @@
-# EMMicro L8.1-L8.9 External FDTD Helpers + L9.8 Example Library / L9.7 Simulation Intake / L9.6 Cross-Solver Consistency / L9.5 Evidence Auto-Pack / L9.4 Solver Router / L9.3 RCWA / L9.2 2D Sandbox Smoke
+# EMMicro L8.1-L8.9 External FDTD Helpers + L9.9 Advisor Packet / L9.8 Example Library / L9.7 Simulation Intake / L9.6 Cross-Solver Consistency / L9.5 Evidence Auto-Pack / L9.4 Solver Router / L9.3 RCWA / L9.2 2D Sandbox Smoke
 
-These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, the L8.8a two-view interaction hardening smoke flow, the L8.9 `Real External FDTD Run Ingestion` workflow, L9.0 browser smoke for the capped 2D FDTD sandbox, L9.1 browser smoke for validation/stability/convergence diagnostics, L9.2 browser smoke for optional WebGPU acceleration/fallback, CPU/GPU parity, and performance diagnostics, L9.3 browser smoke for the bounded 1D RCWA preview solver, L9.4 browser smoke for the Solver Router / Method Selection Matrix, L9.5 browser smoke for the Solver Router Evidence Auto-Pack, L9.6 browser smoke for the Cross-Solver Consistency Bench, L9.7 browser smoke for the Build My Simulation / Solver Method Decision Wizard, and L9.8 browser smoke for the Guided Example Library / Known Experiment Pack.
+These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, the L8.8a two-view interaction hardening smoke flow, the L8.9 `Real External FDTD Run Ingestion` workflow, L9.0 browser smoke for the capped 2D FDTD sandbox, L9.1 browser smoke for validation/stability/convergence diagnostics, L9.2 browser smoke for optional WebGPU acceleration/fallback, CPU/GPU parity, and performance diagnostics, L9.3 browser smoke for the bounded 1D RCWA preview solver, L9.4 browser smoke for the Solver Router / Method Selection Matrix, L9.5 browser smoke for the Solver Router Evidence Auto-Pack, L9.6 browser smoke for the Cross-Solver Consistency Bench, L9.7 browser smoke for the Build My Simulation / Solver Method Decision Wizard, L9.8 browser smoke for the Guided Example Library / Known Experiment Pack, and L9.9 browser smoke for the Advisor Review Packet / Evidence Dossier Generator.
 
 Scope:
 - The web app exports an EMMicro FDTD scene manifest and a deterministic Meep-style Python helper script.
@@ -25,9 +25,10 @@ Scope:
 - L9.6 cross-solver consistency smoke covers TMM/RCWA no-pattern consistency, CPU/WebGPU FDTD parity, scalar-vs-2D-FDTD aperture diagnostics, TMM/Fresnel-vs-external-FDTD slab evidence, absorber consistency, missing external grating evidence, non-comparable guardrails, status categories, evidence hashes, and cross-solver export filenames.
 - L9.7 simulation intake smoke covers guided Problem Type/Desired Output/Geometry/Materials/Rigor answers, deterministic route recommendations, generated templates, evidence-pack actions, consistency-bench linking, unsupported gap reporting, and decision export filenames.
 - L9.8 example library smoke covers searchable/filterable known examples, Airy/scalar, RCWA, 2D FDTD, external FDTD, unsupported gap examples, evidence pack generation, campaign handoff metadata, example report exports, and L9.7/L9.3/L9.2 regression visibility.
+- L9.9 advisor packet smoke covers packet presets, selected examples/scenes, claim ledger, completeness checker, gap table, advisor packet exports, and L9.8/L9.6/L9.3/L9.2 regression visibility.
 
 Not scope:
-- No automatic certified solver selection or solver correctness proof; L9.8 is a guided example starter library only, L9.7 is guided intake only, L9.6 is cross-solver consistency diagnostics only, L9.5 is evidence task packaging, and L9.4 is method recommendation only.
+- No automatic certified solver selection, certified validation, or solver correctness proof; L9.9 is advisor review packet reporting only, L9.8 is a guided example starter library only, L9.7 is guided intake only, L9.6 is cross-solver consistency diagnostics only, L9.5 is evidence task packaging, and L9.4 is method recommendation only.
 - No production browser FDTD execution; L9.2 is capped diagnostic 2D TMz only.
 - No required WebGPU; optional WebGPU acceleration falls back to CPU when unavailable or failed.
 - No arbitrary 2D-periodic RCWA, production RCWA certification, anisotropic/conical RCWA, or slanted/curved/freeform grating CAD solving; L9.3 is bounded 1D periodic preview only.
@@ -204,6 +205,15 @@ L9.8 smoke artifacts include:
 - `l98-fdtd-example-smoke.png`
 - `l98-external-fdtd-example-smoke.png`
 - `l98-gap-example-smoke.png`
+
+L9.9 smoke artifacts include:
+
+- `l99-advisor-packet-start-smoke.png`
+- `l99-physics-sanity-packet-smoke.png`
+- `l99-surface-geometry-packet-smoke.png`
+- `l99-claim-ledger-smoke.png`
+- `l99-completeness-check-smoke.png`
+- `l99-packet-export-smoke.png`
 
 L8.9 fixture manifest:
 
@@ -399,4 +409,13 @@ Playwright CLI smoke helper for L9.8 Guided Example Library / Known Experiment P
 ```powershell
 npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
 npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l98_browser_smoke_code.js
+```
+
+`l99_browser_smoke_code.js`
+
+Playwright CLI smoke helper for L9.9 Advisor Review Packet / Evidence Dossier Generator: preset switching, Physics Sanity packet generation, Surface Geometry packet generation, Solver Credibility packet evidence, Full Current-State packet exports, claim ledger, completeness checker, gap table, and L9.8/L9.6/L9.3/L9.2 regression visibility:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
+npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l99_browser_smoke_code.js
 ```

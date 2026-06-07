@@ -107,6 +107,7 @@ import { FitPanel } from "./measurement/FitPanel";
 import { ImageImportPanel } from "./measurement/ImageImportPanel";
 import { residualMapToPngDataUrl } from "./measurement/ResidualView";
 import { RoiPanel } from "./measurement/RoiPanel";
+import { AdvisorPacketPanel } from "./maxwell/AdvisorPacketPanel";
 import { ExampleLibraryPanel } from "./maxwell/ExampleLibraryPanel";
 import { Fdtd2dSandboxPanel } from "./maxwell/Fdtd2dSandboxPanel";
 import { MaxwellPanel } from "./maxwell/MaxwellPanel";
@@ -263,7 +264,7 @@ function downloadText(filename: string, mime: string, text: string): void {
 }
 
 function MaxwellOnlyApp() {
-  const [visibleMode, setVisibleMode] = useState<"examples" | "intake" | "builder" | "sandbox" | "rcwa" | "diagnostics">("examples");
+  const [visibleMode, setVisibleMode] = useState<"advisor" | "examples" | "intake" | "builder" | "sandbox" | "rcwa" | "diagnostics">("advisor");
   const [fdtd2dScene, setFdtd2dScene] = useState<Fdtd2dScene>(() => createFdtd2dScene());
   const [exampleWizardAnswers, setExampleWizardAnswers] = useState<SimulationIntakeAnswers | null>(null);
 
@@ -279,15 +280,18 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L9.8 Example Library / Known Experiment Pack / L9.7 Build My Simulation / L9.6 Cross-Solver Consistency Bench / L9.5 Evidence Auto-Pack</p>
+            <p>L9.9 Advisor Review Packet / Evidence Dossier / L9.8 Example Library / L9.7 Build My Simulation / L9.6 Cross-Solver Consistency Bench</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>Example Library + Build My Simulation + Cross-Solver Consistency + Evidence Auto-Pack + RCWA Preview + 2D Maxwell Sandbox</span>
-          <strong>L9.8 loads known starter examples into existing L9.7/L9.4/L9.5/L9.6/RCWA/FDTD/diagnostic workflows; it does not add solver physics, automatic correctness proof, certified validation, certified solver selection, or production RCWA/FDTD/FEM/BEM execution</strong>
+          <span>Advisor Review Packet + Example Library + Build My Simulation + Cross-Solver Consistency + Evidence Auto-Pack + RCWA Preview + 2D Maxwell Sandbox</span>
+          <strong>L9.9 packages current evidence into advisor review dossiers; it does not add solver physics, automatic correctness proof, certified validation, certified solver selection, or production RCWA/FDTD/FEM/BEM execution</strong>
         </div>
         <div className="top-actions simulation-mode-actions" aria-label="Top-level workflow mode">
+          <button type="button" className={visibleMode === "advisor" ? "active" : ""} onClick={() => setVisibleMode("advisor")}>
+            Advisor Review Packet
+          </button>
           <button type="button" className={visibleMode === "examples" ? "active" : ""} onClick={() => setVisibleMode("examples")}>
             Example Library
           </button>
@@ -311,6 +315,14 @@ function MaxwellOnlyApp() {
 
       <main className="maxwell-only-workspace" aria-label="Maxwell simulator">
         <div className="maxwell-only-main">
+          {visibleMode === "advisor" && (
+            <AdvisorPacketPanel
+              onOpenExampleLibrary={() => setVisibleMode("examples")}
+              onOpenSimulationBuilder={() => setVisibleMode("builder")}
+              onOpenRcwaPreview={() => setVisibleMode("rcwa")}
+              onOpenFdtdSandbox={() => setVisibleMode("sandbox")}
+            />
+          )}
           {visibleMode === "examples" && (
             <ExampleLibraryPanel
               onOpenWizardAnswers={openExampleWizardAnswers}
