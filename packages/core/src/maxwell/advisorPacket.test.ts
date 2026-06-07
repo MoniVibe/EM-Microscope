@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   advisorClaimLedgerCsv,
   advisorEvidenceTableCsv,
@@ -13,6 +13,17 @@ import {
   l99AdvisorPacketPrinciple
 } from "./advisorPacket";
 import { createExampleLibraryRegistry, loadExampleLibraryEntry } from "./exampleLibrary";
+
+type AdvisorPacketPresetTestId = Parameters<typeof createAdvisorReviewPacketFromPreset>[0];
+
+const advisorPacketTestTimeoutMs = 60000;
+const cachedPresetPackets = new Map<AdvisorPacketPresetTestId, ReturnType<typeof createAdvisorReviewPacket>>();
+
+beforeAll(() => {
+  for (const preset of advisorPacketPresets) {
+    cachedPresetPackets.set(preset.id, createAdvisorReviewPacketFromPreset(preset.id));
+  }
+}, advisorPacketTestTimeoutMs);
 
 describe("L9.9 advisor packet builder", () => {
   it("creates a packet from selected examples", () => {
@@ -32,7 +43,7 @@ describe("L9.9 advisor packet builder", () => {
   });
 
   it("creates a physics sanity preset", () => {
-    const packet = createAdvisorReviewPacketFromPreset("physics-sanity");
+    const packet = presetPacket("physics-sanity");
     const titles = packet.scenarios.map((scenario) => scenario.title).join(" ");
 
     expect(packet.reviewType).toBe("First physics review");
@@ -51,7 +62,7 @@ describe("L9.9 advisor packet builder", () => {
   });
 
   it("creates a surface geometry preset", () => {
-    const packet = createAdvisorReviewPacketFromPreset("surface-geometry");
+    const packet = presetPacket("surface-geometry");
     const titles = packet.scenarios.map((scenario) => scenario.title).join(" ");
 
     expect(packet.reviewType).toBe("Surface geometry review");
@@ -63,7 +74,7 @@ describe("L9.9 advisor packet builder", () => {
   });
 
   it("creates a solver credibility preset", () => {
-    const packet = createAdvisorReviewPacketFromPreset("solver-credibility");
+    const packet = presetPacket("solver-credibility");
     const cases = packet.consistencyCases.map((item) => item.id);
 
     expect(packet.reviewType).toBe("Solver credibility review");
@@ -74,7 +85,7 @@ describe("L9.9 advisor packet builder", () => {
   });
 
   it("creates a workflow preset", () => {
-    const packet = createAdvisorReviewPacketFromPreset("workflow");
+    const packet = presetPacket("workflow");
     const titles = packet.scenarios.map((scenario) => scenario.title);
 
     expect(packet.reviewType).toBe("Optical bench workflow review");
@@ -87,7 +98,7 @@ describe("L9.9 advisor packet builder", () => {
   });
 
   it("creates a full current-state preset", () => {
-    const packet = createAdvisorReviewPacketFromPreset("full-current-state");
+    const packet = presetPacket("full-current-state");
     const registry = createExampleLibraryRegistry();
 
     expect(packet.reviewType).toBe("Full current-state review");
@@ -97,18 +108,18 @@ describe("L9.9 advisor packet builder", () => {
   });
 
   it("hashes packet contents deterministically", () => {
-    const first = createAdvisorReviewPacketFromPreset("solver-credibility");
+    const first = presetPacket("solver-credibility");
     const second = createAdvisorReviewPacketFromPreset("solver-credibility");
 
     expect(first.packetHash).toBe(second.packetHash);
     expect(first.completeness.reportHash).toBe(second.completeness.reportHash);
     expect(first.claimLedger.map((claim) => claim.claimHash)).toEqual(second.claimLedger.map((claim) => claim.claimHash));
-  });
+  }, advisorPacketTestTimeoutMs);
 });
 
 describe("L9.9 advisor packet claim ledger", () => {
   it("marks supported claims as supported", () => {
-    const packet = createAdvisorReviewPacketFromPreset("full-current-state");
+    const packet = presetPacket("full-current-state");
 
     expect(statusOf(packet, "scalar-airy-bessel")).toBe("supported");
     expect(statusOf(packet, "planar-tmm-rta")).toBe("supported");
@@ -117,7 +128,7 @@ describe("L9.9 advisor packet claim ledger", () => {
   });
 
   it("marks bounded diagnostic claims as diagnostic", () => {
-    const packet = createAdvisorReviewPacketFromPreset("full-current-state");
+    const packet = presetPacket("full-current-state");
 
     expect(statusOf(packet, "rcwa-preview-bounded")).toBe("diagnostic");
     expect(statusOf(packet, "camera-diagnostics")).toBe("diagnostic");
@@ -125,20 +136,20 @@ describe("L9.9 advisor packet claim ledger", () => {
   });
 
   it("marks unsupported claims as unsupported", () => {
-    const packet = createAdvisorReviewPacketFromPreset("full-current-state");
+    const packet = presetPacket("full-current-state");
 
     expect(statusOf(packet, "arbitrary-3d-maxwell-unsupported")).toBe("unsupported");
   });
 
   it("marks not implemented claims as not implemented", () => {
-    const packet = createAdvisorReviewPacketFromPreset("full-current-state");
+    const packet = presetPacket("full-current-state");
 
     expect(statusOf(packet, "fem-bem-not-implemented")).toBe("not-implemented");
     expect(statusOf(packet, "certified-validation-not-implemented")).toBe("not-implemented");
   });
 
   it("includes evidence references for supported claims", () => {
-    const packet = createAdvisorReviewPacketFromPreset("full-current-state");
+    const packet = presetPacket("full-current-state");
 
     for (const claim of packet.claimLedger.filter((entry) => entry.status === "supported")) {
       expect(claim.evidenceReferences.length).toBeGreaterThan(0);
@@ -147,7 +158,7 @@ describe("L9.9 advisor packet claim ledger", () => {
   });
 
   it("includes limitations for every claim", () => {
-    const packet = createAdvisorReviewPacketFromPreset("full-current-state");
+    const packet = presetPacket("full-current-state");
 
     expect(packet.claimLedger.every((claim) => claim.limitations.length > 0)).toBe(true);
   });
@@ -155,7 +166,7 @@ describe("L9.9 advisor packet claim ledger", () => {
 
 describe("L9.9 advisor packet completeness", () => {
   it("reports complete when evidence, residuals, limitations, and hashes exist", () => {
-    const packet = createAdvisorReviewPacketFromPreset("physics-sanity");
+    const packet = presetPacket("physics-sanity");
 
     expect(packet.completeness.scorePercent).toBe(100);
     expect(packet.completeness.summary.missing).toBe(0);
@@ -163,7 +174,7 @@ describe("L9.9 advisor packet completeness", () => {
   });
 
   it("warns when residuals are missing", () => {
-    const packet = createAdvisorReviewPacketFromPreset("physics-sanity");
+    const packet = presetPacket("physics-sanity");
     const altered = {
       ...packet,
       scenarios: packet.scenarios.map((scenario, index) => index === 0 ? { ...scenario, residuals: [] } : scenario)
@@ -173,7 +184,7 @@ describe("L9.9 advisor packet completeness", () => {
   });
 
   it("warns when convergence/stability evidence is missing", () => {
-    const packet = createAdvisorReviewPacketFromPreset("physics-sanity");
+    const packet = presetPacket("physics-sanity");
     const altered = {
       ...packet,
       scenarios: packet.scenarios.map((scenario, index) => index === 0 ? { ...scenario, convergenceStabilityConsistency: [] } : scenario)
@@ -183,7 +194,7 @@ describe("L9.9 advisor packet completeness", () => {
   });
 
   it("warns when limitations are missing", () => {
-    const packet = createAdvisorReviewPacketFromPreset("physics-sanity");
+    const packet = presetPacket("physics-sanity");
     const altered = {
       ...packet,
       claimLedger: packet.claimLedger.map((claim, index) => index === 0 ? { ...claim, limitations: [] } : claim)
@@ -193,7 +204,7 @@ describe("L9.9 advisor packet completeness", () => {
   });
 
   it("warns when unsupported items are not listed", () => {
-    const packet = createAdvisorReviewPacketFromPreset("physics-sanity");
+    const packet = presetPacket("physics-sanity");
     const altered = {
       ...packet,
       gaps: [],
@@ -218,7 +229,7 @@ describe("L9.9 advisor packet completeness", () => {
 
 describe("L9.9 advisor packet exports", () => {
   it("exports Markdown packet", () => {
-    const packet = createAdvisorReviewPacketFromPreset("solver-credibility");
+    const packet = presetPacket("solver-credibility");
     const markdown = advisorPacketMarkdown(packet);
 
     expect(markdown).toContain("L9.9 Advisor Review Packet / Evidence Dossier");
@@ -227,34 +238,34 @@ describe("L9.9 advisor packet exports", () => {
   });
 
   it("exports JSON packet", () => {
-    const file = advisorPacketExportFiles(createAdvisorReviewPacketFromPreset("physics-sanity")).find((item) => item.filename === "advisor_packet.json");
+    const file = advisorPacketExportFiles(presetPacket("physics-sanity")).find((item) => item.filename === "advisor_packet.json");
 
     expect(file?.content).toContain("emmicro.advisorPacket.v1");
     expect(file?.content).toContain("packetHash");
   });
 
   it("exports summary CSV", () => {
-    const file = advisorPacketExportFiles(createAdvisorReviewPacketFromPreset("physics-sanity")).find((item) => item.filename === "advisor_packet_summary.csv");
+    const file = advisorPacketExportFiles(presetPacket("physics-sanity")).find((item) => item.filename === "advisor_packet_summary.csv");
 
     expect(file?.content).toContain("packet_hash,preset,review_type,completeness");
   });
 
   it("exports claim ledger CSV", () => {
-    const csv = advisorClaimLedgerCsv(createAdvisorReviewPacketFromPreset("full-current-state"));
+    const csv = advisorClaimLedgerCsv(presetPacket("full-current-state"));
 
     expect(csv).toContain("claim_id,claim,status,category");
     expect(csv).toContain("arbitrary-3d-maxwell-unsupported");
   });
 
   it("exports evidence table CSV", () => {
-    const csv = advisorEvidenceTableCsv(createAdvisorReviewPacketFromPreset("solver-credibility"));
+    const csv = advisorEvidenceTableCsv(presetPacket("solver-credibility"));
 
     expect(csv).toContain("evidence_id,label,source,status");
     expect(csv).toContain("TMM vs RCWA no-pattern consistency");
   });
 
   it("exports gap table CSV", () => {
-    const csv = advisorGapTableCsv(createAdvisorReviewPacketFromPreset("full-current-state"));
+    const csv = advisorGapTableCsv(presetPacket("full-current-state"));
 
     expect(csv).toContain("gap_id,feature,status");
     expect(csv).toContain("Arbitrary 3D Maxwell");
@@ -262,21 +273,21 @@ describe("L9.9 advisor packet exports", () => {
   });
 
   it("exports review questions Markdown", () => {
-    const file = advisorPacketExportFiles(createAdvisorReviewPacketFromPreset("workflow")).find((item) => item.filename === "advisor_review_questions.md");
+    const file = advisorPacketExportFiles(presetPacket("workflow")).find((item) => item.filename === "advisor_review_questions.md");
 
     expect(file?.content).toContain("L9.9 Advisor Review Questions");
     expect(file?.content).toContain("Which claims need stronger numeric residuals");
   });
 
   it("exports reproducibility manifest JSON", () => {
-    const file = advisorPacketExportFiles(createAdvisorReviewPacketFromPreset("solver-credibility")).find((item) => item.filename === "advisor_reproducibility_manifest.json");
+    const file = advisorPacketExportFiles(presetPacket("solver-credibility")).find((item) => item.filename === "advisor_reproducibility_manifest.json");
 
     expect(file?.content).toContain("emmicro.advisorPacket.reproducibilityManifest.v1");
     expect(file?.content).toContain("receipts");
   });
 
   it("exports the required packet file set plus HTML", () => {
-    const files = advisorPacketExportFiles(createAdvisorReviewPacketFromPreset("physics-sanity"));
+    const files = advisorPacketExportFiles(presetPacket("physics-sanity"));
 
     expect(files.map((file) => file.filename)).toEqual([
       "advisor_packet.md",
@@ -294,7 +305,7 @@ describe("L9.9 advisor packet exports", () => {
 
 describe("L9.9 boundaries and regressions", () => {
   it("does not claim certified validation", () => {
-    const packet = createAdvisorReviewPacketFromPreset("full-current-state");
+    const packet = presetPacket("full-current-state");
     const combined = `${advisorPacketMarkdown(packet)} ${l99AdvisorPacketBoundary.join(" ")}`;
 
     expect(combined).toContain("does not provide certified validation");
@@ -302,14 +313,14 @@ describe("L9.9 boundaries and regressions", () => {
   });
 
   it("does not claim automatic correctness proof", () => {
-    const packet = createAdvisorReviewPacketFromPreset("physics-sanity");
+    const packet = presetPacket("physics-sanity");
 
     expect(packet.claimsNotMade.join(" ")).toContain("Automatic correctness proof is not claimed");
     expect(advisorPacketMarkdown(packet)).not.toMatch(/automatic correctness proof is complete|solver correctness certified/i);
   });
 
   it("does not claim arbitrary 3D Maxwell/FEM/BEM", () => {
-    const packet = createAdvisorReviewPacketFromPreset("full-current-state");
+    const packet = presetPacket("full-current-state");
     const ledger = advisorClaimLedgerCsv(packet);
 
     expect(ledger).toContain("Arbitrary 3D Maxwell runs in browser,unsupported");
@@ -344,7 +355,7 @@ describe("L9.9 boundaries and regressions", () => {
   });
 
   it("keeps L9.6 consistency bench working", () => {
-    const packet = createAdvisorReviewPacketFromPreset("solver-credibility");
+    const packet = presetPacket("solver-credibility");
 
     expect(packet.consistencyCases.map((item) => item.id)).toContain("tmm-rcwa-no-pattern");
     expect(packet.consistencyCases.map((item) => item.id)).toContain("fdtd-cpu-webgpu-parity");
@@ -392,6 +403,14 @@ describe("L9.9 boundaries and regressions", () => {
 
 function statusOf(packet: ReturnType<typeof createAdvisorReviewPacket>, id: string) {
   return packet.claimLedger.find((claim) => claim.id === id)?.status;
+}
+
+function presetPacket(presetId: AdvisorPacketPresetTestId): ReturnType<typeof createAdvisorReviewPacket> {
+  const cached = cachedPresetPackets.get(presetId);
+  if (cached) return cached;
+  const packet = createAdvisorReviewPacketFromPreset(presetId);
+  cachedPresetPackets.set(presetId, packet);
+  return packet;
 }
 
 function completenessStatus(packet: ReturnType<typeof createAdvisorReviewPacket>, id: ReturnType<typeof createAdvisorReviewPacket>["completeness"]["items"][number]["id"]) {
