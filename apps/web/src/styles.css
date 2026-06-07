@@ -3289,6 +3289,92 @@ h2 {
   margin-bottom: 12px;
 }
 
+.l97-intake-panel {
+  margin-bottom: 12px;
+}
+
+.l97-step-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.l97-option-group {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #ccd6e2;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.l97-option-group:last-child {
+  grid-column: 1 / -1;
+}
+
+.l97-option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.l97-option-grid button {
+  min-width: 0;
+  min-height: 58px;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: 8px 9px;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.l97-option-grid button strong,
+.l97-option-grid button span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.l97-option-grid button strong {
+  color: #102742;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.l97-option-grid button span {
+  color: #5c6b80;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.l97-option-grid button.active {
+  border-color: #0b7788;
+  background: #e8f7f8;
+  color: #0b4f5b;
+  box-shadow: 0 0 0 1px rgba(11, 119, 136, 0.22);
+}
+
+.l97-recommendation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.l97-recommendation-card {
+  grid-column: 1 / -1;
+}
+
+.l97-action-list {
+  gap: 8px;
+}
+
+.l97-export-list {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .l94-preset-row {
   display: flex;
   flex-wrap: wrap;
@@ -4883,6 +4969,9 @@ button.l88-scenario-row.active {
   .fdtd-verification-controls,
   .surface-cross-section-legend,
   .simulation-field-grid,
+  .l97-step-grid,
+  .l97-option-grid,
+  .l97-recommendation-grid,
   .l94-router-grid,
   .l94-alternative-row,
   .l94-compact-list > div,

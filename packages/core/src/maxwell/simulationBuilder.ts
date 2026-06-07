@@ -171,10 +171,11 @@ export type SimulationBuilderValidationInput = {
 };
 
 export const l80SimulationBuilderBoundary = [
-  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, L8.7 robust-design guidance, L8.8 engineering evidence dossier reporting, L9.4 solver-router method selection, L9.5 solver-router evidence task auto-pack, and L9.6 cross-solver consistency diagnostics only.",
+  "Limited ordered optical-bench validation over grid/source/elements/target/compute/validate plus L8.5 multi-element scene orchestration, L8.6 diagnostic process/tolerance variation, L8.7 robust-design guidance, L8.8 engineering evidence dossier reporting, L9.4 solver-router method selection, L9.5 solver-router evidence task auto-pack, L9.6 cross-solver consistency diagnostics, and L9.7 simulation intake guidance only.",
+  "L9.7 Solver Method Decision Wizard / Simulation Intake turns user intent into deterministic L9.4/L9.5/L9.6 routes, generated scene templates, evidence actions, unsupported gap reports, and decision exports; it does not add optical physics.",
   "L9.5 Solver Router Evidence Auto-Pack turns L9.4 route decisions for PlanarTmmBackend, scalar propagation, bounded 1D RCWA preview, bounded 2D FDTD CPU/WebGPU diagnostics, external FDTD evidence, or unsupported/scaffold routes into deterministic evidence tasks, artifact lists, validation plans, exports, and campaign-promotion metadata.",
   "L9.6 Cross-Solver Consistency Bench compares only overlapping solver lanes with declared residuals, assumptions, status categories, evidence hashes, and report exports.",
-  "L9.5/L9.6 are not automatic solver correctness proof, certified solver selection, arbitrary 3D Maxwell execution, FEM/BEM implementation, production RCWA/FDTD certification, external solver replacement, digital twin behavior, or manufacturing certification.",
+  "L9.5/L9.6/L9.7 are not automatic solver correctness proof, certified solver selection, arbitrary 3D Maxwell execution, FEM/BEM implementation, production RCWA/FDTD certification, external solver replacement, digital twin behavior, or manufacturing certification.",
   "L8.5.1 element inspector editing changes placement, dimensions, material metadata, custom monitors, and workflow state only; it does not add new physics.",
   "L8.6 process/tolerance variation runs deterministic one-at-a-time, grid, seeded sample, and external FDTD sweep receipt workflows over the current editable scene; it is not certified tolerancing or auto redesign.",
   "L8.7 robust design recommendations compare recentering, tolerance-budget, and candidate-grid actions over existing L8.6 evidence; they are not automatic final design approval or full inverse design.",
@@ -211,7 +212,8 @@ export const l80ReleaseTrail = [
   { milestone: "L8.8", label: "Engineering Evidence Campaign", runnable: "golden scenario dossier, convergence review, tolerance/robust summaries, and capability truth table exports" },
   { milestone: "L9.4", label: "Solver Router / Method Selection Matrix", runnable: "scene classification, recommended solver, alternatives, route actions, method matrix, and route report exports" },
   { milestone: "L9.5", label: "Solver Router Evidence Auto-Pack", runnable: "deterministic evidence task generation, route-specific artifacts, promotion metadata, and evidence exports" },
-  { milestone: "L9.6", label: "Cross-Solver Consistency Bench", runnable: "overlap-case residuals, status categories, evidence hashes, and report exports" }
+  { milestone: "L9.6", label: "Cross-Solver Consistency Bench", runnable: "overlap-case residuals, status categories, evidence hashes, and report exports" },
+  { milestone: "L9.7", label: "Solver Method Decision Wizard / Simulation Intake", runnable: "guided intake, recommended workflow, scene templates, gap reports, and decision exports" }
 ] as const;
 
 export function defaultSimulationBuilderScenario(): SimulationBuilderScenario {
@@ -640,6 +642,18 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       evidence: "L8.5.1 ordered source/elements/target/monitor scene graph, element inspector editing, solver plan, scalar preview, external FDTD handoff, and validation report exports"
     },
     {
+      id: "simulation-intake-wizard",
+      label: "Solver Method Decision Wizard / Simulation Intake",
+      status: "executable" as const,
+      evidence: "L9.7 guides Problem Type, Desired Output, Geometry, Materials, and Rigor/Evidence answers into deterministic L9.4 route decisions, L9.5 evidence tasks, L9.6 consistency cases, generated templates, and unsupported gap reports"
+    },
+    {
+      id: "simulation-intake-decision-export",
+      label: "Simulation intake decision export",
+      status: "executable" as const,
+      evidence: "L9.7 exports simulation_decision_report.md/json, simulation_decision_matrix.csv, generated_scene_template.json, and wizard_answers.json without adding solver physics or certifying solver choice"
+    },
+    {
       id: "solver-router-method-selection",
       label: "Solver Router / Method Selection Matrix",
       status: "executable" as const,
@@ -679,7 +693,7 @@ function simulationBuilderCapabilitySummary(elements: SimulationBuilderElement[]
       id: "automatic-certified-solver-selection",
       label: "Automatic certified solver selection",
       status: "not-implemented" as const,
-      evidence: "L9.5 packages evidence tasks and L9.6 compares overlap residuals from recommended lanes; neither proves correctness nor certifies solver selection"
+      evidence: "L9.7 guides intake, L9.5 packages evidence tasks, and L9.6 compares overlap residuals from recommended lanes; none proves correctness or certifies solver selection"
     },
     {
       id: "fem-bem-route",

@@ -261,7 +261,7 @@ function downloadText(filename: string, mime: string, text: string): void {
 }
 
 function MaxwellOnlyApp() {
-  const [visibleMode, setVisibleMode] = useState<"builder" | "sandbox" | "rcwa" | "diagnostics">("builder");
+  const [visibleMode, setVisibleMode] = useState<"intake" | "builder" | "sandbox" | "rcwa" | "diagnostics">("intake");
   const [fdtd2dScene, setFdtd2dScene] = useState<Fdtd2dScene>(() => createFdtd2dScene());
 
   return (
@@ -271,15 +271,18 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L9.6 Cross-Solver Consistency Bench / L9.5 Solver Router Evidence Auto-Pack / L9.4 Method Selection Matrix / L9.3 In-Browser 1D RCWA Preview</p>
+            <p>L9.7 Build My Simulation / Solver Method Decision Wizard / L9.6 Cross-Solver Consistency Bench / L9.5 Solver Router Evidence Auto-Pack / L9.4 Method Selection Matrix</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>Cross-Solver Consistency + Evidence Auto-Pack + Solver Router + RCWA Preview + 2D Maxwell Sandbox + External FDTD Evidence</span>
-          <strong>L9.6 compares overlapping solver lanes with deterministic residuals, status categories, report exports, and L9.5 evidence task hashes; L9.5 evidence packs, L9.4 method selection, L9.3 bounded 1D periodic RCWA preview, and L9.2 bounded 2D TMz FDTD diagnostics remain available without claiming automatic correctness proof or solver certification</strong>
+          <span>Build My Simulation + Solver Decision Wizard + Cross-Solver Consistency + Evidence Auto-Pack + RCWA Preview + 2D Maxwell Sandbox</span>
+          <strong>L9.7 guides problem intake into existing L9.4/L9.5/L9.6 workbenches and exports decision reports/templates; it does not add solver physics, automatic correctness proof, certified solver selection, or production RCWA/FDTD/FEM/BEM execution</strong>
         </div>
         <div className="top-actions simulation-mode-actions" aria-label="Top-level workflow mode">
+          <button type="button" className={visibleMode === "intake" ? "active" : ""} onClick={() => setVisibleMode("intake")}>
+            Build My Simulation
+          </button>
           <button type="button" className={visibleMode === "builder" ? "active" : ""} onClick={() => setVisibleMode("builder")}>
             Simulation Builder
           </button>
@@ -297,7 +300,7 @@ function MaxwellOnlyApp() {
 
       <main className="maxwell-only-workspace" aria-label="Maxwell simulator">
         <div className="maxwell-only-main">
-          {visibleMode === "builder" && (
+          {(visibleMode === "intake" || visibleMode === "builder") && (
             <SimulationBuilderPanel
               onOpenRcwaPreview={() => setVisibleMode("rcwa")}
               onOpenDiagnosticWorkbenches={() => setVisibleMode("diagnostics")}

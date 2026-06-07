@@ -35,7 +35,9 @@ import {
   createSurfaceGeometryScene,
   createTransparentFdtdExampleBundle,
   createTransparentFdtdExampleScenario,
+  createSimulationIntakeDecision,
   defaultOpticalBenchScenario,
+  defaultSimulationIntakeAnswers,
   defaultSimulationBuilderScenario,
   defaultToleranceMetrics,
   defaultToleranceThresholds,
@@ -113,6 +115,16 @@ import {
   solverPairResidualsCsv,
   solverEvidenceBundleFiles,
   solverEvidencePromotionJson,
+  simulationIntakeDecisionMatrixCsv,
+  simulationIntakeDecisionReportJson,
+  simulationIntakeDecisionReportMarkdown,
+  simulationIntakeGeneratedTemplateJson,
+  simulationIntakeGeometryOptions,
+  simulationIntakeMaterialOptions,
+  simulationIntakeOutputOptions,
+  simulationIntakeProblemOptions,
+  simulationIntakeRigorOptions,
+  simulationIntakeWizardAnswersJson,
   simulationBuilderToFdtd2dSandbox,
   crossSolverConsistencyReportJson,
   crossSolverConsistencyReportMarkdown,
@@ -205,6 +217,10 @@ import {
   type SimulationBuilderSource,
   type SimulationBuilderTarget,
   type SimulationBuilderTargetKind,
+  type SimulationIntakeAction,
+  type SimulationIntakeAnswers,
+  type SimulationIntakeDecision,
+  type SimulationIntakeOption,
   type MethodMatrixFeatureId,
   type MethodMatrixRow,
   type SolverRouteAction,
@@ -356,6 +372,10 @@ export function SimulationBuilderPanel(
   const [l95GeneratedTask, setL95GeneratedTask] = useState<SolverEvidenceTask | null>(null);
   const [l95Promotion, setL95Promotion] = useState<SolverEvidenceCampaignPromotion | null>(null);
   const [l96SelectedCaseId, setL96SelectedCaseId] = useState<CrossSolverConsistencyCaseId>("tmm-rcwa-no-pattern");
+  const [l97Answers, setL97Answers] = useState<SimulationIntakeAnswers>(() => defaultSimulationIntakeAnswers);
+  const [l97CreatedTemplateHash, setL97CreatedTemplateHash] = useState<string | null>(null);
+  const [l97GeneratedEvidenceHash, setL97GeneratedEvidenceHash] = useState<string | null>(null);
+  const [l97ExportedDecisionHash, setL97ExportedDecisionHash] = useState<string | null>(null);
   const [l85SnapStepMm, setL85SnapStepMm] = useState(0.5);
   const [xzGeometryMode, setXzGeometryMode] = useState<XzGeometryMode>("inspect");
   const [l85History, setL85History] = useState<OpticalBenchHistoryState>(() => createOpticalBenchHistory(defaultOpticalBenchScenario()));
@@ -392,6 +412,7 @@ export function SimulationBuilderPanel(
   const [apertureFieldSlice, setApertureFieldSlice] = useState<FdtdFieldSlice | null>(null);
   const [apertureImportError, setApertureImportError] = useState<string | null>(null);
   const result = useMemo(() => runSimulationBuilderScenario(scenario), [scenario]);
+  const l97Decision = useMemo(() => createSimulationIntakeDecision(l97Answers), [l97Answers]);
   const l94CurrentScene = useMemo(() => classifySimulationBuilderScenario(scenario), [scenario]);
   const l94RouteScene = useMemo(() => (l94RoutePreset === "current" ? l94CurrentScene : createSolverRouteExampleScene(l94RoutePreset)), [l94CurrentScene, l94RoutePreset]);
   const l94RouteDecision = useMemo(() => routeSolverScene(l94RouteScene), [l94RouteScene]);
@@ -484,6 +505,94 @@ export function SimulationBuilderPanel(
   const l88Warnings = useMemo(() => (l88Summary ? validateEngineeringEvidenceCampaign(l88Manifest, l88Summary) : []), [l88Manifest, l88Summary]);
   const zMin = Math.min(scenario.grid.zStartMm, ...result.axis.map((node) => node.zMm));
   const zMax = Math.max(scenario.observationPlaneZMm, scenario.grid.zEndMm, ...result.axis.map((node) => node.zMm));
+
+  function updateL97Answers(patch: Partial<Omit<SimulationIntakeAnswers, "schema">>): void {
+    setL97Answers((current) => ({ ...current, ...patch, schema: "emmicro.simulationIntake.answers.v1" }));
+    setL97CreatedTemplateHash(null);
+    setL97GeneratedEvidenceHash(null);
+    setL97ExportedDecisionHash(null);
+  }
+
+  function loadL97BuilderTemplate(next: SimulationBuilderScenario): void {
+    setScenario(next);
+    setL85History(createOpticalBenchHistory(next));
+    setSelectedL85({ kind: "element", id: next.elements[0]?.id ?? "source" });
+    setL86Variations(defaultToleranceVariationSpecs(next));
+    setL86Thresholds(defaultToleranceThresholds());
+    setL86FdtdSummary(null);
+    setL86FdtdImportError(null);
+    setL87Permissions([]);
+    setL87FdtdSummary(null);
+    setL87FdtdImportError(null);
+    setHasComputed(true);
+    setHasL85ScalarPreview(true);
+    setHasL85ExternalEvidence(true);
+    setSurfaceGeometryExample(null);
+    setL88Summary(null);
+    setL88ImportError(null);
+    setL89RunBundle(null);
+    setL89Promotion(null);
+    setL89ImportError(null);
+    setImportedFdtd(null);
+    setFdtdImportError(null);
+    setL94RoutePreset("current");
+    clearApertureEvidence();
+  }
+
+  function applyL97SceneTemplate(): void {
+    const template = l97Decision.generatedTemplate;
+    setL97CreatedTemplateHash(template.templateHash);
+    if (template.fdtd2dScene) {
+      props.onExportSandboxScene?.(template.fdtd2dScene);
+      return;
+    }
+    if (template.simulationBuilderScenario) {
+      loadL97BuilderTemplate(template.simulationBuilderScenario);
+      return;
+    }
+    if (template.rcwaPreviewSpec) props.onOpenRcwaPreview?.();
+  }
+
+  function exportL97DecisionReports(): void {
+    downloadText("simulation_decision_report.md", "text/markdown", `${simulationIntakeDecisionReportMarkdown(l97Decision)}\n`);
+    downloadText("simulation_decision_report.json", "application/json", simulationIntakeDecisionReportJson(l97Decision));
+    downloadText("simulation_decision_matrix.csv", "text/csv", `${simulationIntakeDecisionMatrixCsv(l97Decision)}\n`);
+    downloadText("generated_scene_template.json", "application/json", simulationIntakeGeneratedTemplateJson(l97Decision.generatedTemplate));
+    downloadText("wizard_answers.json", "application/json", simulationIntakeWizardAnswersJson(l97Decision.answers));
+    setL97ExportedDecisionHash(l97Decision.decisionHash);
+  }
+
+  function handleL97Action(action: SimulationIntakeAction): void {
+    if (!action.enabled) return;
+    if (action.id === "create-scene-template") {
+      applyL97SceneTemplate();
+      return;
+    }
+    if (action.id === "open-recommended-solver") {
+      if (l97Decision.routeDecision.recommendedSolver === "rcwa-1d-preview") props.onOpenRcwaPreview?.();
+      else if (l97Decision.generatedTemplate.fdtd2dScene) props.onExportSandboxScene?.(l97Decision.generatedTemplate.fdtd2dScene);
+      else if (l97Decision.generatedTemplate.simulationBuilderScenario) loadL97BuilderTemplate(l97Decision.generatedTemplate.simulationBuilderScenario);
+      else props.onOpenDiagnosticWorkbenches?.();
+      return;
+    }
+    if (action.id === "generate-evidence-pack") {
+      setL97GeneratedEvidenceHash(l97Decision.evidenceTask.taskHash);
+      exportL95EvidenceBundle(l97Decision.evidenceTask);
+      return;
+    }
+    if (action.id === "open-consistency-bench") {
+      const firstCase = l97Decision.consistencyCaseIds[0];
+      if (firstCase) setL96SelectedCaseId(firstCase);
+      return;
+    }
+    if (action.id === "export-decision-report") {
+      exportL97DecisionReports();
+      return;
+    }
+    if (action.id === "show-unsupported-gap-report") {
+      exportL97DecisionReports();
+    }
+  }
 
   function updateGrid<K extends keyof SimulationBuilderGrid>(key: K, value: SimulationBuilderGrid[K]): void {
     setScenario((current) => ({ ...current, grid: { ...current.grid, [key]: value } }));
@@ -1434,20 +1543,30 @@ export function SimulationBuilderPanel(
   }
 
   return (
-    <section className="wave-panel simulation-builder-panel" aria-label="L9.6 Simulation Builder cross-solver consistency router">
+    <section className="wave-panel simulation-builder-panel" aria-label="L9.7 Simulation Builder decision wizard cross-solver consistency router">
       <div className="maxwell-section-heading simulation-builder-title">
-        <h2>L9.6 Simulation Builder + Cross-Solver Consistency + Evidence Auto-Pack</h2>
+        <h2>L9.7 Build My Simulation + Solver Method Decision Wizard</h2>
         <strong className={`maxwell-l72-status maxwell-l72-status-${result.validation.status}`}>{result.validation.status.toUpperCase()}</strong>
       </div>
 
       <div className="l2-disclosure">
-        <strong>Simulation Builder</strong>
+        <strong>Build My Simulation</strong>
         <span>
-          Define grid density, source, as many ordered z-axis elements as needed, target geometry, monitors, L9.6 cross-solver consistency diagnostics, L9.5 evidence task generation, L9.4 solver recommendation, scalar multi-plane preview, a bounded L9.2 2D FDTD sandbox handoff exporting fdtd2d_sandbox_scene.json and fdtd2d_sandbox_handoff.json, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, real external FDTD run ingestion and reproducibility reports, precise numeric edits, optional diagram drag, and a validation report.
-          The L9.6 bench compares overlapping solver lanes only and does not prove solver correctness. The L9.5 evidence auto-pack generates route evidence tasks only, not automatic correctness proof. The L9.4 router is method selection only. The L9.2 sandbox is capped 2D TMz only with CPU reference stepping, optional WebGPU acceleration, parity/performance diagnostics, and stability, validation, boundary, and convergence diagnostics. Arbitrary 3D Maxwell material geometry/CAD solving, production FDTD, required WebGPU execution, FDTD/FEM/BEM/RCWA execution beyond the bounded 1D RCWA preview and bounded 2D sandbox, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
+          Start from a guided L9.7 simulation intake, then continue into the existing L9.4 route recommendation, L9.5 evidence task generation, L9.6 cross-solver consistency diagnostics, scalar multi-plane preview, bounded L9.2 2D FDTD sandbox handoff exporting fdtd2d_sandbox_scene.json and fdtd2d_sandbox_handoff.json, diagnostic process/tolerance variation studies, robust-design recommendations, engineering evidence campaign dossiers, real external FDTD run ingestion and reproducibility reports, precise numeric edits, optional diagram drag, and validation reports.
+          L9.7 is a deterministic decision wizard only; it does not add a new solver. The L9.6 bench compares overlapping solver lanes only and does not prove solver correctness. The L9.5 evidence auto-pack generates route evidence tasks only, not automatic correctness proof. The L9.4 router is method selection only. The L9.2 sandbox is capped 2D TMz only with CPU reference stepping, optional WebGPU acceleration, parity/performance diagnostics, and stability, validation, boundary, and convergence diagnostics. Arbitrary 3D Maxwell material geometry/CAD solving, production FDTD, required WebGPU execution, FDTD/FEM/BEM/RCWA execution beyond the bounded 1D RCWA preview and bounded 2D sandbox, real curved material lens solving, certified validation, full inverse design, automatic final design approval, sensor-stack EM, digital twin behavior, and manufacturing
           certification are not implemented.
         </span>
       </div>
+
+      <L97SimulationIntakeWizardPanel
+        decision={l97Decision}
+        answers={l97Answers}
+        createdTemplateHash={l97CreatedTemplateHash}
+        generatedEvidenceHash={l97GeneratedEvidenceHash}
+        exportedDecisionHash={l97ExportedDecisionHash}
+        onAnswers={updateL97Answers}
+        onAction={handleL97Action}
+      />
 
       <div className="simulation-stepper" aria-label="Simulation Builder ordered steps">
         {stepLabels.map(([step, label]) => (
@@ -2745,6 +2864,184 @@ export function SimulationBuilderPanel(
         </div>
       </div>
     </section>
+  );
+}
+
+function L97SimulationIntakeWizardPanel(props: {
+  decision: SimulationIntakeDecision;
+  answers: SimulationIntakeAnswers;
+  createdTemplateHash: string | null;
+  generatedEvidenceHash: string | null;
+  exportedDecisionHash: string | null;
+  onAnswers: (patch: Partial<Omit<SimulationIntakeAnswers, "schema">>) => void;
+  onAction: (action: SimulationIntakeAction) => void;
+}) {
+  const templateCreated = props.createdTemplateHash === props.decision.generatedTemplate.templateHash;
+  const evidenceGenerated = props.generatedEvidenceHash === props.decision.evidenceTask.taskHash;
+  const decisionExported = props.exportedDecisionHash === props.decision.decisionHash;
+  const unsupportedGap = props.decision.generatedTemplate.unsupportedGap;
+
+  return (
+    <div className="maxwell-workspace-panel simulation-builder-card simulation-builder-wide l97-intake-panel" aria-label="L9.7 Build My Simulation wizard smoke preview">
+      <div className="maxwell-section-heading">
+        <h2>L9.7 Solver Method Decision Wizard / Simulation Intake</h2>
+        <strong className={`maxwell-l72-status maxwell-l72-status-${props.decision.routeDecision.status === "unsupported" ? "fail" : props.decision.routeDecision.status === "ready" ? "pass" : "warning"}`}>
+          {props.decision.recommendedWorkflow.routeStatus}
+        </strong>
+      </div>
+      <div className="l2-disclosure">
+        <strong>Build My Simulation</strong>
+        <span>
+          Choose the problem, output, geometry, material behavior, and evidence level. The wizard routes to existing L9.4/L9.5/L9.6 workbenches, generates templates and reports, and keeps unsupported requests visible as gap reports.
+        </span>
+      </div>
+
+      <div className="l97-step-grid" aria-label="L9.7 intake wizard steps">
+        <L97OptionGroup
+          label="Problem Type"
+          activeId={props.answers.problemType}
+          options={simulationIntakeProblemOptions}
+          onSelect={(problemType) => props.onAnswers({ problemType })}
+        />
+        <L97OptionGroup
+          label="Desired Output"
+          activeId={props.answers.desiredOutput}
+          options={simulationIntakeOutputOptions}
+          onSelect={(desiredOutput) => props.onAnswers({ desiredOutput })}
+        />
+        <L97OptionGroup
+          label="Geometry"
+          activeId={props.answers.geometry}
+          options={simulationIntakeGeometryOptions}
+          onSelect={(geometry) => props.onAnswers({ geometry })}
+        />
+        <L97OptionGroup
+          label="Materials"
+          activeId={props.answers.material}
+          options={simulationIntakeMaterialOptions}
+          onSelect={(material) => props.onAnswers({ material })}
+        />
+        <L97OptionGroup
+          label="Rigor / Evidence Level"
+          activeId={props.answers.rigor}
+          options={simulationIntakeRigorOptions}
+          onSelect={(rigor) => props.onAnswers({ rigor })}
+        />
+      </div>
+
+      <div className="l97-recommendation-grid" aria-label="L9.7 Recommendation">
+        <div className="l94-route-card l94-route-primary l97-recommendation-card">
+          <div className="maxwell-section-heading">
+            <h2>Recommendation</h2>
+            <strong>{props.decision.recommendedWorkflow.solverLabel}</strong>
+          </div>
+          <div className="maxwell-study-list">
+            <Stat label="Recommended solver" value={props.decision.recommendedWorkflow.solverLabel} />
+            <Stat label="Workbench" value={props.decision.recommendedWorkflow.workbenchLabel} />
+            <Stat label="Evidence task" value={props.decision.recommendedWorkflow.evidenceLabel} />
+            <Stat label="Generated template" value={props.decision.generatedTemplate.label} />
+            <Stat label="Decision hash" value={props.decision.decisionHash.slice(0, 10)} />
+            <Stat label="L9.6 checks" value={props.decision.consistencyCaseIds.join(", ") || "none"} />
+          </div>
+          <div className="fdtd-warning-list l94-route-reasons">
+            {props.decision.why.slice(0, 4).map((reason) => (
+              <span key={reason}><strong>why</strong> {reason}</span>
+            ))}
+            {props.decision.assumptions.slice(0, 4).map((assumption) => (
+              <span key={assumption}><strong>assumption</strong> {assumption}</span>
+            ))}
+            {props.decision.limitations.slice(0, 4).map((limitation) => (
+              <span key={limitation}><strong>limit</strong> {limitation}</span>
+            ))}
+          </div>
+          <div className="maxwell-layer-actions simulation-builder-actions l94-action-list l97-action-list" aria-label="L9.7 wizard actions">
+            {props.decision.nextActions.map((action) => (
+              <button type="button" key={action.id} disabled={!action.enabled} title={action.reason} onClick={() => props.onAction(action)}>
+                {action.target === "export" || action.target === "gap" ? <FileDown size={14} /> : <Sparkles size={14} />}
+                <span>{action.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="l94-route-card" aria-label="L9.7 evidence and export state">
+          <div className="maxwell-section-heading">
+            <h2>Decision Exports</h2>
+            <strong>{decisionExported ? "exported" : "ready"}</strong>
+          </div>
+          <div className="maxwell-study-list">
+            <Stat label="Scene template" value={templateCreated ? "created" : props.decision.generatedTemplate.kind} />
+            <Stat label="Evidence pack" value={evidenceGenerated ? "generated" : props.decision.evidenceTask.taskType} />
+            <Stat label="Route" value={props.decision.routeDecision.recommendedSolver} />
+            <Stat label="Route hash" value={props.decision.routeDecision.resultHash.slice(0, 10)} />
+          </div>
+          <div className="l94-export-list l97-export-list" aria-label="L9.7 decision export filenames">
+            <span>simulation_decision_report.md</span>
+            <span>simulation_decision_report.json</span>
+            <span>simulation_decision_matrix.csv</span>
+            <span>generated_scene_template.json</span>
+            <span>wizard_answers.json</span>
+          </div>
+        </div>
+
+        <div className="l94-route-card" aria-label="L9.7 validation checks">
+          <div className="maxwell-section-heading">
+            <h2>Validation Checks</h2>
+            <strong>{props.decision.validationChecks.length}</strong>
+          </div>
+          <div className="l94-compact-list">
+            {props.decision.validationChecks.slice(0, 5).map((check) => (
+              <div key={check.id}>
+                <strong>{check.label}</strong>
+                <span>{check.status}</span>
+                <small>{check.description}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="l94-route-card" aria-label="L9.7 unsupported gap report">
+          <div className="maxwell-section-heading">
+            <h2>Unsupported Gap Report</h2>
+            <strong>{props.decision.unsupportedItems.length || (unsupportedGap ? "gap" : "clear")}</strong>
+          </div>
+          <div className="fdtd-warning-list">
+            {props.decision.unsupportedItems.length > 0 ? (
+              props.decision.unsupportedItems.map((item) => <span key={item}><strong>unsupported</strong> {item}</span>)
+            ) : (
+              <span><strong>unsupported</strong> No unsupported item detected for this intake.</span>
+            )}
+            {unsupportedGap?.requiredFutureSolvers.map((solver) => <span key={solver}><strong>future solver</strong> {solver}</span>)}
+            {unsupportedGap?.safeApproximations.slice(0, 3).map((approximation) => <span key={approximation}><strong>safe approximation</strong> {approximation}</span>)}
+            <span><strong>boundary</strong> L9.7 is workflow guidance only and does not certify solver selection or execute arbitrary 3D Maxwell/FDTD/FEM/BEM work.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function L97OptionGroup<TId extends string>(props: {
+  label: string;
+  activeId: TId;
+  options: Array<SimulationIntakeOption<TId>>;
+  onSelect: (id: TId) => void;
+}) {
+  return (
+    <div className="l97-option-group" aria-label={`L9.7 ${props.label}`}>
+      <div className="maxwell-section-heading">
+        <h2>{props.label}</h2>
+        <strong>{props.options.find((option) => option.id === props.activeId)?.label ?? props.activeId}</strong>
+      </div>
+      <div className="l97-option-grid">
+        {props.options.map((option) => (
+          <button type="button" key={option.id} className={props.activeId === option.id ? "active" : ""} title={option.description} onClick={() => props.onSelect(option.id)}>
+            <strong>{option.label}</strong>
+            <span>{option.description}</span>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 

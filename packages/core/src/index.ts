@@ -73,6 +73,7 @@ export * from "./maxwell/solverRegistry";
 export * from "./maxwell/solverEvidence";
 export * from "./maxwell/solverRouter";
 export * from "./maxwell/simulationBuilder";
+export * from "./maxwell/simulationIntakeWizard";
 export * from "./metrics/resolutionTargetMetrics";
 export * from "./metrics/slantedEdgeSfr";
 export * from "./metrics/targetContrast2d";

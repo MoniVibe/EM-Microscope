@@ -1,6 +1,6 @@
-# EMMicro L8.1-L8.9 External FDTD Helpers + L9.6 Cross-Solver Consistency / L9.5 Evidence Auto-Pack / L9.4 Solver Router / L9.3 RCWA / L9.2 2D Sandbox Smoke
+# EMMicro L8.1-L8.9 External FDTD Helpers + L9.7 Simulation Intake / L9.6 Cross-Solver Consistency / L9.5 Evidence Auto-Pack / L9.4 Solver Router / L9.3 RCWA / L9.2 2D Sandbox Smoke
 
-These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, the L8.8a two-view interaction hardening smoke flow, the L8.9 `Real External FDTD Run Ingestion` workflow, L9.0 browser smoke for the capped 2D FDTD sandbox, L9.1 browser smoke for validation/stability/convergence diagnostics, L9.2 browser smoke for optional WebGPU acceleration/fallback, CPU/GPU parity, and performance diagnostics, L9.3 browser smoke for the bounded 1D RCWA preview solver, L9.4 browser smoke for the Solver Router / Method Selection Matrix, L9.5 browser smoke for the Solver Router Evidence Auto-Pack, and L9.6 browser smoke for the Cross-Solver Consistency Bench.
+These tools support the L8.1 `External FDTD / Field Maps` workflow, the L8.2 `FDTD Verification Suite`, the L8.3 `Surface Geometry Interaction Starter Set`, the L8.4 `Aperture / Blocker Edge-Diffraction Validation` workbench, the L8.5 `Multi-Element Optical Bench Propagation Chain`, the L8.5.1 `Element Inspector + Direct Optical Bench Editing` workbench, the L8.6 `Process / Tolerance Runner`, the L8.7 `Robust Design Advisor`, the L8.8 `Engineering Evidence Campaign`, the L8.8a two-view interaction hardening smoke flow, the L8.9 `Real External FDTD Run Ingestion` workflow, L9.0 browser smoke for the capped 2D FDTD sandbox, L9.1 browser smoke for validation/stability/convergence diagnostics, L9.2 browser smoke for optional WebGPU acceleration/fallback, CPU/GPU parity, and performance diagnostics, L9.3 browser smoke for the bounded 1D RCWA preview solver, L9.4 browser smoke for the Solver Router / Method Selection Matrix, L9.5 browser smoke for the Solver Router Evidence Auto-Pack, L9.6 browser smoke for the Cross-Solver Consistency Bench, and L9.7 browser smoke for the Build My Simulation / Solver Method Decision Wizard.
 
 Scope:
 - The web app exports an EMMicro FDTD scene manifest and a deterministic Meep-style Python helper script.
@@ -23,9 +23,10 @@ Scope:
 - L9.4 solver-router smoke covers deterministic scene classification, recommended solver, alternatives, assumptions, limitations, validation checks, route-specific actions, method selection matrix, route report export filenames, unsupported/scaffold handling, and L9.3/L9.2/L8.9/L8.8 regression visibility.
 - L9.5 evidence auto-pack smoke covers route-specific evidence task generation for TMM, scalar, RCWA, 2D FDTD, external FDTD, and unsupported/gap routes; evidence artifact filenames; validation-plan/export filenames; external run-pack/import/receipt actions; campaign promotion metadata; and L9.4/L9.3/L9.2/L8.9/L8.8 regression visibility.
 - L9.6 cross-solver consistency smoke covers TMM/RCWA no-pattern consistency, CPU/WebGPU FDTD parity, scalar-vs-2D-FDTD aperture diagnostics, TMM/Fresnel-vs-external-FDTD slab evidence, absorber consistency, missing external grating evidence, non-comparable guardrails, status categories, evidence hashes, and cross-solver export filenames.
+- L9.7 simulation intake smoke covers guided Problem Type/Desired Output/Geometry/Materials/Rigor answers, deterministic route recommendations, generated templates, evidence-pack actions, consistency-bench linking, unsupported gap reporting, and decision export filenames.
 
 Not scope:
-- No automatic certified solver selection or solver correctness proof; L9.6 is cross-solver consistency diagnostics only, L9.5 is evidence task packaging, and L9.4 is method recommendation only.
+- No automatic certified solver selection or solver correctness proof; L9.7 is guided intake only, L9.6 is cross-solver consistency diagnostics only, L9.5 is evidence task packaging, and L9.4 is method recommendation only.
 - No production browser FDTD execution; L9.2 is capped diagnostic 2D TMz only.
 - No required WebGPU; optional WebGPU acceleration falls back to CPU when unavailable or failed.
 - No arbitrary 2D-periodic RCWA, production RCWA certification, anisotropic/conical RCWA, or slanted/curved/freeform grating CAD solving; L9.3 is bounded 1D periodic preview only.
@@ -185,6 +186,14 @@ L9.6 smoke artifacts include:
 - `l96-cross-solver-fdtd-parity-smoke.png`
 - `l96-cross-solver-external-slab-smoke.png`
 - `l96-cross-solver-report-export-smoke.png`
+
+L9.7 smoke artifacts include:
+
+- `l97-wizard-start-smoke.png`
+- `l97-wizard-rcwa-route-smoke.png`
+- `l97-wizard-external-fdtd-route-smoke.png`
+- `l97-wizard-unsupported-gap-smoke.png`
+- `l97-wizard-decision-report-smoke.png`
 
 L8.9 fixture manifest:
 
@@ -362,4 +371,13 @@ Playwright CLI smoke helper for L9.6 Cross-Solver Consistency Bench: overlap-cas
 ```powershell
 npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
 npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l96_browser_smoke_code.js
+```
+
+`l97_browser_smoke_code.js`
+
+Playwright CLI smoke helper for L9.7 Build My Simulation / Solver Method Decision Wizard: guided intake answers, route recommendations, scene-template creation, evidence pack generation, consistency-bench linking, unsupported gap reporting, decision export filenames, and L9.6/L9.5/L9.4/L9.3/L9.2 regression visibility:
+
+```powershell
+npx --yes --package @playwright/cli playwright-cli open https://monivibe.github.io/EM-Microscope/
+npx --yes --package @playwright/cli playwright-cli run-code --filename tools/fdtd/l97_browser_smoke_code.js
 ```
