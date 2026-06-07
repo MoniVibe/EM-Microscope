@@ -111,6 +111,7 @@ import { AdvisorPacketPanel } from "./maxwell/AdvisorPacketPanel";
 import { ExampleLibraryPanel } from "./maxwell/ExampleLibraryPanel";
 import { Fdtd2dSandboxPanel } from "./maxwell/Fdtd2dSandboxPanel";
 import { MaxwellPanel } from "./maxwell/MaxwellPanel";
+import { ReleaseCandidatePanel } from "./maxwell/ReleaseCandidatePanel";
 import { RcwaPreviewPanel } from "./maxwell/RcwaPreviewPanel";
 import { SimulationBuilderPanel } from "./maxwell/SimulationBuilderPanel";
 import { MtfPanel } from "./metrics/MtfPanel";
@@ -264,9 +265,17 @@ function downloadText(filename: string, mime: string, text: string): void {
 }
 
 function MaxwellOnlyApp() {
-  const [visibleMode, setVisibleMode] = useState<"advisor" | "examples" | "intake" | "builder" | "sandbox" | "rcwa" | "diagnostics">("advisor");
+  const [visibleMode, setVisibleMode] = useState<"release" | "advisor" | "examples" | "intake" | "builder" | "sandbox" | "rcwa" | "diagnostics">("release");
   const [fdtd2dScene, setFdtd2dScene] = useState<Fdtd2dScene>(() => createFdtd2dScene());
   const [exampleWizardAnswers, setExampleWizardAnswers] = useState<SimulationIntakeAnswers | null>(null);
+  const releaseMetadata = useMemo(
+    () => ({
+      commitSha: import.meta.env.VITE_EMMICRO_COMMIT_SHA ?? "local-dev",
+      buildDateIso: import.meta.env.VITE_EMMICRO_BUILD_DATE ?? "unknown",
+      githubPagesUrl: import.meta.env.VITE_EMMICRO_PUBLIC_URL ?? "https://monivibe.github.io/EM-Microscope/"
+    }),
+    []
+  );
 
   function openExampleWizardAnswers(answers: SimulationIntakeAnswers): void {
     setExampleWizardAnswers({ ...answers });
@@ -280,15 +289,18 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L9.9 Advisor Review Packet / Evidence Dossier / L9.8 Example Library / L9.7 Build My Simulation / L9.6 Cross-Solver Consistency Bench</p>
+            <p>L10.0 Engineer Review Release Candidate / L9.9 Advisor Review Packet / L9.8 Example Library / L9.7 Build My Simulation</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>Advisor Review Packet + Example Library + Build My Simulation + Cross-Solver Consistency + Evidence Auto-Pack + RCWA Preview + 2D Maxwell Sandbox</span>
-          <strong>L9.9 packages current evidence into advisor review dossiers; it does not add solver physics, automatic correctness proof, certified validation, certified solver selection, or production RCWA/FDTD/FEM/BEM execution</strong>
+          <span>Engineer Review RC + Advisor Review Packet + Example Library + Build My Simulation + Cross-Solver Consistency + RCWA Preview + 2D Maxwell Sandbox</span>
+          <strong>L10.0 RC packages the current evidence stack for review; it does not add solver physics, automatic correctness proof, certified validation, certified solver selection, or production RCWA/FDTD/FEM/BEM execution</strong>
         </div>
         <div className="top-actions simulation-mode-actions" aria-label="Top-level workflow mode">
+          <button type="button" className={visibleMode === "release" ? "active" : ""} onClick={() => setVisibleMode("release")}>
+            Engineer Review RC
+          </button>
           <button type="button" className={visibleMode === "advisor" ? "active" : ""} onClick={() => setVisibleMode("advisor")}>
             Advisor Review Packet
           </button>
@@ -315,6 +327,17 @@ function MaxwellOnlyApp() {
 
       <main className="maxwell-only-workspace" aria-label="Maxwell simulator">
         <div className="maxwell-only-main">
+          {visibleMode === "release" && (
+            <ReleaseCandidatePanel
+              metadata={releaseMetadata}
+              onOpenAdvisorPacket={() => setVisibleMode("advisor")}
+              onOpenExampleLibrary={() => setVisibleMode("examples")}
+              onOpenSimulationBuilder={() => setVisibleMode("builder")}
+              onOpenRcwaPreview={() => setVisibleMode("rcwa")}
+              onOpenFdtdSandbox={() => setVisibleMode("sandbox")}
+              onOpenDiagnostics={() => setVisibleMode("diagnostics")}
+            />
+          )}
           {visibleMode === "advisor" && (
             <AdvisorPacketPanel
               onOpenExampleLibrary={() => setVisibleMode("examples")}

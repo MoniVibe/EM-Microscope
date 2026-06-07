@@ -1,10 +1,28 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
+import { execSync } from "node:child_process";
+
+function readGitCommitSha(): string {
+  try {
+    return execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
+  } catch {
+    return "local-dev";
+  }
+}
+
+const commitSha = process.env.VITE_EMMICRO_COMMIT_SHA ?? readGitCommitSha();
+const buildDateIso = process.env.VITE_EMMICRO_BUILD_DATE ?? new Date().toISOString();
+const publicUrl = process.env.VITE_EMMICRO_PUBLIC_URL ?? "https://monivibe.github.io/EM-Microscope/";
 
 export default defineConfig({
   plugins: [react()],
   base: process.env.GITHUB_PAGES === "true" ? "/EM-Microscope/" : "/",
+  define: {
+    "import.meta.env.VITE_EMMICRO_COMMIT_SHA": JSON.stringify(commitSha),
+    "import.meta.env.VITE_EMMICRO_BUILD_DATE": JSON.stringify(buildDateIso),
+    "import.meta.env.VITE_EMMICRO_PUBLIC_URL": JSON.stringify(publicUrl)
+  },
   resolve: {
     alias: {
       "@emmicro/core": path.resolve(__dirname, "../../packages/core/src/index.ts")

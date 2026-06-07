@@ -69,6 +69,7 @@ export * from "./maxwell/planarTmm";
 export * from "./maxwell/planarTmmBackend";
 export * from "./maxwell/processToleranceRunner";
 export * from "./maxwell/rcwaPreview";
+export * from "./maxwell/releaseCandidate";
 export * from "./maxwell/robustDesignAdvisor";
 export * from "./maxwell/solverBackend";
 export * from "./maxwell/solverRegistry";
