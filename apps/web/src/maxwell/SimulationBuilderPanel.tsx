@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import {
   addOpticalBenchCustomMonitor,
   addSimulationBuilderElement,
@@ -360,6 +360,7 @@ function initialL85Selection(): L85Selection {
 
 export function SimulationBuilderPanel(
   props: {
+    initialWizardAnswers?: SimulationIntakeAnswers | null;
     onExportSandboxScene?: (scene: Fdtd2dScene) => void;
     onOpenRcwaPreview?: () => void;
     onOpenDiagnosticWorkbenches?: () => void;
@@ -372,7 +373,7 @@ export function SimulationBuilderPanel(
   const [l95GeneratedTask, setL95GeneratedTask] = useState<SolverEvidenceTask | null>(null);
   const [l95Promotion, setL95Promotion] = useState<SolverEvidenceCampaignPromotion | null>(null);
   const [l96SelectedCaseId, setL96SelectedCaseId] = useState<CrossSolverConsistencyCaseId>("tmm-rcwa-no-pattern");
-  const [l97Answers, setL97Answers] = useState<SimulationIntakeAnswers>(() => defaultSimulationIntakeAnswers);
+  const [l97Answers, setL97Answers] = useState<SimulationIntakeAnswers>(() => props.initialWizardAnswers ?? defaultSimulationIntakeAnswers);
   const [l97CreatedTemplateHash, setL97CreatedTemplateHash] = useState<string | null>(null);
   const [l97GeneratedEvidenceHash, setL97GeneratedEvidenceHash] = useState<string | null>(null);
   const [l97ExportedDecisionHash, setL97ExportedDecisionHash] = useState<string | null>(null);
@@ -505,6 +506,14 @@ export function SimulationBuilderPanel(
   const l88Warnings = useMemo(() => (l88Summary ? validateEngineeringEvidenceCampaign(l88Manifest, l88Summary) : []), [l88Manifest, l88Summary]);
   const zMin = Math.min(scenario.grid.zStartMm, ...result.axis.map((node) => node.zMm));
   const zMax = Math.max(scenario.observationPlaneZMm, scenario.grid.zEndMm, ...result.axis.map((node) => node.zMm));
+
+  useEffect(() => {
+    if (!props.initialWizardAnswers) return;
+    setL97Answers({ ...props.initialWizardAnswers, schema: "emmicro.simulationIntake.answers.v1" });
+    setL97CreatedTemplateHash(null);
+    setL97GeneratedEvidenceHash(null);
+    setL97ExportedDecisionHash(null);
+  }, [props.initialWizardAnswers]);
 
   function updateL97Answers(patch: Partial<Omit<SimulationIntakeAnswers, "schema">>): void {
     setL97Answers((current) => ({ ...current, ...patch, schema: "emmicro.simulationIntake.answers.v1" }));

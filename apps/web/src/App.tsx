@@ -82,7 +82,8 @@ import {
   type SweepResult,
   type TestTarget2D,
   createFdtd2dScene,
-  type Fdtd2dScene
+  type Fdtd2dScene,
+  type SimulationIntakeAnswers
 } from "@emmicro/core";
 import {
   Aperture,
@@ -106,6 +107,7 @@ import { FitPanel } from "./measurement/FitPanel";
 import { ImageImportPanel } from "./measurement/ImageImportPanel";
 import { residualMapToPngDataUrl } from "./measurement/ResidualView";
 import { RoiPanel } from "./measurement/RoiPanel";
+import { ExampleLibraryPanel } from "./maxwell/ExampleLibraryPanel";
 import { Fdtd2dSandboxPanel } from "./maxwell/Fdtd2dSandboxPanel";
 import { MaxwellPanel } from "./maxwell/MaxwellPanel";
 import { RcwaPreviewPanel } from "./maxwell/RcwaPreviewPanel";
@@ -261,8 +263,14 @@ function downloadText(filename: string, mime: string, text: string): void {
 }
 
 function MaxwellOnlyApp() {
-  const [visibleMode, setVisibleMode] = useState<"intake" | "builder" | "sandbox" | "rcwa" | "diagnostics">("intake");
+  const [visibleMode, setVisibleMode] = useState<"examples" | "intake" | "builder" | "sandbox" | "rcwa" | "diagnostics">("examples");
   const [fdtd2dScene, setFdtd2dScene] = useState<Fdtd2dScene>(() => createFdtd2dScene());
+  const [exampleWizardAnswers, setExampleWizardAnswers] = useState<SimulationIntakeAnswers | null>(null);
+
+  function openExampleWizardAnswers(answers: SimulationIntakeAnswers): void {
+    setExampleWizardAnswers({ ...answers });
+    setVisibleMode("intake");
+  }
 
   return (
     <div className="app-shell maxwell-only-shell">
@@ -271,15 +279,18 @@ function MaxwellOnlyApp() {
           <div className="brand-mark">EM</div>
           <div>
             <h1>EMMicro</h1>
-            <p>L9.7 Build My Simulation / Solver Method Decision Wizard / L9.6 Cross-Solver Consistency Bench / L9.5 Solver Router Evidence Auto-Pack / L9.4 Method Selection Matrix</p>
+            <p>L9.8 Example Library / Known Experiment Pack / L9.7 Build My Simulation / L9.6 Cross-Solver Consistency Bench / L9.5 Evidence Auto-Pack</p>
           </div>
         </div>
         <div className="mode-badge">
           <Gauge size={16} />
-          <span>Build My Simulation + Solver Decision Wizard + Cross-Solver Consistency + Evidence Auto-Pack + RCWA Preview + 2D Maxwell Sandbox</span>
-          <strong>L9.7 guides problem intake into existing L9.4/L9.5/L9.6 workbenches and exports decision reports/templates; it does not add solver physics, automatic correctness proof, certified solver selection, or production RCWA/FDTD/FEM/BEM execution</strong>
+          <span>Example Library + Build My Simulation + Cross-Solver Consistency + Evidence Auto-Pack + RCWA Preview + 2D Maxwell Sandbox</span>
+          <strong>L9.8 loads known starter examples into existing L9.7/L9.4/L9.5/L9.6/RCWA/FDTD/diagnostic workflows; it does not add solver physics, automatic correctness proof, certified validation, certified solver selection, or production RCWA/FDTD/FEM/BEM execution</strong>
         </div>
         <div className="top-actions simulation-mode-actions" aria-label="Top-level workflow mode">
+          <button type="button" className={visibleMode === "examples" ? "active" : ""} onClick={() => setVisibleMode("examples")}>
+            Example Library
+          </button>
           <button type="button" className={visibleMode === "intake" ? "active" : ""} onClick={() => setVisibleMode("intake")}>
             Build My Simulation
           </button>
@@ -300,8 +311,21 @@ function MaxwellOnlyApp() {
 
       <main className="maxwell-only-workspace" aria-label="Maxwell simulator">
         <div className="maxwell-only-main">
+          {visibleMode === "examples" && (
+            <ExampleLibraryPanel
+              onOpenWizardAnswers={openExampleWizardAnswers}
+              onOpenRcwaPreview={() => setVisibleMode("rcwa")}
+              onOpenDiagnosticWorkbenches={() => setVisibleMode("diagnostics")}
+              onOpenSimulationBuilder={() => setVisibleMode("builder")}
+              onExportSandboxScene={(scene) => {
+                setFdtd2dScene(scene);
+                setVisibleMode("sandbox");
+              }}
+            />
+          )}
           {(visibleMode === "intake" || visibleMode === "builder") && (
             <SimulationBuilderPanel
+              initialWizardAnswers={exampleWizardAnswers}
               onOpenRcwaPreview={() => setVisibleMode("rcwa")}
               onOpenDiagnosticWorkbenches={() => setVisibleMode("diagnostics")}
               onExportSandboxScene={(scene) => {

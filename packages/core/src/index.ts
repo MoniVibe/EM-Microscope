@@ -50,6 +50,7 @@ export * from "./maxwell/coatingYield";
 export * from "./maxwell/crossSolverConsistency";
 export * from "./maxwell/designFoundry";
 export * from "./maxwell/externalFdtdBackend";
+export * from "./maxwell/exampleLibrary";
 export * from "./maxwell/fieldDatasetManifest";
 export * from "./maxwell/materialCatalog";
 export * from "./maxwell/materialImport";
